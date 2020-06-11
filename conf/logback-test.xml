@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- An alternative logback configuration that is used when running tests, in order to keep the output cleaner -->
+<configuration>
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>/tmp/pluto-core-testing.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%level %logger{15} - %message%n%xException{20}</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="play" level="INFO" />
+    <logger name="application" level="ERROR" />
+    <logger name="services.PostrunActionScanner" level="INFO"/>
+    <logger name="org.reflections" level="OFF"/>
+    <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
+    <logger name="helpers.PostrunSorter" level="WARN"/>
+    <logger name="helpers.InitCluster" level="WARN"/>
+    <logger name="services.actors.ClusterListener" level="WARN"/>
+    <logger name="controllers.MessageTest" level="WARN"/>
+    <logger name="models.ProjectRequestPluto" level="WARN"/>
+    <logger name="drivers.PathStorage" level="WARN"/>
+    <logger name="models.PlutoWorkingGroup" level="WARN"/>
+    <logger name="models.PlutoCommission" level="WARN"/>
+    <logger name="services.PlutoWGCommissionScanner" level="INFO"/>
+    <logger name="services.ClockSingleton" level="INFO"/>
+    <logger name="controllers.Files" level="WARN" />
+    <logger name="controllers.StoragesController" level="INFO"/>
+    <logger name="drivers.MatrixStoreDriver" level="INFO"/>
+    <logger name="controllers.StorageControllerSpec" level="WARN"/>
+    <logger name="auth.Security" level="WARN"/>
+    <logger name="controllers.Application" level="WARN"/>
+    <logger name="controllers.System" level="INFO"/>
+    <logger name="auth.LDAP" level="INFO"/>
+    <logger name="services.actors.MessageProcessorActor" level="WARN"/>
+    <logger name="services.actors.MessageProcessorState" level="WARN"/>
+    <logger name="services.PlutoProjectTypeScanner" level="WARN"/>
+    <logger name="models.FileEntry" level="INFO" />
+    <logger name="controllers.Files" level="WARN" />
+    <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
+    <logger name="models.ProjectMetadata" level="WARN"/>
+    <logger name="postrun.UpdateAdobeUuidSpec" level="WARN"/>
+    <logger name="services.StorageScanner" level="INFO"/>
+    <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
+    <logger name="MockProjectCreationActor" level="DEBUG"/>
+    <logger name="services.actors.ProjectCreationActor" level="INFO"/>
+    <logger name="ProjectCreation.ProjectCreationSpec" level="ERROR"/>
+    <logger name="services.actors.creation" level="INFO"/>
+    <logger name="services.ValidateProject" level="DEBUG"/>
+    <logger name="streamcomponents.ProjectSearchSource" level="DEBUG"/>
+    <logger name="helpers.AllowCORSFilter" level="WARN"/>
+
+    <root level="INFO">
+        <appender-ref ref="FILE" />
+    </root>
+
+</configuration>

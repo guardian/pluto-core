@@ -1,0 +1,59 @@
+stages:
+  - build
+  - deploy
+
+frontend:
+    image: node:12.18-alpine3.12
+    stage: build
+    script:
+    - cd frontend
+    - yarn install
+    - yarn test
+    - yarn compile
+    cache:
+        key: ${CI_COMMIT_REF_SLUG}-node
+        paths:
+        - frontend/node_modules/
+    artifacts:
+        paths: 
+        - public/javascripts/bundle.js
+
+backend:
+    image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20190708_3
+    stage: build
+    services:
+    - postgres:9.6
+    variables:
+      POSTGRES_DB: projectlocker_test
+      POSTGRES_USER: projectlocker
+      POSTGRES_PASSWORD: projectlocker
+      POSTGRES_HOST_AUTH_METHOD: trust
+      TEST_DB_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker
+      DEFAULT_DB_URL: jdbc:postgresql://postgres:5432/projectlocker?user=projectlocker
+      TEST_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
+      DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/postgres?user=projectlocker&password=projectlocke
+    script:
+    - yum -y install nc
+    - ping -c5 postgres
+    - nc -vv -z postgres 5432
+    - echo ${TEST_DB_URL}
+    - echo ${TEST_DB_PROPERTIES_URL}
+    - sbt test:compile
+    - sbt test
+    cache:
+        key: ${CI_COMMIT_REF_SLUG}-sbt
+        paths:
+        - target/
+
+deploy:
+    image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20190708_3
+    stage: deploy
+    services:
+    - docker:dind
+    script:
+    - JAVA_OPTS="-Dbuild.number=${CI_REGISTRY}" sbt docker:publish
+    cache:
+        key: ${CI_COMMIT_REF_SLUG}-sbt
+        policy: pull
+        paths:
+        - target/
