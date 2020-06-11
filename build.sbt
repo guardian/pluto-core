@@ -20,11 +20,11 @@ lazy val `projectlocker` = (project in file("."))
       dockerExposedPorts := Seq(9000),
       dockerUsername  := sys.props.get("docker.username"),
       dockerRepository := Some("andyg42"),
-      packageName in Docker := "andyg42/projectlocker",
-      packageName := "projectlocker",
+      packageName in Docker := "andyg42/pluto-core",
+      packageName := "pluto-core",
       dockerBaseImage := "openjdk:8-jdk-slim",
       dockerPermissionStrategy := DockerPermissionStrategy.Run,
-      dockerAlias := docker.DockerAlias(None,sys.props.get("docker.username"),"projectlocker",Some(sys.props.getOrElse("build.number","DEV"))),
+      dockerAlias := docker.DockerAlias(None,sys.props.get("docker.username"),"pluto-core",Some(sys.props.getOrElse("build.number","DEV"))),
       dockerCommands ++= Seq(
         Cmd("USER", "root"),
         Cmd("RUN", "apt-get","-y", "update", "&&", "apt-get", "-y", "install", "sudo", "perl"),
@@ -66,7 +66,10 @@ libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
 
 
 //authentication
-libraryDependencies += "com.unboundid" % "unboundid-ldapsdk" % "4.0.5"
+libraryDependencies ++= Seq(
+  "com.unboundid" % "unboundid-ldapsdk" % "4.0.5",
+  "com.nimbusds" % "nimbus-jose-jwt" % "8.17",
+)
 
 // https://mvnrepository.com/artifact/org.python/jython
 libraryDependencies += "org.python" % "jython" % "2.7.1b2"
@@ -90,6 +93,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-cluster" % "2.5.23",
   "com.typesafe.akka" %% "akka-cluster-metrics" % "2.5.23",
   "com.typesafe.akka" %% "akka-cluster-tools" % "2.5.23",
+  "com.typesafe.akka" %% "akka-slf4j"      % "2.5.23",
   "org.iq80.leveldb"            % "leveldb"          % "0.7",
   "org.fusesource.leveldbjni"   % "leveldbjni-all"   % "1.8",
   "com.typesafe.akka" %% "akka-testkit" % "2.5.23" % Test
