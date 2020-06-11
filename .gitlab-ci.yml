@@ -17,6 +17,8 @@ frontend:
     artifacts:
         paths: 
         - public/javascripts/bundle.js
+        reports:
+          junit: frontend/junit.xml
 
 backend:
     image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20190708_3
@@ -36,10 +38,15 @@ backend:
     - yum -y install perl-Digest-SHA
     - sbt test:compile
     - sbt test
+    artifacts:
+      paths:
+        - /tmp/pluto-core-testing.log
     cache:
         key: ${CI_COMMIT_REF_SLUG}-sbt
         paths:
         - target/
+        - /root/.sbt
+        - /root/.ivy2
 
 deploy:
     image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20190708_3
