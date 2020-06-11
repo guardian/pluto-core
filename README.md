@@ -20,6 +20,7 @@ only implementing https to the loadbalancer)
 
 Projectlocker is intended to run against an ldap-based authentication system, such as Active Directory. This is configured
 in `application.conf` but it can be turned off during development.
+It also supports bearer-token and server->server shared secret (HMAC) auth, see "Authentication Precedence" below.
 
 ### ldaps
 
@@ -114,6 +115,25 @@ make sure of the following:
 - reset the state of the database before each test run. The simplest way to do this is to use `scripts/setup_docker_postgres.sh`
 and use CTRL-C to exit the database and re-run it to set up the environment again before each run
 
+### Authentication Precedence
+
+Projectlocker supports three distinct types of authentication.  Only one is ever applied to an incoming request, depending on
+the headers present in that request:
+
+- HMAC shared-secret
+If an incoming HTTP request contains the `X-HMAC-Authentication` header, then shared-secret authentication is applied
+(for details, see `Signing requests for server->server interactions`)
+
+- Bearer token authentication
+If an incoming HTTP request does not contain X-HMAC-Authentication but does contain the `Authorization` header then bearer-token
+authentication is applied (for details, see `OAuth2 authentication`)
+
+- LDAP in-session
+If an incoming HTTP request contains neither authentication header then session-based auth is applied.  The server expects a
+session cookie to be present and to cryptographically validate and it gets the authentication information from that.  If
+no cookie is present, then the requestor must call the /login endpoint to present username/password credentials for validation
+against LDAP and if successful a session cookie will be returned.
+
 ### Signing requests for server->server interactions
 
 Projectlocker supports HMAC signing of requests for server-server actions.
@@ -134,3 +154,15 @@ The signature should be calculated like this:
 - if you have troubles, turn on debug at the server end to check the string_to_sign and digests
 
 There is a working example of how to do this in Python in `scripts/test_hmac_auth.py`
+
+### OAuth2 Autentication
+
+Projectlocker supports validation with OAuth2 bearer tokens. It is assumed that the frontend client is taking care of actually
+obtaining said tokens.
+To use this method, present a header called `Authorization` in the format `Bearer: {token}` where {token} is the JWT
+obtained from the identity provider (see https://jwt.io/ for lots more information and tools to generate/validate test JWTs)
+The server requires the public signing certificate of your IdP to validate the token against, place it in the application.conf
+as per the comments in that file.  If a presented token validates and its expiry time is not past, then the request will be allowed.
+In the application config, you should also provide the name of a claims field to indicate whether the user is an admin or not.
+If this field is present in the JWT then the user will be considered an admin, if not then they will be considered a regular user.
+
