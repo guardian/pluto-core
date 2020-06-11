@@ -61,7 +61,9 @@ deploy:
     DOCKER_HOST: tcp://docker:2376
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_VERIFY: 1
+    JAVA_OPTS: -Dsbt.ivy.home=./.ivy2 -Divy.home=./.ivy2
   script:
+  - if [ -d ".sbt" ]; then rm -rf ${HOME}/.sbt; mv .sbt ${HOME}; fi
   - ls -lhd /certs
   - ls -lh /certs/*
   - mkdir ~/.docker && cp -a /certs/client/*.pem ~/.docker
