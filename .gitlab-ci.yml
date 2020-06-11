@@ -33,11 +33,7 @@ backend:
       TEST_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
       DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/postgres?user=projectlocker&password=projectlocke
     script:
-    - yum -y install nc
-    - ping -c5 postgres
-    - nc -vv -z postgres 5432
-    - echo ${TEST_DB_URL}
-    - echo ${TEST_DB_PROPERTIES_URL}
+    - yum -y install perl-Digest-SHA
     - sbt test:compile
     - sbt test
     cache:
