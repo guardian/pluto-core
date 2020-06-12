@@ -69,7 +69,7 @@ class PlutoCommissionSpec extends Specification with utils.BuildMyApp with Times
       println(data(2).get)
       data(2).get.collectionId mustEqual 13
       data(2).get.title mustEqual "addasadsf"
-      data(2).get.status mustEqual PlutoCommissionStatus.InProduction
+      data(2).get.status mustEqual EntryStatus.InProduction
 
     }
   }

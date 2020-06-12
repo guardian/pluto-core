@@ -15,13 +15,8 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object PlutoCommissionStatus extends Enumeration {
-  val New,Held,Completed,Killed = Value
-  val InProduction = Value("In Production")
-}
-
 case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, created: Timestamp, updated:Timestamp,
-                            title: String, status: PlutoCommissionStatus.Value, description: Option[String], workingGroup: Int) {
+                            title: String, status: EntryStatus.Value, description: Option[String], workingGroup: Int) {
   private def logger = Logger(getClass)
 
   /**
@@ -90,24 +85,15 @@ case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, cr
   )
 }
 
-object PlutoCommissionStatusMapper {
-  implicit val commissionStatusStringMapper = MappedColumnType.base[PlutoCommissionStatus.Value, String](
-    e=>e.toString,
-    s=>PlutoCommissionStatus.withName(s)
-  )
-  implicit val plutoCommissionStatusReads:Reads[PlutoCommissionStatus.Value] = Reads.enumNameReads(PlutoCommissionStatus)
-  implicit val plutoCommissionStatusWrites:Writes[PlutoCommissionStatus.Value] = Writes.enumNameWrites
-}
-
 class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoCommission"){
-  import PlutoCommissionStatusMapper._
+  import EntryStatusMapper._
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
   def collectionId = column[Int]("i_collection_id")
   def siteId = column[String]("s_site_id")
   def created = column[Timestamp]("t_created")
   def updated = column[Timestamp]("t_updated")
   def title = column[String]("s_title")
-  def status = column[PlutoCommissionStatus.Value]("s_status")
+  def status = column[EntryStatus.Value]("s_status")
   def description = column[Option[String]]("s_description")
   def workingGroup = column[Int]("k_working_group")
 
@@ -115,7 +101,7 @@ class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoComm
 }
 
 trait PlutoCommissionSerializer extends TimestampSerialization {
-  import PlutoCommissionStatusMapper._
+  import EntryStatusMapper._
 
   implicit val plutoCommissionWrites:Writes[PlutoCommission] = (
     (JsPath \ "id").writeNullable[Int] and
@@ -124,7 +110,7 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
       (JsPath \ "created").write[Timestamp] and
       (JsPath \ "updated").write[Timestamp] and
       (JsPath \ "title").write[String] and
-      (JsPath \ "status").write[PlutoCommissionStatus.Value] and
+      (JsPath \ "status").write[EntryStatus.Value] and
       (JsPath \ "description").writeNullable[String] and
       (JsPath \ "workingGroupId").write[Int]
   )(unlift(PlutoCommission.unapply))
@@ -136,13 +122,13 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
       (JsPath \ "created").read[Timestamp] and
       (JsPath \ "updated").read[Timestamp] and
       (JsPath \ "title").read[String] and
-      (JsPath \ "status").read[PlutoCommissionStatus.Value] and
+      (JsPath \ "status").read[EntryStatus.Value] and
       (JsPath \ "description").readNullable[String] and
       (JsPath \ "workingGroupId").read[Int]
     )(PlutoCommission.apply _)
 }
 
-object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,String,PlutoCommissionStatus.Value,Option[String],Int)=>PlutoCommission)  {
+object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,String,EntryStatus.Value,Option[String],Int)=>PlutoCommission)  {
   def mostRecentByWorkingGroup(workingGroupId: Int)(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Option[PlutoCommission]]] = {
     db.run(
       TableQuery[PlutoCommissionRow].filter(_.workingGroup===workingGroupId).sortBy(_.updated.desc).take(1).result.asTry
@@ -187,7 +173,7 @@ object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,Stri
         created = (serverRep \ "created").as[Timestamp],
         updated = (serverRep \ "updated").as[Timestamp],
         title = (serverRep \ "gnm_commission_title").as[String],
-        status = PlutoCommissionStatus.withName((serverRep \ "gnm_commission_status").as[String]),
+        status = EntryStatus.withName((serverRep \ "gnm_commission_status").as[String]),
         description = (serverRep \ "gnm_commission_description").asOpt[String],
         workingGroup = forWorkingGroup
       )

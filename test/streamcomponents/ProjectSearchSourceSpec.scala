@@ -5,7 +5,7 @@ import java.time.ZonedDateTime
 
 import akka.stream.scaladsl.{GraphDSL, RunnableGraph, Sink}
 import akka.stream.{ActorMaterializer, ClosedShape, Materializer}
-import models.{ProjectEntry, ProjectEntryRow}
+import models.{EntryStatus, ProjectEntry, ProjectEntryRow}
 import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.test.WithApplication
@@ -34,7 +34,7 @@ class ProjectSearchSourceSpec extends Specification with BuildMyApp {
       val result = Await.result(RunnableGraph.fromGraph(graph).run, 30 seconds)
 
       result.length must beGreaterThanOrEqualTo(4)
-      result.head mustEqual ProjectEntry(Some(1),1,None,"InitialTestProject",Timestamp.valueOf("2016-12-11 12:21:11.021"),"me",None,None,None,None,None)
+      result.head mustEqual ProjectEntry(Some(1),1,None,"InitialTestProject",Timestamp.valueOf("2016-12-11 12:21:11.021"),"me",None,None,None,None,None, EntryStatus.InProduction)
     }
   }
 }

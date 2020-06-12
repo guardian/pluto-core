@@ -17,7 +17,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId: Option[String],
                          projectTitle: String, created:Timestamp, user: String, workingGroupId: Option[Int],
-                         commissionId: Option[Int], deletable: Option[Boolean], deep_archive: Option[Boolean], sensitive: Option[Boolean]) {
+                         commissionId: Option[Int], deletable: Option[Boolean], deep_archive: Option[Boolean],
+                         sensitive: Option[Boolean], status:EntryStatus.Value) {
   def associatedFiles(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Seq[FileEntry]] = {
     db.run(
       TableQuery[FileAssociationRow].filter(_.projectEntry===this.id.get).result.asTry
@@ -107,6 +108,7 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
 }
 
 class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") {
+  import EntryStatusMapper._
   implicit val DateTimeTotimestamp =
     MappedColumnType.base[DateTime, Timestamp]({d=>new Timestamp(d.getMillis)}, {t=>new DateTime(t.getTime, UTC)})
 
@@ -124,10 +126,13 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
   def sensitive = column[Option[Boolean]]("b_sensitive")
 
   def projectTypeKey=foreignKey("fk_project_type",projectType,TableQuery[ProjectTypeRow])(_.id)
-  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, user, workingGroup, commission, deletable, deep_archive, sensitive) <> (ProjectEntry.tupled, ProjectEntry.unapply)
+
+  def status = column[EntryStatus.Value]("s_status")
+  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, user, workingGroup, commission, deletable, deep_archive, sensitive, status) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }
 
 trait ProjectEntrySerializer extends TimestampSerialization {
+  import EntryStatusMapper._
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
   implicit val projectEntryWrites:Writes[ProjectEntry] = (
     (JsPath \ "id").writeNullable[Int] and
@@ -140,7 +145,8 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "commissionId").writeNullable[Int] and
       (JsPath \ "deletable").writeNullable[Boolean] and
       (JsPath \ "deep_archive").writeNullable[Boolean] and
-      (JsPath \ "sensitive").writeNullable[Boolean]
+      (JsPath \ "sensitive").writeNullable[Boolean] and
+      (JsPath \ "status").write[EntryStatus.Value]
     )(unlift(ProjectEntry.unapply))
 
   implicit val projectEntryReads:Reads[ProjectEntry] = (
@@ -154,11 +160,12 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "commissionId").readNullable[Int] and
       (JsPath \ "deletable").readNullable[Boolean] and
       (JsPath \ "deep_archive").readNullable[Boolean] and
-      (JsPath \ "sensitive").readNullable[Boolean]
+      (JsPath \ "sensitive").readNullable[Boolean] and
+      (JsPath \ "status").read[EntryStatus.Value]
     )(ProjectEntry.apply _)
 }
 
-object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean])=>ProjectEntry) {
+object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean], EntryStatus.Value)=>ProjectEntry) {
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String],
                      deletable: Boolean, deep_archive: Boolean, sensitive: Boolean)
@@ -221,7 +228,7 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
 
     /* step one - create a new project entry */
     val entry = ProjectEntry(None, projectTypeId, existingVidispineId, title, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())),
-      user, workingGroupId, commissionId, Some(deletable), Some(deep_archive), Some(sensitive))
+      user, workingGroupId, commissionId, Some(deletable), Some(deep_archive), Some(sensitive), EntryStatus.New)
     val savedEntry = entry.save
 
     /* step two - set up file association. Project entry must be saved, so this is done as a future map */
@@ -240,4 +247,15 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
       case Failure(error)=>Future(Failure(error))
     })
   }
+
+  /**
+   * get a sequence of projects that belong to the given commission
+   * @param commissionId ID of the commission to search for
+   * @param db implicitly provided database profile
+   * @return a Future, containing a sequence of zero or more ProjectEntryRow. On error, the future fails; catch this with .recover or .onComplete
+   */
+  def forCommission(commissionId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run(
+    TableQuery[ProjectEntryRow].filter(_.commission===commissionId).result
+  )
+
 }

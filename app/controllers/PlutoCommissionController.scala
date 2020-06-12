@@ -1,5 +1,6 @@
 package controllers
 
+import akka.actor.ActorRef
 import auth.BearerTokenAuth
 import exceptions.{AlreadyExistsException, BadDataException}
 import helpers.AllowCORSFunctions
@@ -11,6 +12,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc.{ControllerComponents, EssentialAction, Request, ResponseHeader, Result}
+import services.CommissionStatusPropagator
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
@@ -20,8 +22,12 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class PlutoCommissionController @Inject()(override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
-                                          dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, config:Configuration)
+class PlutoCommissionController @Inject()(override val controllerComponents:ControllerComponents,
+                                          override val bearerTokenAuth:BearerTokenAuth,
+                                          dbConfigProvider:DatabaseConfigProvider,
+                                          cacheImpl:SyncCacheApi,
+                                          config:Configuration,
+                                         @Named("commission-status-propagator") commissionStatusPropagator:ActorRef)
   extends GenericDatabaseObjectControllerWithFilter[PlutoCommission,PlutoCommissionFilterTerms]
     with PlutoCommissionSerializer with PlutoCommissionFilterTermsSerializer {
 
@@ -135,11 +141,10 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         }
     }
 
-    private def updateStatusColumn(commissionId:Int, newValue:PlutoCommissionStatus.Value) = {
-        import PlutoCommissionStatusMapper._
+    private def updateStatusColumn(commissionId:Int, newValue:EntryStatus.Value) = {
+        import EntryStatusMapper._
 
         db.run {
-            //TableQuery[PlutoCommissionRow].filter(_.id===commissionId).update()
             val q = for {c <- TableQuery[PlutoCommissionRow] if c.id === commissionId} yield c.status
             q.update(newValue)
         }
@@ -156,6 +161,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                         NotFound(Json.obj("status"->"not_found","detail"->s"No commission with id $commissionId"))
                     } else {
                         if(rowsUpdated>1) logger.error(s"Status update request for commission $commissionId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
+                        commissionStatusPropagator ! CommissionStatusPropagator.CommissionStatusUpdate(commissionId, requiredUpdate.status)
                         Ok(Json.obj("status"->"ok","detail"->"commission status updated"))
                     }
                 }).recover({

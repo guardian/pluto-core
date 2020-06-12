@@ -20,12 +20,12 @@ object ILike {
 }
 
 case class PlutoCommissionFilterTerms(title:Option[String],
-                                      status:Option[PlutoCommissionStatus.Value],
+                                      status:Option[EntryStatus.Value],
                                       siteId:Option[String],
                                       collectionId:Option[Int],
                                       workingGroupId:Option[Int],
                                       description:Option[String],
-                                   wildcard:FilterTypeWildcard.Value)
+                                      wildcard:FilterTypeWildcard.Value)
 extends GeneralFilterEntryTerms[PlutoCommissionRow, PlutoCommission] {
 
   /**
@@ -38,7 +38,7 @@ extends GeneralFilterEntryTerms[PlutoCommissionRow, PlutoCommission] {
     import ILike._
     var action = f
 
-    import PlutoCommissionStatusMapper._
+    import EntryStatusMapper._
 
     if(title.isDefined) action = action.filter(_.title ilike makeWildcard(title.get))
     if(siteId.isDefined) action = action.filter(_.siteId ===siteId.get)
@@ -52,11 +52,11 @@ extends GeneralFilterEntryTerms[PlutoCommissionRow, PlutoCommission] {
 
 trait PlutoCommissionFilterTermsSerializer {
   implicit val wildcardSerializer:Reads[FilterTypeWildcard.Value] = Reads.enumNameReads(FilterTypeWildcard)
-  import PlutoCommissionStatusMapper._
+  import EntryStatusMapper._
 
   implicit val plutoCommissionFilterTermsReads:Reads[PlutoCommissionFilterTerms] = (
     (JsPath \ "title").readNullable[String] and
-      (JsPath \ "status").readNullable[PlutoCommissionStatus.Value] and
+      (JsPath \ "status").readNullable[EntryStatus.Value] and
       (JsPath \ "siteId").readNullable[String] and
       (JsPath \ "collectionId").readNullable[Int] and
       (JsPath \ "workingGroupId").readNullable[Int] and
