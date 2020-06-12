@@ -8,6 +8,7 @@ frontend:
   script:
     - cd frontend
     - yarn install
+    - yarn lint
     - yarn test
     - yarn build:prod
   cache:
