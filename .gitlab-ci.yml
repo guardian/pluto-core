@@ -9,7 +9,7 @@ frontend:
    - cd frontend
    - yarn install
    - yarn test
-   - yarn compile
+   - yarn build:prod
    cache:
        key: ${CI_COMMIT_REF_SLUG}-node
        paths:
