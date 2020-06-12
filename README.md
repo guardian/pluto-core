@@ -96,12 +96,16 @@ running the `setup_docker_postgres.sh` script in `scripts`.
 
 ### Frontend
 
-- The frontend is written in ES2016 javascript using React JSX.  To run in a browser, it's transpiled with Babel and bundled with Webpack
-- I'd recommend installing yarn to manage javascript dependencies: see `https://yarnpkg.com/lang/en/docs/install/`
-- Set up the tools like so: `cd frontend; yarn install` (or `cd frontend; npm install` if you don't like yarn)
-- Tests can be run via `npm test`
-- To just build the frontend, you can run `npm run compile` from the frontend directory
-- To develop the frontend, you should run `npm run dev` from the frontend directory.  This doesn't terminate, it asks Webpack to stay running and check the source files for modifications and automatically rebuild for you
+The frontend is written in ES2016 JavaScript using React JSX. To run in a browser, it's transpiled with Babel and bundled with Webpack
+
+Installing `yarn` is recommended to manage JavaScript dependencies. See `https://yarnpkg.com/lang/en/docs/install/`.
+
+The following list explains the available yarn scripts in the frontend directory. (Commands in this section assume the current working directory is `${PROJECT_ROOT}/frontend/`.)
+
+- Install dependencies: `yarn`
+- Run tests: `yarn test`
+- Build the frontend: `yarn build` (use `yarn build:prod` to build for a production environment)
+- Run a local development server: `yarn start`. This builds the project in a development environment and continues to monitor source files for modifications. The project is rebuilt automatically when they occur.
 
 ### Running the backend tests
 
