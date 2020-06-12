@@ -158,6 +158,10 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                         if(rowsUpdated>1) logger.error(s"Status update request for commission $commissionId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
                         Ok(Json.obj("status"->"ok","detail"->"commission status updated"))
                     }
+                }).recover({
+                    case err:Throwable=>
+                    logger.error(s"Could not update status of commission $commissionId to ${requiredUpdate.status}: ", err)
+                    InternalServerError(Json.obj("status"->"db_error","detail"->"Database error, see logs for details"))
                 })
         )
     }
