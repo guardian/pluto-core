@@ -47,7 +47,7 @@ class PlutoCommissionSpec extends Specification with utils.BuildMyApp with Times
                                   |        "created": "2017-12-04T16:18:12.105",
                                   |        "updated": "2018-01-04T14:14:35.346",
                                   |        "gnm_commission_title": "addasadsf",
-                                  |        "gnm_commission_status": "In production",
+                                  |        "gnm_commission_status": "In Production",
                                   |        "gnm_commission_workinggroup": "8b2bc331-7a11-40d0-a1e5-1266bdf8dce5",
                                   |        "gnm_commission_description": null,
                                   |        "gnm_commission_owner": [

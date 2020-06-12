@@ -9,7 +9,7 @@ import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
-import play.api.libs.json.{JsResult, JsValue, Json}
+import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc.{ControllerComponents, EssentialAction, Request, ResponseHeader, Result}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
@@ -135,4 +135,30 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         }
     }
 
+    private def updateStatusColumn(commissionId:Int, newValue:PlutoCommissionStatus.Value) = {
+        import PlutoCommissionStatusMapper._
+
+        db.run {
+            //TableQuery[PlutoCommissionRow].filter(_.id===commissionId).update()
+            val q = for {c <- TableQuery[PlutoCommissionRow] if c.id === commissionId} yield c.status
+            q.update(newValue)
+        }
+    }
+
+    def updateStatus(commissionId: Int) = IsAuthenticatedAsync(parse.json) {uid=> request=>
+        import PlutoCommissionStatusUpdateRequestSerializer._
+        request.body.validate[PlutoCommissionStatusUpdateRequest].fold(
+            invalidErrs=>
+                Future(BadRequest(Json.obj("status"->"bad_request","detail"->JsError.toJson(invalidErrs)))),
+            requiredUpdate=>
+                updateStatusColumn(commissionId, requiredUpdate.status).map(rowsUpdated=>{
+                    if(rowsUpdated==0){
+                        NotFound(Json.obj("status"->"not_found","detail"->s"No commission with id $commissionId"))
+                    } else {
+                        if(rowsUpdated>1) logger.error(s"Status update request for commission $commissionId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
+                        Ok(Json.obj("status"->"ok","detail"->"commission status updated"))
+                    }
+                })
+        )
+    }
   }
