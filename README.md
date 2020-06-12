@@ -168,5 +168,5 @@ If this field is present in the JWT then the user will be considered an admin, i
 
 ### Testing a built image
 
-An image built from the CI process can be tested locally using `docker-compose`.  See `scripts/test_built_image/README.md`
+An image built from the CI process can be tested locally using `docker-compose`. See [Testing a built image](scripts/test_built_image/README.md)
 for more information.
