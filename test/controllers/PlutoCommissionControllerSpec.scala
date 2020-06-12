@@ -2,7 +2,6 @@ package controllers
 
 import java.sql.Timestamp
 import java.time.Instant
-
 import models.{PlutoCommission, PlutoCommissionRow, EntryStatus}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification

@@ -15,6 +15,11 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
+object PlutoCommissionStatus extends Enumeration {
+  val New,Held,Completed,Killed = Value
+  val InProduction = Value("In Production")
+}
+
 case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, created: Timestamp, updated:Timestamp,
                             title: String, status: EntryStatus.Value, description: Option[String], workingGroup: Int) {
   private def logger = Logger(getClass)
@@ -83,6 +88,15 @@ case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, cr
     "commissionTitle"->title,
     "commissionDescription"->description.getOrElse("")
   )
+}
+
+object PlutoCommissionStatusMapper {
+  implicit val commissionStatusStringMapper = MappedColumnType.base[PlutoCommissionStatus.Value, String](
+    e=>e.toString,
+    s=>PlutoCommissionStatus.withName(s)
+  )
+  implicit val plutoCommissionStatusReads:Reads[PlutoCommissionStatus.Value] = Reads.enumNameReads(PlutoCommissionStatus)
+  implicit val plutoCommissionStatusWrites:Writes[PlutoCommissionStatus.Value] = Writes.enumNameWrites
 }
 
 class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoCommission"){
