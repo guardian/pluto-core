@@ -166,3 +166,9 @@ To use this method, present a header called `Authorization` in the format `Beare
 The server requires the public signing certificate of your IdP to validate the token against. Place it in `application.conf` as per the comments in that file. If a presented token validates and its expiry time is not past, then the request will be allowed.
 
 In the application config, you should also provide the name of a claims field to indicate whether the user is an admin or not. If this field is present in the JWT then the user will be considered an admin, if not then they will be considered a regular user.
+
+### Testing a built image
+
+An image built from the CI process can be tested locally using `docker-compose`. See [Testing a built image](scripts/test_built_image/README.md)
+for more information.
+

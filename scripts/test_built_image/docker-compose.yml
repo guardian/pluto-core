@@ -1,0 +1,28 @@
+version: '2.0'
+services:
+  database:
+    image: postgres:9.6
+    networks:
+      - projectlocker
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: cjkbvzjkbvdvjkbdbjks
+      POSTGRES_USER: postgres
+    volumes:
+      - "../docker-init:/docker-entrypoint-initdb.d"
+      - projectlocker_db:/var/lib/postgresql/data
+  plutocore:
+    # Change the build number here to the version you want to run.
+    image: guardianmultimedia/pluto-core:DEV
+    networks:
+      - projectlocker
+    volumes:
+      - projectlocker_app_data:/data
+    ports:
+      - "9000:9000"
+networks:
+  projectlocker:
+volumes:
+  projectlocker_db:
+  projectlocker_app_data:
