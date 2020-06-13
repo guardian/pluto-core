@@ -5,7 +5,7 @@ apt-get -y install curl gnupg
 echo "deb https://dl.bintray.com/sbt/debian /" | tee -a /etc/apt/sources.list.d/sbt.list
 apt-key add /tmp/sbt-deb-key.txt
 apt-get -y update
-apt-get -y install sbt git
+apt-get -y install sbt git libxml2-utils
 apt-get -y clean && rm -rf /var/cache/apt
 
 echo exit | sbt
