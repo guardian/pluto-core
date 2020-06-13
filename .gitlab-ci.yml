@@ -35,14 +35,19 @@ backend:
     TEST_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
     DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/postgres?user=projectlocker&password=projectlocker
     JAVA_OPTS: -Dsbt.ivy.home=./.ivy2 -Divy.home=./.ivy2
+    SBT_JUNIT_OUTPUT: ./junit-tests
   script:
     - if [ -d ".sbt" ]; then rm -rf ${HOME}/.sbt; mv .sbt ${HOME}; fi
+    - if [ -d "junit-tests" ]; then mkdir junit-tests; fi
     - sbt test:compile
     - sbt test
     - mv ${HOME}/.sbt .sbt || true
+    - mv /tmp/pluto-core-testing.log . || /bin/true
   artifacts:
     paths:
-      - /tmp/pluto-core-testing.log
+      - pluto-core-testing.log
+    reports:
+      junit: junit-tests/*.xml
   cache:
     key: ${CI_COMMIT_REF_SLUG}-sbt
     paths:
