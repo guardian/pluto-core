@@ -1,7 +1,8 @@
-FROM centos:7
+FROM openjdk:11-jre-slim-buster
 
-COPY ./containerscripts/javasbtdockergit.sh /tmp
-RUN bash /tmp/javasbtdockergit.sh
+COPY ./containerscripts/sbt-deb-key.txt /tmp
+COPY ./containerscripts/sbt-install.sh /tmp
+RUN bash /tmp/sbt-install.sh
 
 COPY ./containerscripts/jython.sh /tmp
 RUN bash /tmp/jython.sh

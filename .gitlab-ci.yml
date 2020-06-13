@@ -21,7 +21,7 @@ frontend:
       junit: frontend/junit.xml
 
 backend:
-  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200611_1
+  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200613_1
   stage: build
   services:
     - postgres:9.6
@@ -52,7 +52,7 @@ backend:
       - .ivy2/
 
 deploy:
-  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200611_1
+  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200613_1
   stage: deploy
   services:
     - docker:19.03.11-dind
