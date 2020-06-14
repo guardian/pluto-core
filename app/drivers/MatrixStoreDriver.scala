@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
@@ -297,20 +297,20 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
 
   /**
     * Get a Map of metadata relevant to the specified file.  The contents can vary between implementations, but should always
-    * have 'size (Long converted to String) and 'lastModified (Long converted to String) members
+    * have Symbol("size") (Long converted to String) and Symbol("lastModified") (Long converted to String) members
     * @param path [[String]] Absolute path to open
     * @return [[Map]] of [[Symbol]] -> [[String]] containing metadata about the given file.
     */
   def getMetadata(path:String, version:Int):Map[Symbol,String] = withVault { vault=>
     val resultFuture = findByFilename(vault, path, version).map({
       case None=>
-        Map('size->"-1")
+        Map(Symbol("size")->"-1")
       case Some(omEntry)=>
         val fileAttrKeysMap = omEntry.attributes.map(_.toSymbolMap)
         Map(
-          'size->omEntry.fileAttribues.map(_.size).getOrElse(-1).toString,
-          'lastModified->omEntry.fileAttribues.map(_.mtime).getOrElse(-1).toString,
-          'version->fileAttrKeysMap.getOrElse('PROJECTLOCKER_VERSION,-1).toString
+          Symbol("size")->omEntry.fileAttribues.map(_.size).getOrElse(-1).toString,
+          Symbol("lastModified")->omEntry.fileAttribues.map(_.mtime).getOrElse(-1).toString,
+          Symbol("version")->fileAttrKeysMap.getOrElse(Symbol("PROJECTLOCKER_VERSION"),-1).toString
         ) ++ fileAttrKeysMap.getOrElse(Map())
     })
 
