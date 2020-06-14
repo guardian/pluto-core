@@ -233,7 +233,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     val stream = mxsFile.newOutputStream()
     try {
       stream.write(data)
-      Success()
+      Success( () )
     } finally {
       stream.close()
     }
