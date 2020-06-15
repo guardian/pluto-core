@@ -1,6 +1,6 @@
 package utils
 
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.testkit.TestProbe
 import play.api.cache.SyncCacheApi
 import play.api.cache.ehcache.EhCacheModule
@@ -26,7 +26,7 @@ trait BuildMyApp extends MockedCacheApi {
     .overrides(bind[SyncCacheApi].toInstance(mockedSyncCacheApi))
     .build
 
-  def bodyAsJsonFuture(response:Future[play.api.mvc.Result])(implicit materializer:ActorMaterializer) = response.flatMap(result=>
+  def bodyAsJsonFuture(response:Future[play.api.mvc.Result])(implicit materializer:Materializer) = response.flatMap(result=>
     result.body.consumeData.map(contentBytes=> {
       Json.parse(contentBytes.decodeString("UTF-8"))
     }
