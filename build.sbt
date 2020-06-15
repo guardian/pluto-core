@@ -90,6 +90,8 @@ libraryDependencies ++= Seq(
   "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion,
   "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion,
   "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion,
+  "com.github.dnvriend" %% "akka-persistence-jdbc" % "3.5.3",
   "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-metrics" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,

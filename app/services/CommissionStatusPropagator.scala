@@ -82,6 +82,7 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
       logger.debug(s"receiveRecover got message handled: ${handledEvt.eventId}")
       state = state.removed(handledEvt.eventId)
     case RecoveryCompleted=>
+      logger.info(s"Completed journal recovery")
       restoreCompleted=true
     case SnapshotOffer(_, snapshot: CommissionStatusPropagatorState)=>
       logger.debug("receiveRecover got snapshot offer")
