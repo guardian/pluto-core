@@ -4,7 +4,12 @@
 <configuration>
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
         <file>/tmp/pluto-core-testing.log</file>
-        <append>true</append>
+        <append>false</append>
+        <encoder>
+            <pattern>%level %logger{15} - %message%n%xException{20}</pattern>
+        </encoder>
+    </appender>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%level %logger{15} - %message%n%xException{20}</pattern>
         </encoder>
@@ -52,7 +57,7 @@
     <logger name="helpers.AllowCORSFilter" level="WARN"/>
 
     <root level="INFO">
-        <appender-ref ref="FILE" />
+        <appender-ref ref="STDOUT" />
     </root>
 
 </configuration>

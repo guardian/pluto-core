@@ -4,6 +4,8 @@ import java.util.UUID
 
 import akka.actor.Props
 import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
+import com.fasterxml.jackson.core.`type`.TypeReference
+import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
 import com.google.inject.Inject
 import models.{EntryStatus, ProjectEntry, ProjectEntryRow}
 import play.api.db.slick.DatabaseConfigProvider
@@ -23,7 +25,10 @@ object CommissionStatusPropagator {
   trait CommissionStatusEvent {
     val uuid:UUID
   }
-  case class CommissionStatusUpdate(commissionId:Int, newStatus:EntryStatus.Value, override val uuid:UUID) extends CommissionStatusEvent
+
+  class EnumStatusType extends TypeReference[EntryStatus.type] {}
+
+  case class CommissionStatusUpdate(commissionId:Int, @JsonScalaEnumeration(classOf[EnumStatusType]) newValue:EntryStatus.Value, override val uuid:UUID) extends CommissionStatusEvent with JacksonSerializable
   object CommissionStatusUpdate {
     def apply(commissionId:Int, newStatus:EntryStatus.Value) = new CommissionStatusUpdate(commissionId, newStatus, UUID.randomUUID())
   }
@@ -82,8 +87,12 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
       logger.debug(s"receiveRecover got message handled: ${handledEvt.eventId}")
       state = state.removed(handledEvt.eventId)
     case RecoveryCompleted=>
-      logger.info(s"Completed journal recovery")
+      logger.info(s"Completed journal recovery, kicking off pending items")
       restoreCompleted=true
+      state.foreach { stateEntry =>
+        logger.debug(s"${stateEntry._1.toString}: ${stateEntry._2.toString}")
+        self ! stateEntry._2
+      }
     case SnapshotOffer(_, snapshot: CommissionStatusPropagatorState)=>
       logger.debug("receiveRecover got snapshot offer")
       state=snapshot
@@ -119,14 +128,16 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
             db.run(requiredUpdate).onComplete({
               case Failure(err) =>
                 logger.error(s"Could not update project status for $commissionId to $newStatus: ", err)
-                originalSender ! akka.actor.Status.Failure(err)
+                originalSender ! akka.actor.Status.Failure(err) //leave it open for retries
               case Success(updatedRecordCount) =>
                 logger.info(s"Commission $commissionId status change to $newStatus updated the status of $updatedRecordCount contained projects")
                 originalSender ! akka.actor.Status.Success(updatedRecordCount)
+                confirmHandled(evt)
             })
           case None=>
             logger.info(s"Commission $commissionId status change to $newStatus did not need any project updates")
             originalSender ! akka.actor.Status.Success(0)
+            confirmHandled(evt)
         }
       }
   }
