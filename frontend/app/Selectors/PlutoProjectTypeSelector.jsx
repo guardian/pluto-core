@@ -9,7 +9,7 @@ class PlutoProjectTypeSelector extends React.Component {
     selectionUpdated: PropTypes.func.isRequired,
     selectedType: PropTypes.number.isRequired,
     subTypesFor: PropTypes.number,
-    onlyShowSubtypes: PropTypes.boolean,
+    onlyShowSubtypes: PropTypes.bool,
   };
 
   constructor(props) {

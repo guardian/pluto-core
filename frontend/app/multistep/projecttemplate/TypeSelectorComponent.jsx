@@ -12,7 +12,7 @@ class TypeSelectorComponent extends CommonMultistepComponent {
     templateName: PropTypes.string.isRequired,
     valueWasSet: PropTypes.func.isRequired,
     deprecated: PropTypes.bool.isRequired,
-    loadingComplete: PropTypes.boolean,
+    loadingComplete: PropTypes.bool,
   };
 
   constructor(props) {
@@ -63,6 +63,7 @@ class TypeSelectorComponent extends CommonMultistepComponent {
     return null;
   }
 
+  // FIXME: this should return a number, but it can return a string, null, or something unknown (number?).
   getPlutoSubtypeForPlType() {
     const type = this.projectTypeForId(this.props.selectedType);
     console.log(type);
@@ -104,7 +105,8 @@ class TypeSelectorComponent extends CommonMultistepComponent {
           }
           selectedType={this.state.selectedPlutoSubtype}
           onlyShowSubtypes={true}
-          subTypesFor={this.getPlutoSubtypeForPlType()}
+          // FIXME: coercing this to Number to fix tests. Should be solved properly by typing.
+          subTypesFor={Number(this.getPlutoSubtypeForPlType())}
         />
         <label htmlFor="projectNameSelector">Template name:</label>
         <input

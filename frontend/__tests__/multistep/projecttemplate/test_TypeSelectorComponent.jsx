@@ -1,5 +1,5 @@
 import React from "react";
-import { shallow, mount } from "enzyme";
+import { shallow } from "enzyme";
 import TypeSelectorComponent from "../../../app/multistep/projecttemplate/TypeSelectorComponent.jsx";
 
 describe("TypeSelectorComponent", () => {
@@ -16,7 +16,16 @@ describe("TypeSelectorComponent", () => {
     ];
 
     const rendered = shallow(
-      <TypeSelectorComponent projectTypes={fakeProjectTypes} />
+      <TypeSelectorComponent
+        projectTypes={[]}
+        plutoTypesList={[]}
+        selectedPlutoSubtype={0}
+        selectedType={0}
+        templateName={""}
+        valueWasSet={() => undefined}
+        deprecated={false}
+        projectTypes={fakeProjectTypes}
+      />
     );
 
     const selector = rendered.find("#project_type_selector");
