@@ -88,11 +88,12 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
 
-      Thread.sleep(1000)
       private val actorSystem = injector.instanceOf(classOf[ActorSystem])
       val toTest = actorSystem.actorOf(Props(injector.instanceOf(classOf[CommissionStatusPropagator])))
 
-      val result = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(1499,EntryStatus.New), 30 seconds)
+      val parentCommission = Await.result(getParentCommissionId, 5 seconds)
+      parentCommission must beSome
+      val result = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.New), 30 seconds)
 
       result mustEqual 0
 
@@ -103,6 +104,97 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
       newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 1
       newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 1
       newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 1
+    }
+
+    "Not change contained project statuses if the commission status is InProduction" in new WithApplication(buildApp) {
+      private val injector = app.injector
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
+
+      private val actorSystem = injector.instanceOf(classOf[ActorSystem])
+      val toTest = actorSystem.actorOf(Props(injector.instanceOf(classOf[CommissionStatusPropagator])))
+
+      val parentCommission = Await.result(getParentCommissionId, 5 seconds)
+      parentCommission must beSome
+      val updatedRows = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.InProduction), 30 seconds)
+
+      updatedRows mustEqual 0
+
+      val newDatabaseState = Await.result(getTestRecords, 2 seconds)
+      newDatabaseState.count(_.status==EntryStatus.New) mustEqual 1
+      newDatabaseState.count(_.status==EntryStatus.InProduction) mustEqual 1
+      newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 1
+      newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 1
+      newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 1
+    }
+
+    "Change New and InProduction projects to Held if the status is Held" in new WithApplication(buildApp) {
+      private val injector = app.injector
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
+
+      private val actorSystem = injector.instanceOf(classOf[ActorSystem])
+      val toTest = actorSystem.actorOf(Props(injector.instanceOf(classOf[CommissionStatusPropagator])))
+
+      val parentCommission = Await.result(getParentCommissionId, 5 seconds)
+      parentCommission must beSome
+      val updatedRows = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.Held), 30 seconds)
+
+      updatedRows mustEqual 2
+
+      val newDatabaseState = Await.result(getTestRecords, 2 seconds)
+      println(newDatabaseState)
+      newDatabaseState.count(_.status==EntryStatus.New) mustEqual 0
+      newDatabaseState.count(_.status==EntryStatus.InProduction) mustEqual 0
+      newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 3
+      newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 1
+      newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 1
+    }
+
+    "Change New, InProduction and Held projects to Completed if the status is Completed" in new WithApplication(buildApp) {
+      private val injector = app.injector
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
+
+      private val actorSystem = injector.instanceOf(classOf[ActorSystem])
+      val toTest = actorSystem.actorOf(Props(injector.instanceOf(classOf[CommissionStatusPropagator])))
+
+      val parentCommission = Await.result(getParentCommissionId, 5 seconds)
+      parentCommission must beSome
+      val updatedRows = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.Completed), 30 seconds)
+
+      updatedRows mustEqual 3
+
+      val newDatabaseState = Await.result(getTestRecords, 2 seconds)
+      println(newDatabaseState)
+      newDatabaseState.count(_.status==EntryStatus.New) mustEqual 0
+      newDatabaseState.count(_.status==EntryStatus.InProduction) mustEqual 0
+      newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 0
+      newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 4
+      newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 1
+    }
+
+    "Change New, InProduction and Held projects to Killed if the status is Killed" in new WithApplication(buildApp) {
+      private val injector = app.injector
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
+
+      private val actorSystem = injector.instanceOf(classOf[ActorSystem])
+      val toTest = actorSystem.actorOf(Props(injector.instanceOf(classOf[CommissionStatusPropagator])))
+
+      val parentCommission = Await.result(getParentCommissionId, 5 seconds)
+      parentCommission must beSome
+      val updatedRows = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.Killed), 30 seconds)
+
+      updatedRows mustEqual 3
+
+      val newDatabaseState = Await.result(getTestRecords, 2 seconds)
+      println(newDatabaseState)
+      newDatabaseState.count(_.status==EntryStatus.New) mustEqual 0
+      newDatabaseState.count(_.status==EntryStatus.InProduction) mustEqual 0
+      newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 0
+      newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 1
+      newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 4
     }
   }
 }
