@@ -44,10 +44,12 @@
     "babel-jest": "^24.8.0",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.2",
+    "husky": ">=4",
     "jest": "^24.8.0",
     "jest-cli": "^24.8.0",
     "jest-fetch-mock": "^3.0.1",
     "jest-junit": "^4.0.0",
+    "lint-staged": ">=10",
     "moxios": "^0.4.0",
     "object.entries": "^1.1.1",
     "prettier": "^2.0.5",
@@ -89,5 +91,13 @@
     "webpack-cli": "^3.3.10",
     "yarn": "^1.21.1"
   },
-  "snyk": true
+  "snyk": true,
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,css,md}": "prettier --write"
+  }
 }
