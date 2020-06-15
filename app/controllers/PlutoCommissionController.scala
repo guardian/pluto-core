@@ -71,7 +71,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
       * form.
       * @return
       */
-    override def create = IsAuthenticatedAsync(parse.json) { uid => { request =>
+    def createPluto = IsAuthenticatedAsync(parse.json) { uid => { request =>
         try {
             val siteId = (request.body \ "siteId").as[String]
             val workingGroupUuid = (request.body \ "gnm_commission_workinggroup").as[String]
