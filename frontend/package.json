@@ -9,8 +9,8 @@
     "build:prod": "webpack -p",
     "start": "webpack -d --watch",
     "snyk-protect": "snyk protect",
-    "lint": "prettier --check app",
-    "lint:fix": "prettier --write app",
+    "lint": "prettier --check app __tests__",
+    "lint:fix": "prettier --write app __tests__",
     "prepare": "yarn snyk-protect"
   },
   "jest": {
