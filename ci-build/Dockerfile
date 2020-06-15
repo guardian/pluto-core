@@ -1,4 +1,4 @@
-FROM openjdk:11-jre-slim-buster
+FROM openjdk:11-jdk-slim-buster
 
 COPY ./containerscripts/sbt-deb-key.txt /tmp
 COPY ./containerscripts/sbt-install.sh /tmp
