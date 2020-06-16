@@ -10,6 +10,9 @@ class CommissionCompletionComponent extends React.Component {
     workingGroupId: PropTypes.number,
     wgList: PropTypes.array,
     title: PropTypes.string,
+    productionOffice: PropTypes.string,
+    scheduledCompletion: PropTypes.string,
+    userName: PropTypes.string,
   };
 
   constructor(props) {
@@ -26,13 +29,16 @@ class CommissionCompletionComponent extends React.Component {
 
   requestContent() {
     return {
-      siteId: "PX",
-      collectionId: Math.floor(Math.random() * 10000 + 1), //give it a random number between 1 and 10,000. if the number is already in use then a 409 is returned by the server and we recurse.
       title: this.props.title,
       status: "New",
       workingGroupId: this.props.workingGroupId,
       created: this.state.createTime,
       updated: this.state.createTime,
+      productionOffice: this.props.productionOffice,
+      scheduledCompletion: moment(this.props.scheduledCompletion).format(
+        "YYYY-MM-DD[T]HH:mm:ss.SSSZ"
+      ),
+      owner: this.props.userName,
     };
   }
 
@@ -100,6 +106,9 @@ class CommissionCompletionComponent extends React.Component {
           wgList={this.props.wgList}
           selectedWorkingGroupId={this.props.workingGroupId}
           createTime={this.state.createTime}
+          scheduledCompletion={this.props.scheduledCompletion}
+          productionOffice={this.props.productionOffice}
+          userName={this.props.userName}
         />
         <span style={{ float: "right" }}>
           <button

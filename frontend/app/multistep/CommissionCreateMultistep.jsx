@@ -4,8 +4,16 @@ import axios from "axios";
 import PlutoLinkageComponent from "./commissioncreate/PlutoLinkageComponent.jsx";
 import CommissionTitleComponent from "./commissioncreate/CommissionTitleComponent.jsx";
 import CommissionCompletionComponent from "./commissioncreate/CommissionCompletionComponent.jsx";
+import ProductionOfficeComponent from "./commissioncreate/ProductionOfficeComponent.jsx";
+import moment from "moment";
+import { PropTypes } from "prop-types";
 
 class CommissionCreateMultistep extends React.Component {
+  static propTypes = {
+    userName: PropTypes.string,
+    match: PropTypes.object.isRequired,
+  };
+
   constructor(props) {
     super(props);
 
@@ -13,19 +21,47 @@ class CommissionCreateMultistep extends React.Component {
       wgList: [],
       selectedWorkingGroup: null,
       title: "",
+      productionOffice: "UK", //FIXME: would be cool to guess this based on the users location data or timezone?
+      scheduledCompletion: moment().add(1, "months").format("YYYY-MM-DD"),
+      status: "New",
+      owner: props.userName,
     };
   }
 
   componentDidMount() {
-    Promise.all([axios.get("/api/pluto/workinggroup")])
+    let promises = [axios.get("/api/pluto/workinggroup")];
+    if (
+      this.props.match.params.hasOwnProperty("itemid") &&
+      this.props.match.params.itemid !== "new"
+    ) {
+      promises.push(
+        axios.get("/api/pluto/commission/" + this.props.match.params.itemid)
+      );
+    }
+    Promise.all(promises)
       .then((responses) => {
         const firstWorkingGroup = responses[0].data.result.length
           ? responses[0].data.result[0].id
           : null;
-        this.setState({
+        let stateToSet = {
           wgList: responses[0].data.result,
           selectedWorkingGroup: firstWorkingGroup,
-        });
+        };
+
+        if (responses.length > 1) {
+          const loadedCommissionData = responses[1].data.result;
+          stateToSet = Object.assign(stateToSet, {
+            selectedWorkingGroup: loadedCommissionData.workingGroupId,
+            title: loadedCommissionData.title,
+            productionOffice: loadedCommissionData.productionOffice,
+            status: loadedCommissionData.status,
+            scheduledCompletion: moment(
+              loadedCommissionData.scheduledCompletion
+            ).format("YYYY-MM-DD"),
+            owner: loadedCommissionData.owner,
+          });
+        }
+        this.setState(stateToSet);
       })
       .catch((error) => {
         console.error(error);
@@ -65,8 +101,25 @@ class CommissionCreateMultistep extends React.Component {
         name: "Title",
         component: (
           <CommissionTitleComponent
-            selectionUpdated={(newValue) => this.setState({ title: newValue })}
+            selectionUpdated={(newTitle, newScheduledCompletion) =>
+              this.setState({
+                title: newTitle,
+                scheduledCompletion: newScheduledCompletion,
+              })
+            }
             projectName={this.state.title}
+            scheduledCompletion={this.state.scheduledCompletion}
+          />
+        ),
+      },
+      {
+        name: "Production Office",
+        component: (
+          <ProductionOfficeComponent
+            valueWasSet={(newValue) =>
+              this.setState({ productionOffice: newValue })
+            }
+            value={this.state.productionOffice}
           />
         ),
       },
@@ -77,6 +130,9 @@ class CommissionCreateMultistep extends React.Component {
             title={this.state.title}
             wgList={this.state.wgList}
             workingGroupId={this.state.selectedWorkingGroup}
+            productionOffice={this.state.productionOffice}
+            scheduledCompletion={this.state.scheduledCompletion}
+            userName={this.state.owner}
           />
         ),
       },
