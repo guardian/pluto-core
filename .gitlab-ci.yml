@@ -20,6 +20,8 @@ frontend:
       - public/javascripts/bundle.js
     reports:
       junit: frontend/junit.xml
+  only:
+    - master
 
 backend:
   image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200615_1
@@ -55,6 +57,8 @@ backend:
       - target/
       - .sbt/
       - .ivy2/
+  only:
+    - master
 
 deploy:
   image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200615_1
@@ -80,3 +84,5 @@ deploy:
     policy: pull
     paths:
       - target/
+  only:
+    - master
