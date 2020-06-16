@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import ProductionOfficeMapper._
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
 
-case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, created: Timestamp, updated:Timestamp,
+case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: Option[String], created: Timestamp, updated:Timestamp,
                             title: String, status: EntryStatus.Value, description: Option[String], workingGroup: Int,
                             originalCommissionerName:Option[String], scheduledCompletion:Timestamp, owner:String,
                             notes:Option[String],
@@ -96,8 +96,8 @@ class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoComm
   import ProductionOfficeMapper._
 
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
-  def collectionId = column[Int]("i_collection_id")
-  def siteId = column[String]("s_site_id")
+  def collectionId = column[Option[Int]]("i_collection_id")
+  def siteId = column[Option[String]]("s_site_id")
   def created = column[Timestamp]("t_created")
   def updated = column[Timestamp]("t_updated")
   def title = column[String]("s_title")
@@ -119,8 +119,8 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
 
   implicit val plutoCommissionWrites:Writes[PlutoCommission] = (
     (JsPath \ "id").writeNullable[Int] and
-      (JsPath \ "collectionId").write[Int] and
-      (JsPath \ "siteId").write[String] and
+      (JsPath \ "collectionId").writeNullable[Int] and
+      (JsPath \ "siteId").writeNullable[String] and
       (JsPath \ "created").write[Timestamp] and
       (JsPath \ "updated").write[Timestamp] and
       (JsPath \ "title").write[String] and
@@ -137,8 +137,8 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
 
   implicit val plutoCommissionReads:Reads[PlutoCommission] = (
     (JsPath \ "id").readNullable[Int] and
-      (JsPath \ "collectionId").read[Int] and
-      (JsPath \ "siteId").read[String] and
+      (JsPath \ "collectionId").readNullable[Int] and
+      (JsPath \ "siteId").readNullable[String] and
       (JsPath \ "created").read[Timestamp] and
       (JsPath \ "updated").read[Timestamp] and
       (JsPath \ "title").read[String] and
@@ -154,7 +154,7 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
     )(PlutoCommission.apply _)
 }
 
-object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,String,EntryStatus.Value,Option[String],Int,Option[String],Timestamp,String,Option[String],ProductionOffice.Value, Option[String])=>PlutoCommission)  {
+object PlutoCommission extends ((Option[Int],Option[Int],Option[String],Timestamp,Timestamp,String,EntryStatus.Value,Option[String],Int,Option[String],Timestamp,String,Option[String],ProductionOffice.Value, Option[String])=>PlutoCommission)  {
   def mostRecentByWorkingGroup(workingGroupId: Int)(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Option[PlutoCommission]]] = {
     db.run(
       TableQuery[PlutoCommissionRow].filter(_.workingGroup===workingGroupId).sortBy(_.updated.desc).take(1).result.asTry

@@ -55,7 +55,7 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
     val commFut = db.run(
       TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += PlutoCommission(
         Some(1499),
-        1499,"PX",
+        None,None,
         Timestamp.from(Instant.now()),
         Timestamp.from(Instant.now()),
         "CommissionStatusPropagatorTests",

@@ -23,7 +23,7 @@ class PlutoCommissionSpec extends Specification with utils.BuildMyApp with Times
 
       result must beSuccessfulTry
       result.get must beSome
-      result.get.get.collectionId mustEqual 4567
+      result.get.get.collectionId must beSome(4567)
       result.get.get.title mustEqual "My test commission 4"
     }
   }
