@@ -17,10 +17,9 @@ describe("TypeSelectorComponent", () => {
 
     const rendered = shallow(
       <TypeSelectorComponent
-        projectTypes={[]}
         plutoTypesList={[]}
         selectedPlutoSubtype={0}
-        selectedType={0}
+        selectedType={1}
         templateName={""}
         valueWasSet={() => undefined}
         deprecated={false}
