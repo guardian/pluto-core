@@ -11,7 +11,7 @@ class WorkingGroupSelector extends React.Component {
 
   convertContentList(rawContentList) {
     return rawContentList
-      .filter((entry) => !entry.hasOwnProperty("hide"))
+      .filter((entry) => !entry.hide)
       .map((entry) => {
         return { name: entry.name, value: entry.id };
       });

@@ -51,8 +51,8 @@ INSERT INTO "PostrunDependency" (id,K_SOURCE, K_DEPENDSON) VALUES (2, 1, 6);
 INSERT INTO "PostrunDependency" (id,K_SOURCE, K_DEPENDSON) VALUES (3, 4, 5);
 INSERT INTO "PostrunDependency" (id,K_SOURCE, K_DEPENDSON) VALUES (4, 2, 1);
 
-INSERT INTO "PlutoWorkingGroup" (id, S_HIDE, S_NAME, U_UUID) VALUES (1, NULL, 'Multimedia Social', '1b97c363-fba0-4771-9cb5-9bd65aaed306');
-INSERT INTO "PlutoWorkingGroup" (id, S_HIDE, S_NAME, U_UUID) VALUES (2, 'hidden', 'Multimedia Anti-Social', 'DA60602E-55C1-4F2A-8EDD-2737BEB4916E');
+INSERT INTO "PlutoWorkingGroup" (id, S_HIDE, S_NAME, S_COMMISSIONER) VALUES (1, NULL, 'Multimedia Social', 'Paul Boyd');
+INSERT INTO "PlutoWorkingGroup" (id, S_HIDE, S_NAME, S_COMMISSIONER) VALUES (2, 'hidden', 'Multimedia Anti-Social', 'Boyd Paul');
 
 INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (1, 1234, 'VX', '2018-01-01T12:13:24.000', '2018-01-01T12:13:24.000', 'My test commission', 'New', 'some very long description goes here', 1);
 INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (2, 2345, 'VX', '2018-01-02T12:13:24.000', '2018-01-02T12:13:24.000', 'My test commission 2', 'In production', 'some very long description goes here', 1);

@@ -14,7 +14,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class PlutoWorkingGroup (id:Option[Int], hide:Option[String], name:String, uuid:String) {
+case class PlutoWorkingGroup (id:Option[Int], hide:Boolean, name:String, commissioner_name:String) {
   private val logger = Logger(getClass)
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
@@ -38,58 +38,26 @@ case class PlutoWorkingGroup (id:Option[Int], hide:Option[String], name:String, 
   }
 
   /**
-    * inserts this record into the database if there is nothing with the given uuid present
-    * @param db - implicitly provided database object
-    * @return a Future containing a containing a [[PlutoWorkingGroup]] object.
-    *         If it was newly saved, or exists in the db, the id member will be set.
-    *         If the operation fails, the Future fails too, use onComplete or recover() to handle this.
-    */
-  def ensureRecorded(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[PlutoWorkingGroup] = {
-    db.run(
-      TableQuery[PlutoWorkingGroupRow].filter(_.uuid===uuid).result.asTry
-    ).flatMap({
-      case Success(rows)=>
-        if(rows.isEmpty) {
-          logger.info(s"Saving working group $name ($uuid) to the database")
-          this.save.map({
-            case Success(result)=>result
-            case Failure(err)=>throw err
-          })
-        } else {
-          Future(rows.head)
-        }
-      case Failure(error)=>
-        Future.failed(error)
-    })
-  }
-
-  /**
     * returns the contents as a string->string map, for passing to postrun actions
     * @return
     */
   def asStringMap:Map[String,String] = Map(
     "workingGroupName"->name,
-    "workingGroupUuid"->uuid,
-    "workingGroupHide"->hide.getOrElse("")
+    "workingGroupCommissioner"->commissioner_name,
+    "workingGroupHide"->{ if(hide) "hidden" else "" }
   )
 }
 
 class PlutoWorkingGroupRow(tag:Tag) extends Table[PlutoWorkingGroup](tag, "PlutoWorkingGroup") {
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
-  def hide = column[Option[String]]("s_hide")
+  def hide = column[Boolean]("b_hide")
   def name = column[String]("s_name")
-  def uuid = column[String]("u_uuid")
+  def commissioner_name = column[String]("s_commissioner")
 
-  def * = (id.?, hide, name, uuid) <> (PlutoWorkingGroup.tupled, PlutoWorkingGroup.unapply)
+  def * = (id.?, hide, name, commissioner_name) <> (PlutoWorkingGroup.tupled, PlutoWorkingGroup.unapply)
 }
 
-object PlutoWorkingGroup extends ((Option[Int],Option[String], String, String)=>PlutoWorkingGroup) {
-  def entryForUuid(uuid:String)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoWorkingGroup]] = db.run(
-    TableQuery[PlutoWorkingGroupRow].filter(_.uuid===uuid).result.asTry
-  ).map({
-    case Success(resultSeq)=>resultSeq.headOption
-    case Failure(error)=>throw error
-  })
+object PlutoWorkingGroup extends ((Option[Int],Boolean, String, String)=>PlutoWorkingGroup) {
 
   def entryForId(id:Int)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoWorkingGroup]] = db.run(
     TableQuery[PlutoWorkingGroupRow].filter(_.id===id).result
@@ -99,16 +67,16 @@ object PlutoWorkingGroup extends ((Option[Int],Option[String], String, String)=>
 trait PlutoWorkingGroupSerializer extends TimestampSerialization {
   implicit val workingGroupWrites:Writes[PlutoWorkingGroup] = (
     (JsPath \ "id").writeNullable[Int] and
-    (JsPath \ "hide").writeNullable[String] and
+    (JsPath \ "hide").write[Boolean] and
       (JsPath \ "name").write[String] and
-      (JsPath \ "uuid").write[String]
+      (JsPath \ "commissioner").write[String]
     )(unlift(PlutoWorkingGroup.unapply))
 
   implicit val workingGroupReads:Reads[PlutoWorkingGroup] = (
     (JsPath \ "id").readNullable[Int] and
-    (JsPath \ "hide").readNullable[String] and
+    (JsPath \ "hide").read[Boolean] and
       (JsPath \ "name").read[String] and
-      (JsPath \ "uuid").read[String]
+      (JsPath \ "commissioner").read[String]
     )(PlutoWorkingGroup.apply _)
 }
 

@@ -42,7 +42,13 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
 
   override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
 
-  override def dbupdate(itemId: Int, entry:PlutoWorkingGroup):Future[Try[Int]] = throw new RuntimeException("This is not supported")
+  override def dbupdate(itemId: Int, entry:PlutoWorkingGroup):Future[Try[Int]] = {
+    val newRecord = entry.id match {
+      case Some(id)=>entry
+      case None=>entry.copy(id=Some(itemId))
+    }
+    db.run(TableQuery[PlutoWorkingGroupRow].filter(_.id===itemId).update(newRecord).asTry)
+  }
 
   /*these are handled through implict translation*/
   override def jstranslate(result:Seq[PlutoWorkingGroup]):Json.JsValueWrapper = result
