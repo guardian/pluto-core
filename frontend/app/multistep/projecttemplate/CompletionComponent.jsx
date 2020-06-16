@@ -1,72 +1,87 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import axios from 'axios';
-import SummaryComponent from './SummaryComponent.jsx';
-import ErrorViewComponent from '../common/ErrorViewComponent.jsx';
+import React from "react";
+import PropTypes from "prop-types";
+import axios from "axios";
+import SummaryComponent from "./SummaryComponent.jsx";
+import ErrorViewComponent from "../common/ErrorViewComponent.jsx";
 
 class TemplateCompletionComponent extends React.Component {
-    static propTypes ={
-        currentEntry: PropTypes.number.isRequired,
-        fileId: PropTypes.number.isRequired,
-        projectType: PropTypes.number.isRequired,
-        plutoSubtype: PropTypes.number,
-        name: PropTypes.string.isRequired,
-        deprecated: PropTypes.bool.isRequired
+  static propTypes = {
+    currentEntry: PropTypes.number.isRequired,
+    fileId: PropTypes.number.isRequired,
+    projectType: PropTypes.number.isRequired,
+    plutoSubtype: PropTypes.number,
+    name: PropTypes.string.isRequired,
+    deprecated: PropTypes.bool.isRequired,
+  };
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      inProgress: false,
+      error: null,
     };
+    this.confirmClicked = this.confirmClicked.bind(this);
+  }
 
-    constructor(props){
-        super(props);
+  confirmClicked(event) {
+    this.setState({ inProgress: true });
+    const restUrl = this.props.currentEntry
+      ? "/api/template/" + this.props.currentEntry
+      : "/api/template";
 
-        this.state = {
-            inProgress: false,
-            error: null
-        };
-        this.confirmClicked = this.confirmClicked.bind(this);
-    }
+    axios
+      .put(restUrl, this.requestContent())
+      .then((response) => {
+        this.setState({ inProgress: false }, () =>
+          window.location.assign("/template/")
+        );
+      })
+      .catch((error) => {
+        this.setState({ inProgress: false, error: error });
+        console.error(error);
+      });
+  }
 
-    confirmClicked(event){
-        this.setState({inProgress: true});
-        const restUrl = this.props.currentEntry ? "/api/template/" + this.props.currentEntry : "/api/template";
+  requestContent() {
+    /* returns an object of keys/values to send to the server for saving */
+    let rtn = {
+      name: this.props.name,
+      projectTypeId: this.props.projectType,
+      fileRef: this.props.fileId,
+      deprecated: this.props.deprecated,
+    };
+    if (this.props.plutoSubtype !== "" && this.props.plutoSubtype !== null)
+      rtn["plutoSubtype"] = this.props.plutoSubtype;
+    return rtn;
+  }
 
-        axios.put(restUrl,this.requestContent()).then(
-            (response)=>{
-                this.setState({inProgress: false}, ()=>window.location.assign('/template/'));
-            }
-        ).catch(
-            (error)=>{
-                this.setState({inProgress: false, error: error});
-                console.error(error)
-            }
-        )
-    }
-
-    requestContent(){
-        /* returns an object of keys/values to send to the server for saving */
-        let rtn = {
-            name: this.props.name,
-            projectTypeId: this.props.projectType,
-            fileRef: this.props.fileId,
-            deprecated: this.props.deprecated
-        };
-        if(this.props.plutoSubtype!=="" && this.props.plutoSubtype!==null)  rtn['plutoSubtype'] = this.props.plutoSubtype;
-        return rtn;
-    }
-
-    render() {
-        return(<div>
-            <h3>Set up project template</h3>
-            <p className="information">We will set up a new project template definition with the information below.</p>
-            <SummaryComponent fileId={this.props.fileId}
-                              projectType={this.props.projectType}
-                              name={this.props.name}
-                              plutoSubtype={this.props.plutoSubtype}
-                              deprecated={this.props.deprecated}
-            />
-            <p className="information">Press "Confirm" to go ahead, or press Previous if you need to amend any details.</p>
-            <ErrorViewComponent error={this.state.error}/>
-            <span style={{float: "right"}}><button onClick={this.confirmClicked}>Confirm</button></span>
-        </div>)
-    }
+  render() {
+    return (
+      <div>
+        <h3>Set up project template</h3>
+        <p className="information">
+          We will set up a new project template definition with the information
+          below.
+        </p>
+        <SummaryComponent
+          fileId={this.props.fileId}
+          projectType={this.props.projectType}
+          name={this.props.name}
+          plutoSubtype={this.props.plutoSubtype}
+          deprecated={this.props.deprecated}
+        />
+        <p className="information">
+          Press "Confirm" to go ahead, or press Previous if you need to amend
+          any details.
+        </p>
+        <ErrorViewComponent error={this.state.error} />
+        <span style={{ float: "right" }}>
+          <button onClick={this.confirmClicked}>Confirm</button>
+        </span>
+      </div>
+    );
+  }
 }
 
 export default TemplateCompletionComponent;
