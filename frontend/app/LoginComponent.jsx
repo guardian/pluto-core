@@ -93,7 +93,7 @@ class LoginComponent extends React.Component {
             className="inline-dialog-content centered emphasis"
             style={{ fontSize: "1.5em" }}
           >
-            <Link to="/project/?mine">Go to my projects ></Link>
+            <Link to="/project/?mine">Go to my projects {">"}</Link>
           </p>
           <p className="intro-banner">
             Or, please select an option on the left

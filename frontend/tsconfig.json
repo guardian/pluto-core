@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "sourceMap": true, // allow sourcemap support
+    "strict": true,
+    "module": "ES2015", // specify module code generation
+    "jsx": "react", // use typescript to transpile jsx to js
+    "target": "ES2016", // specify ECMAScript target version
+    "allowJs": true // allow a partial TypeScript and JavaScript codebase
+  },
+  "include": ["./app/"]
+}
