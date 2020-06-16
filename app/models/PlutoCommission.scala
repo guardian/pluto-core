@@ -155,15 +155,6 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
 }
 
 object PlutoCommission extends ((Option[Int],Option[Int],Option[String],Timestamp,Timestamp,String,EntryStatus.Value,Option[String],Int,Option[String],Timestamp,String,Option[String],ProductionOffice.Value, Option[String])=>PlutoCommission)  {
-  def mostRecentByWorkingGroup(workingGroupId: Int)(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Option[PlutoCommission]]] = {
-    db.run(
-      TableQuery[PlutoCommissionRow].filter(_.workingGroup===workingGroupId).sortBy(_.updated.desc).take(1).result.asTry
-    ).map({
-      case Failure(error)=>Failure(error)
-      case Success(resultList)=> Success(resultList.headOption)
-    })
-  }
-
   def entryForVsid(vsid:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoCommission]] = {
     val idparts = vsid.split("-")
     if(idparts.length!=2) return Future(None)
