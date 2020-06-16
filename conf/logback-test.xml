@@ -28,7 +28,6 @@
     <logger name="drivers.PathStorage" level="WARN"/>
     <logger name="models.PlutoWorkingGroup" level="WARN"/>
     <logger name="models.PlutoCommission" level="WARN"/>
-    <logger name="services.PlutoWGCommissionScanner" level="INFO"/>
     <logger name="services.ClockSingleton" level="INFO"/>
     <logger name="controllers.Files" level="WARN" />
     <logger name="controllers.StoragesController" level="INFO"/>

@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import models._
 import org.specs2.matcher.ThrownExpectations
 import org.specs2.mock.Mockito
@@ -14,6 +14,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.test.Helpers._
 import play.api.test._
 import slick.jdbc.JdbcProfile
+
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
@@ -23,7 +24,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 //  "ProjectEntryController.create" should {
 //    "validate request data and call out to ProjectCreationActor" in new WithApplication(buildAppWithMockedProjectHelper){
 //      implicit val system:ActorSystem = app.actorSystem
-//      implicit val materializer:ActorMaterializer = ActorMaterializer()
+//      implicit val materializer:Materializer = Materializer(system)
 //      //needed for database access
 //      private val injector = app.injector
 //      private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -60,7 +61,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
   "ProjectEntryController.createFromPluto" should {
     "validate request and show errors if any data does not line up" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -97,7 +98,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
     "return a Conflict containing all matching projects and their likely pluto types if a project with the same vsid exists already" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -141,7 +142,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
   "ProjectEntryController.getByVsid" should {
     "return a ProjectEntry instance based on vidispine ID" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -158,7 +159,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
     "return 404 for an unkown vidispine ID" in new WithApplication(buildApp) {
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -175,7 +176,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
   "ProjectEntryController.updateTitle" should {
     "update the title field of an existing record" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -206,7 +207,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
     }
     "return 404 for a record that does not exist" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -231,7 +232,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
   "ProjectEntryController.updateTitleByVsid" should {
     "update the title field of an existing record" in new WithApplication(buildApp) {
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -262,7 +263,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
     }
     "update the title field of multiple matching records" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -297,7 +298,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
     "return 404 for a record that does not exist" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -324,7 +325,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
   "ProjectEntryController.updateVsid" should {
     "update the vidipsineProjectId field of an existing record" in new WithApplication(buildApp) {
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -356,7 +357,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
     "return 404 for a record that does not exist" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -381,7 +382,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
   "ProjectEntryController.listFiltered" should {
     "show projectentry items filtered by title" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -411,7 +412,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
     "show projectentry items filtered by vidispine id" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -440,7 +441,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
     "return an empty list for a filename that is not associated with any projects" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -468,7 +469,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
     "show projectentry items filtered by file association" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -498,7 +499,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
     "return an empty list if nothing matches" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -525,7 +526,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
     "reject invalid json doc with 400" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       //needed for database access
       private val injector = app.injector
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])

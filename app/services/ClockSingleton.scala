@@ -19,7 +19,6 @@ object ClockSingleton {
 class ClockSingleton @Inject() (config:Configuration,
                                @Named("message-processor-actor") messageProcessorActor:ActorRef,
                                @Named("postrun-action-scanner") postrunActionScanner:ActorRef,
-                               @Named("pluto-wg-commission-scanner") plutoWGCommissionScanner:ActorRef,
                                @Named("pluto-project-type-scanner") plutoProjectTypeScanner:ActorRef,
                                @Named("storage-scanner") storageScanner: ActorRef,
                                @Named("commission-status-propagator") commissionStatusPropagator: ActorRef,
@@ -49,7 +48,6 @@ class ClockSingleton @Inject() (config:Configuration,
       storageScanner ! StorageScanner.Rescan
     case SlowClockTick=>
       logger.debug("SlowClockTick")
-      plutoWGCommissionScanner ! PlutoWGCommissionScanner.RefreshWorkingGroups
       plutoProjectTypeScanner ! PlutoProjectTypeScanner.RefreshProjectTypes
       commissionStatusPropagator ! CommissionStatusPropagator.RetryFromState
 
