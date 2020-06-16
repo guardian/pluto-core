@@ -20,8 +20,12 @@ frontend:
       - public/javascripts/bundle.js
     reports:
       junit: frontend/junit.xml
+  tags:
+    - gnm
+    - docker
   only:
     - master
+    - merge_requests
 
 backend:
   image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200615_1
@@ -57,8 +61,13 @@ backend:
       - target/
       - .sbt/
       - .ivy2/
+  tags:
+    - gnm
+    - docker
   only:
     - master
+    - merge_requests
+  
 
 deploy:
   image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200615_1
@@ -84,5 +93,9 @@ deploy:
     policy: pull
     paths:
       - target/
+  tags:
+    - gnm
+    - docker
   only:
     - master
+    - merge_requests
