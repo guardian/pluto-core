@@ -29,6 +29,8 @@ object CommissionStatusPropagator {
   class EnumStatusType extends TypeReference[EntryStatus.type] {}
 
   case class CommissionStatusUpdate(commissionId:Int, @JsonScalaEnumeration(classOf[EnumStatusType]) newValue:EntryStatus.Value, override val uuid:UUID) extends CommissionStatusEvent with JacksonSerializable
+  case object RetryFromState extends JacksonSerializable
+
   object CommissionStatusUpdate {
     def apply(commissionId:Int, newStatus:EntryStatus.Value) = new CommissionStatusUpdate(commissionId, newStatus, UUID.randomUUID())
   }
@@ -99,11 +101,24 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
   }
 
   override def receiveCommand: Receive = {
-    case evt@CommissionStatusUpdate(commissionId, newStatus, _)=>
+    /**
+      * re-run any messages stuck in the actor's state. This is sent at 5 minute intervals by ClockSingleton and
+      * is there to ensure that events get retried (e.g. one instance loses network connectivity before postgres update is sent,
+      * it is restarted, so another instance will pick up the update)
+      */
+    case RetryFromState=>
+      if(state.size!=0) logger.warn(s"CommissionStatusPropagator retrying ${state.size} events from state")
+
+      state.foreach { stateEntry=>
+        logger.warn(s"Retrying event ${stateEntry._1}")
+        self ! stateEntry._2
+      }
+
+    case evt@CommissionStatusUpdate(commissionId, newStatus, uuid)=>
       val originalSender = sender()
 
       persist(evt) { _=>
-        logger.debug(s"Received notification that commission $commissionId changed to $newStatus")
+        logger.info(s"${uuid}: Received notification that commission $commissionId changed to $newStatus")
         val maybeRequiredUpdate = newStatus match {
           case EntryStatus.Completed | EntryStatus.Killed=>
             val q = for { project <- TableQuery[ProjectEntryRow]
