@@ -6,7 +6,7 @@ class WorkingGroupSelector extends React.Component {
   static propTypes = {
     valueWasSet: PropTypes.func.isRequired,
     workingGroupList: PropTypes.array.isRequired,
-    currentValue: PropTypes.string.isRequired,
+    currentValue: PropTypes.number,
   };
 
   convertContentList(rawContentList) {
@@ -21,7 +21,9 @@ class WorkingGroupSelector extends React.Component {
     return (
       <FilterableList
         onChange={(newValue) => this.props.valueWasSet(parseInt(newValue))}
-        value={this.props.currentValue}
+        value={
+          this.props.currentValue ? this.props.currentValue.toString() : ""
+        }
         size={10}
         unfilteredContent={this.convertContentList(this.props.workingGroupList)}
       />

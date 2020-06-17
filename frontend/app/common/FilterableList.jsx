@@ -43,7 +43,7 @@ class FilterableList extends React.Component {
     unfilteredContentConverter: PropTypes.func,
     initialLoad: PropTypes.bool,
     onChange: PropTypes.func.isRequired,
-    value: PropTypes.string.isRequired,
+    value: PropTypes.string,
     onFiltered: PropTypes.func,
     size: PropTypes.number.isRequired,
     allowCredentials: PropTypes.bool,
@@ -207,7 +207,7 @@ class FilterableList extends React.Component {
               className="filterable-list-selector"
               size={this.props.size}
               value={this.props.value}
-              onClick={(evt) => this.props.onChange(evt.target.value)}
+              onChange={(evt) => this.props.onChange(evt.target.value)}
             >
               {listContent.map((entry, ix) => {
                 return (
