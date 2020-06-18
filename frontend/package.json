@@ -4,8 +4,8 @@
   "description": "Frontend for the projectlocker project",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
+    "test": "jest __tests__",
+    "test:watch": "jest __tests__ --watch",
     "build": "webpack -d",
     "build:prod": "webpack -p",
     "start": "webpack -d --watch",
@@ -25,7 +25,7 @@
       "\\.(css|less)$": "identity-obj-proxy"
     },
     "transform": {
-      "^.+\\.(js|jsx)?$": "babel-jest"
+      "^.+\\.(js|jsx)?$": "ts-jest"
     },
     "transformIgnorePatterns": [
       "node_modules/react-treebeard/.+\\\\.js$",
@@ -58,6 +58,7 @@
     "sinon": "^8.0.4",
     "source-map-loader": "^1.0.0",
     "terser-webpack-plugin": "^1.4.3",
+    "ts-jest": "^26.1.0",
     "ts-loader": "^7.0.5",
     "typescript": "^3.9.5"
   },
