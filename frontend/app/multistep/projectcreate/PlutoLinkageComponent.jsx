@@ -9,6 +9,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
     valueWasSet: PropTypes.func.isRequired,
     currentPlutoCommission: PropTypes.number,
     currentWorkingGroup: PropTypes.number,
+    productionOffice: PropTypes.string,
     workingGroupList: PropTypes.array.isRequired,
   };
 
@@ -19,6 +20,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
       plutoCommissionRef: null,
       workingGroupRef: null,
       showStatus: "In production",
+      productionOffice: "UK",
     };
   }
 
