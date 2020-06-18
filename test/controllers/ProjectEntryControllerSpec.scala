@@ -58,40 +58,6 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 //    }
 //  }
 
-  "ProjectEntryController.getByVsid" should {
-    "return a ProjectEntry instance based on vidispine ID" in new WithApplication(buildApp){
-      implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:Materializer = Materializer(system)
-      //needed for database access
-      private val injector = app.injector
-      private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-      private implicit val db = dbConfigProvider.get[JdbcProfile].db
-
-      val response = route(app,
-        FakeRequest(GET,"/api/project/by-vsid/VX-1234").withSession("uid"->"testuser")
-      ).get
-
-      status(response) must equalTo(OK)
-      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
-      jsondata.toString mustEqual """{"status":"ok","result":[{"id":2,"projectTypeId":1,"vidispineId":"VX-1234","title":"AnotherTestProject","created":"2016-12-11T12:21:11.021+0000","user":"you","status":"In Production"}]}"""
-    }
-
-    "return 404 for an unkown vidispine ID" in new WithApplication(buildApp) {
-      implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:Materializer = Materializer(system)
-      //needed for database access
-      private val injector = app.injector
-      private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-      private implicit val db = dbConfigProvider.get[JdbcProfile].db
-
-      val response = route(app,
-        FakeRequest(GET,"/api/project/by-vsid/VX-99999").withSession("uid"->"testuser")
-      ).get
-
-      status(response) must equalTo(NOT_FOUND)
-    }
-  }
-
   "ProjectEntryController.updateTitle" should {
     "update the title field of an existing record" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem

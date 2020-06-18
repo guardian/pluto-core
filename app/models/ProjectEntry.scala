@@ -18,7 +18,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId: Option[String],
                          projectTitle: String, created:Timestamp, user: String, workingGroupId: Option[Int],
                          commissionId: Option[Int], deletable: Option[Boolean], deep_archive: Option[Boolean],
-                         sensitive: Option[Boolean], status:EntryStatus.Value) {
+                         sensitive: Option[Boolean], status:EntryStatus.Value, productionOffice: ProductionOffice.Value) {
   def associatedFiles(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Seq[FileEntry]] = {
     db.run(
       TableQuery[FileAssociationRow].filter(_.projectEntry===this.id.get).result.asTry
@@ -109,6 +109,8 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
 
 class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") {
   import EntryStatusMapper._
+  import ProductionOfficeMapper._
+
   implicit val DateTimeTotimestamp =
     MappedColumnType.base[DateTime, Timestamp]({d=>new Timestamp(d.getMillis)}, {t=>new DateTime(t.getTime, UTC)})
 
@@ -124,15 +126,18 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
   def deletable = column[Option[Boolean]]("b_deletable")
   def deep_archive = column[Option[Boolean]]("b_deeparchive")
   def sensitive = column[Option[Boolean]]("b_sensitive")
-
   def projectTypeKey=foreignKey("fk_project_type",projectType,TableQuery[ProjectTypeRow])(_.id)
 
   def status = column[EntryStatus.Value]("s_status")
-  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, user, workingGroup, commission, deletable, deep_archive, sensitive, status) <> (ProjectEntry.tupled, ProjectEntry.unapply)
+  def productionOffice = column[ProductionOffice.Value]("s_production_office")
+
+  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, user, workingGroup, commission, deletable, deep_archive, sensitive, status, productionOffice) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }
 
 trait ProjectEntrySerializer extends TimestampSerialization {
   import EntryStatusMapper._
+  import ProductionOfficeMapper._
+
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
   implicit val projectEntryWrites:Writes[ProjectEntry] = (
     (JsPath \ "id").writeNullable[Int] and
@@ -146,7 +151,8 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "deletable").writeNullable[Boolean] and
       (JsPath \ "deep_archive").writeNullable[Boolean] and
       (JsPath \ "sensitive").writeNullable[Boolean] and
-      (JsPath \ "status").write[EntryStatus.Value]
+      (JsPath \ "status").write[EntryStatus.Value] and
+      (JsPath \ "productionOffice").write[ProductionOffice.Value]
     )(unlift(ProjectEntry.unapply))
 
   implicit val projectEntryReads:Reads[ProjectEntry] = (
@@ -161,16 +167,17 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "deletable").readNullable[Boolean] and
       (JsPath \ "deep_archive").readNullable[Boolean] and
       (JsPath \ "sensitive").readNullable[Boolean] and
-      (JsPath \ "status").read[EntryStatus.Value]
+      (JsPath \ "status").read[EntryStatus.Value] and
+      (JsPath \ "productionOffice").read[ProductionOffice.Value]
     )(ProjectEntry.apply _)
 }
 
-object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean], EntryStatus.Value)=>ProjectEntry) {
+object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean], EntryStatus.Value, ProductionOffice.Value)=>ProjectEntry) {
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String],
-                     deletable: Boolean, deep_archive: Boolean, sensitive: Boolean)
+                     deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value)
                     (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
-    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user, workingGroupId, commissionId, existingVidispineId, deletable, deep_archive, sensitive)
+    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user, workingGroupId, commissionId, existingVidispineId, deletable, deep_archive, sensitive, productionOffice)
   }
 
   def entryForId(requestedId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
@@ -192,12 +199,12 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
 
   def createFromFile(sourceFile: FileEntry, projectTypeId: Int, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String],
-                     deletable: Boolean, deep_archive: Boolean, sensitive: Boolean)
+                     deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value)
                     (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
 
     /* step one - create a new project entry */
     val entry = ProjectEntry(None, projectTypeId, existingVidispineId, title, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())),
-      user, workingGroupId, commissionId, Some(deletable), Some(deep_archive), Some(sensitive), EntryStatus.New)
+      user, workingGroupId, commissionId, Some(deletable), Some(deep_archive), Some(sensitive), EntryStatus.New, productionOffice)
     val savedEntry = entry.save
 
     /* step two - set up file association. Project entry must be saved, so this is done as a future map */

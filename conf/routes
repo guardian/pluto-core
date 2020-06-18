@@ -40,7 +40,6 @@ PUT     /api/project/list                   @controllers.ProjectEntryController.
 GET     /api/project/distinctowners         @controllers.ProjectEntryController.distinctOwners
 
 PUT     /api/project                        @controllers.ProjectEntryController.create
-GET     /api/project/by-vsid/:vsid          @controllers.ProjectEntryController.getByVsid(vsid:String)
 GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int)
 PUT     /api/project/:id/title              @controllers.ProjectEntryController.updateTitle(id: Int)
 PUT     /api/project/:id/vsid               @controllers.ProjectEntryController.updateVsid(id: Int)

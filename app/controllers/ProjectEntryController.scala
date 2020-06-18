@@ -56,20 +56,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
   override def dbupdate(itemId:Int, entry:ProjectEntry) = Future(Failure(new RuntimeException("Not implemented")))
 
-  def getByVsid(vsid:String) = IsAuthenticatedAsync {uid=>{request=>
-    selectVsid(vsid).map({
-      case Success(result)=>
-        if(result.isEmpty)
-          NotFound(Json.obj("status"->"error","detail"->"no project with that ID"))
-        else
-          Ok(Json.obj("status"->"ok","result"->this.jstranslate(result)))
-      case Failure(error)=>
-        logger.error(error.toString)
-        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
-    })
-  }}
-
-
   /**
     * Fully generic container method to process an update request
     * @param requestedId an ID to identify what should be updated, this is passed to `selector`

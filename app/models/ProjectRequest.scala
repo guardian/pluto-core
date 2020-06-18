@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ProjectRequest(filename:String,destinationStorageId:Int,title:String, projectTemplateId:Int,
                           user:String, workingGroupId: Option[Int], commissionId: Option[Int],
-                          deletable: Boolean, deep_archive: Boolean, sensitive: Boolean) {
+                          deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value) {
   /* looks up the ids of destination storage and project template, and returns a new object with references to them or None */
   def hydrate(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[ProjectRequestFull]] = {
     val storageFuture = StorageEntryHelper.entryFor(this.destinationStorageId)
@@ -21,7 +21,7 @@ case class ProjectRequest(filename:String,destinationStorageId:Int,title:String,
           successfulResults.head.asInstanceOf[StorageEntry],
           this.title,
           successfulResults(1).asInstanceOf[ProjectTemplate],
-          user, workingGroupId, commissionId, existingVidispineId = None, shouldNotify = true, deletable, deep_archive, sensitive))
+          user, workingGroupId, commissionId, existingVidispineId = None, shouldNotify = true, deletable, deep_archive, sensitive, productionOffice))
       } else None
     })
   }
@@ -29,11 +29,12 @@ case class ProjectRequest(filename:String,destinationStorageId:Int,title:String,
 
 case class ProjectRequestFull(filename:String,destinationStorage:StorageEntry,title:String,projectTemplate:ProjectTemplate,
                               user:String, workingGroupId: Option[Int], commissionId:Option[Int], existingVidispineId: Option[String],
-                              shouldNotify: Boolean, deletable: Boolean, deep_archive: Boolean, sensitive: Boolean) {
+                              shouldNotify: Boolean, deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value) {
 
 }
 
 trait ProjectRequestSerializer {
+  import ProductionOfficeMapper._
   implicit val projectRequestReads:Reads[ProjectRequest] = (
     (JsPath \ "filename").read[String] and
       (JsPath \ "destinationStorageId").read[Int] and
@@ -44,6 +45,7 @@ trait ProjectRequestSerializer {
       (JsPath \ "commissionId").readNullable[Int] and
       (JsPath \ "deletable").read[Boolean] and
       (JsPath \ "deepArchive").read[Boolean] and
-      (JsPath \ "sensitive").read[Boolean]
+      (JsPath \ "sensitive").read[Boolean] and
+      (JsPath \ "productionOffice").read[ProductionOffice.Value]
   )(ProjectRequest.apply _)
 }
