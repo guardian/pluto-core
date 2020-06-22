@@ -3,13 +3,11 @@ package services
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.model.{HttpResponse, headers}
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
-import models.ProjectEntry
 import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsValue, Json}
-import slick.jdbc.PostgresProfile
 import org.slf4j.MDC
 
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -18,7 +16,7 @@ import scala.concurrent.duration._
 trait JsonComms {
   protected val logger:Logger
   implicit val actorSystem:ActorSystem
-  implicit val materializer:ActorMaterializer
+  implicit val materializer:Materializer
 
   implicit val configuration:Configuration
 
@@ -74,7 +72,8 @@ trait JsonComms {
     }
   }
 
-  protected def bodyAsJsonFuture(response:HttpResponse)(implicit ec:ExecutionContext, materializer:ActorMaterializer):Future[Either[String, JsValue]] = {
+
+  protected def bodyAsJsonFuture(response:HttpResponse)(implicit ec:ExecutionContext, materializer:Materializer):Future[Either[String, JsValue]] = {
     val sink = Sink.fold[String, ByteString]("")(_ + _.decodeString("UTF-8"))
 
     response.entity.dataBytes.runWith(sink)

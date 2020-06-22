@@ -22,6 +22,7 @@ class ClockSingleton @Inject() (config:Configuration,
                                @Named("pluto-wg-commission-scanner") plutoWGCommissionScanner:ActorRef,
                                @Named("pluto-project-type-scanner") plutoProjectTypeScanner:ActorRef,
                                @Named("storage-scanner") storageScanner: ActorRef,
+                               @Named("commission-status-propagator") commissionStatusPropagator: ActorRef,
                                )(implicit system:ActorSystem) extends Actor with Timers{
   import ClockSingleton._
   private val logger = Logger(getClass)
@@ -33,11 +34,11 @@ class ClockSingleton @Inject() (config:Configuration,
     val d = durationToPair(Duration(config.getOptional[String]("pluto.resend_delay").getOrElse("10 seconds")))
     val delay = FiniteDuration(d._1,d._2)
 
-    timers.startPeriodicTimer(ResendTick, ResendTick, delay)
+    timers.startTimerAtFixedRate(ResendTick, ResendTick, delay)
 
-    timers.startPeriodicTimer(RapidClockTick, RapidClockTick, 30.seconds)
-    timers.startPeriodicTimer(SlowClockTick, SlowClockTick, 5.minutes)
-    timers.startPeriodicTimer(VerySlowClockTick, VerySlowClockTick, 1.hours)
+    timers.startTimerAtFixedRate(RapidClockTick, RapidClockTick, 30.seconds)
+    timers.startTimerAtFixedRate(SlowClockTick, SlowClockTick, 5.minutes)
+    timers.startTimerAtFixedRate(VerySlowClockTick, VerySlowClockTick, 1.hours)
     logger.info(s"Timer setup complete")
     //self ! SlowClockTick
   }
@@ -50,6 +51,7 @@ class ClockSingleton @Inject() (config:Configuration,
       logger.debug("SlowClockTick")
       plutoWGCommissionScanner ! PlutoWGCommissionScanner.RefreshWorkingGroups
       plutoProjectTypeScanner ! PlutoProjectTypeScanner.RefreshProjectTypes
+      commissionStatusPropagator ! CommissionStatusPropagator.RetryFromState
 
     case VerySlowClockTick=>
       logger.debug("VerySlowClockTick")

@@ -5,6 +5,8 @@ import slick.jdbc.PostgresProfile.api._
 import java.sql.Timestamp
 
 import akka.stream.Materializer
+import com.fasterxml.jackson.core.`type`.TypeReference
+import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsPath, Reads, Writes}
 
@@ -20,6 +22,8 @@ object StorageStatus extends Enumeration {
   val ONLINE,OFFLINE,DISAPPEARED,MISCONFIGURED,UNKNOWN=Value
 }
 
+//used for jackson-databind in persistence jdbc
+class StorageStatusType extends TypeReference[StorageStatus.type] {}
 
 trait StorageSerializer {
   implicit val storageStatusWrites:Writes[StorageStatus.Value] = Writes.enumNameWrites
@@ -59,7 +63,7 @@ trait StorageSerializer {
 
 
 case class StorageEntry(id: Option[Int], nickname:Option[String], rootpath: Option[String], clientpath: Option[String], storageType: String,
-                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int], device:Option[String], supportsVersions: Boolean, status:Option[StorageStatus.Value]) {
+                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int], device:Option[String], supportsVersions: Boolean, @JsonScalaEnumeration(classOf[StorageStatusType]) status:Option[StorageStatus.Value]) {
 
   def getStorageDriver(implicit mat:Materializer):Option[StorageDriver] = {
     val logger: Logger = Logger(this.getClass)

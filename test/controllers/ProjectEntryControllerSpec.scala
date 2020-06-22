@@ -79,7 +79,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
           |"sensitive": false}
         """.stripMargin
 
-      val fakeProjectEntry = ProjectEntry(Some(999),1,None,"MyTestProjectEntry",Timestamp.valueOf(LocalDateTime.now()),"test-user",None,None, None, None, None)
+      val fakeProjectEntry = ProjectEntry(Some(999),1,None,"MyTestProjectEntry",Timestamp.valueOf(LocalDateTime.now()),"test-user",None,None, None, None, None, EntryStatus.New)
       val response = route(app, FakeRequest(
         method="PUT",
         uri="/api/project/external/create",
@@ -153,7 +153,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
       status(response) must equalTo(OK)
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
-      jsondata.toString mustEqual """{"status":"ok","result":[{"id":2,"projectTypeId":1,"vidispineId":"VX-1234","title":"AnotherTestProject","created":"2016-12-11T12:21:11.021+0000","user":"you"}]}"""
+      jsondata.toString mustEqual """{"status":"ok","result":[{"id":2,"projectTypeId":1,"vidispineId":"VX-1234","title":"AnotherTestProject","created":"2016-12-11T12:21:11.021+0000","user":"you","status":"In Production"}]}"""
     }
 
     "return 404 for an unkown vidispine ID" in new WithApplication(buildApp) {
