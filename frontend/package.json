@@ -16,8 +16,10 @@
   },
   "jest": {
     "moduleFileExtensions": [
-      "js",
       "jsx",
+      "js",
+      "tsx",
+      "ts",
       "json"
     ],
     "verbose": true,
