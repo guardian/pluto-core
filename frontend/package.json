@@ -6,6 +6,7 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:ci": "jest --ci",
     "build": "webpack -d",
     "build:prod": "webpack -p",
     "start": "webpack -d --watch",
