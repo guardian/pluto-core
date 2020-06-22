@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.time.Instant
 
 import akka.actor.{ActorSystem, Props}
-import models.{EntryStatus, PlutoCommission, PlutoCommissionRow, ProjectEntry, ProjectEntryRow}
+import models.{EntryStatus, PlutoCommission, PlutoCommissionRow, ProductionOffice, ProjectEntry, ProjectEntryRow}
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterEach
 import play.api.db.slick.DatabaseConfigProvider
@@ -53,7 +53,22 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
     protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
 
     val commFut = db.run(
-      (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += PlutoCommission(Some(1499),1499,"PX",Timestamp.from(Instant.now()),Timestamp.from(Instant.now()),"CommissionStatusPropagatorTests",EntryStatus.New,None,1))
+      TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += PlutoCommission(
+        Some(1499),
+        None,None,
+        Timestamp.from(Instant.now()),
+        Timestamp.from(Instant.now()),
+        "CommissionStatusPropagatorTests",
+        EntryStatus.New,
+        None,
+        1,
+        None,
+        Timestamp.from(Instant.now),
+        "TestUser",
+        None,
+        ProductionOffice.UK,
+        None
+      )
     )
 
     val insertFut = commFut.flatMap(insertedRowId=>{

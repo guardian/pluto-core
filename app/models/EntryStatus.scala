@@ -8,6 +8,10 @@ object EntryStatus extends Enumeration {
   val InProduction = Value("In Production")
 }
 
+/**
+  * this object is intended to import into classes that use EntryStatus.
+  * it contains implicits to allow Play JSON and Slick to use the enum
+  */
 object EntryStatusMapper {
   implicit val commissionStatusStringMapper = MappedColumnType.base[EntryStatus.Value, String](
     e=>e.toString,

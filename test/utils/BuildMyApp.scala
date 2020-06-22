@@ -19,6 +19,7 @@ trait BuildMyApp extends MockedCacheApi {
   def buildApp = new GuiceApplicationBuilder().disable(classOf[EhCacheModule])
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .overrides(bind[SyncCacheApi].toInstance(mockedSyncCacheApi))
+    .configure("ldap.ldapProtocol"->"ldaps")
     .configure("akka.persistence.journal.plugin"->"akka.persistence.journal.inmem")
     .configure("akka.persistence.journal.auto-start-journals"->Seq())
     .configure("akka.persistence.snapshot-store.plugin"->"akka.persistence.snapshot-store.local")

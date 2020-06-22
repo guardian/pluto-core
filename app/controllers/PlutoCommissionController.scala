@@ -70,39 +70,6 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                 Future(Conflict(Json.obj("status" -> "error", "detail" -> errDetail)))
         }
 
-    /**
-      * override the standard create method. This is necessary because the [[PlutoCommission]] object contains the
-      * Projectlocker integer key of the working group, but Pluto does not know about it. So we must convert it here,
-      * using PlutoCommission.fromServerRepresentation.  This is why we can't use the standard JsValue.validate[object]
-      * form.
-      * @return
-      */
-    def createPluto = IsAuthenticatedAsync(parse.json) { uid => { request =>
-        try {
-            val siteId = (request.body \ "siteId").as[String]
-            val workingGroupUuid = (request.body \ "gnm_commission_workinggroup").as[String]
-
-            PlutoWorkingGroup.entryForUuid(workingGroupUuid).flatMap({
-                case Some(workingGroup) =>
-                    PlutoCommission.fromServerRepresentation(request.body, workingGroup.id.get, siteId) match {
-                        case Success(newEntry) =>
-                            logger.debug(s"Got pluto commission object $newEntry")
-                            doCreateCommissionRecord(newEntry, uid)
-                        case Failure(error) =>
-                            logger.error(s"Could not look up working group for $workingGroupUuid", error)
-                            Future(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
-                    }
-                case None =>
-                    Future(BadRequest(Json.obj("status" -> "error", "detail" -> "Working group does not exist")))
-            })
-        } catch {
-            case e:Throwable=>
-                logger.error("Could not process create commission request:", e)
-                Future(InternalServerError(Json.obj("status"->"error","detail"->e.toString)))
-        }
-    }
-    }
-
     override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(
         (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
 

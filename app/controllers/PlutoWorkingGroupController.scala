@@ -11,7 +11,6 @@ import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 import akka.pattern.ask
 import auth.BearerTokenAuth
-import services.PlutoWGCommissionScanner
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -21,7 +20,7 @@ import scala.language.postfixOps
 
 @Singleton
 class PlutoWorkingGroupController @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
-                                             dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, @Named("pluto-wg-commission-scanner") scanner:ActorRef)
+                                             dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[PlutoWorkingGroup] with PlutoWorkingGroupSerializer {
 
   implicit val timeout:akka.util.Timeout = 55 seconds
@@ -43,7 +42,13 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
 
   override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
 
-  override def dbupdate(itemId: Int, entry:PlutoWorkingGroup):Future[Try[Int]] = throw new RuntimeException("This is not supported")
+  override def dbupdate(itemId: Int, entry:PlutoWorkingGroup):Future[Try[Int]] = {
+    val newRecord = entry.id match {
+      case Some(id)=>entry
+      case None=>entry.copy(id=Some(itemId))
+    }
+    db.run(TableQuery[PlutoWorkingGroupRow].filter(_.id===itemId).update(newRecord).asTry)
+  }
 
   /*these are handled through implict translation*/
   override def jstranslate(result:Seq[PlutoWorkingGroup]):Json.JsValueWrapper = result
@@ -51,19 +56,4 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
 
   override def validate(request: Request[JsValue]): JsResult[PlutoWorkingGroup] = request.body.validate[PlutoWorkingGroup]
 
-  def rescan = IsAdminAsync { uid=> { request=>
-    (scanner ? PlutoWGCommissionScanner.RefreshWorkingGroups).map({
-      case akka.actor.Status.Success=>Ok("rescan started")
-      case akka.actor.Status.Failure(err)=>
-        logger.error(s"Could not start pluto scan: ", err)
-        InternalServerError("Could not start scan. See logs for details.")
-      case other@_=>
-        logger.error(s"Received unexpected reply from RefreshWorkingGroups: ${other.getClass}")
-        InternalServerError("Program error, see logs for details")
-    }).recover({
-      case err:Throwable=>
-        logger.error(s"Could not start pluto scan: ", err)
-        InternalServerError("Could not start scan. See logs for details.")
-    })
-  }}
 }

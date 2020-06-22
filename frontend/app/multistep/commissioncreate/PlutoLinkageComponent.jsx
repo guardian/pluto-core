@@ -38,7 +38,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
                     this.props.valueWasSet({ workingGroupRef: value })
                   }
                   workingGroupList={this.props.workingGroupList}
-                  currentValue={this.props.workingGroupRef}
+                  currentValue={this.props.currentWorkingGroup}
                 />
               </td>
             </tr>

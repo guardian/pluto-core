@@ -2,7 +2,7 @@ package controllers
 
 import org.specs2.mutable.Specification
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import org.junit.runner.RunWith
 import org.specs2.matcher.MatchResult
 import org.specs2.runner._
@@ -51,7 +51,7 @@ trait GenericControllerSpec extends Specification with BuildMyApp {
 
     "return valid data for a valid record" in new WithApplication(buildApp) {
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       val response:Future[play.api.mvc.Result] = route(app, FakeRequest(GET, s"$uriRoot/1").withSession("uid"->"testuser")).get
 
       status(response) must equalTo(OK)
@@ -64,7 +64,7 @@ trait GenericControllerSpec extends Specification with BuildMyApp {
 
     "accept new data to create a new record" in new WithApplication(buildApp) {
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       val response = route(app, FakeRequest(
         method="PUT",
         uri=uriRoot,
@@ -92,7 +92,7 @@ trait GenericControllerSpec extends Specification with BuildMyApp {
 
     "delete a record" in new WithApplication(buildApp) {
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       val response = route(app, FakeRequest(
         method="DELETE",
         uri=s"$uriRoot/$testDeleteId",
@@ -111,7 +111,7 @@ trait GenericControllerSpec extends Specification with BuildMyApp {
 
     "return conflict (409) if attempting to delete something with sub-objects" in new WithApplication(buildApp) {
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer:Materializer = Materializer(system)
       val response = route(app, FakeRequest(
         method = "DELETE",
         uri = s"$uriRoot/$testConflictId",

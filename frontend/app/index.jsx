@@ -228,8 +228,13 @@ class App extends React.Component {
             <Route path="/project/:itemid" component={TitleEditComponent} />
             <Route path="/project/" component={ProjectEntryList} />
             <Route
-              path="/commission/new"
-              component={CommissionCreateMultistep}
+              path="/commission/:itemid"
+              component={(props) => (
+                <CommissionCreateMultistep
+                  match={props.match}
+                  userName={this.state.currentUsername}
+                />
+              )}
             />
             <Route path="/commission/" component={CommissionsList} />
             <Route path="/validate/project" component={ProjectValidationView} />
