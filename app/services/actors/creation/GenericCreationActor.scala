@@ -8,6 +8,7 @@ import akka.actor.{ActorRef, Props}
 import akka.persistence._
 import models.{FileEntry, PostrunAction, ProjectEntry, ProjectRequestFull}
 import play.api.Logger
+import services.JacksonSerializable
 
 import scala.concurrent.Future
 import scala.concurrent.duration.{Duration, FiniteDuration, durationToPair}
@@ -21,31 +22,31 @@ object GenericCreationActor {
     val eventId: UUID
   }
 
-  case class ProjectCreateTransientData(destFileEntry: Option[FileEntry], createdProjectEntry: Option[ProjectEntry], postrunSequence: Option[Seq[PostrunAction]])
+  case class ProjectCreateTransientData(destFileEntry: Option[FileEntry], createdProjectEntry: Option[ProjectEntry], postrunSequence: Option[Seq[PostrunAction]]) extends JacksonSerializable
   /**
     * This message is sent to each actor in the chain when creating a new project.  Each should do its work and send the result
     * back to the sender
     * @param rq [[ProjectRequestFull]] model describing the project to be created
     */
-  case class NewProjectRequest(rq:ProjectRequestFull, createTime:Option[LocalDateTime], data:ProjectCreateTransientData) extends CreationMessage
+  case class NewProjectRequest(rq:ProjectRequestFull, createTime:Option[LocalDateTime], data:ProjectCreateTransientData) extends CreationMessage with JacksonSerializable
 
   /**
     * This message is send to each actor in the chain when the project creation has failed.  Each should undo the work that was previously
     * done in response to [[NewProjectRequest]]
     * @param rq [[ProjectRequestFull]] model describing the project being rolled back
     */
-  case class NewProjectRollback(rq:ProjectRequestFull, data:ProjectCreateTransientData) extends CreationMessage
+  case class NewProjectRollback(rq:ProjectRequestFull, data:ProjectCreateTransientData) extends CreationMessage with JacksonSerializable
 
-  case class ProjectCreateFailed(rq:ProjectRequestFull, error:Throwable) extends CreationMessage
-  case class ProjectCreateSucceeded(rq:ProjectRequestFull, createdProjectEntry:ProjectEntry) extends CreationMessage
+  case class ProjectCreateFailed(rq:ProjectRequestFull, error:Throwable) extends CreationMessage with JacksonSerializable
+  case class ProjectCreateSucceeded(rq:ProjectRequestFull, createdProjectEntry:ProjectEntry) extends CreationMessage with JacksonSerializable
 
-  case class StepSucceded(updatedData:ProjectCreateTransientData) extends CreationMessage
+  case class StepSucceded(updatedData:ProjectCreateTransientData) extends CreationMessage with JacksonSerializable
 
-  case class StepFailed(updatedData:ProjectCreateTransientData, err:Throwable) extends CreationMessage
+  case class StepFailed(updatedData:ProjectCreateTransientData, err:Throwable) extends CreationMessage with JacksonSerializable
 
-  case class NewCreationEvent(rq:CreationMessage, eventId:UUID) extends CreationEvent
+  case class NewCreationEvent(rq:CreationMessage, eventId:UUID) extends CreationEvent with JacksonSerializable
 
-  case class CreateEventHandled(eventId: UUID)
+  case class CreateEventHandled(eventId: UUID)  extends JacksonSerializable
 }
 
 trait GenericCreationActor extends PersistentActor {

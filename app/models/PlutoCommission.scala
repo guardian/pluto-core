@@ -14,9 +14,15 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
+import ProductionOfficeMapper._
+import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
 
-case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, created: Timestamp, updated:Timestamp,
-                            title: String, status: String, description: Option[String], workingGroup: Int) {
+case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: Option[String], created: Timestamp, updated:Timestamp,
+                            title: String, status: EntryStatus.Value, description: Option[String], workingGroup: Int,
+                            originalCommissionerName:Option[String], scheduledCompletion:Timestamp, owner:String,
+                            notes:Option[String],
+                            @JsonScalaEnumeration(classOf[ProductionOfficeMapper.EnumStatusType]) productionOffice:ProductionOffice.Value,
+                            originalTitle:Option[String]) {
   private def logger = Logger(getClass)
 
   /**
@@ -86,99 +92,69 @@ case class PlutoCommission (id:Option[Int], collectionId:Int, siteId: String, cr
 }
 
 class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoCommission"){
+  import EntryStatusMapper._
+  import ProductionOfficeMapper._
+
   def id = column[Int]("id",O.PrimaryKey, O.AutoInc)
-  def collectionId = column[Int]("i_collection_id")
-  def siteId = column[String]("s_site_id")
+  def collectionId = column[Option[Int]]("i_collection_id")
+  def siteId = column[Option[String]]("s_site_id")
   def created = column[Timestamp]("t_created")
   def updated = column[Timestamp]("t_updated")
   def title = column[String]("s_title")
-  def status = column[String]("s_status")
+  def status = column[EntryStatus.Value]("s_status")
   def description = column[Option[String]]("s_description")
   def workingGroup = column[Int]("k_working_group")
-
-  def * = (id.?, collectionId, siteId, created, updated, title, status, description, workingGroup) <> (PlutoCommission.tupled, PlutoCommission.unapply)
+  def originalCommissionerName = column[Option[String]]("s_original_commissioner")
+  def scheduledCompletion = column[Timestamp]("t_scheduled_completion")
+  def owner = column[String]("s_owner")
+  def notes = column[Option[String]]("s_notes")
+  def productionOffice = column[ProductionOffice.Value]("s_production_office")
+  def originalTitle = column[Option[String]]("s_original_title")
+  
+  def * = (id.?, collectionId, siteId, created, updated, title, status, description, workingGroup, originalCommissionerName, scheduledCompletion, owner, notes, productionOffice, originalTitle) <> (PlutoCommission.tupled, PlutoCommission.unapply)
 }
 
 trait PlutoCommissionSerializer extends TimestampSerialization {
+  import EntryStatusMapper._
+
   implicit val plutoCommissionWrites:Writes[PlutoCommission] = (
     (JsPath \ "id").writeNullable[Int] and
-      (JsPath \ "collectionId").write[Int] and
-      (JsPath \ "siteId").write[String] and
+      (JsPath \ "collectionId").writeNullable[Int] and
+      (JsPath \ "siteId").writeNullable[String] and
       (JsPath \ "created").write[Timestamp] and
       (JsPath \ "updated").write[Timestamp] and
       (JsPath \ "title").write[String] and
-      (JsPath \ "status").write[String] and
+      (JsPath \ "status").write[EntryStatus.Value] and
       (JsPath \ "description").writeNullable[String] and
-      (JsPath \ "workingGroupId").write[Int]
+      (JsPath \ "workingGroupId").write[Int] and 
+      (JsPath \ "originalCommissionerName").writeNullable[String] and
+      (JsPath \ "scheduledCompletion").write[Timestamp] and
+      (JsPath \ "owner").write[String] and
+      (JsPath \ "notes").writeNullable[String] and
+      (JsPath \ "productionOffice").write[ProductionOffice.Value] and
+      (JsPath \ "originalTitle").writeNullable[String]
   )(unlift(PlutoCommission.unapply))
 
   implicit val plutoCommissionReads:Reads[PlutoCommission] = (
     (JsPath \ "id").readNullable[Int] and
-      (JsPath \ "collectionId").read[Int] and
-      (JsPath \ "siteId").read[String] and
+      (JsPath \ "collectionId").readNullable[Int] and
+      (JsPath \ "siteId").readNullable[String] and
       (JsPath \ "created").read[Timestamp] and
       (JsPath \ "updated").read[Timestamp] and
       (JsPath \ "title").read[String] and
-      (JsPath \ "status").read[String] and
+      (JsPath \ "status").read[EntryStatus.Value] and
       (JsPath \ "description").readNullable[String] and
-      (JsPath \ "workingGroupId").read[Int]
+      (JsPath \ "workingGroupId").read[Int] and
+      (JsPath \ "originalCommissionerName").readNullable[String] and
+      (JsPath \ "scheduledCompletion").read[Timestamp] and
+      (JsPath \ "owner").read[String] and
+      (JsPath \ "notes").readNullable[String] and
+      (JsPath \ "productionOffice").read[ProductionOffice.Value] and
+      (JsPath \ "originalTitle").readNullable[String]
     )(PlutoCommission.apply _)
 }
 
-/*
-[
-    {
-        "collection_id": 11,
-        "user": 1,
-        "created": "2017-12-04T16:11:23.632",
-        "updated": "2017-12-04T16:11:28.288",
-        "gnm_commission_title": "addasads",
-        "gnm_commission_status": "New",
-        "gnm_commission_workinggroup": "8b2bc331-7a11-40d0-a1e5-1266bdf8dce5",
-        "gnm_commission_description": null,
-        "gnm_commission_owner": [
-            1
-        ]
-    },
-    {
-        "collection_id": 26,
-        "user": 1,
-        "created": "2017-12-06T15:17:19.425",
-        "updated": "2017-12-06T15:17:20.808",
-        "gnm_commission_title": "fwqggrgqggreqgr",
-        "gnm_commission_status": "New",
-        "gnm_commission_workinggroup": "8b2bc331-7a11-40d0-a1e5-1266bdf8dce5",
-        "gnm_commission_description": null,
-        "gnm_commission_owner": [
-            1
-        ]
-    },
-    {
-        "collection_id": 13,
-        "user": 1,
-        "created": "2017-12-04T16:18:12.105",
-        "updated": "2018-01-04T14:14:35.346",
-        "gnm_commission_title": "addasadsf",
-        "gnm_commission_status": "In production",
-        "gnm_commission_workinggroup": "8b2bc331-7a11-40d0-a1e5-1266bdf8dce5",
-        "gnm_commission_description": null,
-        "gnm_commission_owner": [
-            1
-        ]
-    }
-]
- */
-
-object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,String,String,Option[String],Int)=>PlutoCommission)  {
-  def mostRecentByWorkingGroup(workingGroupId: Int)(implicit db: slick.jdbc.JdbcProfile#Backend#Database):Future[Try[Option[PlutoCommission]]] = {
-    db.run(
-      TableQuery[PlutoCommissionRow].filter(_.workingGroup===workingGroupId).sortBy(_.updated.desc).take(1).result.asTry
-    ).map({
-      case Failure(error)=>Failure(error)
-      case Success(resultList)=> Success(resultList.headOption)
-    })
-  }
-
+object PlutoCommission extends ((Option[Int],Option[Int],Option[String],Timestamp,Timestamp,String,EntryStatus.Value,Option[String],Int,Option[String],Timestamp,String,Option[String],ProductionOffice.Value, Option[String])=>PlutoCommission)  {
   def entryForVsid(vsid:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoCommission]] = {
     val idparts = vsid.split("-")
     if(idparts.length!=2) return Future(None)
@@ -203,24 +179,5 @@ object PlutoCommission extends ((Option[Int],Int,String,Timestamp,Timestamp,Stri
   implicit val timestampFormat = new Format[Timestamp] {
     def writes(t: Timestamp): JsValue = Json.toJson(timestampToDateTime(t))
     def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[DateTime](json).map(dateTimeToTimestamp)
-  }
-
-  def fromServerRepresentation(serverRep: JsValue, forWorkingGroup: Int, forSiteId: String):Try[PlutoCommission] = {
-    try {
-      val comm = new PlutoCommission(
-        id = None,
-        collectionId = (serverRep \ "collection_id").as[Int],
-        siteId = forSiteId,
-        created = (serverRep \ "created").as[Timestamp],
-        updated = (serverRep \ "updated").as[Timestamp],
-        title = (serverRep \ "gnm_commission_title").as[String],
-        status = (serverRep \ "gnm_commission_status").as[String],
-        description = (serverRep \ "gnm_commission_description").asOpt[String],
-        workingGroup = forWorkingGroup
-      )
-      Success(comm)
-    } catch {
-      case t:Throwable=>Failure(t)
-    }
   }
 }

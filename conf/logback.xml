@@ -23,7 +23,7 @@
 
     <logger name="play" level="INFO" />
     <logger name="application" level="ERROR" />
-    <logger name="services.PostrunActionScanner" level="INFO"/>
+    <logger name="services.PostrunActionScanner" level="OFF"/>
     <logger name="org.reflections" level="OFF"/>
     <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
     <logger name="helpers.PostrunSorter" level="WARN"/>
@@ -34,7 +34,6 @@
     <logger name="drivers.PathStorage" level="WARN"/>
     <logger name="models.PlutoWorkingGroup" level="WARN"/>
     <logger name="models.PlutoCommission" level="WARN"/>
-    <logger name="services.PlutoWGCommissionScanner" level="INFO"/>
     <logger name="services.ClockSingleton" level="INFO"/>
     <logger name="controllers.Files" level="WARN" />
     <logger name="controllers.StoragesController" level="INFO"/>
@@ -61,7 +60,7 @@
     <logger name="services.ValidateProject" level="DEBUG"/>
     <logger name="streamcomponents.ProjectSearchSource" level="DEBUG"/>
     <logger name="helpers.AllowCORSFilter" level="WARN"/>
-
+    <logger name="services.CommissionStatusPropagator" level="DEBUG"/>
     <root level="INFO">
         <appender-ref ref="STDOUT" />
         <!-- <appender-ref ref="Sentry" />-->

@@ -5,12 +5,12 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 import com.google.inject.Inject
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.{ActorSystem, Props}
 import akka.cluster.pubsub.DistributedPubSub
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import models.messages.{NewAdobeUuid, NewAssetFolder, NewProjectCreated, QueuedMessage}
 import play.api.{Configuration, Logger}
-import services.{ListenAssetFolder, ListenNewUuid, ListenProjectCreate}
+import services.{JacksonSerializable, ListenAssetFolder, ListenNewUuid, ListenProjectCreate}
 import akka.persistence._
 import models.ProjectEntry
 import play.api.db.slick.DatabaseConfigProvider
@@ -28,15 +28,15 @@ object MessageProcessorActor {
     val eventId: UUID
   }
 
-  case class NewProjectCreatedEvent(rq: NewProjectCreated, eventId: UUID) extends MessageEvent
-  case class NewAdobeUuidEvent(rq: NewAdobeUuid, eventId: UUID, receivedAt:ZonedDateTime) extends MessageEvent
-  case class NewAssetFolderEvent(rq: NewAssetFolder, eventId: UUID, receivedAt:ZonedDateTime) extends MessageEvent
+  case class NewProjectCreatedEvent(rq: NewProjectCreated, eventId: UUID) extends MessageEvent with JacksonSerializable
+  case class NewAdobeUuidEvent(rq: NewAdobeUuid, eventId: UUID, receivedAt:ZonedDateTime) extends MessageEvent with JacksonSerializable
+  case class NewAssetFolderEvent(rq: NewAssetFolder, eventId: UUID, receivedAt:ZonedDateTime) extends MessageEvent with JacksonSerializable
 
-  case class EventHandled(eventId: UUID)
-  case class RetryFromState()
+  case class EventHandled(eventId: UUID) extends JacksonSerializable
+  case class RetryFromState() extends JacksonSerializable
 }
 
-class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystemI: ActorSystem, dbConfigProvider:DatabaseConfigProvider) extends PersistentActor
+class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystemI: ActorSystem, dbConfigProvider:DatabaseConfigProvider)(override implicit val materializer:Materializer) extends PersistentActor
   with ListenAssetFolder with ListenProjectCreate with ListenNewUuid {
   override def persistenceId = "message-processor-actor"
 
@@ -52,7 +52,6 @@ class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystem
 
   implicit val configuration = configurationI
   implicit val actorSystem = actorSystemI
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val db = dbConfigProvider.get[PostgresProfile].db
 
   protected val snapshotInterval = configuration.getOptional[Long]("pluto.persistence-snapshot-interval").getOrElse(50L)

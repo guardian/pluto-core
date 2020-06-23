@@ -20,9 +20,9 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     bindActor[MessageProcessorActor]("message-processor-actor")
     bindActor[ProjectCreationActor]("project-creation-actor")
     bindActor[PostrunActionScanner]("postrun-action-scanner")
-    bindActor[PlutoWGCommissionScanner]("pluto-wg-commission-scanner")
     bindActor[PlutoProjectTypeScanner]("pluto-project-type-scanner")
     bindActor[StorageScanner]("storage-scanner")
     bindActor[ValidateProject]("validate-project-actor")
+    bindActor[CommissionStatusPropagator]("commission-status-propagator")
   }
 }

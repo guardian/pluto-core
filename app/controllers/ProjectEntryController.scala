@@ -33,8 +33,8 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         cacheImpl:SyncCacheApi,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
-    with ProjectEntrySerializer with ProjectEntryAdvancedFilterTermsSerializer with ProjectRequestSerializer
-    with ProjectRequestPlutoSerializer with UpdateTitleRequestSerializer with FileEntrySerializer
+    with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
+    with UpdateTitleRequestSerializer with FileEntrySerializer
     with PlutoConflictReplySerializer with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
@@ -290,36 +290,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
-  def createExternal(force:Boolean) = IsAuthenticatedAsync(parse.json) {uid=>{ request:Request[JsValue] =>
-    implicit val db = dbConfig.db
-
-    request.body.validate[ProjectRequestPluto].fold(
-      errors=>
-        Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
-      projectRequest=>
-        projectRequest.hydrate.flatMap({
-          case Left(errorList)=>
-            Future(BadRequest(Json.obj("status"->"error","detail"->errorList)))
-          case Right(rq)=>
-            if(rq.existingVidispineId.isDefined){
-              ProjectEntry.lookupByVidispineId(rq.existingVidispineId.get).flatMap({
-                case Success(matchingProjects)=>
-                  handleMatchingProjects(rq, matchingProjects, force)
-                case Failure(error)=>
-                  logger.error("Unable to look up vidispine ID: ", error)
-                  Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
-              })
-            } else {
-              createFromFullRequest(rq)
-            }
-        }).recover({
-          case err:Throwable=>
-            logger.error(s"Could not run createExternal for ${request.body}", err)
-            InternalServerError(Json.obj("status"->"error", "detail"->err.toString))
-        })
-    )
-  }}
-
   def getDistinctOwnersList:Future[Try[Seq[String]]] = {
     //work around distinctOn bug - https://github.com/slick/slick/issues/1712
     dbConfig.db.run(sql"""select distinct(s_user) from "ProjectEntry"""".as[String].asTry)
@@ -349,27 +319,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         InternalServerError(Json.obj("status"->"error", "detail"->err.toString))
     })
   }}
-
-  def advancedSearch(startAt:Int,limit:Int) = IsAuthenticatedAsync(parse.json) { uid=> request=>
-    request.body.validate[ProjectEntryAdvancedFilterTerms] fold(
-      errors=>
-        Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
-      filterTerms=>{
-        val queryFut = dbConfig.db.run(
-          filterTerms.addFilterTerms {
-            TableQuery[ProjectEntryRow]
-          }.sortBy(_._1.created.desc).drop(startAt).take(limit).map(_._1).result)
-
-          queryFut
-            .map(results=>Ok(Json.obj("status" -> "ok","result"->this.jstranslate(results))))
-          .recover({
-            case err:Throwable=>
-              logger.error(s"Could not perform advanced search for $filterTerms: ", err)
-              InternalServerError(Json.obj("status"->"error","detail"->err.toString))
-          })
-      }
-    )
-  }
 
   /**
     * respond to CORS options requests for login from vaultdoor
