@@ -12,8 +12,7 @@
     "start": "webpack -d --watch",
     "snyk-protect": "snyk protect",
     "lint": "prettier --check app __tests__",
-    "lint:fix": "prettier --write app __tests__",
-    "prepare": "yarn snyk-protect"
+    "lint:fix": "prettier --write app __tests__"
   },
   "jest": {
     "moduleFileExtensions": [
@@ -28,11 +27,11 @@
       "\\.(css|less)$": "identity-obj-proxy"
     },
     "transform": {
-      "^.+\\.[jt]sx?$": "ts-jest"
+      "^.+\\.[jt]sx?$": "ts-jest",
+      "node_modules/react-multistep/.+\\.js$": "ts-jest"
     },
     "transformIgnorePatterns": [
-      "node_modules/react-treebeard/.+\\\\.js$",
-      "node_modules/(?!panda-session).+\\\\.js$"
+      "\\/node_modules\\/(?!react-multistep)"
     ],
     "testResultsProcessor": "jest-junit",
     "setupFiles": [
