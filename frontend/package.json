@@ -31,7 +31,7 @@
       "node_modules/react-multistep/.+\\.js$": "ts-jest"
     },
     "transformIgnorePatterns": [
-      "\\/node_modules\\/(?!react-multistep)"
+      "node_modules/(?!react-multistep)"
     ],
     "testResultsProcessor": "jest-junit",
     "setupFiles": [
