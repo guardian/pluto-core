@@ -5,7 +5,7 @@ import java.time.{LocalDateTime, ZonedDateTime}
 import akka.actor.{ActorRef, ActorSystem, Props}
 import org.specs2.mutable._
 import akka.testkit._
-import models.{FileEntry, ProjectEntry, ProjectRequest, ProjectRequestFull}
+import models.{EntryStatus, FileEntry, ProjectEntry, ProjectRequest, ProjectRequestFull}
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -51,7 +51,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
 
       probe1.expectMsg(30.seconds, NewProjectRequest(rq.get, None, initialData))
       logger.info(probe1.lastSender.toString)
-      val fakeProject = ProjectEntry(None,1,None,"test title",timestamp,"tst-user",None,None, None, None, None)
+      val fakeProject = ProjectEntry(None,1,None,"test title",timestamp,"tst-user",None,None, None, None, None, EntryStatus.New)
       val updatedData = initialData.copy(createdProjectEntry = Some(fakeProject))
 
       probe1.reply(StepSucceded(updatedData))

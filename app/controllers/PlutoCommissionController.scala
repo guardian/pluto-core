@@ -1,5 +1,6 @@
 package controllers
 
+import akka.actor.ActorRef
 import auth.BearerTokenAuth
 import exceptions.{AlreadyExistsException, BadDataException}
 import helpers.AllowCORSFunctions
@@ -9,8 +10,9 @@ import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
-import play.api.libs.json.{JsResult, JsValue, Json}
+import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc.{ControllerComponents, EssentialAction, Request, ResponseHeader, Result}
+import services.CommissionStatusPropagator
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
@@ -20,8 +22,12 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class PlutoCommissionController @Inject()(override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
-                                          dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, config:Configuration)
+class PlutoCommissionController @Inject()(override val controllerComponents:ControllerComponents,
+                                          override val bearerTokenAuth:BearerTokenAuth,
+                                          dbConfigProvider:DatabaseConfigProvider,
+                                          cacheImpl:SyncCacheApi,
+                                          config:Configuration,
+                                         @Named("commission-status-propagator") commissionStatusPropagator:ActorRef)
   extends GenericDatabaseObjectControllerWithFilter[PlutoCommission,PlutoCommissionFilterTerms]
     with PlutoCommissionSerializer with PlutoCommissionFilterTermsSerializer {
 
@@ -64,39 +70,6 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                 Future(Conflict(Json.obj("status" -> "error", "detail" -> errDetail)))
         }
 
-    /**
-      * override the standard create method. This is necessary because the [[PlutoCommission]] object contains the
-      * Projectlocker integer key of the working group, but Pluto does not know about it. So we must convert it here,
-      * using PlutoCommission.fromServerRepresentation.  This is why we can't use the standard JsValue.validate[object]
-      * form.
-      * @return
-      */
-    def createPluto = IsAuthenticatedAsync(parse.json) { uid => { request =>
-        try {
-            val siteId = (request.body \ "siteId").as[String]
-            val workingGroupUuid = (request.body \ "gnm_commission_workinggroup").as[String]
-
-            PlutoWorkingGroup.entryForUuid(workingGroupUuid).flatMap({
-                case Some(workingGroup) =>
-                    PlutoCommission.fromServerRepresentation(request.body, workingGroup.id.get, siteId) match {
-                        case Success(newEntry) =>
-                            logger.debug(s"Got pluto commission object $newEntry")
-                            doCreateCommissionRecord(newEntry, uid)
-                        case Failure(error) =>
-                            logger.error(s"Could not look up working group for $workingGroupUuid", error)
-                            Future(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
-                    }
-                case None =>
-                    Future(BadRequest(Json.obj("status" -> "error", "detail" -> "Working group does not exist")))
-            })
-        } catch {
-            case e:Throwable=>
-                logger.error("Could not process create commission request:", e)
-                Future(InternalServerError(Json.obj("status"->"error","detail"->e.toString)))
-        }
-    }
-    }
-
     override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(
         (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
 
@@ -135,4 +108,34 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         }
     }
 
+    private def updateStatusColumn(commissionId:Int, newValue:EntryStatus.Value) = {
+        import EntryStatusMapper._
+
+        db.run {
+            val q = for {c <- TableQuery[PlutoCommissionRow] if c.id === commissionId} yield c.status
+            q.update(newValue)
+        }
+    }
+
+    def updateStatus(commissionId: Int) = IsAuthenticatedAsync(parse.json) {uid=> request=>
+        import PlutoCommissionStatusUpdateRequestSerializer._
+        request.body.validate[PlutoCommissionStatusUpdateRequest].fold(
+            invalidErrs=>
+                Future(BadRequest(Json.obj("status"->"bad_request","detail"->JsError.toJson(invalidErrs)))),
+            requiredUpdate=>
+                updateStatusColumn(commissionId, requiredUpdate.status).map(rowsUpdated=>{
+                    if(rowsUpdated==0){
+                        NotFound(Json.obj("status"->"not_found","detail"->s"No commission with id $commissionId"))
+                    } else {
+                        if(rowsUpdated>1) logger.error(s"Status update request for commission $commissionId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
+                        commissionStatusPropagator ! CommissionStatusPropagator.CommissionStatusUpdate(commissionId, requiredUpdate.status)
+                        Ok(Json.obj("status"->"ok","detail"->"commission status updated"))
+                    }
+                }).recover({
+                    case err:Throwable=>
+                    logger.error(s"Could not update status of commission $commissionId to ${requiredUpdate.status}: ", err)
+                    InternalServerError(Json.obj("status"->"db_error","detail"->"Database error, see logs for details"))
+                })
+        )
+    }
   }

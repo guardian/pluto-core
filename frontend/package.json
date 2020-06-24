@@ -6,19 +6,21 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:ci": "jest --ci",
     "build": "webpack -d",
     "build:prod": "webpack -p",
     "start": "webpack -d --watch",
     "clean": "rm -rf node_modules ../public/javascripts/bundle.js",
     "snyk-protect": "snyk protect",
     "lint": "prettier --check app __tests__",
-    "lint:fix": "prettier --write app __tests__",
-    "prepare": "yarn snyk-protect"
+    "lint:fix": "prettier --write app __tests__"
   },
   "jest": {
     "moduleFileExtensions": [
-      "js",
       "jsx",
+      "js",
+      "tsx",
+      "ts",
       "json"
     ],
     "verbose": true,
@@ -26,11 +28,11 @@
       "\\.(css|less)$": "identity-obj-proxy"
     },
     "transform": {
-      "^.+\\.(js|jsx)?$": "babel-jest"
+      "^.+\\.[jt]sx?$": "ts-jest",
+      "node_modules/react-multistep/.+\\.js$": "ts-jest"
     },
     "transformIgnorePatterns": [
-      "node_modules/react-treebeard/.+\\\\.js$",
-      "node_modules/(?!panda-session).+\\\\.js$"
+      "node_modules/(?!react-multistep)"
     ],
     "testResultsProcessor": "jest-junit",
     "setupFiles": [
@@ -40,14 +42,12 @@
   "author": "Andy Gallagher <andy.gallagher@theguardian.com>",
   "license": "ISC",
   "devDependencies": {
-    "@babel/plugin-proposal-class-properties": "^7.7.4",
-    "@babel/plugin-proposal-function-bind": "^7.7.4",
-    "@babel/plugin-transform-react-jsx": "^7.7.7",
-    "babel-jest": "^24.8.0",
+    "@types/react": "^16.9.36",
+    "@types/react-dom": "^16.9.8",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.2",
     "husky": ">=4",
-    "jest": "^24.8.0",
+    "jest": "^26.0.1",
     "jest-cli": "^24.8.0",
     "jest-fetch-mock": "^3.0.1",
     "jest-junit": "^4.0.0",
@@ -57,16 +57,13 @@
     "prettier": "^2.0.5",
     "react-test-renderer": "^16.12.0",
     "sinon": "^8.0.4",
-    "terser-webpack-plugin": "^1.4.3"
+    "source-map-loader": "^1.0.0",
+    "terser-webpack-plugin": "^1.4.3",
+    "ts-jest": "^26.1.0",
+    "ts-loader": "^7.0.5",
+    "typescript": "^3.9.5"
   },
   "dependencies": {
-    "@babel/cli": "^7.7.7",
-    "@babel/core": "^7.7.7",
-    "@babel/plugin-transform-runtime": "^7.7.6",
-    "@babel/preset-env": "^7.7.7",
-    "@babel/preset-react": "^7.7.4",
-    "@babel/preset-stage-0": "^7.0.0",
-    "@babel/preset-stage-2": "^7.0.0",
     "@fortawesome/fontawesome-svg-core": "^1.2.26",
     "@fortawesome/free-brands-svg-icons": "^5.12.0",
     "@fortawesome/free-regular-svg-icons": "^5.12.0",
@@ -74,7 +71,6 @@
     "@fortawesome/react-fontawesome": "^0.1.8",
     "@material-ui/core": "^4.10.2",
     "axios": "^0.19.1",
-    "babel-loader": "^8.0.5",
     "css-loader": "^1.0.0",
     "identity-obj-proxy": "^3.0.0",
     "lodash": "^4.17.15",

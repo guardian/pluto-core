@@ -15,6 +15,23 @@ When deploying, you should ensure that the `domain =` setting is configured to b
 to prevent cookie theft. It's also recommended to serve via https and set `secure = true` (but this could be problematic if you're
 only implementing https to the loadbalancer)
 
+## Setting up the database server for deployment
+
+Pluto-Core requires a PostGresQL database, it's tested against 9.6 at present.
+In order to work with the "out of the box" docker config, you will need to:
+1. deploy a Postgres image with the virtual hostname of "database" (or customise the POSTGRES_HOST environment var or 
+the application.conf)
+2. set this database up with a user called projectlocker, password projectlocker, and a database called projectlocker that
+is owned by the projectlocker user.  Again these can be customised with POSTGRES_ environment
+variables or adjusting the application.conf. I would strongly suggest setting a stronger password!
+3. create another database called "journal" also owned by the projectlocker user
+4. deploy the akka-persistence-jdbc schema to "journal"
+
+All of these steps are carried out by the `scripts/docker-init/setup_dev.db.sh` script,
+consult that for setup-by-step instructions.
+
+These steps are carried out automatically when you run `scripts/setup_docker_postgres.sh`.
+
 ## Authentication Setup
 
 Projectlocker is intended to run against an ldap-based authentication system, such as Active Directory. This is configured

@@ -9,6 +9,7 @@ case class ProjectEntryFilterTerms(title:Option[String],
                                    vidispineProjectId:Option[String],
                                    filename:Option[String],
                                    user:Option[String],
+                                   commissionId:Option[Int],
                                    wildcard:FilterTypeWildcard.Value)
 extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
 
@@ -31,6 +32,7 @@ extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
     if(title.isDefined) action = action.filter(_.projectTitle like makeWildcard(title.get))
     if(vidispineProjectId.isDefined) action = action.filter(_.vidispineProjectId like makeWildcard(vidispineProjectId.get))
     if(user.isDefined && user.get!="Everyone") action = action.filter(_.user like makeWildcard(user.get))
+    if(commissionId.isDefined ) action = action.filter(_.commission===commissionId.get)
     action
   }
 }
@@ -43,6 +45,7 @@ trait ProjectEntryFilterTermsSerializer {
       (JsPath \ "vidispineId").readNullable[String] and
       (JsPath \ "filename").readNullable[String] and
       (JsPath \ "user").readNullable[String] and
+      (JsPath \ "commissionId").readNullable[Int] and
       (JsPath \ "match").read[FilterTypeWildcard.Value]
   )(ProjectEntryFilterTerms.apply _)
 }

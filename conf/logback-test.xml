@@ -4,7 +4,12 @@
 <configuration>
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
         <file>/tmp/pluto-core-testing.log</file>
-        <append>true</append>
+        <append>false</append>
+        <encoder>
+            <pattern>%level %logger{15} - %message%n%xException{20}</pattern>
+        </encoder>
+    </appender>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%level %logger{15} - %message%n%xException{20}</pattern>
         </encoder>
@@ -23,7 +28,6 @@
     <logger name="drivers.PathStorage" level="WARN"/>
     <logger name="models.PlutoWorkingGroup" level="WARN"/>
     <logger name="models.PlutoCommission" level="WARN"/>
-    <logger name="services.PlutoWGCommissionScanner" level="INFO"/>
     <logger name="services.ClockSingleton" level="INFO"/>
     <logger name="controllers.Files" level="WARN" />
     <logger name="controllers.StoragesController" level="INFO"/>

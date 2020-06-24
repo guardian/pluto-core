@@ -232,7 +232,7 @@ describe("FilterableList", () => {
     );
 
     const listbox = rendered.find("select").first();
-    listbox.simulate("click", { target: { value: "test" } });
+    listbox.simulate("change", { target: { value: "test" } });
     expect(onChangeMock.getCall(0).calledWith("test")).toBe(true);
   });
 
