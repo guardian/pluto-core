@@ -20,6 +20,7 @@ class ProjectCompletionComponent extends React.Component {
     deletable: PropTypes.bool.isRequired,
     deep_archive: PropTypes.bool.isRequired,
     sensitive: PropTypes.bool.isRequired,
+    productionOffice: PropTypes.string.isRequired,
   };
 
   constructor(props) {
@@ -35,19 +36,20 @@ class ProjectCompletionComponent extends React.Component {
   requestContent() {
     return {
       filename: this.props.projectFilename,
-      destinationStorageId: parseInt(this.props.selectedStorage),
+      destinationStorageId: this.props.selectedStorage,
       title: this.props.projectName,
-      projectTemplateId: parseInt(this.props.selectedProjectTemplate),
+      projectTemplateId: this.props.selectedProjectTemplate,
       user: "frontend", //this should be deprecated as the backend ignores it
       workingGroupId: this.props.selectedWorkingGroupId
-        ? parseInt(this.props.selectedWorkingGroupId)
+        ? this.props.selectedWorkingGroupId
         : null,
       commissionId: this.props.selectedCommissionId
-        ? parseInt(this.props.selectedCommissionId)
+        ? this.props.selectedCommissionId
         : null,
       deletable: this.props.deletable,
       deepArchive: this.props.deep_archive,
       sensitive: this.props.sensitive,
+      productionOffice: this.props.productionOffice,
     };
   }
 
@@ -119,6 +121,7 @@ class ProjectCompletionComponent extends React.Component {
           deletable={this.props.deletable}
           deep_archive={this.props.deep_archive}
           sensitive={this.props.sensitive}
+          productionOffice={this.props.productionOffice}
         />
 
         {this.getWarnings().map((warning) => (

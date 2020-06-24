@@ -5,6 +5,7 @@ class ProductionOfficeComponent extends React.Component {
   static propTypes = {
     valueWasSet: PropTypes.func.isRequired,
     value: PropTypes.string.isRequired,
+    extraText: PropTypes.string,
   };
 
   //we could load these in dynamically from the backend, but as they hardly ever change it seems better
@@ -17,7 +18,8 @@ class ProductionOfficeComponent extends React.Component {
         <h3>Where are you working from</h3>
         <p>
           We need to know which production office you are working out of, i.e.
-          where the commissioner who green-lit this project usually works
+          where the commissioner who green-lit this project usually works.
+          {this.props.extraText ? this.props.extraText : ""}
         </p>
         <table>
           <tbody>
