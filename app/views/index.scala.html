@@ -1,20 +1,20 @@
-@(cbVersion:String)
+@(cbVersion:String, deploymentRoot:String)
 
 <html>
 <head>
     <meta charset="utf-8">
     <link href='https://fonts.googleapis.com/css?family=Raleway:400,300,600' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/react-multistep/normalize.css")">
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/react-multistep/skeleton.css")">
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/react-multistep/custom.css")">
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/react-multistep/prog-tracker.css")">
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("font-awesome-4.7.0/css/font-awesome.min.css")">
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/filterablelist.css")">
-    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/overrides.css")?v=@(cbVersion)">
+    <link rel="stylesheet" media="screen" href="@(deploymentRoot)@routes.Assets.at("stylesheets/react-multistep/normalize.css")">
+    <link rel="stylesheet" media="screen" href="@(deploymentRoot)@routes.Assets.at("stylesheets/react-multistep/skeleton.css")">
+    <link rel="stylesheet" media="screen" href="@(deploymentRoot)@routes.Assets.at("stylesheets/react-multistep/custom.css")">
+    <link rel="stylesheet" media="screen" href="@(deploymentRoot)@routes.Assets.at("stylesheets/react-multistep/prog-tracker.css")">
+    <link rel="stylesheet" media="screen" href="@(deploymentRoot)@routes.Assets.at("font-awesome-4.7.0/css/font-awesome.min.css")">
+    <link rel="stylesheet" media="screen" href="@(deploymentRoot)@routes.Assets.at("stylesheets/filterablelist.css")">
+    <link rel="stylesheet" href="@(deploymentRoot)@routes.Assets.at("stylesheets/overrides.css")?v=@(cbVersion)">
     <title>Projectlocker</title>
 </head>
 <body>
 <div id="app" />
-<script src="/assets/javascripts/bundle.js?v=@(cbVersion)" type="text/javascript"></script>
+<script src="@(deploymentRoot)/assets/javascripts/bundle.js?v=@(cbVersion)" type="text/javascript"></script>
 </body>
 </html>

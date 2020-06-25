@@ -40,7 +40,7 @@ class Application @Inject() (val cc:ControllerComponents, override val bearerTok
         logger.warn("Could not get build-sha property: ", e)
         None
     }
-    Ok(views.html.index(cbVersionString.getOrElse("none")))
+    Ok(views.html.index(cbVersionString.getOrElse("none"), config.getOptional[String]("deployment-root").getOrElse("")))
   }
 
   def timeoutTest(delay: Int) = Action {
