@@ -48,6 +48,9 @@ import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx
 
 library.add(faSearch);
 
+//this is set in the index.scala.html template file and gives us the value of deployment-root from the server config
+axios.defaults.baseURL = deploymentRootPath;
+
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -266,7 +269,7 @@ class App extends React.Component {
 }
 
 render(
-  <BrowserRouter root="/">
+  <BrowserRouter root={deploymentRootPath}>
     <App />
   </BrowserRouter>,
   document.getElementById("app")
