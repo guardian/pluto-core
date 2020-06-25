@@ -127,12 +127,7 @@ class Application @Inject() (val cc:ControllerComponents, override val bearerTok
     *         If the session is valid, a 200 response with the currently logged in userid in a json object
     */
   def isLoggedIn = IsAuthenticated { uid=> { request=>
-    val adminRoles = config.getOptional[Seq[String]]("ldap.admin-groups").getOrElse(List("Administrator"))
-    val isAdmin = config.get[String]("ldap.ldapProtocol") match {
-      case "none"=>true
-      case _=>checkRole(uid, adminRoles)
-    }
-
+    val isAdmin = checkAdmin(uid, request)
     val corsOrigin = if(request.headers.hasHeader("Origin")){
       checkCorsOrigins(request)
     } else {

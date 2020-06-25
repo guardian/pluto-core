@@ -129,7 +129,7 @@ trait Security extends BaseController {
       }
   }
 
-  private def checkAdmin[A](uid:String, request:Request[A]) = Seq("X-Hmac-Authorization","Authorization").map(request.headers.get) match {
+  def checkAdmin[A](uid:String, request:Request[A]) = Seq("X-Hmac-Authorization","Authorization").map(request.headers.get) match {
     case Seq(Some(hmac),_)=>
       false //server-server never requires admin
     case Seq(None,Some(bearer))=>

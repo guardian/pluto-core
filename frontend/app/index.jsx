@@ -115,7 +115,8 @@ class App extends React.Component {
     this.setState(
       { currentUsername: userid, isAdmin: isAdmin, isLoggedIn: true },
       () => {
-        if (!isAdmin) window.location.href = "/project/?mine";
+        if (!isAdmin)
+          window.location.href = `${deploymentRootPath}/project/?mine`;
       }
     );
   }
@@ -130,19 +131,21 @@ class App extends React.Component {
       return (
         <ul className="leftmenu">
           <li>
-            <Link to="/">Home</Link>
+            <Link to={deploymentRootPath}>Home</Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/storage/">Storages...</Link>
+            <Link to={`${deploymentRootPath}/storage/`}>Storages...</Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/type/">Project Types...</Link>
+            <Link to={`${deploymentRootPath}/type/`}>Project Types...</Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/template/">Project Templates...</Link>
+            <Link to={`${deploymentRootPath}/template/`}>
+              Project Templates...
+            </Link>
           </li>
           <li>
-            <Link to="/commission/">Commissions...</Link>
+            <Link to={`${deploymentRootPath}/commission/`}>Commissions...</Link>
           </li>
           <li>
             <Link to={this.state.isAdmin ? "/project/" : "/project/?mine"}>
@@ -150,18 +153,30 @@ class App extends React.Component {
             </Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/validate/project">Validate projectfiles...</Link>
+            <Link to={`${deploymentRootPath}/validate/project`}>
+              Validate projectfiles...
+            </Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/postrun/">Postrun Actions...</Link>
+            <Link to={`${deploymentRootPath}/postrun/`}>
+              Postrun Actions...
+            </Link>
           </li>
           <li>
-            <Link to={this.state.isAdmin ? "/file/" : "/file/?mine"}>
+            <Link
+              to={
+                this.state.isAdmin
+                  ? `${deploymentRootPath}/file/`
+                  : `${deploymentRootPath}/file/?mine`
+              }
+            >
               Files...
             </Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/defaults/">Server defaults...</Link>
+            <Link to={`${deploymentRootPath}/defaults/`}>
+              Server defaults...
+            </Link>
           </li>
         </ul>
       );
