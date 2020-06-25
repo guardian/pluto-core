@@ -66,7 +66,8 @@ export const getCommissionsOnPage = async ({
 }: GetCommissionsOnPageParams) => {
   const itemOffset = pageOffset * pageSize;
   const {
-    data: { status, result: commissions = [] },
+    status,
+    data: { result: commissions = [] },
   } = await (filterTerms
     ? Axios.put(
         `${API_COMMISSION_FILTER}?startAt=${itemOffset}&length=${pageSize}`,
@@ -74,7 +75,7 @@ export const getCommissionsOnPage = async ({
       )
     : Axios.get(`${API_COMMISSION}?startAt=${itemOffset}&length=${pageSize}`));
 
-  if (status !== "ok") {
+  if (status !== 200) {
     throw new Error("unable to fetch commissions");
   }
 
