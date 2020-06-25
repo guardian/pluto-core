@@ -86,13 +86,8 @@ object LDAP {
      * @return
     */
   def hasConnectionPool:Future[Try[Unit]] = Future {
-    connectionPool
-      .map(_.getCurrentAvailableConnections>0)
-      .getOrElse(false) match {
-      case true=>Success(())
-      case false=>Failure(new RuntimeException("No LDAP pool connections available"))
+      connectionPool.map(_.getCurrentAvailableConnections>0)
     }
-  }
 
   def getUserRoles (uid: String)(implicit cache:SyncCacheApi) : Option[List[String]] = {
     if(connectionPool.isFailure) return None
