@@ -20,6 +20,11 @@ var config = {
   module: {
     rules: [
       {
+        test: /\.tsx?/,
+        include: APP_DIR,
+        loader: "ts-loader",
+      },
+      {
         test: /\.jsx?/,
         include: APP_DIR,
         loader: "ts-loader",

@@ -36,7 +36,7 @@ import NotLoggedIn from "./NotLoggedIn.jsx";
 
 import axios from "axios";
 
-import { library } from "@fortawesome/fontawesome-svg-core";
+import { config, library } from "@fortawesome/fontawesome-svg-core";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
 window.React = require("react");
@@ -45,6 +45,7 @@ import Raven from "raven-js";
 import ProjectValidationView from "./ProjectValidationView.jsx";
 import CommissionsList from "./CommissionsList.jsx";
 import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx";
+import { loadInSigningKey, validateAndDecode } from "./JwtHelpers";
 
 library.add(faSearch);
 
@@ -81,27 +82,62 @@ class App extends React.Component {
       });
   }
 
-  checkLogin() {
-    this.setState({ loading: true, haveChecked: true }, () =>
-      axios
-        .get("/api/isLoggedIn")
-        .then((response) => {
-          //200 response means we are logged in
-          this.setState({
-            isLoggedIn: true,
-            loading: false,
-            currentUsername: response.data.uid,
-            isAdmin: response.data.isAdmin,
-          });
-        })
-        .catch((error) => {
-          this.setState({
-            isLoggedIn: false,
-            loading: false,
-            currentUsername: "",
-          });
-        })
+  setStatePromise(newState) {
+    return new Promise((resolve, reject) =>
+      this.setState(newState, () => resolve())
     );
+  }
+
+  async checkLogin() {
+    await this.setStatePromise({ loading: true });
+    try {
+      const signingKey = await loadInSigningKey();
+      const token = window.sessionStorage.getItem("pluto:access-token");
+      if (token) {
+        const decoded = await validateAndDecode(token, signingKey, undefined);
+        return this.setStatePromise({
+          isLoggedIn: true,
+          loading: false,
+          currentUsername: decoded.username,
+          isAdmin: true, //FIXME: temporary state so we can see stuff, need to get hold of the server-side config for adminClaim
+        });
+      } else {
+        return this.setStatePromise({
+          isLoggedIn: false,
+          loading: false,
+          currentUsername: "",
+          isAdmin: false,
+        });
+      }
+    } catch (err) {
+      console.error("Could not validate login: ", err);
+      return this.setStatePromise({
+        loading: false,
+        isAdmin: false,
+        currentUsername: "",
+        isLoggedIn: false,
+      });
+    }
+    // this.setState({ loading: true, haveChecked: true }, () =>
+    //   axios
+    //     .get("/api/isLoggedIn")
+    //     .then((response) => {
+    //       //200 response means we are logged in
+    //       this.setState({
+    //         isLoggedIn: true,
+    //         loading: false,
+    //         currentUsername: response.data.uid,
+    //         isAdmin: response.data.isAdmin,
+    //       });
+    //     })
+    //     .catch((error) => {
+    //       this.setState({
+    //         isLoggedIn: false,
+    //         loading: false,
+    //         currentUsername: "",
+    //       });
+    //     })
+    // );
   }
 
   componentWillMount() {
@@ -115,8 +151,7 @@ class App extends React.Component {
     this.setState(
       { currentUsername: userid, isAdmin: isAdmin, isLoggedIn: true },
       () => {
-        if (!isAdmin)
-          window.location.href = `${deploymentRootPath}/project/?mine`;
+        if (!isAdmin) window.location.href = `/project/?mine`;
       }
     );
   }
@@ -131,21 +166,19 @@ class App extends React.Component {
       return (
         <ul className="leftmenu">
           <li>
-            <Link to={deploymentRootPath}>Home</Link>
+            <Link to="/">Home</Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to={`${deploymentRootPath}/storage/`}>Storages...</Link>
+            <Link to="/storage/">Storages...</Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to={`${deploymentRootPath}/type/`}>Project Types...</Link>
+            <Link to="/type/">Project Types...</Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to={`${deploymentRootPath}/template/`}>
-              Project Templates...
-            </Link>
+            <Link to="/template/">Project Templates...</Link>
           </li>
           <li>
-            <Link to={`${deploymentRootPath}/commission/`}>Commissions...</Link>
+            <Link to="/commission/">Commissions...</Link>
           </li>
           <li>
             <Link to={this.state.isAdmin ? "/project/" : "/project/?mine"}>
@@ -153,30 +186,18 @@ class App extends React.Component {
             </Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to={`${deploymentRootPath}/validate/project`}>
-              Validate projectfiles...
-            </Link>
+            <Link to="/validate/project">Validate projectfiles...</Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to={`${deploymentRootPath}/postrun/`}>
-              Postrun Actions...
-            </Link>
+            <Link to="/postrun/">Postrun Actions...</Link>
           </li>
           <li>
-            <Link
-              to={
-                this.state.isAdmin
-                  ? `${deploymentRootPath}/file/`
-                  : `${deploymentRootPath}/file/?mine`
-              }
-            >
+            <Link to={this.state.isAdmin ? `/file/` : `/file/?mine`}>
               Files...
             </Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to={`${deploymentRootPath}/defaults/`}>
-              Server defaults...
-            </Link>
+            <Link to="/defaults/">Server defaults...</Link>
           </li>
         </ul>
       );
@@ -290,7 +311,7 @@ class App extends React.Component {
 }
 
 render(
-  <BrowserRouter root={deploymentRootPath}>
+  <BrowserRouter basename={deploymentRootPath}>
     <App />
   </BrowserRouter>,
   document.getElementById("app")

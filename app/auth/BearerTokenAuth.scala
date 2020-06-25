@@ -89,9 +89,8 @@ class BearerTokenAuth @Inject() (config:Configuration) {
   /**
     * try to validate the given token with the key provided
     * returns a JWTClaimsSet if successful
-    * the Try is cast to a Future to make composition easier
     * @param token JWT token to verify
-    * @return a Future, containing a JWTClaimsSet. The Future fails if it can't be verified
+    * @return a Try, containing a JWTClaimsSet or an error
     */
   def validateToken(token:String) = {
     logger.debug(s"validating token $token")
