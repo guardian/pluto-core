@@ -50,6 +50,12 @@ library.add(faSearch);
 
 //this is set in the index.scala.html template file and gives us the value of deployment-root from the server config
 axios.defaults.baseURL = deploymentRootPath;
+axios.interceptors.request.use(function (config) {
+  const token = window.sessionStorage.getItem("pluto:access-token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  return config;
+});
 
 class App extends React.Component {
   constructor(props) {
