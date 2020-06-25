@@ -73,7 +73,7 @@ libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
 
 //authentication
 libraryDependencies ++= Seq(
-  "com.unboundid" % "unboundid-ldapsdk" % "5.0.0",
+  "com.unboundid" % "unboundid-ldapsdk" % "5.1.0",
   "com.nimbusds" % "nimbus-jose-jwt" % "8.21",
 )
 
