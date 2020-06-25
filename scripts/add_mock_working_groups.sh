@@ -7,5 +7,13 @@ do
   curl localhost:9000/api/pluto/workinggroup \
     -v \
     -H content-type:application/json \
-    --data "{\"name\": \"Working Group ${i}\", \"uuid\":\"$(uuidgen)\"}"
+    --data "$(cat <<EOF
+{
+  "id": ${RANDOM},
+  "name": "Working Group ${i}",
+  "commissioner": "Victor",
+  "hide": false
+}
+EOF
+)"
 done
