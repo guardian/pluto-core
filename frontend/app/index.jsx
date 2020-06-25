@@ -43,7 +43,7 @@ window.React = require("react");
 
 import Raven from "raven-js";
 import ProjectValidationView from "./ProjectValidationView.jsx";
-import CommissionsList from "./CommissionsList.jsx";
+import CommissionsList from "./CommissionsList/CommissionsList.tsx";
 import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx";
 
 library.add(faSearch);
