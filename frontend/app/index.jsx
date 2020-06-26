@@ -193,7 +193,7 @@ class App extends React.Component {
             <Link to="/postrun/">Postrun Actions...</Link>
           </li>
           <li>
-            <Link to={this.state.isAdmin ? `/file/` : `/file/?mine`}>
+            <Link to={this.state.isAdmin ? "/file/" : "/file/?mine"}>
               Files...
             </Link>
           </li>
