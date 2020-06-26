@@ -35,7 +35,7 @@ class CommonCompletionComponent extends React.Component {
         this.setState({ inProgress: false, newId: response.data.id }, () => {
           this.recordDidSave().then(() => {
             console.log("save succeeded");
-            window.location.assign(this.successRedirect);
+            this.setState({ inProgress: false, completed: true, error: null });
           }); //rely on catch() below to log errors
         });
       })

@@ -1,7 +1,7 @@
 import React from "react";
 import axios from "axios";
 import PropTypes from "prop-types";
-
+import { Redirect } from "react-router-dom";
 import SummaryComponent from "./SummaryComponent.jsx";
 import ErrorViewComponent from "../common/ErrorViewComponent.jsx";
 import LongProcessComponent from "./LongProcessComponent.jsx";
@@ -29,6 +29,7 @@ class ProjectCompletionComponent extends React.Component {
     this.state = {
       inProgress: false,
       error: null,
+      completed: false,
     };
     this.confirmClicked = this.confirmClicked.bind(this);
   }
@@ -62,8 +63,7 @@ class ProjectCompletionComponent extends React.Component {
         data: this.requestContent(),
       })
       .then((response) => {
-        this.setState({ inProgress: false });
-        window.location.assign("/project/");
+        this.setState({ inProgress: false, completed: true });
       })
       .catch((error) => {
         this.setState({ inProgress: false, error: error });
@@ -98,6 +98,7 @@ class ProjectCompletionComponent extends React.Component {
   }
 
   render() {
+    if (this.state.completed) return <Redirect to="/project/" />;
     return (
       <div>
         <h3>Create new project</h3>
