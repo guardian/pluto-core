@@ -80,7 +80,6 @@ describe("StorageCompletionComponent", () => {
     );
     const button = rendered.find("button");
     button.simulate("click");
-    window.location.assign = sinon.spy();
 
     return moxios.wait(() => {
       expect(moxios.requests.mostRecent().config.url).toEqual("/api/storage");
@@ -91,7 +90,9 @@ describe("StorageCompletionComponent", () => {
           response: { status: "ok" },
         })
         .then(() => {
-          assert(window.location.assign.calledWith("/storage/"));
+          const redir = rendered.find("Redirect");
+          expect(redir.length).toEqual(1);
+          expect(redir.at(0).props().to).toEqual("/storage/");
           done();
         })
         .catch((error) => {

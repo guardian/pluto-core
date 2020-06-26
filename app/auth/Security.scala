@@ -30,7 +30,7 @@ import play.api.libs.typedmap.TypedKey
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 trait Security extends BaseController {
   implicit val cache:SyncCacheApi
@@ -129,21 +129,29 @@ trait Security extends BaseController {
       }
   }
 
-  private def checkAdmin[A](uid:String, request:Request[A]) = Seq("X-Hmac-Authorization","Authorization").map(request.headers.get) match {
+  def checkAdmin[A](uid:String, request:Request[A]) = Seq("X-Hmac-Authorization","Authorization").map(request.headers.get) match {
     case Seq(Some(hmac),_)=>
+      logger.debug("hmac auth is never admin")
       false //server-server never requires admin
     case Seq(None,Some(bearer))=>
       //FIXME: seems a bit rubbish to validate the token twice, once for login and once for admin
-      bearerTokenAuth.validateToken(bearer).toOption.flatMap(jwtClaims=>
-        Option(jwtClaims.getStringClaim(bearerTokenAuth.isAdminClaimName()))
-      ) match {
+      val adminClaimContent = for {
+        tok <- bearerTokenAuth.extractAuthorization(bearer)
+        maybeClaims <- bearerTokenAuth.validateToken(tok).toOption
+        maybeAdminClaim <- Option(maybeClaims.getStringClaim(bearerTokenAuth.isAdminClaimName()))
+      } yield maybeAdminClaim
+
+      adminClaimContent match {
         case Some(stringValue)=>
+          logger.debug(s"got value for isAdminClaim ${bearerTokenAuth.isAdminClaimName()}: $stringValue, downcasing and testing for 'true' or 'yes'")
           val downcased = stringValue.toLowerCase()
           downcased == "true" || downcased == "yes"
         case None=>
+          logger.debug(s"got nothing for isAdminClaim ${bearerTokenAuth.isAdminClaimName()}")
           false
       }
     case _=>
+      logger.debug("checking ldap roles")
       //if we are running in dev mode without authentication then we have to allow admin actionss
       Conf.ldapProtocol=="none" || LdapHasRole(Conf.adminGroups.asScala.toList, uid)
   }

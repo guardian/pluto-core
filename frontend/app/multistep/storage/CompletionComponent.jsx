@@ -1,7 +1,7 @@
 import React from "react";
 import axios from "axios";
 import PropTypes from "prop-types";
-
+import { Redirect } from "react-router-dom";
 import SummaryComponent from "./SummaryComponent.jsx";
 import ErrorViewComponent from "../common/ErrorViewComponent.jsx";
 import CommonCompletionComponent from "../common/CommonCompletionComponent.jsx";
@@ -23,6 +23,7 @@ class StorageCompletionComponent extends CommonCompletionComponent {
     this.state = {
       inProgress: false,
       error: null,
+      completed: false,
     };
 
     this.endpoint = "/api/storage";
@@ -49,6 +50,7 @@ class StorageCompletionComponent extends CommonCompletionComponent {
   }
 
   render() {
+    if (this.state.completed) return <Redirect to={this.successRedirect} />;
     const selectedStorage = this.props.strgTypes[this.props.selectedType];
     return (
       <div>

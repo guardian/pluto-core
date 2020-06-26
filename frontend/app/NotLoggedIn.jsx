@@ -35,19 +35,19 @@ class NotLoggedIn extends React.Component {
   }
 
   render() {
-    if (this.state.timeRemaining < 1) {
-      return <Redirect to="/" />;
-    } else {
-      return (
-        <div className="inline-dialog">
-          <h2 className="inline-dialog-title">Not logged in</h2>
-          <p className="inline-dialog-content centered">
-            You are not currently logged in as anybody. Redirecting to login
-            page in {this.state.timeRemaining} seconds
-          </p>
-        </div>
-      );
-    }
+    //deliberately done like this not with <Redirect> so we get sent back to pluto-start/
+    //TODO: once refresh is implemented in pluto-start we should jump to a refresh location
+    if (this.state.timeRemaining < 1) window.location.assign("/");
+
+    return (
+      <div className="inline-dialog">
+        <h2 className="inline-dialog-title">Not logged in</h2>
+        <p className="inline-dialog-content centered">
+          You are not currently logged in as anybody. Redirecting to login page
+          in {this.state.timeRemaining} seconds
+        </p>
+      </div>
+    );
   }
 }
 

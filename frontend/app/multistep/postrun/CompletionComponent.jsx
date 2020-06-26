@@ -5,6 +5,7 @@ import PropTypes from "prop-types";
 import SummaryComponent from "./SummaryComponent.jsx";
 import ErrorViewComponent from "../common/ErrorViewComponent.jsx";
 import CommonCompletionComponent from "../common/CommonCompletionComponent.jsx";
+import { Redirect } from "react-router-dom";
 
 class CompletionComponent extends CommonCompletionComponent {
   static propTypes = {
@@ -23,6 +24,7 @@ class CompletionComponent extends CommonCompletionComponent {
       loadingError: null,
       depsToRemove: [],
       depsToAdd: [],
+      completed: false,
     };
     this.endpoint = "/api/postrun";
     this.successRedirect = "/postrun/";
@@ -91,6 +93,7 @@ class CompletionComponent extends CommonCompletionComponent {
   }
 
   render() {
+    if (this.state.completed) return <Redirect to={this.successRedirect} />;
     return (
       <div>
         <h3>Edit postrun action metadata</h3>
