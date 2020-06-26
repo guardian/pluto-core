@@ -24,5 +24,6 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     bindActor[StorageScanner]("storage-scanner")
     bindActor[ValidateProject]("validate-project-actor")
     bindActor[CommissionStatusPropagator]("commission-status-propagator")
+    bindActor[RabbitMqPropagator]("rabbitmq-propagator")
   }
 }

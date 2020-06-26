@@ -118,6 +118,8 @@ libraryDependencies += "io.sentry" % "sentry-logback" % "1.7.30"
 //Reflections library for scanning classpath
 libraryDependencies += "org.reflections" % "reflections" % "0.9.11"
 
+libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.1.2"
+
 enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)

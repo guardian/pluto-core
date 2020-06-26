@@ -9,10 +9,11 @@ import models._
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.http.HttpEntity
+import play.api.http.{HttpEntity, Status}
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc.{ControllerComponents, EssentialAction, Request, ResponseHeader, Result}
-import services.CommissionStatusPropagator
+import services.RabbitMqPropagator.ChangeEvent
+import services.{ChangeOperation, CommissionStatusPropagator, CreateOperation, PlutoCommissionType, UpdateOperation}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
@@ -28,7 +29,8 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                                           dbConfigProvider:DatabaseConfigProvider,
                                           cacheImpl:SyncCacheApi,
                                           config:Configuration,
-                                         @Named("commission-status-propagator") commissionStatusPropagator:ActorRef)
+                                         @Named("commission-status-propagator") commissionStatusPropagator:ActorRef,
+                                         @Named("rabbitmq-propagator") rabbitMqPropagator:ActorRef)
   extends GenericDatabaseObjectControllerWithFilter[PlutoCommission,PlutoCommissionFilterTerms]
     with PlutoCommissionSerializer with PlutoCommissionFilterTermsSerializer {
 
@@ -58,6 +60,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         }.drop(startAt).take(limit).sortBy(_.title.asc.nullsLast).result.asTry
     )
 
+    // TODO not used? delete?
     def doCreateCommissionRecord(newEntry:PlutoCommission, uid:String) =
         shouldCreateEntry(newEntry) match {
             case Right(_) =>
@@ -93,7 +96,11 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
     }
 
     override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(
-        (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
+      (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
+      .flatMap {
+        case success@Success(commissionId) => sendToRabbitMq(CreateOperation, commissionId).map(_ => success)
+        case failed@Failure(_) => Future.apply(failed)
+      }
 
     override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
 
@@ -139,19 +146,28 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         }
     }
 
+    private def sendToRabbitMq(operation: ChangeOperation, commissionId: Int): Future[Unit] = {
+      selectid(commissionId) .map({
+        case Success(Seq(commission)) =>
+          rabbitMqPropagator ! ChangeEvent(PlutoCommissionType, operation, Json.stringify(plutoCommissionWrites.writes(commission)))
+        case _ => Failure(new RuntimeException("Failed to propagate changes"))
+      })
+    }
+
     def updateStatus(commissionId: Int) = IsAuthenticatedAsync(parse.json) {uid=> request=>
         import PlutoCommissionStatusUpdateRequestSerializer._
         request.body.validate[PlutoCommissionStatusUpdateRequest].fold(
             invalidErrs=>
                 Future(BadRequest(Json.obj("status"->"bad_request","detail"->JsError.toJson(invalidErrs)))),
             requiredUpdate=>
-                updateStatusColumn(commissionId, requiredUpdate.status).map(rowsUpdated=>{
+                updateStatusColumn(commissionId, requiredUpdate.status).flatMap(rowsUpdated=>{
                     if(rowsUpdated==0){
-                        NotFound(Json.obj("status"->"not_found","detail"->s"No commission with id $commissionId"))
+                        Future.apply(NotFound(Json.obj("status"->"not_found","detail"->s"No commission with id $commissionId")))
                     } else {
                         if(rowsUpdated>1) logger.error(s"Status update request for commission $commissionId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
                         commissionStatusPropagator ! CommissionStatusPropagator.CommissionStatusUpdate(commissionId, requiredUpdate.status)
-                        Ok(Json.obj("status"->"ok","detail"->"commission status updated"))
+                        sendToRabbitMq(UpdateOperation, commissionId)
+                          .map(_ => Ok(Json.obj("status"->"ok","detail"->"commission status updated")))
                     }
                 }).recover({
                     case err:Throwable=>
