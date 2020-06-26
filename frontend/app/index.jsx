@@ -88,56 +88,56 @@ class App extends React.Component {
     );
   }
 
-  async checkLogin() {
-    await this.setStatePromise({ loading: true });
-    try {
-      const signingKey = await loadInSigningKey();
-      const token = window.sessionStorage.getItem("pluto:access-token");
-      if (token) {
-        const decoded = await validateAndDecode(token, signingKey, undefined);
-        return this.setStatePromise({
-          isLoggedIn: true,
-          loading: false,
-          currentUsername: decoded.username,
-          isAdmin: true, //FIXME: temporary state so we can see stuff, need to get hold of the server-side config for adminClaim
-        });
-      } else {
-        return this.setStatePromise({
-          isLoggedIn: false,
-          loading: false,
-          currentUsername: "",
-          isAdmin: false,
-        });
-      }
-    } catch (err) {
-      console.error("Could not validate login: ", err);
-      return this.setStatePromise({
-        loading: false,
-        isAdmin: false,
-        currentUsername: "",
-        isLoggedIn: false,
-      });
-    }
-    // this.setState({ loading: true, haveChecked: true }, () =>
-    //   axios
-    //     .get("/api/isLoggedIn")
-    //     .then((response) => {
-    //       //200 response means we are logged in
-    //       this.setState({
-    //         isLoggedIn: true,
-    //         loading: false,
-    //         currentUsername: response.data.uid,
-    //         isAdmin: response.data.isAdmin,
-    //       });
-    //     })
-    //     .catch((error) => {
-    //       this.setState({
-    //         isLoggedIn: false,
-    //         loading: false,
-    //         currentUsername: "",
-    //       });
-    //     })
-    // );
+  checkLogin() {
+    // await this.setStatePromise({ loading: true });
+    // try {
+    //   const signingKey = await loadInSigningKey();
+    //   const token = window.sessionStorage.getItem("pluto:access-token");
+    //   if (token) {
+    //     const decoded = await validateAndDecode(token, signingKey, undefined);
+    //     return this.setStatePromise({
+    //       isLoggedIn: true,
+    //       loading: false,
+    //       currentUsername: decoded.username,
+    //       isAdmin: true, //FIXME: temporary state so we can see stuff, need to get hold of the server-side config for adminClaim
+    //     });
+    //   } else {
+    //     return this.setStatePromise({
+    //       isLoggedIn: false,
+    //       loading: false,
+    //       currentUsername: "",
+    //       isAdmin: false,
+    //     });
+    //   }
+    // } catch (err) {
+    //   console.error("Could not validate login: ", err);
+    //   return this.setStatePromise({
+    //     loading: false,
+    //     isAdmin: false,
+    //     currentUsername: "",
+    //     isLoggedIn: false,
+    //   });
+    // }
+    this.setState({ loading: true, haveChecked: true }, () =>
+      axios
+        .get("/api/isLoggedIn")
+        .then((response) => {
+          //200 response means we are logged in
+          this.setState({
+            isLoggedIn: true,
+            loading: false,
+            currentUsername: response.data.uid,
+            isAdmin: response.data.isAdmin,
+          });
+        })
+        .catch((error) => {
+          this.setState({
+            isLoggedIn: false,
+            loading: false,
+            currentUsername: "",
+          });
+        })
+    );
   }
 
   componentWillMount() {

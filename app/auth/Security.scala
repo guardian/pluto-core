@@ -30,7 +30,7 @@ import play.api.libs.typedmap.TypedKey
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 trait Security extends BaseController {
   implicit val cache:SyncCacheApi
@@ -135,10 +135,13 @@ trait Security extends BaseController {
       false //server-server never requires admin
     case Seq(None,Some(bearer))=>
       //FIXME: seems a bit rubbish to validate the token twice, once for login and once for admin
-      bearerTokenAuth.validateToken(bearer).toOption.flatMap(jwtClaims=> {
-        logger.debug(s"got claims: ${jwtClaims.toString}")
-        Option(jwtClaims.getStringClaim(bearerTokenAuth.isAdminClaimName()))
-      }) match {
+      val adminClaimContent = for {
+        tok <- bearerTokenAuth.extractAuthorization(bearer)
+        maybeClaims <- bearerTokenAuth.validateToken(tok).toOption
+        maybeAdminClaim <- Option(maybeClaims.getStringClaim(bearerTokenAuth.isAdminClaimName()))
+      } yield maybeAdminClaim
+
+      adminClaimContent match {
         case Some(stringValue)=>
           logger.debug(s"got value for isAdminClaim ${bearerTokenAuth.isAdminClaimName()}: $stringValue, downcasing and testing for 'true' or 'yes'")
           val downcased = stringValue.toLowerCase()

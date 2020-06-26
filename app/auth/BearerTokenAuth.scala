@@ -99,6 +99,7 @@ class BearerTokenAuth @Inject() (config:Configuration) {
         case Some(verifier) =>
           if (signedJWT.verify(verifier)) {
             logger.debug("verified JWT")
+            logger.debug(s"${signedJWT.getJWTClaimsSet.toJSONObject(true).toJSONString}")
             Success(signedJWT.getJWTClaimsSet)
           } else {
             Failure(new RuntimeException("Failed to validate JWT"))
