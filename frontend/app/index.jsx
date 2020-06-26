@@ -151,8 +151,9 @@ class App extends React.Component {
     this.setState(
       { currentUsername: userid, isAdmin: isAdmin, isLoggedIn: true },
       () => {
-        if (!isAdmin)
+        if (!isAdmin) {
           window.location.href = `${deploymentRootPath}/project/?mine`;
+        }
       }
     );
   }

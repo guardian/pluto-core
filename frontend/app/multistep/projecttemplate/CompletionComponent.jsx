@@ -21,7 +21,7 @@ class TemplateCompletionComponent extends React.Component {
     this.state = {
       inProgress: false,
       error: null,
-      completed: true,
+      completed: false,
     };
     this.confirmClicked = this.confirmClicked.bind(this);
   }
