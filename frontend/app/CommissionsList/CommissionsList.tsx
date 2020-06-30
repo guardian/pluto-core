@@ -92,7 +92,15 @@ const CommissionsList: React.FC = () => {
           </TableHead>
           <TableBody>
             {commissions.map(
-              ({ id, title, created, workingGroupId, status, owner }) => (
+              ({
+                id,
+                title,
+                projectCount,
+                created,
+                workingGroupId,
+                status,
+                owner,
+              }) => (
                 <TableRow
                   className={"table-row"}
                   key={id}
@@ -102,7 +110,7 @@ const CommissionsList: React.FC = () => {
                   hover
                 >
                   <TableCell>{title}</TableCell>
-                  <TableCell>TODO: Project count</TableCell>
+                  <TableCell>{projectCount}</TableCell>
                   <TableCell>{new Date(created).toLocaleString()}</TableCell>
                   <TableCell>
                     {workingGroups.get(workingGroupId) ?? "<Unknown>"}
