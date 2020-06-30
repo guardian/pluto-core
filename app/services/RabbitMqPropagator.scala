@@ -3,7 +3,8 @@ package services
 import akka.actor.{Actor, ActorRef, ActorSystem}
 import com.google.inject.Inject
 import com.rabbitmq.client.AMQP.Exchange
-import models.{PlutoCommission, PlutoModel}
+import javax.inject.Singleton
+import models.{PlutoCommission, PlutoModel, PlutoWorkingGroup}
 import play.api.libs.json.{Json, Writes}
 import play.api.{Configuration, Logger}
 
@@ -22,6 +23,7 @@ object RabbitMqPropagator {
  * Propagates model changes to rabbit mq for others to consume.
  *
  */
+@Singleton
 class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSystem) extends Actor {
   import RabbitMqPropagator._
   import com.newmotion.akka.rabbitmq._
@@ -54,7 +56,8 @@ class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSyst
 
   private def getRoute(model: PlutoModel, operation: ChangeOperation): String = {
     val modelPath = model match {
-      case _: PlutoCommission => "commisssion"
+      case _: PlutoCommission => "commission"
+      case _: PlutoWorkingGroup => "workinggroup"
     }
 
     List(rmqRouteBase, modelPath, operationPath(operation)).mkString(".")

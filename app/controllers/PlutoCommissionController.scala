@@ -12,8 +12,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.{HttpEntity, Status}
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc.{ControllerComponents, EssentialAction, Request, ResponseHeader, Result}
-import services.RabbitMqPropagator.ChangeEvent
-import services.{ChangeOperation, CommissionStatusPropagator, CreateOperation, UpdateOperation}
+import services.{CommissionStatusPropagator, CreateOperation, UpdateOperation}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
@@ -30,7 +29,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                                           cacheImpl:SyncCacheApi,
                                           config:Configuration,
                                          @Named("commission-status-propagator") commissionStatusPropagator:ActorRef,
-                                         @Named("rabbitmq-propagator") rabbitMqPropagator:ActorRef)
+                                         @Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef)
   extends GenericDatabaseObjectControllerWithFilter[PlutoCommission,PlutoCommissionFilterTerms]
     with PlutoCommissionSerializer with PlutoCommissionFilterTermsSerializer {
 
@@ -74,10 +73,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
 
     override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(
       (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
-      .flatMap {
-        case success@Success(commissionId) => sendToRabbitMq(CreateOperation, commissionId).map(_ => success)
-        case failed@Failure(_) => Future(failed)
-      }
+      .flatMap(id => sendToRabbitMq(CreateOperation, id))
 
     override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
 
@@ -121,13 +117,6 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
             val q = for {c <- TableQuery[PlutoCommissionRow] if c.id === commissionId} yield c.status
             q.update(newValue)
         }
-    }
-
-    private def sendToRabbitMq(operation: ChangeOperation, commissionId: Int): Future[Unit] = {
-      selectid(commissionId).map({
-        case Success(Seq(commission)) => rabbitMqPropagator ! ChangeEvent(commission, operation)
-        case _ => Failure(new RuntimeException("Failed to propagate changes"))
-      })
     }
 
     def updateStatus(commissionId: Int) = IsAuthenticatedAsync(parse.json) {uid=> request=>

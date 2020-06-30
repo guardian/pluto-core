@@ -1,5 +1,6 @@
 import com.google.inject.AbstractModule
-import helpers.{JythonRunner}
+import com.newmotion.akka.rabbitmq.ConnectionActor
+import helpers.JythonRunner
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import services.actors.{MessageProcessorActor, ProjectCreationActor}

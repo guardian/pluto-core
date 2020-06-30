@@ -11,16 +11,18 @@ import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 import akka.pattern.ask
 import auth.BearerTokenAuth
+import services.{CreateOperation, UpdateOperation}
 
 import scala.concurrent.Future
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
 @Singleton
 class PlutoWorkingGroupController @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
-                                             dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi)
+                                             dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi,
+                                             @Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef)
   extends GenericDatabaseObjectController[PlutoWorkingGroup] with PlutoWorkingGroupSerializer {
 
   implicit val timeout:akka.util.Timeout = 55 seconds
@@ -37,8 +39,8 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
   )
 
   override def insert(entry: PlutoWorkingGroup, uid: String): Future[Try[Int]] = db.run(
-    (TableQuery[PlutoWorkingGroupRow] returning TableQuery[PlutoWorkingGroupRow].map(_.id) += entry).asTry
-  )
+    (TableQuery[PlutoWorkingGroupRow] returning TableQuery[PlutoWorkingGroupRow].map(_.id) += entry).asTry)
+    .flatMap (id => sendToRabbitMq(CreateOperation, id))
 
   override def deleteid(requestedId: Int):Future[Try[Int]] = db.run(
     TableQuery[PlutoWorkingGroupRow].filter(_.id === requestedId).delete.asTry
@@ -50,6 +52,7 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
       case None=>entry.copy(id=Some(itemId))
     }
     db.run(TableQuery[PlutoWorkingGroupRow].filter(_.id===itemId).update(newRecord).asTry)
+      .flatMap(id => sendToRabbitMq(UpdateOperation, id))
   }
 
   /*these are handled through implict translation*/

@@ -1,5 +1,6 @@
 package controllers
 
+import akka.actor.ActorRef
 import play.api.libs.json._
 import play.api.mvc._
 
@@ -8,6 +9,9 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import auth.Security
 import exceptions.{AlreadyExistsException, BadDataException}
+import models.PlutoModel
+import services.ChangeOperation
+import services.RabbitMqPropagator.ChangeEvent
 
 /**
   * Simplified form of [[GenericDatabaseObjectControllerWithFilter]] which does not support filtering. This provides
@@ -233,4 +237,21 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends BaseController with
     else
       deleteAction(requestedId)
   }}
+
+  def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, tryId: Try[Int])(implicit rabbitMqPropagator: ActorRef,
+                                                                                       writes: Writes[N]): Future[Try[Int]] = {
+    tryId.map(id => sendToRabbitMq(operation, id))
+    Future(tryId)
+  }
+
+  def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, id: Int)(implicit rabbitMqPropagator: ActorRef,
+                                                                                  writes: Writes[N]): Future[Unit] = {
+    selectid(id).map({
+      case Success(Seq(commission : N)) => rabbitMqPropagator ! ChangeEvent(commission, operation)
+      case _ => {
+        logger.error("Failed to propagate changes")
+      }
+    })
+  }
+
 }
