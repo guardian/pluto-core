@@ -12,11 +12,6 @@ object RabbitMqPropagator {
 
   case class ChangeEvent(modelType: PlutoModel, operation: ChangeOperation, body: String) extends RabbitMqEvent with
     JacksonSerializable
-
-  object ChangeEvent {
-    def apply(modelType: PlutoModel, operation: ChangeOperation, body: String) = new ChangeEvent(modelType, operation, body)
-  }
-
 }
 /**
  * Propagates model changes to rabbit mq for others to consume.

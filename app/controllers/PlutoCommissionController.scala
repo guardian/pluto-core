@@ -60,29 +60,6 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         }.drop(startAt).take(limit).sortBy(_.title.asc.nullsLast).result.asTry
     )
 
-    // TODO not used? delete?
-    def doCreateCommissionRecord(newEntry:PlutoCommission, uid:String) =
-        shouldCreateEntry(newEntry) match {
-            case Right(_) =>
-                this.insert(newEntry, uid).map({
-                    case Success(result) =>
-                        logger.info(s"Successfully created commission record ${result.asInstanceOf[Int]} for ${newEntry.title}")
-                        Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
-                    case Failure(error) =>
-                        logger.error(error.toString)
-                        error match {
-                            case e: BadDataException =>
-                                Conflict(Json.obj("status" -> "error", "detail" -> e.toString))
-                            case e: AlreadyExistsException =>
-                                Conflict(Json.obj("status" -> "error", "detail" -> e.toString))
-                            case _ =>
-                                handleConflictErrors(error, "object", isInsert = true)
-                        }
-                })
-            case Left(errDetail) =>
-                Future(Conflict(Json.obj("status" -> "error", "detail" -> errDetail)))
-        }
-
     def calculateProjectCount(entries: Seq[PlutoCommission]): Future[ListMap[Int, Int]] = {
       val commissionIds = entries.flatMap(entry => entry.id)
       db.run (
@@ -99,7 +76,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
       (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
       .flatMap {
         case success@Success(commissionId) => sendToRabbitMq(CreateOperation, commissionId).map(_ => success)
-        case failed@Failure(_) => Future.apply(failed)
+        case failed@Failure(_) => Future(failed)
       }
 
     override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
@@ -162,7 +139,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
             requiredUpdate=>
                 updateStatusColumn(commissionId, requiredUpdate.status).flatMap(rowsUpdated=>{
                     if(rowsUpdated==0){
-                        Future.apply(NotFound(Json.obj("status"->"not_found","detail"->s"No commission with id $commissionId")))
+                        Future(NotFound(Json.obj("status"->"not_found","detail"->s"No commission with id $commissionId")))
                     } else {
                         if(rowsUpdated>1) logger.error(s"Status update request for commission $commissionId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
                         commissionStatusPropagator ! CommissionStatusPropagator.CommissionStatusUpdate(commissionId, requiredUpdate.status)
