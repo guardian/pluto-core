@@ -13,6 +13,8 @@ import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { getCommissionsOnPage, getWorkingGroupNameMap } from "./helpers";
 
+import "./CommissionsList.scss";
+
 const tableHeaderTitles = [
   "Title",
   "Projects",
@@ -31,6 +33,7 @@ const CommissionsList: React.FC = () => {
   );
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
+  const history = useHistory();
 
   useEffect(() => {
     const updateCommissions = async () => {
@@ -90,7 +93,14 @@ const CommissionsList: React.FC = () => {
           <TableBody>
             {commissions.map(
               ({ id, title, created, workingGroupId, status, owner }) => (
-                <TableRow key={id}>
+                <TableRow
+                  className={"table-row"}
+                  key={id}
+                  onClick={() => {
+                    history.push(`/commission/${id}`);
+                  }}
+                  hover
+                >
                   <TableCell>{title}</TableCell>
                   <TableCell>TODO: Project count</TableCell>
                   <TableCell>{new Date(created).toLocaleString()}</TableCell>
