@@ -31,13 +31,10 @@ class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSyst
   val rmqConnection: ActorRef = system.actorOf(ConnectionActor.props(rmqFactory), "pluto-core")
   val rmqChannel: ActorRef = rmqConnection.createChannel(ChannelActor.props(channelSetup))
   val rmqRouteBase = "core"
+  val rmqExchange = "pluto-core-model"
 
   def channelSetup(channel: Channel, self: ActorRef) = {
-    for (modelType <- List("commission")) {
-      for (operation <- List(CreateOperation, UpdateOperation)) {
-        channel.queueDeclare(getQueue(modelType, operation), false, false, false, null)
-      }
-    }
+    channel.exchangeDeclare(rmqExchange, "topic")
   }
 
   override def receive: Receive = {
@@ -49,12 +46,8 @@ class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSyst
 
     case ev@ChangeEvent(model: PlutoModel, operation) =>
       val route = getRoute(model, operation)
-      rmqChannel ! ChannelMessage(channel => channel.basicPublish("", route, null, ev.json.getBytes), dropIfNoChannel = false)
-      logger.info("RabbitMQ sent")
-  }
-
-  private def getQueue(model: String, operation: ChangeOperation): String = {
-    List(rmqRouteBase, model, operationPath(operation)).mkString(".")
+      rmqChannel ! ChannelMessage(channel => channel.basicPublish(rmqExchange, route, null, ev.json.getBytes), dropIfNoChannel = false)
+      sender() ! akka.actor.Status.Success(())
   }
 
   private def getRoute(model: PlutoModel, operation: ChangeOperation): String = {
