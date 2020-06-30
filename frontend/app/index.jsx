@@ -227,6 +227,7 @@ class App extends React.Component {
             />
             <Route path="/project/:itemid" component={TitleEditComponent} />
             <Route path="/project/" component={ProjectEntryList} />
+            {/* TODO: this should lead to the commission detail page */}
             <Route
               path="/commission/:itemid"
               component={(props) => (
