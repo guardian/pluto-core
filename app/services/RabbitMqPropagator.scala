@@ -2,6 +2,7 @@ package services
 
 import akka.actor.{Actor, ActorRef, ActorSystem}
 import com.google.inject.Inject
+import com.rabbitmq.client.AMQP.Exchange
 import models.{PlutoCommission, PlutoModel}
 import play.api.libs.json.{Json, Writes}
 import play.api.{Configuration, Logger}
@@ -20,20 +21,21 @@ object RabbitMqPropagator {
 /**
  * Propagates model changes to rabbit mq for others to consume.
  *
- * @param configuration
  */
 class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSystem) extends Actor {
   import RabbitMqPropagator._
   import com.newmotion.akka.rabbitmq._
+  import scala.concurrent.duration._
 
-  val logger = Logger(getClass)
+  val logger: Logger = Logger(getClass)
   val rmqFactory = new ConnectionFactory()
-  val rmqConnection: ActorRef = system.actorOf(ConnectionActor.props(rmqFactory), "pluto-core")
+  rmqFactory.setUri(configuration.get[String]("pluto.rabbitmq-uri"))
+  val rmqConnection: ActorRef = system.actorOf(ConnectionActor.props(rmqFactory, reconnectionDelay = 10.seconds), "pluto-core")
   val rmqChannel: ActorRef = rmqConnection.createChannel(ChannelActor.props(channelSetup))
   val rmqRouteBase = "core"
   val rmqExchange = "pluto-core-model"
 
-  def channelSetup(channel: Channel, self: ActorRef) = {
+  def channelSetup(channel: Channel, self: ActorRef): Exchange.DeclareOk = {
     channel.exchangeDeclare(rmqExchange, "topic")
   }
 
