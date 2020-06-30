@@ -3,7 +3,7 @@ package ProjectCreation
 import akka.actor.{ActorSystem, Props}
 import akka.pattern.ask
 import akka.testkit.TestProbe
-import models.{FileEntry, ProjectEntry, ProjectRequest, ProjectRequestFull}
+import models.{FileEntry, ProductionOffice, ProjectEntry, ProjectRequest, ProjectRequestFull}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
@@ -38,7 +38,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
 
       val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), None, None)
@@ -64,7 +64,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
 
       val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), None, None)
@@ -90,7 +90,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
 
       val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), None, None)
@@ -114,7 +114,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
 
       val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), None, None)
@@ -144,7 +144,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
 
       val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), Some(mockedProjectEntry), None)

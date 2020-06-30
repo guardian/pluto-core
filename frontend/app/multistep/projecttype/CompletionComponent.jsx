@@ -4,6 +4,7 @@ import axios from "axios";
 import SummaryComponent from "./SummaryComponent.jsx";
 import ErrorViewComponent from "../common/ErrorViewComponent.jsx";
 import CommonCompletionComponent from "../common/CommonCompletionComponent.jsx";
+import { Redirect } from "react-router-dom";
 
 class ProjectTypeCompletionComponent extends CommonCompletionComponent {
   static propTypes = {
@@ -20,6 +21,7 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
       inProgress: false,
       newId: null,
       error: null,
+      completed: false,
     };
     this.endpoint = "/api/projecttype"; // override this to the api endpoint that you want to hit
     this.successRedirect = "/type/"; //override this to the page to go to when successfully saved
@@ -79,6 +81,7 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
   }
 
   render() {
+    if (this.state.completed) return <Redirect to={this.successRedirect} />;
     return (
       <div>
         <h3>Set up project type</h3>

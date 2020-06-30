@@ -3,7 +3,7 @@ import java.time.LocalDateTime
 
 import akka.actor.{ActorSystem, Props}
 import akka.pattern.ask
-import models.{FileEntry, ProjectRequest, ProjectRequestFull}
+import models.{FileEntry, ProductionOffice, ProjectRequest, ProjectRequestFull}
 import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.test.WithApplication
@@ -36,7 +36,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       fileEntryBefore must beSuccessfulTry
       fileEntryBefore.get.length mustEqual 0
 
-      val maybeRq = Await.result(ProjectRequest("testfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
 
       val dateTime = LocalDateTime.now()
@@ -71,7 +71,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       fileEntryBefore must beSuccessfulTry
       fileEntryBefore.get.length mustEqual 0
 
-      val maybeRq = Await.result(ProjectRequest("testfile2",1,"Test project entry", 1, "test-user", None, None,false, false, false).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testfile2",1,"Test project entry", 1, "test-user", None, None,false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
 
       val dateTime = LocalDateTime.now()
@@ -103,7 +103,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
 
       val initialData = ProjectCreateTransientData(None, None, None)
 
-      val maybeRq = Await.result(ProjectRequest("project_to_delete",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("project_to_delete",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
 
       val dateTime = LocalDateTime.now()

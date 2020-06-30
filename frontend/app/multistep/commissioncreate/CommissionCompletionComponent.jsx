@@ -4,6 +4,7 @@ import ErrorViewComponent from "../common/ErrorViewComponent.jsx";
 import SummaryComponent from "./SummaryComponent.jsx";
 import axios from "axios";
 import moment from "moment";
+import { Redirect } from "react-router-dom";
 
 class CommissionCompletionComponent extends React.Component {
   static propTypes = {
@@ -22,6 +23,7 @@ class CommissionCompletionComponent extends React.Component {
       error: null,
       inProgress: false,
       createTime: moment().format("YYYY-MM-DD[T]HH:mm:ss.SSSZ"),
+      completed: false,
     };
     this.confirmClicked = this.confirmClicked.bind(this);
     this.requestContent = this.requestContent.bind(this);
@@ -50,9 +52,7 @@ class CommissionCompletionComponent extends React.Component {
         data: this.requestContent(),
       })
       .then(() => {
-        this.setState({ inProgress: false }, () =>
-          window.location.assign("/commission/")
-        );
+        this.setState({ inProgress: false, completed: true });
       })
       .catch((err) => {
         console.error(err);
@@ -68,26 +68,11 @@ class CommissionCompletionComponent extends React.Component {
   }
 
   confirmClicked(evt) {
-    this.setState({ inProgress: true }, () =>
-      axios
-        .request({
-          method: "POST",
-          url: "/api/prexit/commission",
-          data: this.requestContent(),
-        })
-        .then(() => {
-          this.setState({ inProgress: false }, () =>
-            window.location.assign("/commission/")
-          );
-        })
-        .catch((err) => {
-          console.error(err);
-          this.setState({ inProgress: false, error: err });
-        })
-    );
+    this.setState({ inProgress: true }, () => this.makeRequest());
   }
 
   render() {
+    if (this.state.completed) return <Redirect to="/commission/" />;
     return (
       <div>
         <h3>Create new commission</h3>

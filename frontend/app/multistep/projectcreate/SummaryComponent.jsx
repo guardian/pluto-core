@@ -20,6 +20,7 @@ class SummaryComponent extends React.Component {
     deletable: PropTypes.bool.isRequired,
     deep_archive: PropTypes.bool.isRequired,
     sensitive: PropTypes.bool.isRequired,
+    productionOffice: PropTypes.string.isRequired,
   };
 
   constructor(props) {
@@ -59,6 +60,10 @@ class SummaryComponent extends React.Component {
                 entryId={this.props.selectedWorkingGroupId}
               />
             </td>
+          </tr>
+          <tr>
+            <td>Production Office</td>
+            <td id="production-office">{this.props.productionOffice}</td>
           </tr>
           <tr>
             <td>Commission</td>

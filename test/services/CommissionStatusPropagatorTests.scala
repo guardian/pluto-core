@@ -75,11 +75,11 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
       println(s"inserting projects with parent $insertedRowId")
       db.run(
         (TableQuery[ProjectEntryRow] ++= Seq(
-          ProjectEntry(Some(1111),1,None,"TestNewProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.New),
-          ProjectEntry(Some(1112),1,None,"TestInProdProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.InProduction),
-          ProjectEntry(Some(1113),1,None,"TestHeldProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Held),
-          ProjectEntry(Some(1114),1,None,"TestCompletedProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Completed),
-          ProjectEntry(Some(1115),1,None,"TestKilledProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Killed),
+          ProjectEntry(Some(1111),1,None,"TestNewProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.New, ProductionOffice.Aus),
+          ProjectEntry(Some(1112),1,None,"TestInProdProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.InProduction, ProductionOffice.Aus),
+          ProjectEntry(Some(1113),1,None,"TestHeldProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Held, ProductionOffice.Aus),
+          ProjectEntry(Some(1114),1,None,"TestCompletedProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Completed, ProductionOffice.Aus),
+          ProjectEntry(Some(1115),1,None,"TestKilledProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Killed,ProductionOffice.Aus),
         ))
       )
     })

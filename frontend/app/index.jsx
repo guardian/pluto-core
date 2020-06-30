@@ -36,7 +36,7 @@ import NotLoggedIn from "./NotLoggedIn.jsx";
 
 import axios from "axios";
 
-import { library } from "@fortawesome/fontawesome-svg-core";
+import { config, library } from "@fortawesome/fontawesome-svg-core";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
 window.React = require("react");
@@ -45,8 +45,18 @@ import Raven from "raven-js";
 import ProjectValidationView from "./ProjectValidationView.jsx";
 import CommissionsList from "./CommissionsList/CommissionsList.tsx";
 import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx";
+import { loadInSigningKey, validateAndDecode } from "./JwtHelpers";
 
 library.add(faSearch);
+
+//this is set in the index.scala.html template file and gives us the value of deployment-root from the server config
+axios.defaults.baseURL = deploymentRootPath;
+axios.interceptors.request.use(function (config) {
+  const token = window.sessionStorage.getItem("pluto:access-token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  return config;
+});
 
 class App extends React.Component {
   constructor(props) {
@@ -72,7 +82,42 @@ class App extends React.Component {
       });
   }
 
+  setStatePromise(newState) {
+    return new Promise((resolve, reject) =>
+      this.setState(newState, () => resolve())
+    );
+  }
+
   checkLogin() {
+    // await this.setStatePromise({ loading: true });
+    // try {
+    //   const signingKey = await loadInSigningKey();
+    //   const token = window.sessionStorage.getItem("pluto:access-token");
+    //   if (token) {
+    //     const decoded = await validateAndDecode(token, signingKey, undefined);
+    //     return this.setStatePromise({
+    //       isLoggedIn: true,
+    //       loading: false,
+    //       currentUsername: decoded.username,
+    //       isAdmin: true, //FIXME: temporary state so we can see stuff, need to get hold of the server-side config for adminClaim
+    //     });
+    //   } else {
+    //     return this.setStatePromise({
+    //       isLoggedIn: false,
+    //       loading: false,
+    //       currentUsername: "",
+    //       isAdmin: false,
+    //     });
+    //   }
+    // } catch (err) {
+    //   console.error("Could not validate login: ", err);
+    //   return this.setStatePromise({
+    //     loading: false,
+    //     isAdmin: false,
+    //     currentUsername: "",
+    //     isLoggedIn: false,
+    //   });
+    // }
     this.setState({ loading: true, haveChecked: true }, () =>
       axios
         .get("/api/isLoggedIn")
@@ -106,7 +151,9 @@ class App extends React.Component {
     this.setState(
       { currentUsername: userid, isAdmin: isAdmin, isLoggedIn: true },
       () => {
-        if (!isAdmin) window.location.href = "/project/?mine";
+        if (!isAdmin) {
+          window.location.href = `${deploymentRootPath}/project/?mine`;
+        }
       }
     );
   }
@@ -267,7 +314,7 @@ class App extends React.Component {
 }
 
 render(
-  <BrowserRouter root="/">
+  <BrowserRouter basename={deploymentRootPath}>
     <App />
   </BrowserRouter>,
   document.getElementById("app")

@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 
 import akka.actor.{ActorSystem, Props}
 import akka.pattern.ask
-import models.{FileEntry, ProjectRequest, ProjectRequestFull}
+import models.{FileEntry, ProductionOffice, ProjectRequest, ProjectRequestFull}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
@@ -46,7 +46,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, storageHelper)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None,None)
@@ -76,7 +76,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, storageHelper)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None, None)
@@ -109,7 +109,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, mockedStorageHelper)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None, None)

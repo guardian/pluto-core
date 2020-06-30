@@ -63,7 +63,6 @@ describe("ProjectTypeCompletionComponent", () => {
 
     const button = rendered.find("button");
     button.simulate("click");
-    window.location.assign = sinon.spy();
 
     return moxios.wait(() => {
       try {
@@ -81,7 +80,9 @@ describe("ProjectTypeCompletionComponent", () => {
           response: { status: "ok" },
         })
         .then(() => {
-          assert(window.location.assign.calledWith("/type/"));
+          const redir = rendered.find("Redirect");
+          expect(redir.length).toEqual(1);
+          expect(redir.at(0).props().to).toEqual("/type/");
           done();
         })
         .catch((error) => {
@@ -104,7 +105,6 @@ describe("ProjectTypeCompletionComponent", () => {
 
     const button = rendered.find("button");
     button.simulate("click");
-    window.location.assign = sinon.spy();
 
     return moxios.wait(() => {
       try {
@@ -122,7 +122,9 @@ describe("ProjectTypeCompletionComponent", () => {
           response: { status: "ok" },
         })
         .then(() => {
-          assert(window.location.assign.calledWith("/type/"));
+          const redir = rendered.find("Redirect");
+          expect(redir.length).toEqual(1);
+          expect(redir.at(0).props().to).toEqual("/type/");
           done();
         })
         .catch((error) => {

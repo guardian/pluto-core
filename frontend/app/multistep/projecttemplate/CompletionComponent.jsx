@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import axios from "axios";
 import SummaryComponent from "./SummaryComponent.jsx";
 import ErrorViewComponent from "../common/ErrorViewComponent.jsx";
+import { Redirect } from "react-router-dom";
 
 class TemplateCompletionComponent extends React.Component {
   static propTypes = {
@@ -20,6 +21,7 @@ class TemplateCompletionComponent extends React.Component {
     this.state = {
       inProgress: false,
       error: null,
+      completed: false,
     };
     this.confirmClicked = this.confirmClicked.bind(this);
   }
@@ -33,9 +35,7 @@ class TemplateCompletionComponent extends React.Component {
     axios
       .put(restUrl, this.requestContent())
       .then((response) => {
-        this.setState({ inProgress: false }, () =>
-          window.location.assign("/template/")
-        );
+        this.setState({ inProgress: false, completed: true });
       })
       .catch((error) => {
         this.setState({ inProgress: false, error: error });
@@ -57,6 +57,7 @@ class TemplateCompletionComponent extends React.Component {
   }
 
   render() {
+    if (this.state.completed) return <Redirect to="/template/" />;
     return (
       <div>
         <h3>Set up project template</h3>

@@ -7,6 +7,7 @@ import DestinationStorageComponent from "./projectcreate/DestinationStorageCompo
 import ProjectCompletionComponent from "./projectcreate/CompletionComponent.jsx";
 import PlutoLinkageComponent from "./projectcreate/PlutoLinkageComponent.jsx";
 import MediaRulesComponent from "./projectcreate/MediaRulesComponent.jsx";
+import ProductionOfficeComponent from "./commissioncreate/ProductionOfficeComponent.jsx";
 
 class ProjectCreateMultistep extends React.Component {
   static propTypes = {};
@@ -28,6 +29,7 @@ class ProjectCreateMultistep extends React.Component {
       deletable: false,
       deep_archive: true,
       sensitive: false,
+      productionOffice: "UK",
     };
 
     this.templateSelectionUpdated = this.templateSelectionUpdated.bind(this);
@@ -58,7 +60,7 @@ class ProjectCreateMultistep extends React.Component {
     );
   }
 
-  componentWillMount() {
+  componentDidMount() {
     Promise.all([
       axios.get("/api/template"),
       axios.get("/api/storage"),
@@ -90,6 +92,25 @@ class ProjectCreateMultistep extends React.Component {
         console.error(error);
         this.setState({ lastError: error });
       });
+  }
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (prevState.selectedCommissionId !== this.state.selectedCommissionId) {
+      console.log("commission id changed, updating production office too");
+      axios
+        .get("/api/pluto/commission/" + this.state.selectedCommissionId)
+        .then((result) => {
+          this.setState({
+            productionOffice: result.data.result.productionOffice,
+          });
+        })
+        .catch((err) => {
+          console.log(
+            "Could not update production office from commission: ",
+            err
+          );
+        });
+    }
   }
 
   templateSelectionUpdated(newTemplate, cb) {
@@ -155,6 +176,18 @@ class ProjectCreateMultistep extends React.Component {
         ),
       },
       {
+        name: "Production Office",
+        component: (
+          <ProductionOfficeComponent
+            valueWasSet={(newValue) =>
+              this.setState({ productionOffice: newValue })
+            }
+            value={this.state.productionOffice}
+            extraText="  This should have been pre-set by your choice of commission but please check that it is correct before continuing"
+          />
+        ),
+      },
+      {
         name: "Media Rules",
         component: (
           <MediaRulesComponent
@@ -191,6 +224,7 @@ class ProjectCreateMultistep extends React.Component {
             deletable={this.state.deletable}
             deep_archive={this.state.deep_archive}
             sensitive={this.state.sensitive}
+            productionOffice={this.state.productionOffice}
           />
         ),
       },

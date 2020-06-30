@@ -92,7 +92,7 @@ class CreateProjectEntry @Inject() (@Named("message-processor-actor") messagePro
             val createTime = createRequest.createTime
             logger.info(s"Creating new project entry from $writtenFile")
             ProjectEntry
-              .createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime, rq.user, rq.workingGroupId, rq.commissionId, rq.existingVidispineId, rq.deletable, rq.deep_archive, rq.sensitive)
+              .createFromFile(writtenFile, rq.projectTemplate, rq.title, createTime, rq.user, rq.workingGroupId, rq.commissionId, rq.existingVidispineId, rq.deletable, rq.deep_archive, rq.sensitive, rq.productionOffice)
               .map({
                 case Success(createdProjectEntry) =>
                   logger.info(s"Project entry created as id ${createdProjectEntry.id}")
