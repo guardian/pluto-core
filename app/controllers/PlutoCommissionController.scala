@@ -13,7 +13,7 @@ import play.api.http.{HttpEntity, Status}
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc.{ControllerComponents, EssentialAction, Request, ResponseHeader, Result}
 import services.RabbitMqPropagator.ChangeEvent
-import services.{ChangeOperation, CommissionStatusPropagator, CreateOperation, PlutoCommissionType, UpdateOperation}
+import services.{ChangeOperation, CommissionStatusPropagator, CreateOperation, UpdateOperation}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
@@ -124,9 +124,8 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
     }
 
     private def sendToRabbitMq(operation: ChangeOperation, commissionId: Int): Future[Unit] = {
-      selectid(commissionId) .map({
-        case Success(Seq(commission)) =>
-          rabbitMqPropagator ! ChangeEvent(PlutoCommissionType, operation, Json.stringify(plutoCommissionWrites.writes(commission)))
+      selectid(commissionId).map({
+        case Success(Seq(commission)) => rabbitMqPropagator ! ChangeEvent(commission, operation)
         case _ => Failure(new RuntimeException("Failed to propagate changes"))
       })
     }

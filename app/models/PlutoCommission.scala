@@ -22,7 +22,7 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: Op
                             originalCommissionerName:Option[String], scheduledCompletion:Timestamp, owner:String,
                             notes:Option[String],
                             @JsonScalaEnumeration(classOf[ProductionOfficeMapper.EnumStatusType]) productionOffice:ProductionOffice.Value,
-                            originalTitle:Option[String]) {
+                            originalTitle:Option[String]) extends PlutoModel {
   private def logger = Logger(getClass)
 
   var projectCount: Option[Int] = None
