@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from "react";
 import {
+  Button,
+  Paper,
   Table,
-  TableHead,
   TableBody,
-  TableRow,
   TableCell,
   TableContainer,
-  Paper,
-  makeStyles,
+  TableHead,
+  TablePagination,
+  TableRow,
 } from "@material-ui/core";
-import { Link } from "react-router-dom";
-import { getCommissionsOnPage } from "./helpers";
+import React, { useEffect, useState } from "react";
+import { useHistory } from "react-router-dom";
+import { getCommissionsOnPage, getWorkingGroupNameMap } from "./helpers";
 
 const tableHeaderTitles = [
   "Title",
@@ -21,17 +22,43 @@ const tableHeaderTitles = [
   "Owner",
 ];
 
-const useStyles = makeStyles({
-  table: {
-    maxWidth: "100%",
-  },
-});
+const pageSizeOptions = [25, 50, 100];
 
 const CommissionsList: React.FC = () => {
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [workingGroups, setWorkingGroups] = useState<Map<number, string>>(
     new Map()
   );
+  const [page, setPage] = useState(0);
+  const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
+
+  useEffect(() => {
+    const updateCommissions = async () => {
+      const commissions = await getCommissionsOnPage({
+        page,
+        pageSize,
+      });
+      const workingGroups = await getWorkingGroupNameMap(commissions);
+      setCommissions(commissions);
+      setWorkingGroups(workingGroups);
+    };
+
+    updateCommissions();
+  }, [page, pageSize]);
+
+  const handleChangePage = (
+    _event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
+    newPage: number
+  ) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setRowsPerPage(+event.target.value);
+    setPage(0);
+  };
 
   // TODO: for use later?
   // const [uid, setUid] = useState(null);
@@ -48,22 +75,11 @@ const CommissionsList: React.FC = () => {
   //   }
   // }, []);
 
-  useEffect(() => {
-    getCommissionsOnPage({
-      setCommissions: (commissions) => setCommissions(commissions),
-      setWorkingGroups: (workingGroups) => setWorkingGroups(workingGroups),
-    }).catch((error) => {
-      console.error(error);
-    });
-  }, []);
-
-  const classes = useStyles();
-
   return (
-    <>
-      <Link to={"/commission/new"}>New</Link>
-      <TableContainer component={Paper}>
-        <Table className={classes.table}>
+    <Paper>
+      <Button href={"/commission/new"}>New</Button>
+      <TableContainer>
+        <Table>
           <TableHead>
             <TableRow>
               {tableHeaderTitles.map((title) => (
@@ -89,7 +105,21 @@ const CommissionsList: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
-    </>
+      <TablePagination
+        rowsPerPageOptions={pageSizeOptions}
+        component="div"
+        // FIXME: count = -1 causes the pagination component to be able to
+        // walk past the last page, which displays zero rows. Need an endpoint
+        // which returns the total, or is returned along the commissions data.
+        count={-1}
+        rowsPerPage={pageSize}
+        page={page}
+        onChangePage={handleChangePage}
+        onChangeRowsPerPage={handleChangeRowsPerPage}
+        // FIXME: remove when count is correct
+        labelDisplayedRows={({ from, to }) => `${from}-${to}`}
+      ></TablePagination>
+    </Paper>
   );
 };
 

@@ -45,9 +45,7 @@ export const getWorkingGroupNameMap = async (
   );
 
 interface GetCommissionsOnPageParams {
-  setCommissions: (commissions: Commission[]) => void;
-  setWorkingGroups: (workingGroups: Map<number, string>) => void;
-  pageOffset?: number;
+  page?: number;
   pageSize?: number;
   filterTerms?: string[];
 }
@@ -58,18 +56,17 @@ interface GetCommissionsOnPageParams {
  * @param params parameters to support pagination
  */
 export const getCommissionsOnPage = async ({
-  setCommissions,
-  setWorkingGroups,
-  pageOffset = 0,
-  pageSize = 20,
+  page = 0,
+  pageSize = 25,
   filterTerms,
-}: GetCommissionsOnPageParams) => {
-  const itemOffset = pageOffset * pageSize;
+}: GetCommissionsOnPageParams): Promise<Commission[]> => {
+  const itemOffset = page * pageSize;
   const {
     status,
     data: { result: commissions = [] },
   } = await (filterTerms
-    ? Axios.put(
+    ? // TODO: filter terms formatting?
+      Axios.put(
         `${API_COMMISSION_FILTER}?startAt=${itemOffset}&length=${pageSize}`,
         filterTerms
       )
@@ -79,9 +76,7 @@ export const getCommissionsOnPage = async ({
     throw new Error("unable to fetch commissions");
   }
 
-  const wgNameMap = await getWorkingGroupNameMap(commissions);
-  setCommissions(commissions);
-  setWorkingGroups(wgNameMap);
+  return commissions;
 };
 
 // TODO: for use later?
