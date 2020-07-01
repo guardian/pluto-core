@@ -9,7 +9,6 @@ do
     -H content-type:application/json \
     --data "$(cat <<EOF
 {
-  "id": ${RANDOM},
   "name": "Working Group ${i}",
   "commissioner": "Victor",
   "hide": false
