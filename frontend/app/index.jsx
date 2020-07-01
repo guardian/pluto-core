@@ -44,7 +44,7 @@ window.React = require("react");
 
 import Raven from "raven-js";
 import ProjectValidationView from "./ProjectValidationView.jsx";
-import CommissionsList from "./CommissionsList.jsx";
+import CommissionsList from "./CommissionsList/CommissionsList.tsx";
 import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx";
 import { loadInSigningKey, validateAndDecode } from "./JwtHelpers";
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
@@ -296,6 +296,7 @@ class App extends React.Component {
               />
               <Route path="/project/:itemid" component={TitleEditComponent} />
               <Route path="/project/" component={ProjectEntryList} />
+              {/* TODO: this should lead to the commission detail page */}
               <Route
                 path="/commission/:itemid"
                 component={(props) => (
