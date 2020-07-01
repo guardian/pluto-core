@@ -11,11 +11,13 @@ import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
-import play.api.libs.json.{JsError, JsResult, JsValue, Json}
+import play.api.libs.json.{JsError, JsResult, JsValue, Json, Writes}
 import play.api.mvc._
+import services.RabbitMqPropagator.ChangeEvent
 import services.{CreateOperation, UpdateOperation, ValidateProject}
 import services.actors.creation.{CreationMessage, GenericCreationActor}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateTransientData}
+import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
@@ -343,4 +345,50 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         Forbidden("")
     }
   }
+
+  def openProject(id: Int): EssentialAction = IsAuthenticatedAsync { uid=> { request => {
+    import models.EntryStatusMapper._
+
+    def updateProject() = TableQuery[ProjectEntryRow]
+      .filter(_.id === id)
+      .filter(_.status === EntryStatus.New)
+      .map(p => p.status).update(EntryStatus.InProduction).flatMap(rows => {
+        if (rows > 0) {
+          DBIOAction.from(sendToRabbitMq(UpdateOperation, id))
+        } else {
+          DBIOAction.successful(())
+        }
+      })
+
+    def updateCommission(commissionId: Option[Int]) = TableQuery[PlutoCommissionRow]
+      .filter(_.id === commissionId)
+      .filter(_.status === EntryStatus.New)
+      .map(p => p.status)
+      .update(EntryStatus.InProduction).flatMap(rows => {
+      if (rows > 0) {
+        TableQuery[PlutoCommissionRow].filter(_.id === commissionId).result.map({
+          case Seq(commission) =>
+            val commissionsSerializer = new PlutoCommissionSerializer {}
+            implicit val commissionsWrites: Writes[PlutoCommission] = commissionsSerializer.plutoCommissionWrites
+            rabbitMqPropagator ! ChangeEvent(commission, UpdateOperation)
+          case _ => ()
+        })
+      } else {
+        DBIOAction.successful(())
+      }
+    })
+
+    dbConfig.db.run(
+        TableQuery[ProjectEntryRow].filter(_.id === id).result.flatMap(result => {
+          val acts =
+            result match {
+            case Seq() => DBIOAction.successful(NotFound)
+            case Seq(project: ProjectEntry) =>
+              DBIO.seq(updateProject(), updateCommission(project.commissionId)).map(_ => Ok)
+            case _ => DBIOAction.successful(InternalServerError)
+          }
+          acts
+        })
+    ) }
+  } }
 }
