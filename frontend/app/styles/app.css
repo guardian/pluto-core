@@ -328,10 +328,10 @@ a:hover {
 }
 
 .button,
-button,
+button:not(.MuiButtonBase-root),
 input[type="submit"],
 input[type="reset"],
-input[type="button"] {
+input[type="button"]:not(.MuiButtonBase-root) {
   display: inline-block;
   height: 38px;
   padding: 0 30px;
@@ -351,15 +351,15 @@ input[type="button"] {
   box-sizing: border-box;
 }
 .button:hover,
-button:hover,
+button:not(.MuiButtonBase-root):hover,
 input[type="submit"]:hover,
 input[type="reset"]:hover,
-input[type="button"]:hover,
+input[type="button"]:not(.MuiButtonBase-root):hover,
 .button:focus,
-button:focus,
+button:not(.MuiButtonBase-root):focus,
 input[type="submit"]:focus,
 input[type="reset"]:focus,
-input[type="button"]:focus {
+input[type="button"]:not(.MuiButtonBase-root):focus {
   color: #333;
   border-color: #888;
   outline: 0;
@@ -392,7 +392,7 @@ input[type="email"],
 input[type="number"],
 input[type="date"],
 input[type="search"],
-input[type="text"],
+input[type="text"]:not(.MuiInputBase-input),
 input[type="tel"],
 input[type="url"],
 input[type="password"],
@@ -429,7 +429,7 @@ input[type="email"]:focus,
 input[type="number"]:focus,
 input[type="date"]:focus,
 input[type="search"]:focus,
-input[type="text"]:focus,
+input[type="text"]:not(.MuiInputBase-input):focus,
 input[type="tel"]:focus,
 input[type="url"]:focus,
 input[type="password"]:focus,
@@ -479,7 +479,7 @@ li {
   margin-bottom: 1rem;
 }
 
-button,
+button:not(.MuiButtonBase-root),
 .button {
   margin-bottom: 1rem;
 }

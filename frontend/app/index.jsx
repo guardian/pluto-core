@@ -47,6 +47,8 @@ import ProjectValidationView from "./ProjectValidationView.jsx";
 import CommissionsList from "./CommissionsList/CommissionsList.tsx";
 import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx";
 import { loadInSigningKey, validateAndDecode } from "./JwtHelpers";
+import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
+import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
 
 import "./styles/app.css";
 
@@ -199,6 +201,9 @@ class App extends React.Component {
             <Link to="/commission/">Commissions...</Link>
           </li>
           <li>
+            <Link to="/working-group/">Working Groups</Link>
+          </li>
+          <li>
             <Link to={this.state.isAdmin ? "/project/" : "/project/?mine"}>
               Projects...
             </Link>
@@ -302,6 +307,11 @@ class App extends React.Component {
                 )}
               />
               <Route path="/commission/" component={CommissionsList} />
+              <Route
+                path="/working-group/:itemid"
+                component={(props) => <WorkingGroup {...props} />}
+              />
+              <Route path="/working-group/" component={WorkingGroups} />
               <Route
                 path="/validate/project"
                 component={ProjectValidationView}
