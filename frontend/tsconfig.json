@@ -10,6 +10,6 @@
     "isolatedModules": true,
     "target": "ES2016"
   },
-  "include": ["./app/", "__tests__"],
+  "include": ["./app/", "__tests__", "types.d.ts"],
   "exclude": ["node_modules"]
 }
