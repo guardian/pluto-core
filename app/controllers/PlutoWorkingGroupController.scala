@@ -52,7 +52,7 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
       case None=>entry.copy(id=Some(itemId))
     }
     db.run(TableQuery[PlutoWorkingGroupRow].filter(_.id===itemId).update(newRecord).asTry)
-      .flatMap(id => sendToRabbitMq(UpdateOperation, id))
+        .flatMap(rows => sendToRabbitMq(UpdateOperation, itemId).map(_ => rows))
   }
 
   /*these are handled through implict translation*/

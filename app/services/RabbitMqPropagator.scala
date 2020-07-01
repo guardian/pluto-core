@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem}
 import com.google.inject.Inject
 import com.rabbitmq.client.AMQP.Exchange
 import javax.inject.Singleton
-import models.{PlutoCommission, PlutoModel, PlutoWorkingGroup}
+import models.{PlutoCommission, PlutoModel, PlutoWorkingGroup, ProjectEntry}
 import play.api.libs.json.{Json, Writes}
 import play.api.{Configuration, Logger}
 
@@ -49,18 +49,25 @@ class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSyst
      */
 
     case ev@ChangeEvent(model: PlutoModel, operation) =>
-      val route = getRoute(model, operation)
-      rmqChannel ! ChannelMessage(channel => channel.basicPublish(rmqExchange, route, null, ev.json.getBytes), dropIfNoChannel = false)
-      sender() ! akka.actor.Status.Success(())
+      getRoute(model, operation) match {
+        case Some(route) =>
+          rmqChannel ! ChannelMessage(channel => channel.basicPublish(rmqExchange, route, null, ev.json.getBytes), dropIfNoChannel = false)
+          sender() ! akka.actor.Status.Success(())
+        case None =>
+          logger.error("Unknown object type for rabbitmq propagation: " + model)
+          sender() ! akka.actor.Status.Failure(new IllegalArgumentException("Unknown object type for rabbitmq propagation"))
+      }
   }
 
-  private def getRoute(model: PlutoModel, operation: ChangeOperation): String = {
-    val modelPath = model match {
-      case _: PlutoCommission => "commission"
-      case _: PlutoWorkingGroup => "workinggroup"
+  private def getRoute(model: PlutoModel, operation: ChangeOperation): Option[String] = {
+    val modelPath: Option[String] = model match {
+      case _: PlutoCommission => Some("commission")
+      case _: PlutoWorkingGroup => Some("workinggroup")
+      case _: ProjectEntry => Some("project")
+      case _ => None
     }
 
-    List(rmqRouteBase, modelPath, operationPath(operation)).mkString(".")
+    modelPath.map(mp => List(rmqRouteBase, mp, operationPath(operation)).mkString("."))
   }
 
   def operationPath(operation: ChangeOperation): String = operation match {

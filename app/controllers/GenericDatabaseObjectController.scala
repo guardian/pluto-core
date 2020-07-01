@@ -254,4 +254,8 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends BaseController with
     })
   }
 
+  def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, model: N)(implicit rabbitMqPropagator: ActorRef,
+                                                                                  writes: Writes[N]): Unit =
+    rabbitMqPropagator ! ChangeEvent(model, operation)
+
 }
