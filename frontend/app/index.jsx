@@ -1,6 +1,7 @@
 import React from "react";
 import { render } from "react-dom";
-import { BrowserRouter, Link, Route, Switch, Redirect } from "react-router-dom";
+import { BrowserRouter, Link, Route, Switch } from "react-router-dom";
+import { ThemeProvider, createMuiTheme } from "@material-ui/core";
 import StorageListComponent from "./StorageComponent.jsx";
 
 import RootComponent from "./RootComponent.jsx";
@@ -47,7 +48,22 @@ import CommissionsList from "./CommissionsList/CommissionsList.tsx";
 import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx";
 import { loadInSigningKey, validateAndDecode } from "./JwtHelpers";
 
+import "./styles/app.css";
+
 library.add(faSearch);
+
+const theme = createMuiTheme({
+  typography: {
+    fontFamily: [
+      "Raleway",
+      '"Helvetica Neue"',
+      "Helvetica",
+      "Arial",
+      "sans-serif",
+    ].join(","),
+    fontWeight: 400,
+  },
+});
 
 //this is set in the index.scala.html template file and gives us the value of deployment-root from the server config
 axios.defaults.baseURL = deploymentRootPath;
@@ -234,81 +250,86 @@ class App extends React.Component {
     }
 
     return (
-      <div>
-        <div id="leftmenu" className="leftmenu">
-          {this.maybeLeftMenu()}
+      <ThemeProvider theme={theme}>
+        <div className="app">
+          <div id="leftmenu" className="leftmenu">
+            {this.maybeLeftMenu()}
+          </div>
+          <div id="mainbody" className="mainbody">
+            <Switch>
+              <Route
+                path="/storage/:itemid/delete"
+                component={StorageDeleteComponent}
+              />
+              <Route path="/storage/:itemid" component={StorageMultistep} />
+              <Route path="/storage/" component={StorageListComponent} />
+              <Route
+                path="/template/:itemid/delete"
+                component={ProjectTemplateDeleteComponent}
+              />
+              <Route
+                path="/template/:itemid"
+                component={ProjectTemplateMultistep}
+              />
+              <Route path="/template/" component={ProjectTemplateIndex} />
+              <Route
+                path="/file/:itemid/delete"
+                component={FileDeleteComponent}
+              />
+              <Route path="/file/:itemid" component={FileEntryList} />
+              <Route path="/file/" component={FileEntryList} />
+              <Route
+                path="/type/:itemid/delete"
+                component={TypeDeleteComponent}
+              />
+              <Route path="/type/:itemid" component={ProjectTypeMultistep} />
+              <Route path="/type/" component={ProjectTypeList} />
+              <Route path="/project/new" component={ProjectCreateMultistep} />
+              <Route
+                path="/project/:itemid/delete"
+                component={ProjectDeleteComponent}
+              />
+              <Route path="/project/:itemid" component={TitleEditComponent} />
+              <Route path="/project/" component={ProjectEntryList} />
+              {/* TODO: this should lead to the commission detail page */}
+              <Route
+                path="/commission/:itemid"
+                component={(props) => (
+                  <CommissionCreateMultistep
+                    match={props.match}
+                    userName={this.state.currentUsername}
+                  />
+                )}
+              />
+              <Route path="/commission/" component={CommissionsList} />
+              <Route
+                path="/validate/project"
+                component={ProjectValidationView}
+              />
+              <Route
+                path="/postrun/:itemid/delete"
+                component={PostrunDeleteComponent}
+              />
+              <Route path="/postrun/:itemid" component={PostrunMultistep} />
+              <Route path="/postrun/" component={PostrunList} />
+              <Route path="/defaults/" component={ServerDefaults} />
+              <Route
+                exact
+                path="/"
+                component={() => (
+                  <RootComponent
+                    onLoggedOut={this.onLoggedOut}
+                    onLoggedIn={this.onLoggedIn}
+                    currentUsername={this.state.currentUsername}
+                    isLoggedIn={this.state.isLoggedIn}
+                    isAdmin={this.state.isAdmin}
+                  />
+                )}
+              />
+            </Switch>
+          </div>
         </div>
-        <div id="mainbody" className="mainbody">
-          <Switch>
-            <Route
-              path="/storage/:itemid/delete"
-              component={StorageDeleteComponent}
-            />
-            <Route path="/storage/:itemid" component={StorageMultistep} />
-            <Route path="/storage/" component={StorageListComponent} />
-            <Route
-              path="/template/:itemid/delete"
-              component={ProjectTemplateDeleteComponent}
-            />
-            <Route
-              path="/template/:itemid"
-              component={ProjectTemplateMultistep}
-            />
-            <Route path="/template/" component={ProjectTemplateIndex} />
-            <Route
-              path="/file/:itemid/delete"
-              component={FileDeleteComponent}
-            />
-            <Route path="/file/:itemid" component={FileEntryList} />
-            <Route path="/file/" component={FileEntryList} />
-            <Route
-              path="/type/:itemid/delete"
-              component={TypeDeleteComponent}
-            />
-            <Route path="/type/:itemid" component={ProjectTypeMultistep} />
-            <Route path="/type/" component={ProjectTypeList} />
-            <Route path="/project/new" component={ProjectCreateMultistep} />
-            <Route
-              path="/project/:itemid/delete"
-              component={ProjectDeleteComponent}
-            />
-            <Route path="/project/:itemid" component={TitleEditComponent} />
-            <Route path="/project/" component={ProjectEntryList} />
-            {/* TODO: this should lead to the commission detail page */}
-            <Route
-              path="/commission/:itemid"
-              component={(props) => (
-                <CommissionCreateMultistep
-                  match={props.match}
-                  userName={this.state.currentUsername}
-                />
-              )}
-            />
-            <Route path="/commission/" component={CommissionsList} />
-            <Route path="/validate/project" component={ProjectValidationView} />
-            <Route
-              path="/postrun/:itemid/delete"
-              component={PostrunDeleteComponent}
-            />
-            <Route path="/postrun/:itemid" component={PostrunMultistep} />
-            <Route path="/postrun/" component={PostrunList} />
-            <Route path="/defaults/" component={ServerDefaults} />
-            <Route
-              exact
-              path="/"
-              component={() => (
-                <RootComponent
-                  onLoggedOut={this.onLoggedOut}
-                  onLoggedIn={this.onLoggedIn}
-                  currentUsername={this.state.currentUsername}
-                  isLoggedIn={this.state.isLoggedIn}
-                  isAdmin={this.state.isAdmin}
-                />
-              )}
-            />
-          </Switch>
-        </div>
-      </div>
+      </ThemeProvider>
     );
   }
 }
