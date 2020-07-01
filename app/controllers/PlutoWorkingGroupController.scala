@@ -29,7 +29,7 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
   implicit val cache:SyncCacheApi = cacheImpl
 
   override def selectall(startAt: Int, limit: Int): Future[Try[Seq[PlutoWorkingGroup]]] = db.run(
-    TableQuery[PlutoWorkingGroupRow].sortBy(_.name.asc.nullsLast).result.asTry
+    TableQuery[PlutoWorkingGroupRow].drop(startAt).take(limit).sortBy(_.name.asc.nullsLast).result.asTry
   )
 
   override def selectid(requestedId: Int): Future[Try[Seq[PlutoWorkingGroup]]] = db.run(
