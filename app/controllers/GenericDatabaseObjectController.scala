@@ -247,7 +247,7 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends BaseController with
   def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, id: Int)(implicit rabbitMqPropagator: ActorRef,
                                                                                   writes: Writes[N]): Future[Unit] = {
     selectid(id).map({
-      case Success(Seq(commission : N)) => rabbitMqPropagator ! ChangeEvent(commission, operation)
+      case Success(Seq(model : N)) => rabbitMqPropagator ! ChangeEvent(model, operation)
       case _ => {
         logger.error("Failed to propagate changes")
       }
