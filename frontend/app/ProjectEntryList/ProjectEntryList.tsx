@@ -18,7 +18,8 @@ import {
   TablePagination,
   TableSortLabel,
 } from "@material-ui/core";
-import { getProjectsOnPage, isLoggedIn } from "./helpers";
+import { getProjectsOnPage } from "./helpers";
+import { isLoggedIn } from "../utils/api";
 import { sortListByOrder, Order } from "../utils/utils";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";

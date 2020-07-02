@@ -14,9 +14,12 @@ import {
   SnackbarContent,
   TablePagination,
   TableSortLabel,
+  IconButton,
 } from "@material-ui/core";
+import DeleteIcon from "@material-ui/icons/Delete";
 import { getWorkingGroupsOnPage } from "./helpers";
 import { sortListByOrder, Order } from "../utils/utils";
+import { isLoggedIn } from "../utils/api";
 
 interface HeaderTitles {
   label: string;
@@ -26,6 +29,7 @@ interface HeaderTitles {
 const tableHeaderTitles: HeaderTitles[] = [
   { label: "Name", key: "name" },
   { label: "Commissioner", key: "commissioner" },
+  { label: "" },
 ];
 const useStyles = makeStyles({
   table: {
@@ -55,6 +59,7 @@ const pageSizeOptions = [25, 50, 100];
 
 interface WorkingGroupsStateTypes {
   success?: boolean;
+  editing?: boolean;
   name?: string;
 }
 
@@ -64,8 +69,11 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
   const classes = useStyles();
 
   const [workingGroups, setWorkingGroups] = useState<WorkingGroup[]>([]);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean | undefined>(false);
   const [name, setName] = useState<string | undefined>("");
+  const [isEditing, setIsEditing] = useState<boolean | undefined>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean | undefined>(false);
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
   const [order, setOrder] = useState<Order>("asc");
@@ -76,6 +84,7 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
       // Get history state
       setSuccess(props.location.state?.success);
       setName(props.location.state?.name);
+      setIsEditing(props.location.state?.editing);
 
       // Reset history state
       props.history.replace({
@@ -88,6 +97,17 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
       const workingGroups = await getWorkingGroupsOnPage({ page, pageSize });
       setWorkingGroups(workingGroups);
     };
+
+    const fetchWhoIsLoggedIn = async () => {
+      try {
+        const loggedIn = await isLoggedIn();
+        setIsAdmin(loggedIn.isAdmin);
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+
+    fetchWhoIsLoggedIn();
 
     fetchWorkingGroupsOnPage();
   }, [page, pageSize]);
@@ -122,6 +142,17 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
     setOrderBy(property);
   };
 
+  const getSuccessMessage = (): string => {
+    if (isEditing) {
+      return `Successfully updated Working Group: ${name}`;
+    }
+    if (isDeleting) {
+      return `Successfully deleted Working Group: ${name}`;
+    }
+
+    return `Successfully created Working Group: ${name}`;
+  };
+
   return (
     <>
       <Button
@@ -136,9 +167,9 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
           <Table className={classes.table}>
             <TableHead>
               <TableRow>
-                {tableHeaderTitles.map((title) => (
+                {tableHeaderTitles.map((title, index) => (
                   <TableCell
-                    key={title.label}
+                    key={title.label ? title.label : index}
                     sortDirection={orderBy === title.key ? order : false}
                   >
                     {title.key ? (
@@ -173,6 +204,20 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
                   >
                     <TableCell>{name}</TableCell>
                     <TableCell>{commissioner}</TableCell>
+                    <TableCell
+                      align={"right"}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {isAdmin && (
+                        <IconButton
+                          onClick={() =>
+                            props.history.push(`/working-group/${id}/delete`)
+                          }
+                        >
+                          <DeleteIcon></DeleteIcon>
+                        </IconButton>
+                      )}
+                    </TableCell>
                   </TableRow>
                 )
               )}
@@ -206,11 +251,7 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
           style={{
             backgroundColor: "#4caf50",
           }}
-          message={
-            <span id="client-snackbar">
-              Successfully created Working Group: {name}
-            </span>
-          }
+          message={<span id="client-snackbar">{getSuccessMessage()}</span>}
         />
       </Snackbar>
     </>

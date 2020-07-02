@@ -308,6 +308,10 @@ class App extends React.Component {
               />
               <Route path="/commission/" component={CommissionsList} />
               <Route
+                path="/working-group/:itemid/delete"
+                component={(props) => <WorkingGroup {...props} />}
+              />
+              <Route
                 path="/working-group/:itemid"
                 component={(props) => <WorkingGroup {...props} />}
               />

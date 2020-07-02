@@ -71,3 +71,44 @@ export const createWorkingGroup = async (
     throw error;
   }
 };
+
+export const updateWorkingGroup = async ({
+  id,
+  name,
+  commissioner,
+  hide,
+}: WorkingGroup): Promise<void> => {
+  try {
+    const { status } = await Axios.put<PlutoApiResponse<void>>(
+      `${API_WORKING_GROUP}/${id}`,
+      {
+        id,
+        name,
+        commissioner,
+        hide,
+      }
+    );
+
+    if (status !== 200) {
+      throw new Error(`Could not update working group ${id}. ${status}`);
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const deleteWorkingGroup = async (id: number): Promise<void> => {
+  try {
+    const { status } = await Axios.delete<PlutoApiResponse<void>>(
+      `${API_WORKING_GROUP}/${id}`
+    );
+
+    if (status !== 200) {
+      throw new Error(`Could not update working group ${id}. ${status}`);
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
