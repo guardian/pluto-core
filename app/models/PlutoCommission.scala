@@ -25,6 +25,7 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: Op
                             originalTitle:Option[String]) {
   private def logger = Logger(getClass)
 
+  var projectCount: Option[Int] = None
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
     * was set, then updates the database record and returns the same object. */
@@ -117,7 +118,16 @@ class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoComm
 trait PlutoCommissionSerializer extends TimestampSerialization {
   import EntryStatusMapper._
 
-  implicit val plutoCommissionWrites:Writes[PlutoCommission] = (
+  implicit val plutoCommissionWrites: Writes[PlutoCommission] =
+    (commission: PlutoCommission) => {
+      val tuple = plutoCommissionTupleWrites.writes(commission).as[JsObject]
+      commission.projectCount match {
+        case Some(count) => tuple .+ ("projectCount", JsNumber(count))
+        case None => tuple
+      }
+    }
+
+  val plutoCommissionTupleWrites:Writes[PlutoCommission] = (
     (JsPath \ "id").writeNullable[Int] and
       (JsPath \ "collectionId").writeNullable[Int] and
       (JsPath \ "siteId").writeNullable[String] and

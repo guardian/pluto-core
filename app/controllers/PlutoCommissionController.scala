@@ -17,6 +17,7 @@ import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
+import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,9 +35,18 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
     implicit val db = dbConfigProvider.get[PostgresProfile].db
     implicit val cache:SyncCacheApi = cacheImpl
 
-    override def selectall(startAt: Int, limit: Int): Future[Try[Seq[PlutoCommission]]] = db.run(
-      TableQuery[PlutoCommissionRow].drop(startAt).take(limit).sortBy(_.title.asc).result.asTry
-    )
+    override def selectall(startAt: Int, limit: Int): Future[Try[Seq[PlutoCommission]]] = {
+      val results: Future[Try[Seq[PlutoCommission]]] = db.run(
+        TableQuery[PlutoCommissionRow].drop(startAt).take(limit).sortBy(_.title.asc).result.asTry
+      )
+      results.flatMap {
+        case s@Success(commissions) => calculateProjectCount(commissions).map(counts => {
+          commissions.foreach(commission => commission.projectCount = commission.id.flatMap(counts.get).orElse(Some(0)))
+          s
+         }).recover(_ => s)
+        case f@Failure(_) => Future(f)
+      }
+    }
 
     override def selectid(requestedId: Int): Future[Try[Seq[PlutoCommission]]] = db.run(
       TableQuery[PlutoCommissionRow].filter(_.id===requestedId).result.asTry
@@ -69,6 +79,18 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
             case Left(errDetail) =>
                 Future(Conflict(Json.obj("status" -> "error", "detail" -> errDetail)))
         }
+
+    def calculateProjectCount(entries: Seq[PlutoCommission]): Future[ListMap[Int, Int]] = {
+      val commissionIds = entries.flatMap(entry => entry.id)
+      db.run (
+        TableQuery[ProjectEntryRow].filter(_.commission inSet commissionIds)
+          .groupBy(_.commission)
+          .map({ case (commissionId, group) => (commissionId, group.length) })
+          .result
+          .map(rows => rows.collect { case (Some(commissionId), count) => (commissionId, count) } )
+          .map(ListMap.from)
+      )
+    }
 
     override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(
         (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
