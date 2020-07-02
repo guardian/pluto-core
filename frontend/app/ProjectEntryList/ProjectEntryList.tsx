@@ -41,14 +41,10 @@ const tableHeaderTitles: HeaderTitles[] = [
 const useStyles = makeStyles({
   table: {
     maxWidth: "100%",
-    "& .MuiTableRow-hover": {
-      cursor: "pointer",
-    },
   },
   createButton: {
     display: "flex",
     marginLeft: "auto",
-    marginRight: "3.125rem",
     marginBottom: "0.625rem",
   },
   visuallyHidden: {
@@ -75,8 +71,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
-  const [order, setOrder] = React.useState<Order>("asc");
-  const [orderBy, setOrderBy] = React.useState<keyof Project>("title");
+  const [order, setOrder] = useState<Order>("asc");
+  const [orderBy, setOrderBy] = useState<keyof Project>("title");
 
   const fetchProjectsOnPage = async () => {
     const projects = await getProjectsOnPage({
@@ -175,94 +171,94 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
       >
         New
       </Button>
-      <TableContainer elevation={3} component={Paper}>
-        <Table className={classes.table}>
-          <TableHead>
-            <TableRow>
-              {tableHeaderTitles.map((title, index) => (
-                <TableCell
-                  key={title.label ? title.label : index}
-                  sortDirection={orderBy === title.key ? order : false}
-                >
-                  {title.key ? (
-                    <TableSortLabel
-                      active={orderBy === title.key}
-                      direction={orderBy === title.key ? order : "asc"}
-                      onClick={sortByColumn(title.key as keyof Project)}
-                    >
-                      {title.label}
-                      {orderBy === title.key ? (
-                        <span className={classes.visuallyHidden}>
-                          {order === "desc"
-                            ? "sorted descending"
-                            : "sorted ascending"}
-                        </span>
-                      ) : null}
-                    </TableSortLabel>
-                  ) : (
-                    title.label
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortListByOrder(projects, order, orderBy).map(
-              ({
-                id,
-                title,
-                commissionId,
-                created,
-                workingGroupId,
-                status,
-                user,
-              }) => (
-                <TableRow key={id}>
-                  <TableCell>{title}</TableCell>
-                  <TableCell>
-                    {<CommissionEntryView entryId={commissionId} />}
+      <Paper elevation={3}>
+        <TableContainer>
+          <Table className={classes.table}>
+            <TableHead>
+              <TableRow>
+                {tableHeaderTitles.map((title, index) => (
+                  <TableCell
+                    key={title.label ? title.label : index}
+                    sortDirection={orderBy === title.key ? order : false}
+                  >
+                    {title.key ? (
+                      <TableSortLabel
+                        active={orderBy === title.key}
+                        direction={orderBy === title.key ? order : "asc"}
+                        onClick={sortByColumn(title.key)}
+                      >
+                        {title.label}
+                        {orderBy === title.key && (
+                          <span className={classes.visuallyHidden}>
+                            {order === "desc"
+                              ? "sorted descending"
+                              : "sorted ascending"}
+                          </span>
+                        )}
+                      </TableSortLabel>
+                    ) : (
+                      title.label
+                    )}
                   </TableCell>
-                  <TableCell>
-                    {
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {sortListByOrder(projects, order, orderBy).map(
+                ({
+                  id,
+                  title,
+                  commissionId,
+                  created,
+                  workingGroupId,
+                  status,
+                  user,
+                }) => (
+                  <TableRow key={id}>
+                    <TableCell>{title}</TableCell>
+                    <TableCell>
+                      <CommissionEntryView entryId={commissionId} />
+                    </TableCell>
+                    <TableCell>
                       <span className="datetime">
                         {moment(created).format("DD/MM/YYYY HH:mm A")}
                       </span>
-                    }
-                  </TableCell>
-                  <TableCell>
-                    {<WorkingGroupEntryView entryId={workingGroupId} />}
-                  </TableCell>
-                  <TableCell>{status}</TableCell>
-                  <TableCell>{user}</TableCell>
-                  <TableCell>{getActionIcons(id)}</TableCell>
-                  <TableCell>
-                    {
-                      <a target="_blank" href={`pluto:openproject:${id}`}>
-                        Open project
-                      </a>
-                    }
-                  </TableCell>
-                </TableRow>
-              )
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                    </TableCell>
+                    <TableCell>
+                      <WorkingGroupEntryView entryId={workingGroupId} />
+                    </TableCell>
+                    <TableCell>{status}</TableCell>
+                    <TableCell>{user}</TableCell>
+                    <TableCell>{getActionIcons(id)}</TableCell>
+                    <TableCell>
+                      {
+                        <a target="_blank" href={`pluto:openproject:${id}`}>
+                          Open project
+                        </a>
+                      }
+                    </TableCell>
+                  </TableRow>
+                )
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      <TablePagination
-        rowsPerPageOptions={pageSizeOptions}
-        component="div"
-        // FIXME: count = -1 causes the pagination component to be able to
-        // walk past the last page, which displays zero rows. Need an endpoint
-        // which returns the total, or is returned along the commissions data.
-        count={-1}
-        rowsPerPage={pageSize}
-        page={page}
-        onChangePage={handleChangePage}
-        onChangeRowsPerPage={handleChangeRowsPerPage}
-        // FIXME: remove when count is correct
-        labelDisplayedRows={({ from, to }) => `${from}-${to}`}
-      ></TablePagination>
+        <TablePagination
+          rowsPerPageOptions={pageSizeOptions}
+          component="div"
+          // FIXME: count = -1 causes the pagination component to be able to
+          // walk past the last page, which displays zero rows. Need an endpoint
+          // which returns the total, or is returned along the commissions data.
+          count={-1}
+          rowsPerPage={pageSize}
+          page={page}
+          onChangePage={handleChangePage}
+          onChangeRowsPerPage={handleChangeRowsPerPage}
+          // FIXME: remove when count is correct
+          labelDisplayedRows={({ from, to }) => `${from}-${to}`}
+        ></TablePagination>
+      </Paper>
     </>
   );
 };

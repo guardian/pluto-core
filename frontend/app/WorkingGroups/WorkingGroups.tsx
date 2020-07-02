@@ -13,10 +13,20 @@ import {
   Snackbar,
   SnackbarContent,
   TablePagination,
+  TableSortLabel,
 } from "@material-ui/core";
 import { getWorkingGroupsOnPage } from "./helpers";
+import { sortListByOrder, Order } from "../utils/utils";
 
-const tableHeaderTitles = ["Name", "Commissioner"];
+interface HeaderTitles {
+  label: string;
+  key?: keyof WorkingGroup;
+}
+
+const tableHeaderTitles: HeaderTitles[] = [
+  { label: "Name", key: "name" },
+  { label: "Commissioner", key: "commissioner" },
+];
 const useStyles = makeStyles({
   table: {
     maxWidth: "100%",
@@ -25,7 +35,20 @@ const useStyles = makeStyles({
     },
   },
   createNewWorkingGroup: {
+    display: "flex",
+    marginLeft: "auto",
     marginBottom: "0.625rem",
+  },
+  visuallyHidden: {
+    border: 0,
+    clip: "rect(0 0 0 0)",
+    height: 1,
+    margin: -1,
+    overflow: "hidden",
+    padding: 0,
+    position: "absolute",
+    top: 20,
+    width: 1,
   },
 });
 const pageSizeOptions = [25, 50, 100];
@@ -45,6 +68,8 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
   const [name, setName] = useState<string | undefined>("");
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
+  const [order, setOrder] = useState<Order>("asc");
+  const [orderBy, setOrderBy] = useState<keyof WorkingGroup>("name");
 
   useEffect(() => {
     if (props.location.state) {
@@ -75,10 +100,6 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
     setSuccess(false);
   };
 
-  const onRowClick = (id: number): void => {
-    props.history.push(`/working-group/${id}`);
-  };
-
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
     newPage: number
@@ -93,6 +114,14 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
     setPage(0);
   };
 
+  const sortByColumn = (property: keyof WorkingGroup) => (
+    _event: React.MouseEvent<unknown>
+  ) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
+  };
+
   return (
     <>
       <Button
@@ -102,40 +131,70 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
       >
         New
       </Button>
-      <TableContainer elevation={3} component={Paper}>
-        <Table className={classes.table}>
-          <TableHead>
-            <TableRow>
-              {tableHeaderTitles.map((title) => (
-                <TableCell key={title}>{title}</TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {workingGroups.map(({ id, name, commissioner }) => (
-              <TableRow hover={true} onClick={() => onRowClick(id)} key={id}>
-                <TableCell>{name}</TableCell>
-                <TableCell>{commissioner}</TableCell>
+      <Paper elevation={3}>
+        <TableContainer>
+          <Table className={classes.table}>
+            <TableHead>
+              <TableRow>
+                {tableHeaderTitles.map((title) => (
+                  <TableCell
+                    key={title.label}
+                    sortDirection={orderBy === title.key ? order : false}
+                  >
+                    {title.key ? (
+                      <TableSortLabel
+                        active={orderBy === title.key}
+                        direction={orderBy === title.key ? order : "asc"}
+                        onClick={sortByColumn(title.key)}
+                      >
+                        {title.label}
+                        {orderBy === title.key && (
+                          <span className={classes.visuallyHidden}>
+                            {order === "desc"
+                              ? "sorted descending"
+                              : "sorted ascending"}
+                          </span>
+                        )}
+                      </TableSortLabel>
+                    ) : (
+                      title.label
+                    )}
+                  </TableCell>
+                ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {sortListByOrder(workingGroups, order, orderBy).map(
+                ({ id, name, commissioner }) => (
+                  <TableRow
+                    hover={true}
+                    onClick={() => props.history.push(`/working-group/${id}`)}
+                    key={id}
+                  >
+                    <TableCell>{name}</TableCell>
+                    <TableCell>{commissioner}</TableCell>
+                  </TableRow>
+                )
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      <TablePagination
-        rowsPerPageOptions={pageSizeOptions}
-        component="div"
-        // FIXME: count = -1 causes the pagination component to be able to
-        // walk past the last page, which displays zero rows. Need an endpoint
-        // which returns the total, or is returned along the commissions data.
-        count={-1}
-        rowsPerPage={pageSize}
-        page={page}
-        onChangePage={handleChangePage}
-        onChangeRowsPerPage={handleChangeRowsPerPage}
-        // FIXME: remove when count is correct
-        labelDisplayedRows={({ from, to }) => `${from}-${to}`}
-      ></TablePagination>
+        <TablePagination
+          rowsPerPageOptions={pageSizeOptions}
+          component="div"
+          // FIXME: count = -1 causes the pagination component to be able to
+          // walk past the last page, which displays zero rows. Need an endpoint
+          // which returns the total, or is returned along the commissions data.
+          count={-1}
+          rowsPerPage={pageSize}
+          page={page}
+          onChangePage={handleChangePage}
+          onChangeRowsPerPage={handleChangeRowsPerPage}
+          // FIXME: remove when count is correct
+          labelDisplayedRows={({ from, to }) => `${from}-${to}`}
+        ></TablePagination>
+      </Paper>
 
       <Snackbar
         open={success}
