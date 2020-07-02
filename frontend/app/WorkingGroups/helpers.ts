@@ -105,7 +105,7 @@ export const deleteWorkingGroup = async (id: number): Promise<void> => {
     );
 
     if (status !== 200) {
-      throw new Error(`Could not update working group ${id}. ${status}`);
+      throw new Error(`Could not delete working group ${id}. ${status}`);
     }
   } catch (error) {
     console.error(error);

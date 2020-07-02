@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { RouteComponentProps, matchPath } from "react-router-dom";
+import { RouteComponentProps } from "react-router-dom";
 import {
   TextField,
   Paper,
@@ -13,7 +13,6 @@ import {
   createWorkingGroup,
   getWorkingGroup,
   updateWorkingGroup,
-  deleteWorkingGroup,
 } from "./helpers";
 
 const useStyles = makeStyles({
@@ -33,9 +32,6 @@ const useStyles = makeStyles({
       width: "100%",
     },
   },
-  deleteButton: {
-    marginTop: "0.625rem",
-  },
 });
 
 interface WorkingGroupStateTypes {
@@ -53,7 +49,6 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
   const [commissioner, setCommissioner] = useState<string>("");
   const [failed, setFailed] = useState<boolean>(false);
   const [editing, setEditing] = useState<boolean>(false);
-  const [deleting, setDeleting] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -62,15 +57,7 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
       const setWorkingGroup = async (
         itemid: string | undefined
       ): Promise<void> => {
-        const isDeletePath = !!matchPath(
-          props.location.pathname,
-          "/working-group/:itemid/delete"
-        );
-        if (isDeletePath) {
-          setDeleting(isDeletePath);
-        } else {
-          setEditing(true);
-        }
+        setEditing(true);
 
         const id = Number(itemid);
         const workingGroup = await getWorkingGroup(id);
@@ -125,7 +112,16 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
 
         props.history.push({
           pathname: "/working-group",
-          state: { success: true, editing, name },
+          state: {
+            success: true,
+            editing,
+            workingGroup: {
+              id,
+              name,
+              commissioner,
+              hide,
+            },
+          },
         });
       } catch {
         setFailed(true);
@@ -133,86 +129,33 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
     }
   };
 
-  const onWorkingGroupDelete = async (
-    event: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ): Promise<void> => {
-    event.preventDefault();
-
-    try {
-      await deleteWorkingGroup(id);
-
-      setFailed(false);
-
-      props.history.push({
-        pathname: "/working-group",
-        state: { success: true, deleting, name },
-      });
-    } catch {
-      setFailed(true);
-    }
-  };
-
   const closeSnackBar = (): void => {
     setFailed(false);
-  };
-
-  const getFailedMessage = (): string => {
-    if (editing) {
-      return "Failed to update Working Group!";
-    }
-    if (deleting) {
-      return "Failed to delete Working Group!";
-    }
-
-    return "Failed to create Working Group!";
   };
 
   return (
     <>
       <Paper className={classes.root}>
         <>
-          {deleting ? (
-            <>
-              <Typography variant="h4" gutterBottom>
-                Delete Working Group
-              </Typography>
-              <Typography variant="subtitle1">Name {name}</Typography>
-              <Typography variant="subtitle2">
-                Commissioner {commissioner}
-              </Typography>
-              <div>
-                <Button
-                  className={classes.deleteButton}
-                  onClick={onWorkingGroupDelete}
-                  variant="contained"
-                  color="secondary"
-                >
-                  Delete
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <Typography variant="h4" gutterBottom>
-                {editing ? "Edit Working Group" : "Create a Working Group"}
-              </Typography>
-              <form onSubmit={onWorkingGroupSubmit}>
-                <TextField
-                  label="Name"
-                  value={name}
-                  onChange={onNameChanged}
-                ></TextField>
-                <TextField
-                  label="Commissioner"
-                  value={commissioner}
-                  onChange={onCommissionerChanged}
-                ></TextField>
-                <Button type="submit" variant="outlined">
-                  {editing ? "Save" : "Create"}
-                </Button>
-              </form>
-            </>
-          )}
+          <Typography variant="h4" gutterBottom>
+            {editing ? "Edit Working Group" : "Create a Working Group"}
+          </Typography>
+          <form onSubmit={onWorkingGroupSubmit}>
+            <TextField
+              label="Name"
+              value={name}
+              autoFocus
+              onChange={onNameChanged}
+            ></TextField>
+            <TextField
+              label="Commissioner"
+              value={commissioner}
+              onChange={onCommissionerChanged}
+            ></TextField>
+            <Button type="submit" variant="outlined">
+              {editing ? "Save" : "Create"}
+            </Button>
+          </form>
         </>
       </Paper>
       <Snackbar
@@ -225,7 +168,11 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
           style={{
             backgroundColor: "#f44336",
           }}
-          message={<span id="client-snackbar">{getFailedMessage()}</span>}
+          message={
+            <span id="client-snackbar">{`Failed to ${
+              editing ? "update" : "create"
+            } Working Group!`}</span>
+          }
         />
       </Snackbar>
     </>
