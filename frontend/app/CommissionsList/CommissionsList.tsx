@@ -66,8 +66,8 @@ const CommissionsList: React.FC = () => {
   );
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
-  const [order, setOrder] = React.useState<Order>("asc");
-  const [orderBy, setOrderBy] = React.useState<keyof Commission>("title");
+  const [order, setOrder] = useState<Order>("asc");
+  const [orderBy, setOrderBy] = useState<keyof Commission>("title");
 
   const history = useHistory();
 
@@ -150,13 +150,13 @@ const CommissionsList: React.FC = () => {
                         onClick={sortByColumn(title.key)}
                       >
                         {title.label}
-                        {orderBy === title.key ? (
+                        {orderBy === title.key && (
                           <span className={classes.visuallyHidden}>
                             {order === "desc"
                               ? "sorted descending"
                               : "sorted ascending"}
                           </span>
-                        ) : null}
+                        )}
                       </TableSortLabel>
                     ) : (
                       title.label

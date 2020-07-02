@@ -71,8 +71,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
-  const [order, setOrder] = React.useState<Order>("asc");
-  const [orderBy, setOrderBy] = React.useState<keyof Project>("title");
+  const [order, setOrder] = useState<Order>("asc");
+  const [orderBy, setOrderBy] = useState<keyof Project>("title");
 
   const fetchProjectsOnPage = async () => {
     const projects = await getProjectsOnPage({
@@ -188,13 +188,13 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
                         onClick={sortByColumn(title.key)}
                       >
                         {title.label}
-                        {orderBy === title.key ? (
+                        {orderBy === title.key && (
                           <span className={classes.visuallyHidden}>
                             {order === "desc"
                               ? "sorted descending"
                               : "sorted ascending"}
                           </span>
-                        ) : null}
+                        )}
                       </TableSortLabel>
                     ) : (
                       title.label
@@ -217,17 +217,15 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
                   <TableRow key={id}>
                     <TableCell>{title}</TableCell>
                     <TableCell>
-                      {<CommissionEntryView entryId={commissionId} />}
+                      <CommissionEntryView entryId={commissionId} />
                     </TableCell>
                     <TableCell>
-                      {
-                        <span className="datetime">
-                          {moment(created).format("DD/MM/YYYY HH:mm A")}
-                        </span>
-                      }
+                      <span className="datetime">
+                        {moment(created).format("DD/MM/YYYY HH:mm A")}
+                      </span>
                     </TableCell>
                     <TableCell>
-                      {<WorkingGroupEntryView entryId={workingGroupId} />}
+                      <WorkingGroupEntryView entryId={workingGroupId} />
                     </TableCell>
                     <TableCell>{status}</TableCell>
                     <TableCell>{user}</TableCell>

@@ -68,8 +68,8 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
   const [name, setName] = useState<string | undefined>("");
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
-  const [order, setOrder] = React.useState<Order>("asc");
-  const [orderBy, setOrderBy] = React.useState<keyof WorkingGroup>("name");
+  const [order, setOrder] = useState<Order>("asc");
+  const [orderBy, setOrderBy] = useState<keyof WorkingGroup>("name");
 
   useEffect(() => {
     if (props.location.state) {
@@ -148,13 +148,13 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
                         onClick={sortByColumn(title.key)}
                       >
                         {title.label}
-                        {orderBy === title.key ? (
+                        {orderBy === title.key && (
                           <span className={classes.visuallyHidden}>
                             {order === "desc"
                               ? "sorted descending"
                               : "sorted ascending"}
                           </span>
-                        ) : null}
+                        )}
                       </TableSortLabel>
                     ) : (
                       title.label
