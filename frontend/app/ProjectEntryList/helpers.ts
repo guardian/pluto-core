@@ -2,7 +2,7 @@ import Axios from "axios";
 
 const API = "/api";
 const API_PROJECTS = `${API}/project`;
-const API_PROJECTS_FILTER = `${API}/project/list`;
+const API_PROJECTS_FILTER = `${API_PROJECTS}/list`;
 const API_IS_LOGGED_IN = `${API}/isLoggedIn`;
 
 interface ProjectsOnPage {

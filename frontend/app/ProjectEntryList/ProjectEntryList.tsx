@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import ProjectEntryFilterComponent from "../filter/ProjectEntryFilterComponent.jsx";
 import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView.jsx";
 import CommissionEntryView from "../EntryViews/CommissionEntryView.jsx";
-import { Link, RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps } from "react-router-dom";
 import moment from "moment";
 import {
   Table,
@@ -13,19 +13,30 @@ import {
   TableContainer,
   Paper,
   makeStyles,
+  Button,
+  IconButton,
   TablePagination,
+  TableSortLabel,
 } from "@material-ui/core";
 import { getProjectsOnPage, isLoggedIn } from "./helpers";
+import { sortListByOrder, Order } from "../utils/utils";
+import EditIcon from "@material-ui/icons/Edit";
+import DeleteIcon from "@material-ui/icons/Delete";
 
-const tableHeaderTitles = [
-  "Project title",
-  "Commission title",
-  "Created",
-  "Group",
-  "Status",
-  "Owner",
-  "",
-  "Open",
+interface HeaderTitles {
+  label: string;
+  key?: keyof Project;
+}
+
+const tableHeaderTitles: HeaderTitles[] = [
+  { label: "Project title", key: "title" },
+  { label: "Commission title", key: "commissionId" },
+  { label: "Created", key: "created" },
+  { label: "Group", key: "workingGroupId" },
+  { label: "Status", key: "status" },
+  { label: "Owner", key: "user" },
+  { label: "" },
+  { label: "Open" },
 ];
 const useStyles = makeStyles({
   table: {
@@ -33,6 +44,23 @@ const useStyles = makeStyles({
     "& .MuiTableRow-hover": {
       cursor: "pointer",
     },
+  },
+  createButton: {
+    display: "flex",
+    marginLeft: "auto",
+    marginRight: "3.125rem",
+    marginBottom: "0.625rem",
+  },
+  visuallyHidden: {
+    border: 0,
+    clip: "rect(0 0 0 0)",
+    height: 1,
+    margin: -1,
+    overflow: "hidden",
+    padding: 0,
+    position: "absolute",
+    top: 20,
+    width: 1,
   },
 });
 const pageSizeOptions = [25, 50, 100];
@@ -47,6 +75,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
+  const [order, setOrder] = React.useState<Order>("asc");
+  const [orderBy, setOrderBy] = React.useState<keyof Project>("title");
 
   const fetchProjectsOnPage = async () => {
     const projects = await getProjectsOnPage({
@@ -81,12 +111,16 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
 
     return (
       <span className="icons" style={{ display: isAdmin ? "inherit" : "none" }}>
-        <Link to={"/" + componentName + "/" + id}>
-          <img className="smallicon" src="/assets/images/edit.png" />
-        </Link>
-        <Link to={"/" + componentName + "/" + id + "/delete"}>
-          <img className="smallicon" src="/assets/images/delete.png" />
-        </Link>
+        <IconButton
+          onClick={() => props.history.push(`/${componentName}/${id}`)}
+        >
+          <EditIcon></EditIcon>
+        </IconButton>
+        <IconButton
+          onClick={() => props.history.push(`/${componentName}/${id}/delete`)}
+        >
+          <DeleteIcon></DeleteIcon>
+        </IconButton>
       </span>
     );
   };
@@ -123,25 +157,57 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
     setPage(0);
   };
 
+  const sortByColumn = (property: keyof Project) => (
+    _event: React.MouseEvent<unknown>
+  ) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
+  };
+
   return (
     <>
       {getFilterComponent()}
-      <span className="banner-control">
-        <button id="newElementButton" onClick={newElementCallback}>
-          New
-        </button>
-      </span>
+      <Button
+        className={classes.createButton}
+        variant="outlined"
+        onClick={newElementCallback}
+      >
+        New
+      </Button>
       <TableContainer elevation={3} component={Paper}>
         <Table className={classes.table}>
           <TableHead>
             <TableRow>
               {tableHeaderTitles.map((title, index) => (
-                <TableCell key={title ? title : index}>{title}</TableCell>
+                <TableCell
+                  key={title.label ? title.label : index}
+                  sortDirection={orderBy === title.key ? order : false}
+                >
+                  {title.key ? (
+                    <TableSortLabel
+                      active={orderBy === title.key}
+                      direction={orderBy === title.key ? order : "asc"}
+                      onClick={sortByColumn(title.key as keyof Project)}
+                    >
+                      {title.label}
+                      {orderBy === title.key ? (
+                        <span className={classes.visuallyHidden}>
+                          {order === "desc"
+                            ? "sorted descending"
+                            : "sorted ascending"}
+                        </span>
+                      ) : null}
+                    </TableSortLabel>
+                  ) : (
+                    title.label
+                  )}
+                </TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
-            {projects.map(
+            {sortListByOrder(projects, order, orderBy).map(
               ({
                 id,
                 title,
@@ -171,7 +237,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
                   <TableCell>{getActionIcons(id)}</TableCell>
                   <TableCell>
                     {
-                      <a target="_blank" href={"pluto:openproject:" + id}>
+                      <a target="_blank" href={`pluto:openproject:${id}`}>
                         Open project
                       </a>
                     }
