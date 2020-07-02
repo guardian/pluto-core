@@ -8,7 +8,7 @@ import RootComponent from "./RootComponent.jsx";
 
 import ProjectTypeMultistep from "./multistep/ProjectTypeMultistep.jsx";
 import FileEntryList from "./FileEntryList.jsx";
-import ProjectEntryList from "./ProjectEntryList.jsx";
+import ProjectEntryList from "./ProjectEntryList/ProjectEntryList.tsx";
 import ProjectTypeList from "./ProjectTypeList.jsx";
 
 import FileDeleteComponent from "./delete/FileDeleteComponent.jsx";
