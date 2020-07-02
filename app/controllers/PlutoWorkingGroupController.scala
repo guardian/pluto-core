@@ -40,7 +40,9 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
     (TableQuery[PlutoWorkingGroupRow] returning TableQuery[PlutoWorkingGroupRow].map(_.id) += entry).asTry
   )
 
-  override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
+  override def deleteid(requestedId: Int):Future[Try[Int]] = db.run(
+    TableQuery[PlutoWorkingGroupRow].filter(_.id === requestedId).delete.asTry
+  )
 
   override def dbupdate(itemId: Int, entry:PlutoWorkingGroup):Future[Try[Int]] = {
     val newRecord = entry.id match {
