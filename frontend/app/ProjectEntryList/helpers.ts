@@ -3,7 +3,6 @@ import Axios from "axios";
 const API = "/api";
 const API_PROJECTS = `${API}/project`;
 const API_PROJECTS_FILTER = `${API_PROJECTS}/list`;
-const API_IS_LOGGED_IN = `${API}/isLoggedIn`;
 
 interface ProjectsOnPage {
   page?: number;
@@ -36,21 +35,6 @@ export const getProjectsOnPage = async ({
     }
 
     throw new Error(`Could not retrieve projects. ${status}`);
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-};
-
-export const isLoggedIn = async (): Promise<IsLoggedIn> => {
-  try {
-    const { status, data } = await Axios.get<IsLoggedIn>(`${API_IS_LOGGED_IN}`);
-
-    if (status === 200) {
-      return data;
-    }
-
-    throw new Error(`Could not retrieve who is logged in. ${status}`);
   } catch (error) {
     console.error(error);
     throw error;

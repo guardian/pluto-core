@@ -14,9 +14,17 @@ import {
   SnackbarContent,
   TablePagination,
   TableSortLabel,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@material-ui/core";
-import { getWorkingGroupsOnPage } from "./helpers";
+import DeleteIcon from "@material-ui/icons/Delete";
+import { getWorkingGroupsOnPage, deleteWorkingGroup } from "./helpers";
 import { sortListByOrder, Order } from "../utils/utils";
+import { isLoggedIn } from "../utils/api";
 
 interface HeaderTitles {
   label: string;
@@ -26,6 +34,7 @@ interface HeaderTitles {
 const tableHeaderTitles: HeaderTitles[] = [
   { label: "Name", key: "name" },
   { label: "Commissioner", key: "commissioner" },
+  { label: "" },
 ];
 const useStyles = makeStyles({
   table: {
@@ -55,7 +64,8 @@ const pageSizeOptions = [25, 50, 100];
 
 interface WorkingGroupsStateTypes {
   success?: boolean;
-  name?: string;
+  editing?: boolean;
+  workingGroup?: WorkingGroup;
 }
 
 type WorkingGroupsProps = RouteComponentProps<{}, {}, WorkingGroupsStateTypes>;
@@ -64,8 +74,17 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
   const classes = useStyles();
 
   const [workingGroups, setWorkingGroups] = useState<WorkingGroup[]>([]);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean | undefined>(false);
-  const [name, setName] = useState<string | undefined>("");
+  const [failedToDelete, setFailedToDelete] = useState<boolean | undefined>(
+    false
+  );
+  const [updatingWorkingGroup, setUpdatingWorkingGroup] = useState<
+    WorkingGroup | undefined
+  >(undefined);
+  const [isEditing, setIsEditing] = useState<boolean | undefined>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
   const [order, setOrder] = useState<Order>("asc");
@@ -75,7 +94,8 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
     if (props.location.state) {
       // Get history state
       setSuccess(props.location.state?.success);
-      setName(props.location.state?.name);
+      setUpdatingWorkingGroup(props.location.state?.workingGroup);
+      setIsEditing(props.location.state?.editing);
 
       // Reset history state
       props.history.replace({
@@ -89,15 +109,22 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
       setWorkingGroups(workingGroups);
     };
 
+    const fetchWhoIsLoggedIn = async () => {
+      try {
+        const loggedIn = await isLoggedIn();
+        setIsAdmin(loggedIn.isAdmin);
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+
+    fetchWhoIsLoggedIn();
+
     fetchWorkingGroupsOnPage();
   }, [page, pageSize]);
 
   const onNewWorkingGroup = (): void => {
     props.history.push("/working-group/new");
-  };
-
-  const closeSnackBar = (): void => {
-    setSuccess(false);
   };
 
   const handleChangePage = (
@@ -122,6 +149,36 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
     setOrderBy(property);
   };
 
+  const closeDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const onDeleteWorkingGroup = async () => {
+    closeDialog();
+
+    try {
+      const workingGroupId = updatingWorkingGroup?.id as number;
+      await deleteWorkingGroup(workingGroupId);
+      setWorkingGroups(
+        workingGroups.filter((group) => group.id !== workingGroupId)
+      );
+
+      setSuccess(true);
+    } catch {
+      setFailedToDelete(true);
+    }
+  };
+
+  const closeSnackBarSuccess = (): void => {
+    setSuccess(false);
+    setIsEditing(false);
+  };
+
+  const closeSnackBarFailed = (): void => {
+    setFailedToDelete(false);
+    setIsDeleting(false);
+  };
+
   return (
     <>
       <Button
@@ -136,9 +193,9 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
           <Table className={classes.table}>
             <TableHead>
               <TableRow>
-                {tableHeaderTitles.map((title) => (
+                {tableHeaderTitles.map((title, index) => (
                   <TableCell
-                    key={title.label}
+                    key={title.label ? title.label : index}
                     sortDirection={orderBy === title.key ? order : false}
                   >
                     {title.key ? (
@@ -165,7 +222,7 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
             </TableHead>
             <TableBody>
               {sortListByOrder(workingGroups, order, orderBy).map(
-                ({ id, name, commissioner }) => (
+                ({ id, name, commissioner, hide }) => (
                   <TableRow
                     hover={true}
                     onClick={() => props.history.push(`/working-group/${id}`)}
@@ -173,6 +230,25 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
                   >
                     <TableCell>{name}</TableCell>
                     <TableCell>{commissioner}</TableCell>
+                    <TableCell align={"right"}>
+                      {isAdmin && (
+                        <IconButton
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setUpdatingWorkingGroup({
+                              id,
+                              name,
+                              commissioner,
+                              hide,
+                            });
+                            setIsDeleting(true);
+                            setOpenDialog(true);
+                          }}
+                        >
+                          <DeleteIcon></DeleteIcon>
+                        </IconButton>
+                      )}
+                    </TableCell>
                   </TableRow>
                 )
               )}
@@ -196,10 +272,31 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
         ></TablePagination>
       </Paper>
 
+      <Dialog
+        open={openDialog}
+        onClose={closeDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Delete Working Group</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete Working Group "
+            {updatingWorkingGroup?.name}"?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>Cancel</Button>
+          <Button color="secondary" onClick={onDeleteWorkingGroup}>
+            Ok
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={success}
         autoHideDuration={4000}
-        onClose={closeSnackBar}
+        onClose={closeSnackBarSuccess}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
         <SnackbarContent
@@ -207,8 +304,25 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
             backgroundColor: "#4caf50",
           }}
           message={
+            <span id="client-snackbar">{`Successfully ${
+              isDeleting ? "deleted" : isEditing ? "updated" : "created"
+            } Working Group: "${updatingWorkingGroup?.name}"`}</span>
+          }
+        />
+      </Snackbar>
+      <Snackbar
+        open={failedToDelete}
+        autoHideDuration={4000}
+        onClose={closeSnackBarFailed}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <SnackbarContent
+          style={{
+            backgroundColor: "#f44336",
+          }}
+          message={
             <span id="client-snackbar">
-              Successfully created Working Group: {name}
+              {`Failed to delete Working Group "${updatingWorkingGroup?.name}"`}
             </span>
           }
         />

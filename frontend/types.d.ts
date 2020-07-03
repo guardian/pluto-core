@@ -5,6 +5,7 @@ interface CreateWorkingGroup {
 
 interface WorkingGroup extends CreateWorkingGroup {
   id: number;
+  hide: boolean;
 }
 
 interface Project {
