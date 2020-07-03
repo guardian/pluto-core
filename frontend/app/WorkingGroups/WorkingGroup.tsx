@@ -5,8 +5,6 @@ import {
   Paper,
   Button,
   Typography,
-  Snackbar,
-  SnackbarContent,
   makeStyles,
 } from "@material-ui/core";
 import {
@@ -14,6 +12,9 @@ import {
   getWorkingGroup,
   updateWorkingGroup,
 } from "./helpers";
+import SystemNotification, {
+  SystemNotificationKind,
+} from "../SystemNotification";
 
 const useStyles = makeStyles({
   root: {
@@ -47,7 +48,6 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
   const [hide, setHide] = useState<boolean>(false);
   const [name, setName] = useState<string>("");
   const [commissioner, setCommissioner] = useState<string>("");
-  const [failed, setFailed] = useState<boolean>(false);
   const [editing, setEditing] = useState<boolean>(false);
 
   useEffect(() => {
@@ -108,29 +108,21 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
           });
         }
 
-        setFailed(false);
+        SystemNotification.open(
+          SystemNotificationKind.Success,
+          `Successfully ${
+            editing ? "updated" : "created"
+          } Working Group: "${name}"`
+        );
 
-        props.history.push({
-          pathname: "/working-group",
-          state: {
-            success: true,
-            editing,
-            workingGroup: {
-              id,
-              name,
-              commissioner,
-              hide,
-            },
-          },
-        });
+        props.history.push("/working-group");
       } catch {
-        setFailed(true);
+        SystemNotification.open(
+          SystemNotificationKind.Error,
+          `Failed to ${editing ? "update" : "create"} Working Group!`
+        );
       }
     }
-  };
-
-  const closeSnackBar = (): void => {
-    setFailed(false);
   };
 
   return (
@@ -158,23 +150,6 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
           </form>
         </>
       </Paper>
-      <Snackbar
-        open={failed}
-        autoHideDuration={4000}
-        onClose={closeSnackBar}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <SnackbarContent
-          style={{
-            backgroundColor: "#f44336",
-          }}
-          message={
-            <span id="client-snackbar">{`Failed to ${
-              editing ? "update" : "create"
-            } Working Group!`}</span>
-          }
-        />
-      </Snackbar>
     </>
   );
 };

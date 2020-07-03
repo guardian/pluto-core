@@ -10,8 +10,6 @@ import {
   Paper,
   makeStyles,
   Button,
-  Snackbar,
-  SnackbarContent,
   TablePagination,
   TableSortLabel,
   IconButton,
@@ -25,6 +23,9 @@ import DeleteIcon from "@material-ui/icons/Delete";
 import { getWorkingGroupsOnPage, deleteWorkingGroup } from "./helpers";
 import { sortListByOrder, Order } from "../utils/utils";
 import { isLoggedIn } from "../utils/api";
+import SystemNotification, {
+  SystemNotificationKind,
+} from "../SystemNotification";
 
 interface HeaderTitles {
   label: string;
@@ -62,28 +63,14 @@ const useStyles = makeStyles({
 });
 const pageSizeOptions = [25, 50, 100];
 
-interface WorkingGroupsStateTypes {
-  success?: boolean;
-  editing?: boolean;
-  workingGroup?: WorkingGroup;
-}
-
-type WorkingGroupsProps = RouteComponentProps<{}, {}, WorkingGroupsStateTypes>;
-
-const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
+const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
   const classes = useStyles();
 
   const [workingGroups, setWorkingGroups] = useState<WorkingGroup[]>([]);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [success, setSuccess] = useState<boolean | undefined>(false);
-  const [failedToDelete, setFailedToDelete] = useState<boolean | undefined>(
-    false
-  );
   const [updatingWorkingGroup, setUpdatingWorkingGroup] = useState<
     WorkingGroup | undefined
   >(undefined);
-  const [isEditing, setIsEditing] = useState<boolean | undefined>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
@@ -91,19 +78,6 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
   const [orderBy, setOrderBy] = useState<keyof WorkingGroup>("name");
 
   useEffect(() => {
-    if (props.location.state) {
-      // Get history state
-      setSuccess(props.location.state?.success);
-      setUpdatingWorkingGroup(props.location.state?.workingGroup);
-      setIsEditing(props.location.state?.editing);
-
-      // Reset history state
-      props.history.replace({
-        pathname: "/working-group",
-        state: {},
-      });
-    }
-
     const fetchWorkingGroupsOnPage = async () => {
       const workingGroups = await getWorkingGroupsOnPage({ page, pageSize });
       setWorkingGroups(workingGroups);
@@ -163,20 +137,17 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
         workingGroups.filter((group) => group.id !== workingGroupId)
       );
 
-      setSuccess(true);
+      SystemNotification.open(
+        SystemNotificationKind.Success,
+        `Successfully deleted
+        Working Group: "${updatingWorkingGroup?.name}"`
+      );
     } catch {
-      setFailedToDelete(true);
+      SystemNotification.open(
+        SystemNotificationKind.Error,
+        `Failed to delete Working Group "${updatingWorkingGroup?.name}"`
+      );
     }
-  };
-
-  const closeSnackBarSuccess = (): void => {
-    setSuccess(false);
-    setIsEditing(false);
-  };
-
-  const closeSnackBarFailed = (): void => {
-    setFailedToDelete(false);
-    setIsDeleting(false);
   };
 
   return (
@@ -241,7 +212,6 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
                               commissioner,
                               hide,
                             });
-                            setIsDeleting(true);
                             setOpenDialog(true);
                           }}
                         >
@@ -292,41 +262,6 @@ const WorkingGroups: React.FC<WorkingGroupsProps> = (props) => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={success}
-        autoHideDuration={4000}
-        onClose={closeSnackBarSuccess}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <SnackbarContent
-          style={{
-            backgroundColor: "#4caf50",
-          }}
-          message={
-            <span id="client-snackbar">{`Successfully ${
-              isDeleting ? "deleted" : isEditing ? "updated" : "created"
-            } Working Group: "${updatingWorkingGroup?.name}"`}</span>
-          }
-        />
-      </Snackbar>
-      <Snackbar
-        open={failedToDelete}
-        autoHideDuration={4000}
-        onClose={closeSnackBarFailed}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <SnackbarContent
-          style={{
-            backgroundColor: "#f44336",
-          }}
-          message={
-            <span id="client-snackbar">
-              {`Failed to delete Working Group "${updatingWorkingGroup?.name}"`}
-            </span>
-          }
-        />
-      </Snackbar>
     </>
   );
 };

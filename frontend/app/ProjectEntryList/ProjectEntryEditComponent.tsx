@@ -17,6 +17,9 @@ import {
 } from "@material-ui/core";
 import { getProject, updateProject } from "./helpers";
 import { validProductionOffices } from "../utils/constants";
+import SystemNotification, {
+  SystemNotificationKind,
+} from "../SystemNotification";
 
 const useStyles = makeStyles({
   root: {
@@ -28,11 +31,22 @@ const useStyles = makeStyles({
       display: "flex",
       flexDirection: "column",
       alignItems: "flex-start",
-      margin: 0,
+      margin: "0.625rem 0 0 0",
     },
     "& .MuiTextField-root": {
-      marginBottom: "1rem",
       width: "100%",
+      marginBottom: "1rem",
+    },
+    "& .MuiFormControl-root": {
+      width: "100%",
+      marginBottom: "1rem",
+    },
+  },
+  formButtons: {
+    display: "flex",
+    marginTop: "2.5rem",
+    "& .cancel": {
+      marginLeft: "1rem",
     },
   },
 });
@@ -52,12 +66,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
   const [project, setProject] = useState<Project>({
     title: "",
+    user: "",
     status: "",
+    productionOffice: "",
     deletable: false,
     deep_archive: false,
     sensitive: false,
   } as Project);
-  const [failed, setFailed] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -69,7 +84,6 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
         if (isMounted) {
           setProject(project);
-          console.warn(project);
         }
       };
       loadProject();
@@ -102,41 +116,33 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       try {
         await updateProject(project as Project);
 
-        setFailed(false);
+        SystemNotification.open(
+          SystemNotificationKind.Success,
+          `Successfully updated Project "${project.title}"`
+        );
+        props.history.push("/project");
       } catch {
-        setFailed(true);
+        SystemNotification.open(
+          SystemNotificationKind.Error,
+          `Failed to update Project "${project.title}"`
+        );
       }
     }
-  };
-
-  const closeSnackBar = (): void => {
-    setFailed(false);
   };
 
   return (
     <>
       <Paper className={classes.root}>
         <>
-          <h3>Edit project information</h3>
-          <p className="information">
+          <Typography variant="h2">Edit project information</Typography>
+          <Typography variant="subtitle1">
             The only part of the project information that it's possible to edit
             is the title.
-          </p>
-          <p className="information">
+          </Typography>
+
+          <Typography variant="subtitle1">
             Press "Confirm" to go ahead, or press Back to cancel.
-          </p>
-          {/*   id: number;
-  projectTypeId: number;
-  title: string;
-  created: string;
-  user: string;
-  workingGroupId: number;
-  commissionId: number;
-  deletable: false;
-  deep_archive: true;
-  sensitive: false;
-  status: string;
-  productionOffice: string;*/}
+          </Typography>
           <form onSubmit={onProjectSubmit}>
             <TextField
               label="Project name"
@@ -144,23 +150,14 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
               autoFocus
               onChange={(event) => fieldChanged(event, "title")}
             ></TextField>
-            {/* <FormControl>
-              <InputLabel id="demo-simple-select-label">Age</InputLabel>
-              <Select
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
-                value={project.user}
-                onChange={(event: any) => fieldChanged(event, "user")}
-              >
-                <MenuItem value={10}>Ten</MenuItem>
-                <MenuItem value={20}>Twenty</MenuItem>
-                <MenuItem value={30}>Thirty</MenuItem>
-              </Select>
-            </FormControl> */}
+            <TextField
+              label="Owner"
+              value={project.user}
+              onChange={(event) => fieldChanged(event, "user")}
+            ></TextField>
             <TextField
               label="Status"
               value={project.status}
-              autoFocus
               onChange={(event) => fieldChanged(event, "status")}
             ></TextField>
 
@@ -177,14 +174,14 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 }
               >
                 {validProductionOffices.map((productionOffice) => (
-                  <MenuItem value={productionOffice}>
+                  <MenuItem value={productionOffice} key={productionOffice}>
                     {productionOffice}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
-            <h4>Applicable rules</h4>
+            <Typography variant="h4">Applicable rules</Typography>
             <FormControlLabel
               control={
                 <Checkbox
@@ -224,27 +221,21 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
               }
               label="Sensitive"
             />
-            <Button type="submit" variant="outlined">
-              Confirm
-            </Button>
+            <div className={classes.formButtons}>
+              <Button type="submit" variant="outlined">
+                Confirm
+              </Button>
+              <Button
+                className="cancel"
+                variant="outlined"
+                onClick={() => props.history.goBack()}
+              >
+                Back
+              </Button>
+            </div>
           </form>
         </>
       </Paper>
-      <Snackbar
-        open={failed}
-        autoHideDuration={4000}
-        onClose={closeSnackBar}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <SnackbarContent
-          style={{
-            backgroundColor: "#f44336",
-          }}
-          message={
-            <span id="client-snackbar">{`Failed to update Project!`}</span>
-          }
-        />
-      </Snackbar>
     </>
   );
 };

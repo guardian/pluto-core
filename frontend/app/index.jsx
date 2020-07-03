@@ -49,6 +49,7 @@ import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx
 import { loadInSigningKey, validateAndDecode } from "./JwtHelpers";
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
+import SystemNotification from "./SystemNotification.tsx";
 
 import "./styles/app.css";
 
@@ -57,7 +58,7 @@ library.add(faSearch);
 const theme = createMuiTheme({
   typography: {
     fontFamily: [
-      "Raleway",
+      "sans-serif",
       '"Helvetica Neue"',
       "Helvetica",
       "Arial",
@@ -342,6 +343,7 @@ class App extends React.Component {
             </Switch>
           </div>
         </div>
+        <SystemNotification></SystemNotification>
       </ThemeProvider>
     );
   }
