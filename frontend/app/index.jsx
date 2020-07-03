@@ -25,7 +25,7 @@ import ProjectTemplateDeleteComponent from "./delete/ProjectTemplateDeleteCompon
 import ProjectDeleteComponent from "./delete/ProjectEntryDeleteComponent.jsx";
 
 import ProjectCreateMultistep from "./multistep/ProjectCreateMultistep.jsx";
-import TitleEditComponent from "./multistep/projectcreate/ProjectEntryEditComponent.jsx";
+import ProjectEntryEditComponent from "./ProjectEntryList/ProjectEntryEditComponent.tsx";
 
 import PostrunList from "./PostrunList.jsx";
 import PostrunMultistep from "./multistep/PostrunMultistep.jsx";
@@ -294,7 +294,10 @@ class App extends React.Component {
                 path="/project/:itemid/delete"
                 component={ProjectDeleteComponent}
               />
-              <Route path="/project/:itemid" component={TitleEditComponent} />
+              <Route
+                path="/project/:itemid"
+                component={ProjectEntryEditComponent}
+              />
               <Route path="/project/" component={ProjectEntryList} />
               {/* TODO: this should lead to the commission detail page */}
               <Route

@@ -40,3 +40,37 @@ export const getProjectsOnPage = async ({
     throw error;
   }
 };
+
+export const getProject = async (id: number): Promise<Project> => {
+  try {
+    const {
+      status,
+      data: { result },
+    } = await Axios.get<PlutoApiResponse<Project>>(`${API_PROJECTS}/${id}`);
+
+    if (status === 200) {
+      return result;
+    }
+
+    throw new Error(`Could not get project ${id}. ${status}`);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const updateProject = async (project: Project): Promise<void> => {
+  try {
+    const { status } = await Axios.put<PlutoApiResponse<void>>(
+      `${API_PROJECTS}/${project.id}/title`,
+      { title: project.title }
+    );
+
+    if (status !== 200) {
+      throw new Error(`Could not update project ${project.id}. ${status}`);
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
