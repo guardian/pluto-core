@@ -22,11 +22,10 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
   render() {
     return (
       <div>
-        <h3>Select Commission</h3>
+        <h3>Select Working Group</h3>
         <p>
-          We need to know which working group is undertaking this project.
-          Please select the relevant working group and if you are unsure which
-          to choose ask your commissioning editor.
+          We need to know which working group is undertaking this project. If
+          you are unsure which to choose, please ask your commissioning editor.
         </p>
         <table>
           <tbody>

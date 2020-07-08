@@ -37,7 +37,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
         <h3>Select Commission</h3>
         <p>
           We need to know which piece of work this project file relates to.
-          Please select the relevant working group and commission
+          Please select the relevant working group and commission.
         </p>
         <table>
           <tbody>
