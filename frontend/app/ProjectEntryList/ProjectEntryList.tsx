@@ -20,7 +20,7 @@ import {
 } from "@material-ui/core";
 import { getProjectsOnPage } from "./helpers";
 import { isLoggedIn } from "../utils/api";
-import { sortListByOrder, Order } from "../utils/utils";
+import { sortListByOrder, SortDirection } from "../utils/lists";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
 
@@ -72,7 +72,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
-  const [order, setOrder] = useState<Order>("asc");
+  const [order, setOrder] = useState<SortDirection>("asc");
   const [orderBy, setOrderBy] = useState<keyof Project>("title");
 
   const fetchProjectsOnPage = async () => {
@@ -205,7 +205,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortListByOrder(projects, order, orderBy).map(
+              {sortListByOrder(projects, orderBy, order).map(
                 ({
                   id,
                   title,

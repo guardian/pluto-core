@@ -14,7 +14,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { getCommissionsOnPage, getWorkingGroupNameMap } from "./helpers";
-import { sortListByOrder, Order } from "../utils/utils";
+import { sortListByOrder, SortDirection } from "../utils/lists";
 
 interface HeaderTitles {
   label: string;
@@ -66,7 +66,7 @@ const CommissionsList: React.FC = () => {
   );
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
-  const [order, setOrder] = useState<Order>("asc");
+  const [order, setOrder] = useState<SortDirection>("asc");
   const [orderBy, setOrderBy] = useState<keyof Commission>("title");
 
   const history = useHistory();
@@ -166,7 +166,7 @@ const CommissionsList: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortListByOrder(commissions, order, orderBy).map(
+              {sortListByOrder(commissions, orderBy, order).map(
                 ({
                   id,
                   title,
