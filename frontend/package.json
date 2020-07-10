@@ -9,7 +9,7 @@
     "test:ci": "jest --ci",
     "build": "webpack -d",
     "build:prod": "webpack -p",
-    "start": "webpack -d --watch",
+    "dev": "webpack -d --watch",
     "clean": "rm -rf node_modules ../public/javascripts/bundle.js",
     "snyk-protect": "snyk protect",
     "lint": "prettier --check app __tests__",
