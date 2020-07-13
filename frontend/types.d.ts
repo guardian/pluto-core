@@ -38,9 +38,9 @@ interface FilterTerms {
   user?: string;
 }
 
-interface IsLoggedIn {
-  isAdmin: boolean;
+interface PlutoUser {
   uid: string;
+  isAdmin: boolean;
 }
 
 interface PlutoApiResponse<T> {

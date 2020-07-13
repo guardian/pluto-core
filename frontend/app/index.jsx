@@ -300,11 +300,20 @@ class App extends React.Component {
                 component={ProjectEntryEditComponent}
               />
               <Route path="/project/" component={ProjectEntryList} />
-              {/* TODO: this should lead to the commission detail page */}
               <Route
-                path="/commission/:itemid"
+                path="/commission/new"
+                exact
                 component={(props) => (
                   <CommissionCreateMultistep
+                    match={props.match}
+                    userName={this.state.currentUsername}
+                  />
+                )}
+              />
+              <Route
+                path="/commission/:commissionId"
+                render={(props) => (
+                  <ProjectEntryList
                     match={props.match}
                     userName={this.state.currentUsername}
                   />
