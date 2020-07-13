@@ -94,7 +94,7 @@ class App extends React.Component {
       .get("/system/publicdsn")
       .then((response) => {
         Raven.config(response.data.publicDsn).install();
-        console.log("Sentry initialised for " + response.data.publicDsn);
+        console.log("Sentry initialised for", response.data.publicDsn);
       })
       .catch((error) => {
         console.error("Could not intialise sentry", error);
@@ -164,8 +164,8 @@ class App extends React.Component {
   }
 
   onLoggedIn(userid, isAdmin) {
-    console.log("Logged in as " + userid);
-    console.log("Is an admin? " + isAdmin);
+    console.log("Logged in as", userid);
+    console.log(`${userid} ${isAdmin ? "is" : "is not"} an admin.`);
 
     this.setState(
       { currentUsername: userid, isAdmin: isAdmin, isLoggedIn: true },
