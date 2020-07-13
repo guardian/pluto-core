@@ -161,15 +161,6 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
     fetchProjectsOnPage();
   }, [filterTerms, page, pageSize, order, orderBy]);
 
-  const getFilterComponent = () => {
-    return (
-      <ProjectEntryFilterComponent
-        filterTerms={filterTerms}
-        filterDidUpdate={setFilterTerms}
-      />
-    );
-  };
-
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
     newPage: number
@@ -194,7 +185,10 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
 
   return (
     <>
-      {getFilterComponent()}
+      <ProjectEntryFilterComponent
+        filterTerms={filterTerms}
+        filterDidUpdate={setFilterTerms}
+      />
       <Button
         className={classes.createButton}
         variant="outlined"
