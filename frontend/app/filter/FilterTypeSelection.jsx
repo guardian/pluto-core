@@ -23,16 +23,15 @@ class FilterTypeSelection extends React.Component {
         <ul
           onChange={(event) => this.props.selectionChanged(event.target.value)}
         >
-          {options.map((opt) => (
-            <li className="horizontal-list-item">
+          {options.map(({ key, name }) => (
+            <li className="horizontal-list-item" key={key}>
               <input
                 type="radio"
-                value={opt.key}
-                key={opt.key}
+                value={key}
                 name="filter-type-selection"
-                defaultChecked={this.props.type === opt.key}
+                defaultChecked={this.props.type === key}
               />
-              {opt.name}
+              {name}
             </li>
           ))}
         </ul>
