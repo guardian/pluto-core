@@ -8,6 +8,8 @@ class GenericEntryView extends React.Component {
     hide: PropTypes.boolean,
   };
 
+  mounted = false;
+
   constructor(props) {
     super(props);
 
@@ -20,23 +22,33 @@ class GenericEntryView extends React.Component {
   }
 
   loadData() {
-    if (this.props.entryId === null) return;
+    if (this.props.entryId === null) {
+      return;
+    }
+
     this.setState({ loading: true }, () => {
       axios
-        .get(this.endpoint + "/" + this.props.entryId)
-        .then((response) =>
-          this.setState({ content: response.data.result, loading: false })
-        )
+        .get(`${this.endpoint}/${this.props.entryId}`)
+        .then((response) => {
+          if (this.mounted) {
+            this.setState({ content: response.data.result, loading: false });
+          }
+        })
         .catch((error) => this.setState({ lastError: error, loading: false }));
     });
   }
 
-  componentWillMount() {
+  componentDidMount() {
+    this.mounted = true;
     if (this.props.entryId) this.loadData();
   }
 
   componentDidUpdate(oldProps, oldState) {
     if (oldProps.entryId !== this.props.entryId) this.loadData();
+  }
+
+  componentWillUnmount() {
+    this.mounted = false;
   }
 
   render() {
