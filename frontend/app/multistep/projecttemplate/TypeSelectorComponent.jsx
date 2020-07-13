@@ -68,7 +68,7 @@ class TypeSelectorComponent extends CommonMultistepComponent {
     const type = this.projectTypeForId(this.props.selectedType);
     if (!type) return "";
 
-    return type.hasOwnProperty("plutoType") ? type.plutoType : null;
+    return type?.plutoType ?? null;
   }
 
   render() {
