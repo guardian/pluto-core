@@ -303,7 +303,7 @@ class App extends React.Component {
               <Route
                 path="/commission/new"
                 exact
-                component={(props) => (
+                render={(props) => (
                   <CommissionCreateMultistep
                     match={props.match}
                     userName={this.state.currentUsername}
@@ -320,10 +320,7 @@ class App extends React.Component {
                 )}
               />
               <Route path="/commission/" component={CommissionsList} />
-              <Route
-                path="/working-group/:itemid"
-                component={(props) => <WorkingGroup {...props} />}
-              />
+              <Route path="/working-group/:itemid" component={WorkingGroup} />
               <Route path="/working-group/" component={WorkingGroups} />
               <Route
                 path="/validate/project"
@@ -339,7 +336,7 @@ class App extends React.Component {
               <Route
                 exact
                 path="/"
-                component={() => (
+                render={() => (
                   <RootComponent
                     onLoggedOut={this.onLoggedOut}
                     onLoggedIn={this.onLoggedIn}
