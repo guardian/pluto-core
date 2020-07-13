@@ -112,10 +112,9 @@ class FilterableList extends React.Component {
   }
 
   async filterStatic(searchParam) {
-    console.log("filterStatic");
     const searchParamLwr = searchParam.toLowerCase();
     if (searchParam === "") {
-      return new Promise((resolve, reject) =>
+      return new Promise((resolve) =>
         this.setState(
           { filteredStaticContent: this.props.unfilteredContent },
           () => resolve()
@@ -123,7 +122,7 @@ class FilterableList extends React.Component {
       );
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.setState(
         {
           filteredStaticContent: this.props.unfilteredContent.filter((entry) =>

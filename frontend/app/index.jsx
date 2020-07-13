@@ -302,7 +302,6 @@ class App extends React.Component {
               <Route path="/project/" component={ProjectEntryList} />
               <Route
                 path="/commission/new"
-                exact
                 render={(props) => (
                   <CommissionCreateMultistep
                     match={props.match}
