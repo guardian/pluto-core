@@ -11,7 +11,7 @@ class FileEntryFilterComponent extends GenericEntryFilterComponent {
     filterTerms: PropTypes.object.isRequired,
   };
 
-  componentWillMount() {
+  componentDidMount() {
     this.setState({ distinctOwners: [] }, () => {
       axios
         .get("/api/file/distinctowners")

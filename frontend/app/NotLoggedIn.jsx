@@ -1,12 +1,12 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { Redirect } from "react-router-dom";
 
 class NotLoggedIn extends React.Component {
   static propTypes = {
     timeOut: PropTypes.number.isRequired,
-    shouldTerminate: false,
   };
+
+  mounted = false;
 
   constructor(props) {
     super(props);
@@ -20,10 +20,15 @@ class NotLoggedIn extends React.Component {
   }
 
   tick() {
+    if (!this.mounted) {
+      return;
+    }
+
     this.setState({ timeRemaining: this.state.timeRemaining - 1 });
   }
 
   componentWillUnmount() {
+    this.mounted = false;
     if (this.state.timerId) window.clearInterval(this.state.timerId);
   }
 
@@ -32,6 +37,8 @@ class NotLoggedIn extends React.Component {
       timeRemaining: this.props.timeOut,
       timerId: window.setInterval(this.tick, 1000),
     });
+
+    this.mounted = true;
   }
 
   render() {

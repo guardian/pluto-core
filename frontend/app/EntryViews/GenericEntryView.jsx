@@ -4,8 +4,8 @@ import PropTypes from "prop-types";
 
 class GenericEntryView extends React.Component {
   static propTypes = {
-    entryId: PropTypes.number.isRequired,
-    hide: PropTypes.boolean,
+    entryId: PropTypes.number,
+    hide: PropTypes.bool,
   };
 
   mounted = false;
@@ -22,7 +22,7 @@ class GenericEntryView extends React.Component {
   }
 
   loadData() {
-    if (this.props.entryId === null) {
+    if (typeof this.props.entryId !== "number") {
       return;
     }
 

@@ -24,7 +24,7 @@ class ServerDefaults extends React.Component {
     this.updateDefaultSetting = this.updateDefaultSetting.bind(this);
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.refreshData();
   }
 

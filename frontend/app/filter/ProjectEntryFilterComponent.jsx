@@ -10,7 +10,7 @@ class ProjectEntryFilterComponent extends GenericEntryFilterComponent {
     filterTerms: PropTypes.object.isRequired,
   };
 
-  componentWillMount() {
+  componentDidMount() {
     this.setState({ distinctOwners: [] }, () => {
       axios
         .get("/api/project/distinctowners")
