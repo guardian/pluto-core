@@ -1,6 +1,5 @@
 import React from "react";
 import PropTypes from "prop-types";
-import ErrorViewComponent from "../common/ErrorViewComponent.jsx";
 
 class PostrunActionSelector extends React.Component {
   static propTypes = {

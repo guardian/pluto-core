@@ -54,8 +54,9 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount {
   }
 
   render() {
-    if (this.state.error)
+    if (this.state.error) {
       return <ErrorViewComponent error={this.state.error} />;
+    }
 
     if (this.state.loading) return <p>Loading...</p>;
 

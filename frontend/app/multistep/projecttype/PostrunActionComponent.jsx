@@ -16,8 +16,9 @@ class PostrunActionComponent extends CommonMultistepComponent {
   }
 
   render() {
-    if (this.props.loadErrors)
+    if (this.props.loadErrors) {
       return <ErrorViewComponent error={this.state.loadErrors} />;
+    }
 
     return (
       <div>

@@ -121,7 +121,7 @@ class GeneralDeleteComponent extends React.Component {
         <h3>Delete {this.itemClass}</h3>
         {this.informationPara()}
         {this.getSummary()}
-        <ErrorViewComponent error={this.state.error} />
+        {this.state.error && <ErrorViewComponent error={this.state.error} />}
         {this.controls()}
       </div>
     );

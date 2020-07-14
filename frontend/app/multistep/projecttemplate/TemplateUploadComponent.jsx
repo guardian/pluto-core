@@ -241,7 +241,7 @@ class TemplateUploadComponent extends CommonMultistepComponent {
             </tr>
           </tbody>
         </table>
-        <ErrorViewComponent error={this.state.error} />
+        {this.state.error && <ErrorViewComponent error={this.state.error} />}
         {this.state.uploadFileVersion === 1 || this.state.hasFiles ? (
           <p />
         ) : (

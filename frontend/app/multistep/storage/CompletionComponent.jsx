@@ -71,7 +71,7 @@ class StorageCompletionComponent extends CommonCompletionComponent {
           nicknameChanged={this.props.nicknameChanged}
           nickname={this.props.nickname}
         />
-        <ErrorViewComponent error={this.state.error} />
+        {this.state.error && <ErrorViewComponent error={this.state.error} />}
         <span style={{ float: "right" }}>
           <button onClick={this.confirmClicked}>Confirm</button>
         </span>

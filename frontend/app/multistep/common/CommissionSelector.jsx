@@ -1,6 +1,5 @@
 import React from "react";
 import PropTypes from "prop-types";
-import ErrorViewComponent from "./ErrorViewComponent.jsx";
 import FilterableList from "../../common/FilterableList.jsx";
 
 class CommissionSelector extends React.Component {

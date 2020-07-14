@@ -123,8 +123,7 @@ class ProjectCompletionComponent extends React.Component {
         {this.getWarnings().map((warning) => (
           <p className="error-text">{warning}</p>
         ))}
-        ERROR?
-        <ErrorViewComponent error={this.state.error} />
+        {this.state.error && <ErrorViewComponent error={this.state.error} />}
         <LongProcessComponent
           inProgress={this.state.inProgress}
           expectedDuration={30}

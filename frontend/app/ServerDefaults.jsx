@@ -117,7 +117,7 @@ class ServerDefaults extends React.Component {
     return (
       <div className="mainbody">
         <h3>Server defaults</h3>
-        <ErrorViewComponent error={this.state.error} />
+        {this.state.error && <ErrorViewComponent error={this.state.error} />}
         <table>
           <tbody>
             <tr>
