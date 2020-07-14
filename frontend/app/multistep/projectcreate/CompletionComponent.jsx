@@ -9,7 +9,7 @@ import LongProcessComponent from "./LongProcessComponent.jsx";
 class ProjectCompletionComponent extends React.Component {
   static propTypes = {
     projectTemplates: PropTypes.array.isRequired,
-    selectedProjectTemplate: PropTypes.number.isRequired,
+    selectedProjectTemplate: PropTypes.string.isRequired,
     storages: PropTypes.array.isRequired,
     selectedStorage: PropTypes.number.isRequired,
     projectName: PropTypes.string.isRequired,
@@ -39,14 +39,10 @@ class ProjectCompletionComponent extends React.Component {
       filename: this.props.projectFilename,
       destinationStorageId: this.props.selectedStorage,
       title: this.props.projectName,
-      projectTemplateId: this.props.selectedProjectTemplate,
+      projectTemplateId: Number(this.props.selectedProjectTemplate),
       user: "frontend", //this should be deprecated as the backend ignores it
-      workingGroupId: this.props.selectedWorkingGroupId
-        ? this.props.selectedWorkingGroupId
-        : null,
-      commissionId: this.props.selectedCommissionId
-        ? this.props.selectedCommissionId
-        : null,
+      workingGroupId: this.props.selectedWorkingGroupId ?? null,
+      commissionId: this.props.selectedCommissionId ?? null,
       deletable: this.props.deletable,
       deepArchive: this.props.deep_archive,
       sensitive: this.props.sensitive,
@@ -54,7 +50,7 @@ class ProjectCompletionComponent extends React.Component {
     };
   }
 
-  confirmClicked(event) {
+  confirmClicked() {
     this.setState({ inProgress: true });
     axios
       .request({
@@ -62,7 +58,7 @@ class ProjectCompletionComponent extends React.Component {
         url: "/api/project",
         data: this.requestContent(),
       })
-      .then((response) => {
+      .then(() => {
         this.setState({ inProgress: false, completed: true });
       })
       .catch((error) => {
@@ -124,10 +120,10 @@ class ProjectCompletionComponent extends React.Component {
           sensitive={this.props.sensitive}
           productionOffice={this.props.productionOffice}
         />
-
         {this.getWarnings().map((warning) => (
           <p className="error-text">{warning}</p>
         ))}
+        ERROR?
         <ErrorViewComponent error={this.state.error} />
         <LongProcessComponent
           inProgress={this.state.inProgress}

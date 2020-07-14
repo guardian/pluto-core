@@ -25,7 +25,7 @@ import ProjectTemplateDeleteComponent from "./delete/ProjectTemplateDeleteCompon
 import ProjectDeleteComponent from "./delete/ProjectEntryDeleteComponent.jsx";
 
 import ProjectCreateMultistep from "./multistep/ProjectCreateMultistep.jsx";
-import TitleEditComponent from "./multistep/projectcreate/ProjectEntryEditComponent.jsx";
+import ProjectEntryEditComponent from "./ProjectEntryList/ProjectEntryEditComponent.tsx";
 
 import PostrunList from "./PostrunList.jsx";
 import PostrunMultistep from "./multistep/PostrunMultistep.jsx";
@@ -49,6 +49,7 @@ import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx
 import { loadInSigningKey, validateAndDecode } from "./JwtHelpers";
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
+import SystemNotification from "./SystemNotification.tsx";
 
 import "./styles/app.css";
 
@@ -57,7 +58,7 @@ library.add(faSearch);
 const theme = createMuiTheme({
   typography: {
     fontFamily: [
-      "Raleway",
+      "sans-serif",
       '"Helvetica Neue"',
       "Helvetica",
       "Arial",
@@ -294,7 +295,10 @@ class App extends React.Component {
                 path="/project/:itemid/delete"
                 component={ProjectDeleteComponent}
               />
-              <Route path="/project/:itemid" component={TitleEditComponent} />
+              <Route
+                path="/project/:itemid"
+                component={ProjectEntryEditComponent}
+              />
               <Route path="/project/" component={ProjectEntryList} />
               {/* TODO: this should lead to the commission detail page */}
               <Route
@@ -339,6 +343,7 @@ class App extends React.Component {
             </Switch>
           </div>
         </div>
+        <SystemNotification></SystemNotification>
       </ThemeProvider>
     );
   }
