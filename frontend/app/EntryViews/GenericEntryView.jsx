@@ -8,10 +8,10 @@ class GenericEntryView extends React.Component {
     hide: PropTypes.bool,
   };
 
-  mounted = false;
-
   constructor(props) {
     super(props);
+
+    this.mounted = false;
 
     this.endpoint = "/unknown";
 
@@ -22,7 +22,7 @@ class GenericEntryView extends React.Component {
   }
 
   loadData() {
-    if (typeof this.props.entryId !== "number") {
+    if (!this.mounted || typeof this.props.entryId !== "number") {
       return;
     }
 

@@ -9,13 +9,13 @@ import LongProcessComponent from "./LongProcessComponent.jsx";
 class ProjectCompletionComponent extends React.Component {
   static propTypes = {
     projectTemplates: PropTypes.array.isRequired,
-    selectedProjectTemplate: PropTypes.string.isRequired,
+    selectedProjectTemplate: PropTypes.number,
     storages: PropTypes.array.isRequired,
-    selectedStorage: PropTypes.number.isRequired,
+    selectedStorage: PropTypes.number,
     projectName: PropTypes.string.isRequired,
     projectFilename: PropTypes.string.isRequired,
-    selectedWorkingGroupId: PropTypes.number.isRequired,
-    selectedCommissionId: PropTypes.number.isRequired,
+    selectedWorkingGroupId: PropTypes.number,
+    selectedCommissionId: PropTypes.number,
     wgList: PropTypes.array.isRequired,
     deletable: PropTypes.bool.isRequired,
     deep_archive: PropTypes.bool.isRequired,
@@ -39,7 +39,7 @@ class ProjectCompletionComponent extends React.Component {
       filename: this.props.projectFilename,
       destinationStorageId: this.props.selectedStorage,
       title: this.props.projectName,
-      projectTemplateId: Number(this.props.selectedProjectTemplate),
+      projectTemplateId: this.props.selectedProjectTemplate,
       user: "frontend", //this should be deprecated as the backend ignores it
       workingGroupId: this.props.selectedWorkingGroupId ?? null,
       commissionId: this.props.selectedCommissionId ?? null,
@@ -120,8 +120,10 @@ class ProjectCompletionComponent extends React.Component {
           sensitive={this.props.sensitive}
           productionOffice={this.props.productionOffice}
         />
-        {this.getWarnings().map((warning) => (
-          <p className="error-text">{warning}</p>
+        {this.getWarnings().map((warning, index) => (
+          <p key={index} className="error-text">
+            {warning}
+          </p>
         ))}
         {this.state.error && <ErrorViewComponent error={this.state.error} />}
         <LongProcessComponent

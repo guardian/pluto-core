@@ -6,10 +6,10 @@ class NotLoggedIn extends React.Component {
     timeOut: PropTypes.number.isRequired,
   };
 
-  mounted = false;
-
   constructor(props) {
     super(props);
+
+    this.mounted = false;
 
     this.state = {
       timeRemaining: props.timeOut,

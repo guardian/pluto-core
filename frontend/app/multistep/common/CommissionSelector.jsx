@@ -4,9 +4,9 @@ import FilterableList from "../../common/FilterableList.jsx";
 
 class CommissionSelector extends React.Component {
   static propTypes = {
-    workingGroupId: PropTypes.number.isRequired,
-    selectedCommissionId: PropTypes.number.isRequired,
-    showStatus: PropTypes.string.isRequired,
+    workingGroupId: PropTypes.number,
+    selectedCommissionId: PropTypes.number,
+    showStatus: PropTypes.string,
     valueWasSet: PropTypes.func.isRequired,
   };
 
@@ -47,7 +47,7 @@ class CommissionSelector extends React.Component {
     return (
       <FilterableList
         onChange={(newValue) => this.props.valueWasSet(parseInt(newValue))}
-        value={this.props.selectedCommissionId}
+        value={this.props.selectedCommissionId?.toString()}
         size={10}
         unfilteredContentFetchUrl="/api/pluto/commission/list?length=150"
         unfilteredContentConverter={CommissionSelector.convertContent}

@@ -16,7 +16,7 @@ class SummaryComponent extends React.Component {
     projectFilename: PropTypes.string.isRequired,
     wgList: PropTypes.array.isRequired,
     selectedWorkingGroupId: PropTypes.number.isRequired,
-    selectedCommissionId: PropTypes.number.isRequired,
+    selectedCommissionId: PropTypes.number,
     deletable: PropTypes.bool.isRequired,
     deep_archive: PropTypes.bool.isRequired,
     sensitive: PropTypes.bool.isRequired,

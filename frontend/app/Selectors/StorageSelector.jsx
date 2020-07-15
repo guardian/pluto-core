@@ -4,7 +4,7 @@ import StatusIndicator from "../EntryViews/StatusIndicator.jsx";
 
 class StorageSelector extends React.Component {
   static propTypes = {
-    selectedStorage: PropTypes.number.isRequired,
+    selectedStorage: PropTypes.number,
     selectionUpdated: PropTypes.func.isRequired,
     storageList: PropTypes.array.isRequired,
     enabled: PropTypes.bool.isRequired,
@@ -12,6 +12,10 @@ class StorageSelector extends React.Component {
   };
 
   getSelectedStorageRecord() {
+    if (!this.props.selectedStorage) {
+      return null;
+    }
+
     const results = this.props.storageList.filter(
       (entry) => entry.id === this.props.selectedStorage
     );

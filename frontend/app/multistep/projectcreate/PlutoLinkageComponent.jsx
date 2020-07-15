@@ -19,7 +19,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
     this.state = {
       plutoCommissionRef: null,
       workingGroupRef: null,
-      showStatus: "In production",
+      showStatus: "In Production",
       productionOffice: "UK",
     };
   }
@@ -66,9 +66,9 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
                   id="only-show-production"
                   type="radio"
                   name="commission"
-                  checked={this.state.showStatus === "In production"}
-                  onChange={(event) =>
-                    this.setState({ showStatus: "In production" })
+                  checked={this.state.showStatus === "In Production"}
+                  onChange={() =>
+                    this.setState({ showStatus: "In Production" })
                   }
                 />
                 <label
@@ -83,7 +83,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
                   type="radio"
                   name="commission"
                   checked={this.state.showStatus === "New"}
-                  onChange={(event) => this.setState({ showStatus: "New" })}
+                  onChange={() => this.setState({ showStatus: "New" })}
                 />
                 <label
                   className="commission_buttons"
@@ -97,7 +97,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
                   type="radio"
                   name="commission"
                   checked={this.state.showStatus === null}
-                  onChange={(event) => this.setState({ showStatus: null })}
+                  onChange={() => this.setState({ showStatus: null })}
                 />
                 <label
                   className="commission_buttons"
