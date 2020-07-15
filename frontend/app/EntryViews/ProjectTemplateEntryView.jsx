@@ -9,7 +9,7 @@ class ProjectTemplateEntryView extends GenericEntryView {
     projectTypeId: PropTypes.number,
   };
 
-  componentWillMount() {
+  componentDidMount() {
     if (this.props.name && this.props.projectTypeId)
       this.setState({
         content: {
@@ -17,7 +17,7 @@ class ProjectTemplateEntryView extends GenericEntryView {
           projectTypeId: this.props.projectTypeId,
         },
       });
-    else super.componentWillMount();
+    else super.componentDidMount();
   }
 
   constructor(props) {

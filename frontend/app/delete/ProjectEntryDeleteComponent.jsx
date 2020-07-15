@@ -10,7 +10,7 @@ class ProjectEntryDeleteComponent extends GeneralDeleteComponent {
     this.endpoint = "/api/project";
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.setState({ loading: false });
     /*remove the default implementation, as the http request is made by ProjectEntryView*/
   }

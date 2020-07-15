@@ -29,7 +29,7 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
     this.recordDidSave = this.recordDidSave.bind(this);
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.updateAddRemoveDeps();
   }
 

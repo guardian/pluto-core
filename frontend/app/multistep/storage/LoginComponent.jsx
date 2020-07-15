@@ -8,7 +8,7 @@ class StorageLoginComponent extends React.Component {
     loginDetails: PropTypes.object.isRequired,
   };
 
-  componentWillMount() {
+  componentDidMount() {
     this.setState({
       hostname: this.props.loginDetails.hostname,
       port: this.props.loginDetails.port,

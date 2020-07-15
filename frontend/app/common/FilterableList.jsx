@@ -134,7 +134,7 @@ class FilterableList extends React.Component {
     });
   }
 
-  componentDidUpdate(prevProps, prevState, snapshot) {
+  componentDidUpdate(prevProps, prevState) {
     if (prevState.currentSearch !== this.state.currentSearch) {
       const completionPromise = this.props.unfilteredContentFetchUrl
         ? this.fetchFromServer(this.state.currentSearch)

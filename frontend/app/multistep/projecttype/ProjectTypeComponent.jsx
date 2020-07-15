@@ -26,12 +26,12 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     axios
       .get("/api/plutoprojecttypeid")
       .then((result) => {
         this.setState({ knownPlutoTypes: result.data.result }, () =>
-          super.componentWillMount()
+          super.componentDidMount()
         );
       })
       .catch((error) => console.error(error));

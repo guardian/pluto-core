@@ -29,7 +29,7 @@ class GeneralDeleteComponent extends React.Component {
   postDownload() {}
 
   /*download information about the thing we want to delete*/
-  componentWillMount() {
+  componentDidMount() {
     axios
       .get(this.endpoint + "/" + this.props.match.params.itemid)
       .then((response) => {

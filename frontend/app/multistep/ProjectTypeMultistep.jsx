@@ -26,7 +26,7 @@ class ProjectTypeMultistep extends React.Component {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     if (
       this.props.match &&
       this.props.match.params &&

@@ -17,7 +17,7 @@ class PostrunActionSelector extends React.Component {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.setState({
       selectedEntries: this.props.selectedEntries
         ? this.props.selectedEntries

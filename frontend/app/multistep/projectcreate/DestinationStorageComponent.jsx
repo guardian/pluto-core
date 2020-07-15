@@ -42,7 +42,7 @@ class DestinationStorageComponent extends CommonMultistepComponent {
     );
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.checkLogin();
   }
   render() {

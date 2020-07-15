@@ -9,7 +9,7 @@ class MultistepComponentLoadsOnMount extends CommonMultistepComponent {
     this.endpoint = "/api/unknown";
   }
 
-  componentWillMount() {
+  componentDidMount() {
     if (this.props.currentEntry) {
       this.setState({ loading: true }, () => {
         axios

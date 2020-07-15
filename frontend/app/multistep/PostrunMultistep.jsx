@@ -35,7 +35,7 @@ class PostrunMultistep extends React.Component {
     return recordList ? recordList.map((entry) => entry.dependsOn) : [];
   }
 
-  componentWillMount() {
+  componentDidMount() {
     if (
       this.props.match &&
       this.props.match.params &&

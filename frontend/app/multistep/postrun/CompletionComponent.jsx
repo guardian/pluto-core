@@ -36,7 +36,7 @@ class CompletionComponent extends CommonCompletionComponent {
     return this.props.postrunMetadata;
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.updateAddRemoveDeps();
   }
 

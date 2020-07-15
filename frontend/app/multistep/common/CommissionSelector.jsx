@@ -20,7 +20,7 @@ class CommissionSelector extends React.Component {
     this.makeSearchDoc = this.makeSearchDoc.bind(this);
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps) {
     if (
       prevProps.workingGroupId !== this.props.workingGroupId ||
       prevProps.showStatus !== this.props.showStatus

@@ -21,7 +21,7 @@ class FileReferencesView extends React.Component {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.setState({ loading: true }, () => {
       axios
         .get("/api/file/" + this.props.entryId + "/associations")

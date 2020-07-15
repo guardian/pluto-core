@@ -30,7 +30,8 @@ class TemplateUploadComponent extends CommonMultistepComponent {
       selectedStorage: firstStorage,
       fileId: null,
       uploading: false,
-      useExisting: true,
+      // Use non-strict equality check to check for both undefined and null.
+      useExisting: props.existingFileId != null,
       uploadFileVersion: 1,
       uploadFileName: null,
       fileInputKey: 0, //we use this to clear the file input component by forcing it to re-render when the value is changed
@@ -42,11 +43,6 @@ class TemplateUploadComponent extends CommonMultistepComponent {
 
   componentDidUpdate() {
     //override the super-class implementation as we don't want it here
-  }
-
-  UNSAFE_componentWillMount() {
-    if (this.props.existingFileId === null)
-      this.setState({ useExisting: false });
   }
 
   doUpload() {

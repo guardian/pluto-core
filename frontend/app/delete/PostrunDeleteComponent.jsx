@@ -10,8 +10,8 @@ class PostrunDeleteComponent extends GeneralDeleteComponent {
     this.endpoint = "/api/postrun";
   }
 
-  componentWillMount() {
-    super.componentWillMount();
+  componentDidMount() {
+    super.componentDidMount();
 
     this.setState({ actionsList: [], dependentActions: [] }, () => {
       Promise.all([
