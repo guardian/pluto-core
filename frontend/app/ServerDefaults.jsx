@@ -36,17 +36,17 @@ class ServerDefaults extends React.Component {
         axios.get("/api/template"),
         axios.get("/api/plutoprojecttypeid"),
       ])
-        .then((responses) => {
+        .then(([defaults, storage, template, projectTypeId]) => {
           this.setState({
             loading: false,
             error: null,
-            templatesList: responses[2].data.result,
-            storageList: responses[1].data.result,
-            currentValues: responses[0].data.results.reduce((acc, entry) => {
+            templatesList: template.data.result,
+            storageList: storage.data.result,
+            currentValues: defaults.data.results.reduce((acc, entry) => {
               acc[entry.name] = entry.value;
               return acc;
             }, {}),
-            plutoProjectTypes: responses[3].data.result,
+            plutoProjectTypes: projectTypeId.data.result,
           });
         })
         .catch((error) => this.setState({ loading: false, error: error }));
@@ -94,14 +94,10 @@ class ServerDefaults extends React.Component {
   }
 
   /* return the current default template, or first in the list, or zero if neither is present */
-  templatePref(keyname) {
-    if (this.state.currentValues.hasOwnProperty(keyname)) {
-      return this.state.currentValues[keyname];
-    } else {
-      if (this.state.templatesList.length > 0)
-        return this.state.templatesList[0].id;
-      else return 0;
-    }
+  templatePref(keyName) {
+    const { currentValues, templatesList } = this.state;
+
+    return currentValues[keyName] ?? templatesList[0]?.id ?? 0;
   }
 
   render() {

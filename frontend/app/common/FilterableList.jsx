@@ -64,8 +64,8 @@ class FilterableList extends React.Component {
   }
 
   setStatePromise(newState) {
-    return new Promise((resolve, reject) => {
-      this.setState(newState, () => resolve()).catch((err) => reject(err));
+    return new Promise((resolve) => {
+      this.setState(newState, () => resolve());
     });
   }
 
@@ -75,22 +75,24 @@ class FilterableList extends React.Component {
   }
 
   async fetchFromServer(searchParam) {
-    console.log("fetchFromServer");
-    const getUrl = this.props.fetchUrlFilterQuery
-      ? this.props.unfilteredContentFetchUrl +
-        "?" +
-        this.props.fetchUrlFilterQuery +
-        "=" +
-        searchParam
-      : this.props.unfilteredContentFetchUrl;
-    const credentialsValue = this.props.allowCredentials ? "include" : "omit";
+    const {
+      allowCredentials,
+      fetchUrlFilterQuery,
+      makeSearchDoc,
+      unfilteredContentConverter,
+      unfilteredContentFetchUrl,
+    } = this.props;
+    const getUrl = fetchUrlFilterQuery
+      ? `${unfilteredContentFetchUrl}?${fetchUrlFilterQuery}=${searchParam}`
+      : unfilteredContentFetchUrl;
+    const credentialsValue = allowCredentials ? "include" : "omit";
 
     console.log(getUrl, credentialsValue);
-    const result = await (this.props.makeSearchDoc
-      ? fetch(this.props.unfilteredContentFetchUrl, {
+    const result = await (makeSearchDoc
+      ? fetch(unfilteredContentFetchUrl, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(this.props.makeSearchDoc(searchParam)),
+          body: JSON.stringify(makeSearchDoc(searchParam)),
           credentials: credentialsValue,
         })
       : fetch(getUrl));
@@ -99,8 +101,8 @@ class FilterableList extends React.Component {
     try {
       if (!result.ok) return this.setStatePromise({ contentFromServer: [] });
 
-      const convertedContent = this.props.unfilteredContentConverter
-        ? this.props.unfilteredContentConverter(content)
+      const convertedContent = unfilteredContentConverter
+        ? unfilteredContentConverter(content)
         : FilterableList.defaultContentConverter(content);
       return this.setStatePromise({
         contentFromServer: convertedContent,

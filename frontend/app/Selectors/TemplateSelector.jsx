@@ -27,10 +27,10 @@ class TemplateSelector extends React.Component {
         onChange={(event) => this.props.selectionUpdated(event.target.value)}
       >
         {this.getTemplatesList()
-          .filter((tpl) => !tpl.deprecated)
-          .map((tpl) => (
-            <option key={tpl.id} value={tpl.id}>
-              {tpl.name}
+          .filter(({ deprecated }) => !deprecated)
+          .map(({ id, name }) => (
+            <option key={id} value={id}>
+              {name}
             </option>
           ))}
       </select>

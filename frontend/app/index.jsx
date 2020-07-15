@@ -237,15 +237,6 @@ class App extends React.Component {
   }
 
   render() {
-    console.debug(
-      "loading: ",
-      this.state.loading,
-      "isLoggedIn",
-      this.state.isLoggedIn,
-      "path",
-      window.location.pathname
-    );
-
     if (
       !this.state.loading &&
       !this.state.isLoggedIn &&

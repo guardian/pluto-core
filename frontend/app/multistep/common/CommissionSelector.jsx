@@ -35,10 +35,12 @@ class CommissionSelector extends React.Component {
   }
 
   makeSearchDoc(enteredText) {
+    const { workingGroupId, showStatus: status } = this.props;
+
     return {
       title: enteredText,
-      workingGroupId: this.props.workingGroupId,
-      status: this.props.showStatus,
+      workingGroupId,
+      status,
       match: "W_CONTAINS",
     };
   }

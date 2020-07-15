@@ -23,7 +23,7 @@ class LongProcessComponent extends React.Component {
     this.mounted = true;
   }
 
-  componentDidUpdate(oldProps, oldState) {
+  componentDidUpdate(oldProps) {
     if (oldProps.inProgress === false && this.props.inProgress === true) {
       this.startTimer();
     } else if (

@@ -19,21 +19,21 @@ class StorageSelector extends React.Component {
     const results = this.props.storageList.filter(
       (entry) => entry.id === this.props.selectedStorage
     );
-    if (results.length > 0) {
-      return results[0];
-    } else return null;
+
+    return results[0] ?? null;
   }
 
   getSelectedStatus() {
-    if (!this.getSelectedStorageRecord()) return "hidden";
-    return this.getSelectedStorageRecord().status;
+    const { status = "hidden" } = this.getSelectedStorageRecord() ?? {};
+
+    return status;
   }
 
   displayName(storage) {
     if (storage.nickname && storage.nickname !== "") {
-      return storage.nickname + " [" + storage.storageType + "]";
+      return `${storage.nickname} [${storage.storageType}]`;
     } else {
-      return storage.rootpath + " on " + storage.storageType;
+      return `${storage.rootpath} on ${storage.storageType}`;
     }
   }
 
