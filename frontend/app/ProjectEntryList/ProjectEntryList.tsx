@@ -147,10 +147,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
       newFilterTerms.commissionId = commissionIdAsNumber;
     }
 
-    setFilterTerms({
-      ...filterTerms,
-      ...newFilterTerms,
-    });
+    setFilterTerms(newFilterTerms);
   }, [commissionId, user?.uid]);
 
   useEffect(() => {
