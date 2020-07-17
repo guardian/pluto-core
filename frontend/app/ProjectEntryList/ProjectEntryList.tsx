@@ -11,6 +11,7 @@ import {
   TablePagination,
   TableRow,
   TableSortLabel,
+  Typography,
 } from "@material-ui/core";
 import DeleteIcon from "@material-ui/icons/Delete";
 import EditIcon from "@material-ui/icons/Edit";
@@ -88,7 +89,7 @@ const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
   </span>
 );
 
-const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
+const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // React Router
   const history = useHistory();
   const { search } = useLocation();
@@ -285,6 +286,11 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
           labelDisplayedRows={({ from, to }) => `${from}-${to}`}
         ></TablePagination>
       </Paper>
+      {typeof commissionId === "string" && projects.length === 0 && (
+        <Typography variant="subtitle1" style={{ marginTop: "1rem" }}>
+          No projects for this commission.
+        </Typography>
+      )}
     </>
   );
 };
