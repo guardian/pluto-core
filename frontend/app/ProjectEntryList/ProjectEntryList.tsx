@@ -45,6 +45,9 @@ const tableHeaderTitles: HeaderTitle<Project>[] = [
 const useStyles = makeStyles({
   table: {
     maxWidth: "100%",
+    "& .MuiTableRow-root": {
+      cursor: "pointer",
+    },
   },
   createButton: {
     display: "flex",
@@ -92,7 +95,7 @@ const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
 
 const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // React Router
-  const history = useHistory();
+  const history = useHistory<Project>();
   const { search } = useLocation();
   const { commissionId } = useParams<{ commissionId?: string }>();
 
@@ -230,8 +233,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortListByOrder(projects, orderBy, order).map(
-                ({
+              {sortListByOrder(projects, orderBy, order).map((project) => {
+                const {
                   id,
                   title,
                   commissionId,
@@ -239,8 +242,15 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                   workingGroupId,
                   status,
                   user: projectUser,
-                }) => (
-                  <TableRow key={id}>
+                } = project;
+                return (
+                  <TableRow
+                    key={id}
+                    onClick={() => {
+                      history.push(`/project/${id}`, project);
+                    }}
+                    hover
+                  >
                     <TableCell>{title}</TableCell>
                     <TableCell>
                       <CommissionEntryView entryId={commissionId} />
@@ -281,8 +291,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                       <AssetFolderLink projectId={id} />
                     </TableCell>
                   </TableRow>
-                )
-              )}
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
