@@ -27,12 +27,7 @@ import SystemNotification, {
   SystemNotificationKind,
 } from "../SystemNotification";
 
-interface HeaderTitles {
-  label: string;
-  key?: keyof WorkingGroup;
-}
-
-const tableHeaderTitles: HeaderTitles[] = [
+const tableHeaderTitles: HeaderTitle<WorkingGroup>[] = [
   { label: "Name", key: "name" },
   { label: "Commissioner", key: "commissioner" },
   { label: "" },

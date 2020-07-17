@@ -30,12 +30,8 @@ import { isLoggedIn } from "../utils/api";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import { getProjectsOnPage, updateProjectOpenedStatus } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
-interface HeaderTitles {
-  label: string;
-  key?: keyof Project;
-}
 
-const tableHeaderTitles: HeaderTitles[] = [
+const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Project title", key: "title" },
   { label: "Commission title", key: "commissionId" },
   { label: "Created", key: "created" },
@@ -45,6 +41,7 @@ const tableHeaderTitles: HeaderTitles[] = [
   { label: "" },
   { label: "Open" },
 ];
+
 const useStyles = makeStyles({
   table: {
     maxWidth: "100%",
