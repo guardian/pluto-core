@@ -190,38 +190,38 @@ class App extends React.Component {
             <Link to="/">Home</Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/storage/">Storages...</Link>
+            <Link to="/storage/">Storages</Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/type/">Project Types...</Link>
+            <Link to="/type/">Project Types</Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/template/">Project Templates...</Link>
+            <Link to="/template/">Project Templates</Link>
           </li>
           <li>
-            <Link to="/commission/">Commissions...</Link>
+            <Link to="/commission/">Commissions</Link>
           </li>
           <li>
             <Link to="/working-group/">Working Groups</Link>
           </li>
           <li>
             <Link to={this.state.isAdmin ? "/project/" : "/project/?mine"}>
-              Projects...
+              Projects
             </Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/validate/project">Validate projectfiles...</Link>
+            <Link to="/validate/project">Validate projectfiles</Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/postrun/">Postrun Actions...</Link>
+            <Link to="/postrun/">Postrun Actions</Link>
           </li>
           <li>
             <Link to={this.state.isAdmin ? "/file/" : "/file/?mine"}>
-              Files...
+              Files
             </Link>
           </li>
           <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/defaults/">Server defaults...</Link>
+            <Link to="/defaults/">Server Defaults</Link>
           </li>
         </ul>
       );
