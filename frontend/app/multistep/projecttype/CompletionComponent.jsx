@@ -29,7 +29,7 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
     this.recordDidSave = this.recordDidSave.bind(this);
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.updateAddRemoveDeps();
   }
 
@@ -111,7 +111,7 @@ class ProjectTypeCompletionComponent extends CommonCompletionComponent {
           to open a fresh tab, find the existing records and remove the
           type/subtype identifiers from them before retrying the save.
         </p>
-        <ErrorViewComponent error={this.state.error} />
+        {this.state.error && <ErrorViewComponent error={this.state.error} />}
         <span style={{ float: "right" }}>
           <button onClick={this.confirmClicked}>Confirm</button>
         </span>

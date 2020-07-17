@@ -76,7 +76,7 @@ class TemplateCompletionComponent extends React.Component {
           Press "Confirm" to go ahead, or press Previous if you need to amend
           any details.
         </p>
-        <ErrorViewComponent error={this.state.error} />
+        {this.state.error && <ErrorViewComponent error={this.state.error} />}
         <span style={{ float: "right" }}>
           <button onClick={this.confirmClicked}>Confirm</button>
         </span>

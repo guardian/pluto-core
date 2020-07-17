@@ -5,7 +5,6 @@ import GeneralListComponent from "./GeneralListComponent.jsx";
 import ProjectTypeView from "./EntryViews/ProjectTypeView.jsx";
 import WorkingGroupEntryView from "./EntryViews/WorkingGroupEntryView.jsx";
 import CommissionEntryView from "./EntryViews/CommissionEntryView.jsx";
-import ProjectEntryFilterComponent from "./filter/ProjectEntryFilterComponent.jsx";
 import { Link } from "react-router-dom";
 import ErrorViewComponent from "./common/ErrorViewComponent.jsx";
 
@@ -232,6 +231,7 @@ class ProjectValidationView extends React.Component {
       return <ErrorViewComponent error={this.state.lastError} />;
     }
   }
+
   render() {
     return (
       <div>

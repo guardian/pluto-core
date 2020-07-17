@@ -25,7 +25,7 @@ class ProjectTemplateMultistep extends CommonMultistepComponent {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     if (
       this.props.match &&
       this.props.match.params &&

@@ -20,7 +20,7 @@ class MediaRulesComponent extends CommonMultistepComponent {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.setState({
       deletable: this.props.deletable,
       deep_archive: this.props.deep_archive,

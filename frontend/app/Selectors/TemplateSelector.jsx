@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 
 class TemplateSelector extends React.Component {
   static propTypes = {
-    selectedTemplate: PropTypes.number.isRequired,
+    selectedTemplate: PropTypes.string,
     selectionUpdated: PropTypes.func.isRequired,
     templatesList: PropTypes.array.isRequired,
     allowNull: PropTypes.bool,
@@ -23,14 +23,14 @@ class TemplateSelector extends React.Component {
     return (
       <select
         id="project_template_selector"
-        value={this.props.selectedTemplate}
+        value={this.props.selectedTemplate ?? undefined}
         onChange={(event) => this.props.selectionUpdated(event.target.value)}
       >
         {this.getTemplatesList()
-          .filter((tpl) => !tpl.deprecated)
-          .map((tpl) => (
-            <option key={tpl.id} value={tpl.id}>
-              {tpl.name}
+          .filter(({ deprecated }) => !deprecated)
+          .map(({ id, name }) => (
+            <option key={id} value={id}>
+              {name}
             </option>
           ))}
       </select>

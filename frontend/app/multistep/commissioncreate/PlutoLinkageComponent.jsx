@@ -15,7 +15,7 @@ class PlutoLinkageComponent extends CommonMultistepComponent {
     super(props);
 
     this.state = {
-      showStatus: "In production",
+      showStatus: "In Production",
     };
   }
 

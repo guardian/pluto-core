@@ -21,7 +21,7 @@ class FileReferencesView extends React.Component {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.setState({ loading: true }, () => {
       axios
         .get("/api/file/" + this.props.entryId + "/associations")
@@ -42,8 +42,9 @@ class FileReferencesView extends React.Component {
         <img src="/assets/images/uploading.svg" style={{ height: "20px" }} />
       );
 
-    if (this.state.error)
+    if (this.state.error) {
       return <ErrorViewComponent error={this.state.error} />;
+    }
 
     if (
       this.state.projectRefs.length === 0 &&

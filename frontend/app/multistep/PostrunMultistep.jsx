@@ -32,10 +32,10 @@ class PostrunMultistep extends React.Component {
 
   //given a list of full dependency record, just return a list of dependsOn
   getDependsId(recordList) {
-    return recordList ? recordList.map((entry) => entry.dependsOn) : [];
+    return recordList?.map(({ dependsOn }) => dependsOn) ?? [];
   }
 
-  componentWillMount() {
+  componentDidMount() {
     if (
       this.props.match &&
       this.props.match.params &&
@@ -46,29 +46,21 @@ class PostrunMultistep extends React.Component {
         { currentEntry: this.props.match.params.itemid, loading: true },
         () => {
           const promiseList = [
-            axios.get("/api/postrun/" + this.state.currentEntry),
-            axios.get("/api/postrun/" + this.state.currentEntry + "/source"),
-            axios.get("/api/postrun/" + this.state.currentEntry + "/depends"),
+            axios.get(`/api/postrun/${this.state.currentEntry}`),
+            axios.get(`/api/postrun/${this.state.currentEntry}/source`),
+            axios.get(`/api/postrun/${this.state.currentEntry}/depends`),
             axios.get("/api/postrun"),
           ];
 
-          Promise.all(promiseList).then((results) => {
-            console.log("got results");
-            this.setState(
-              {
-                postrunMetadata: results[0].data.result,
-                postrunSource: results[1] ? results[1].data : "",
-                originalDependencies: results[2]
-                  ? Object.assign([], this.getDependsId(results[2].data.result))
-                  : [],
-                updatedDependencies: results[2]
-                  ? this.getDependsId(results[2].data.result)
-                  : [],
-                postrunList: results[3] ? results[3].data.result : [],
-                loading: false,
-              },
-              () => console.log("done")
-            ).catch((error) => {
+          Promise.all(promiseList).then(([metadata, source, deps, postrun]) => {
+            this.setState({
+              postrunMetadata: metadata.data.result,
+              postrunSource: source?.data ?? "",
+              originalDependencies: this.getDependsId(deps?.data.result ?? []),
+              updatedDependencies: this.getDependsId(deps?.data.result ?? []),
+              postrunList: postrun?.data.result ?? [],
+              loading: false,
+            }).catch((error) => {
               console.error(error);
               this.setState({ loading: false, loadingError: error });
             });
@@ -78,9 +70,12 @@ class PostrunMultistep extends React.Component {
     }
   }
 
-  metaValueWasSet(newvalue) {
+  metaValueWasSet(newValue) {
     this.setState({
-      postrunMetadata: Object.assign(this.state.postrunMetadata, newvalue),
+      postrunMetadata: {
+        ...this.state.postrunMetadata,
+        ...newValue,
+      },
     });
   }
 

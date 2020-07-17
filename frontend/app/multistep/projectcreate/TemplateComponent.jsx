@@ -6,7 +6,7 @@ import TemplateSelector from "../../Selectors/TemplateSelector.jsx";
 class TemplateComponent extends CommonMultistepComponent {
   static propTypes = {
     templatesList: PropTypes.array.isRequired,
-    selectedTemplate: PropTypes.number.isRequired,
+    selectedTemplate: PropTypes.string,
     selectionUpdated: PropTypes.func.isRequired,
   };
 

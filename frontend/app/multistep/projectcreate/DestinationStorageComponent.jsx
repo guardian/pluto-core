@@ -7,7 +7,7 @@ import axios from "axios";
 class DestinationStorageComponent extends CommonMultistepComponent {
   static propTypes = {
     storageList: PropTypes.array.isRequired,
-    selectedStorage: PropTypes.number.isRequired,
+    selectedStorage: PropTypes.number,
     selectionUpdated: PropTypes.func.isRequired,
   };
 
@@ -42,7 +42,7 @@ class DestinationStorageComponent extends CommonMultistepComponent {
     );
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.checkLogin();
   }
   render() {

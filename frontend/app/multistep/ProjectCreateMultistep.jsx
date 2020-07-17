@@ -10,10 +10,10 @@ import MediaRulesComponent from "./projectcreate/MediaRulesComponent.jsx";
 import ProductionOfficeComponent from "./commissioncreate/ProductionOfficeComponent.jsx";
 
 class ProjectCreateMultistep extends React.Component {
-  static propTypes = {};
-
   constructor(props) {
     super(props);
+
+    this.mounted = false;
 
     this.state = {
       projectTemplates: [],
@@ -40,7 +40,7 @@ class ProjectCreateMultistep extends React.Component {
   }
 
   requestDefaultProjectStorage(defaultValue) {
-    return new Promise((resolve, reject) =>
+    return new Promise((resolve) =>
       axios
         .get("/api/default/project_storage_id")
         .then((response) => {
@@ -61,31 +61,33 @@ class ProjectCreateMultistep extends React.Component {
   }
 
   componentDidMount() {
+    this.mounted = true;
+
     Promise.all([
       axios.get("/api/template"),
       axios.get("/api/storage"),
       axios.get("/api/pluto/workinggroup"),
     ])
-      .then((responses) => {
-        const firstTemplate = responses[0].data.result[0]
-          ? responses[0].data.result[0].id
-          : null;
-        const firstStorage = responses[1].data.result[0]
-          ? responses[1].data.result[0].id
-          : null;
-        const firstWorkingGroup = responses[2].data.result.length
-          ? responses[2].data.result[0].id
-          : null;
+      .then(([templates, storages, workingGroups]) => {
+        const firstTemplate = templates.data.result[0]?.id ?? null;
+        const firstStorage = storages.data.result[0]?.id ?? null;
+        const firstWorkingGroup = workingGroups.data.result[0]?.id ?? null;
 
-        this.requestDefaultProjectStorage(firstStorage).then((projectStorage) =>
-          this.setState({
-            projectTemplates: responses[0].data.result,
-            selectedProjectTemplate: firstTemplate,
-            storages: responses[1].data.result,
-            selectedStorage: projectStorage,
-            wgList: responses[2].data.result,
-            selectedWorkingGroup: firstWorkingGroup,
-          })
+        this.requestDefaultProjectStorage(firstStorage).then(
+          (projectStorage) => {
+            if (!this.mounted) {
+              return;
+            }
+
+            this.setState({
+              projectTemplates: templates.data.result,
+              selectedProjectTemplate: firstTemplate,
+              storages: storages.data.result,
+              selectedStorage: projectStorage,
+              wgList: workingGroups.data.result,
+              selectedWorkingGroup: firstWorkingGroup,
+            });
+          }
         );
       })
       .catch((error) => {
@@ -94,23 +96,38 @@ class ProjectCreateMultistep extends React.Component {
       });
   }
 
-  componentDidUpdate(prevProps, prevState, snapshot) {
-    if (prevState.selectedCommissionId !== this.state.selectedCommissionId) {
-      console.log("commission id changed, updating production office too");
-      axios
-        .get("/api/pluto/commission/" + this.state.selectedCommissionId)
-        .then((result) => {
-          this.setState({
-            productionOffice: result.data.result.productionOffice,
-          });
-        })
-        .catch((err) => {
-          console.log(
-            "Could not update production office from commission: ",
-            err
-          );
-        });
+  componentWillUnmount() {
+    this.mounted = false;
+  }
+
+  componentDidUpdate(_prevProps, prevState) {
+    if (prevState.selectedCommissionId === this.state.selectedCommissionId) {
+      return;
     }
+
+    console.log("commission id changed, updating production office too");
+
+    if (this.state.selectedCommissionId == null) {
+      this.setState({
+        productionOffice: "UK",
+      });
+
+      return;
+    }
+
+    axios
+      .get(`/api/pluto/commission/${this.state.selectedCommissionId}`)
+      .then((result) => {
+        this.setState({
+          productionOffice: result.data.result.productionOffice,
+        });
+      })
+      .catch((err) => {
+        console.error(
+          "Could not update production office from commission:",
+          err
+        );
+      });
   }
 
   templateSelectionUpdated(newTemplate, cb) {
@@ -150,7 +167,7 @@ class ProjectCreateMultistep extends React.Component {
         component: (
           <TemplateComponent
             templatesList={this.state.projectTemplates}
-            selectedTemplate={this.state.selectedProjectTemplate}
+            selectedTemplate={this.state.selectedProjectTemplate?.toString()}
             selectionUpdated={this.templateSelectionUpdated}
           />
         ),
@@ -160,7 +177,7 @@ class ProjectCreateMultistep extends React.Component {
         component: (
           <NameComponent
             projectName={this.state.projectName}
-            fileName={this.state.fileName}
+            fileName={this.state.projectFilename}
             selectionUpdated={this.nameSelectionUpdated}
           />
         ),
@@ -213,7 +230,7 @@ class ProjectCreateMultistep extends React.Component {
         component: (
           <ProjectCompletionComponent
             projectTemplates={this.state.projectTemplates}
-            selectedProjectTemplate={this.state.selectedProjectTemplate}
+            selectedProjectTemplate={Number(this.state.selectedProjectTemplate)}
             storages={this.state.storages}
             selectedStorage={this.state.selectedStorage}
             projectName={this.state.projectName}

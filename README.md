@@ -119,7 +119,7 @@ The following list explains the available yarn scripts in the frontend directory
 - Install dependencies: `yarn`
 - Run tests: `yarn test`
 - Build the frontend: `yarn build` (use `yarn build:prod` to build for a production environment)
-- Run a local development server: `yarn start`. This builds the project in a development environment and continues to monitor source files for modifications. The project is rebuilt automatically when they occur.
+- Build in watch mode: `yarn dev`. This builds the project in a development environment and continues to monitor source files for modifications. The project is rebuilt automatically when they occur.
 
 ### Running the backend tests
 

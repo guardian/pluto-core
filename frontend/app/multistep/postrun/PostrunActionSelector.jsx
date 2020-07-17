@@ -1,6 +1,5 @@
 import React from "react";
 import PropTypes from "prop-types";
-import ErrorViewComponent from "../common/ErrorViewComponent.jsx";
 
 class PostrunActionSelector extends React.Component {
   static propTypes = {
@@ -18,7 +17,7 @@ class PostrunActionSelector extends React.Component {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.setState({
       selectedEntries: this.props.selectedEntries
         ? this.props.selectedEntries

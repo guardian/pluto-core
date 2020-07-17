@@ -18,7 +18,7 @@ class ProjectEntryFiles extends React.Component {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.setState({ loading: true }, () =>
       axios
         .get("/api/project/" + this.props.entryId + "/files")

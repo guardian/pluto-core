@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 
 class PlutoSubtypeEntryView extends GenericEntryView {
   static propTypes = {
-    entryId: PropTypes.number.isRequired,
+    entryId: PropTypes.number,
   };
 
   constructor(props) {
@@ -13,8 +13,9 @@ class PlutoSubtypeEntryView extends GenericEntryView {
   }
 
   render() {
-    if (this.state.content === {} || this.props.entryId == undefined)
+    if (this.state.content === {} || this.props.entryId == undefined) {
       return <span className="value-not-present">(none)</span>;
+    }
 
     return this.state.content ? (
       <span>

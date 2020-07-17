@@ -137,9 +137,11 @@ class LoginComponent extends React.Component {
               </tr>
             </tbody>
           </table>
-          <span className="inline-dialog-content">
-            <ErrorViewComponent error={this.state.error} />
-          </span>
+          {this.state.error && (
+            <span className="inline-dialog-content">
+              <ErrorViewComponent error={this.state.error} />
+            </span>
+          )}
           <img
             src="/assets/images/uploading.svg"
             className="smallicon"

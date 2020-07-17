@@ -94,7 +94,7 @@ class App extends React.Component {
       .get("/system/publicdsn")
       .then((response) => {
         Raven.config(response.data.publicDsn).install();
-        console.log("Sentry initialised for " + response.data.publicDsn);
+        console.log("Sentry initialised for", response.data.publicDsn);
       })
       .catch((error) => {
         console.error("Could not intialise sentry", error);
@@ -159,13 +159,13 @@ class App extends React.Component {
     );
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.checkLogin();
   }
 
   onLoggedIn(userid, isAdmin) {
-    console.log("Logged in as " + userid);
-    console.log("Is an admin? " + isAdmin);
+    console.log("Logged in as", userid);
+    console.log(`${userid} ${isAdmin ? "is" : "is not"} an admin.`);
 
     this.setState(
       { currentUsername: userid, isAdmin: isAdmin, isLoggedIn: true },
@@ -237,15 +237,6 @@ class App extends React.Component {
   }
 
   render() {
-    console.debug(
-      "loading: ",
-      this.state.loading,
-      "isLoggedIn",
-      this.state.isLoggedIn,
-      "path",
-      window.location.pathname
-    );
-
     if (
       !this.state.loading &&
       !this.state.isLoggedIn &&
@@ -300,21 +291,26 @@ class App extends React.Component {
                 component={ProjectEntryEditComponent}
               />
               <Route path="/project/" component={ProjectEntryList} />
-              {/* TODO: this should lead to the commission detail page */}
               <Route
-                path="/commission/:itemid"
-                component={(props) => (
+                path="/commission/new"
+                render={(props) => (
                   <CommissionCreateMultistep
                     match={props.match}
                     userName={this.state.currentUsername}
                   />
                 )}
               />
-              <Route path="/commission/" component={CommissionsList} />
               <Route
-                path="/working-group/:itemid"
-                component={(props) => <WorkingGroup {...props} />}
+                path="/commission/:commissionId"
+                render={(props) => (
+                  <ProjectEntryList
+                    match={props.match}
+                    userName={this.state.currentUsername}
+                  />
+                )}
               />
+              <Route path="/commission/" component={CommissionsList} />
+              <Route path="/working-group/:itemid" component={WorkingGroup} />
               <Route path="/working-group/" component={WorkingGroups} />
               <Route
                 path="/validate/project"
@@ -330,7 +326,7 @@ class App extends React.Component {
               <Route
                 exact
                 path="/"
-                component={() => (
+                render={() => (
                   <RootComponent
                     onLoggedOut={this.onLoggedOut}
                     onLoggedIn={this.onLoggedIn}

@@ -36,7 +36,7 @@ class CompletionComponent extends CommonCompletionComponent {
     return this.props.postrunMetadata;
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.updateAddRemoveDeps();
   }
 
@@ -107,7 +107,7 @@ class CompletionComponent extends CommonCompletionComponent {
           actionList={this.props.actionList}
           selectedActions={this.props.selectedDependencies}
         />
-        <ErrorViewComponent error={this.state.error} />
+        {this.state.error && <ErrorViewComponent error={this.state.error} />}
         <span style={{ float: "right" }}>
           <button onClick={this.confirmClicked}>Confirm</button>
         </span>

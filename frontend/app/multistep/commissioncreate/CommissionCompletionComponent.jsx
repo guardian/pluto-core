@@ -84,7 +84,7 @@ class CommissionCompletionComponent extends React.Component {
           any details.
         </p>
 
-        <ErrorViewComponent error={this.state.error} />
+        {this.state.error && <ErrorViewComponent error={this.state.error} />}
 
         <SummaryComponent
           commissionName={this.props.title}

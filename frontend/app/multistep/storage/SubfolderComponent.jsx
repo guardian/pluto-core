@@ -8,7 +8,7 @@ class StorageSubfolderComponent extends React.Component {
     clientpath: PropTypes.string.isRequired,
   };
 
-  componentWillMount() {
+  componentDidMount() {
     this.setState({
       subfolder: this.props.rootpath,
       clientpath: this.props.clientpath,

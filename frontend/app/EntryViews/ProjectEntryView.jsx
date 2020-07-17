@@ -18,7 +18,7 @@ class ProjectEntryView extends GenericEntryView {
     this.endpoint = "/api/project";
   }
 
-  componentWillMount() {
+  componentDidMount() {
     if (
       this.props.user &&
       this.props.projectTypeId &&
@@ -34,7 +34,7 @@ class ProjectEntryView extends GenericEntryView {
         },
       });
     } else {
-      super.componentWillMount();
+      super.componentDidMount();
     }
   }
 

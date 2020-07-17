@@ -13,7 +13,6 @@ class MetadataComponent extends CommonMultistepComponent {
 
   constructor(props) {
     super(props);
-    console.log(props);
     this.state = {
       title: props.title,
       description: props.description,

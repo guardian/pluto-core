@@ -66,10 +66,9 @@ class TypeSelectorComponent extends CommonMultistepComponent {
   // FIXME: this should return a number, but it can return a string, null, or something unknown (number?).
   getPlutoSubtypeForPlType() {
     const type = this.projectTypeForId(this.props.selectedType);
-    console.log(type);
     if (!type) return "";
 
-    return type.hasOwnProperty("plutoType") ? type.plutoType : null;
+    return type?.plutoType ?? null;
   }
 
   render() {

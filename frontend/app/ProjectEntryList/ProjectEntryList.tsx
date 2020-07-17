@@ -1,28 +1,34 @@
-import React, { useEffect, useState } from "react";
-import ProjectEntryFilterComponent from "../filter/ProjectEntryFilterComponent.jsx";
-import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView.jsx";
-import CommissionEntryView from "../EntryViews/CommissionEntryView.jsx";
-import { RouteComponentProps } from "react-router-dom";
-import moment from "moment";
 import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableContainer,
-  Paper,
-  makeStyles,
   Button,
   IconButton,
+  makeStyles,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
   TablePagination,
+  TableRow,
   TableSortLabel,
+  Typography,
 } from "@material-ui/core";
-import { getProjectsOnPage } from "./helpers";
-import { isLoggedIn } from "../utils/api";
-import { sortListByOrder, Order } from "../utils/utils";
-import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
+import EditIcon from "@material-ui/icons/Edit";
+import moment from "moment";
+import React, { useEffect, useState } from "react";
+import {
+  RouteComponentProps,
+  useHistory,
+  useLocation,
+  useParams,
+} from "react-router-dom";
+import CommissionEntryView from "../EntryViews/CommissionEntryView.jsx";
+import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView.jsx";
+import ProjectEntryFilterComponent from "../filter/ProjectEntryFilterComponent.jsx";
+import { isLoggedIn } from "../utils/api";
+import { SortDirection, sortListByOrder } from "../utils/lists";
+import { getProjectsOnPage } from "./helpers";
 
 interface HeaderTitles {
   label: string;
@@ -62,18 +68,46 @@ const useStyles = makeStyles({
 });
 const pageSizeOptions = [25, 50, 100];
 
-const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
-  const classes = useStyles();
+interface ProjectFilterTerms extends FilterTerms {
+  commissionId?: number;
+}
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [filterTerms, setFilterTerms] = useState<FilterTerms>({
-    match: "W_ENDSWITH",
-  });
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
+  id,
+  isAdmin = false,
+}) => (
+  <span
+    className="icons"
+    style={{ display: isAdmin ? "inherit" : "none", whiteSpace: "nowrap" }}
+  >
+    <IconButton href={`/project/${id}`}>
+      <EditIcon></EditIcon>
+    </IconButton>
+    <IconButton href={`/project/${id}/delete`}>
+      <DeleteIcon></DeleteIcon>
+    </IconButton>
+  </span>
+);
+
+const ProjectEntryList: React.FC<RouteComponentProps> = () => {
+  // React Router
+  const history = useHistory();
+  const { search } = useLocation();
+  const { commissionId } = useParams<{ commissionId?: string }>();
+
+  // React state
+  const [user, setUser] = useState<PlutoUser | null>(null);
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
-  const [order, setOrder] = useState<Order>("asc");
+  const [order, setOrder] = useState<SortDirection>("asc");
   const [orderBy, setOrderBy] = useState<keyof Project>("title");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [filterTerms, setFilterTerms] = useState<ProjectFilterTerms>({
+    match: "W_CONTAINS",
+  });
+
+  // Material-UI
+  const classes = useStyles();
 
   const fetchProjectsOnPage = async () => {
     const projects = await getProjectsOnPage({
@@ -81,64 +115,49 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
       pageSize,
       filterTerms,
     });
+
     setProjects(projects);
   };
 
   useEffect(() => {
     const fetchWhoIsLoggedIn = async () => {
       try {
-        const loggedIn = await isLoggedIn();
-        setIsAdmin(loggedIn.isAdmin);
-        setFilterTerms(
-          props.location.search.includes("mine")
-            ? { user: loggedIn.uid, match: "W_EXACT" }
-            : { match: "W_CONTAINS" }
-        );
-        fetchProjectsOnPage();
-      } catch {
-        setIsAdmin(false);
+        const user = await isLoggedIn();
+        setUser(user);
+      } catch (error) {
+        console.error("Could not login user:", error);
       }
     };
 
     fetchWhoIsLoggedIn();
-  }, [page, pageSize]);
+  }, []);
 
-  const getActionIcons = (id: number) => {
-    const componentName = props.location.pathname.split("/")[1];
+  useEffect(() => {
+    const newFilterTerms: ProjectFilterTerms =
+      user && new URLSearchParams(search).has("mine")
+        ? { user: user.uid, match: "W_EXACT" }
+        : { match: "W_CONTAINS" };
 
-    return (
-      <span className="icons" style={{ display: isAdmin ? "inherit" : "none" }}>
-        <IconButton
-          onClick={() => props.history.push(`/${componentName}/${id}`)}
-        >
-          <EditIcon></EditIcon>
-        </IconButton>
-        <IconButton
-          onClick={() => props.history.push(`/${componentName}/${id}/delete`)}
-        >
-          <DeleteIcon></DeleteIcon>
-        </IconButton>
-      </span>
-    );
-  };
+    const commissionIdAsNumber = Number(commissionId);
 
-  const getFilterComponent = () => {
-    return (
-      <ProjectEntryFilterComponent
-        filterTerms={filterTerms}
-        filterDidUpdate={filterDidUpdate}
-      />
-    );
-  };
+    if (
+      commissionId !== undefined &&
+      commissionId.length > 0 &&
+      !Number.isNaN(commissionIdAsNumber)
+    ) {
+      newFilterTerms.commissionId = commissionIdAsNumber;
+    }
 
-  const newElementCallback = (): void => {
-    props.history.push("/project/new");
-  };
+    setFilterTerms(newFilterTerms);
+  }, [commissionId, user?.uid]);
 
-  const filterDidUpdate = (newTerms: FilterTerms) => {
-    setFilterTerms(newTerms);
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
     fetchProjectsOnPage();
-  };
+  }, [filterTerms, page, pageSize, order, orderBy]);
 
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
@@ -164,11 +183,16 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
 
   return (
     <>
-      {getFilterComponent()}
+      <ProjectEntryFilterComponent
+        filterTerms={filterTerms}
+        filterDidUpdate={setFilterTerms}
+      />
       <Button
         className={classes.createButton}
         variant="outlined"
-        onClick={newElementCallback}
+        onClick={() => {
+          history.push("/project/new");
+        }}
       >
         New
       </Button>
@@ -205,7 +229,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortListByOrder(projects, order, orderBy).map(
+              {sortListByOrder(projects, orderBy, order).map(
                 ({
                   id,
                   title,
@@ -213,7 +237,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
                   created,
                   workingGroupId,
                   status,
-                  user,
+                  user: projectUser,
                 }) => (
                   <TableRow key={id}>
                     <TableCell>{title}</TableCell>
@@ -229,8 +253,10 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
                       <WorkingGroupEntryView entryId={workingGroupId} />
                     </TableCell>
                     <TableCell>{status}</TableCell>
-                    <TableCell>{user}</TableCell>
-                    <TableCell>{getActionIcons(id)}</TableCell>
+                    <TableCell>{projectUser}</TableCell>
+                    <TableCell>
+                      <ActionIcons id={id} isAdmin={user?.isAdmin ?? false} />
+                    </TableCell>
                     <TableCell>
                       {
                         <a target="_blank" href={`pluto:openproject:${id}`}>
@@ -260,6 +286,11 @@ const ProjectEntryList: React.FC<RouteComponentProps> = (props) => {
           labelDisplayedRows={({ from, to }) => `${from}-${to}`}
         ></TablePagination>
       </Paper>
+      {typeof commissionId === "string" && projects.length === 0 && (
+        <Typography variant="subtitle1" style={{ marginTop: "1rem" }}>
+          No projects for this commission.
+        </Typography>
+      )}
     </>
   );
 };

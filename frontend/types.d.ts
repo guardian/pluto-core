@@ -33,14 +33,16 @@ interface Project {
   productionOffice: string;
 }
 
+type FilterOrderType = "W_STARTSWITH" | "W_ENDSWITH" | "W_CONTAINS" | "W_EXACT";
+
 interface FilterTerms {
-  match?: string;
+  match?: FilterOrderType;
   user?: string;
 }
 
-interface IsLoggedIn {
-  isAdmin: boolean;
+interface PlutoUser {
   uid: string;
+  isAdmin: boolean;
 }
 
 interface PlutoApiResponse<T> {

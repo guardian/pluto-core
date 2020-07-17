@@ -11,13 +11,19 @@ class LongProcessComponent extends React.Component {
   constructor(props) {
     super(props);
 
+    this.mounted = false;
+
     this.state = {
       currentTime: 0,
       timerId: null,
     };
   }
 
-  componentDidUpdate(oldProps, oldState) {
+  componentDidMount() {
+    this.mounted = true;
+  }
+
+  componentDidUpdate(oldProps) {
     if (oldProps.inProgress === false && this.props.inProgress === true) {
       this.startTimer();
     } else if (
@@ -28,12 +34,20 @@ class LongProcessComponent extends React.Component {
     }
   }
 
+  componentWillUnmount() {
+    this.mounted = false;
+    this.stopTimer();
+  }
+
   startTimer() {
+    if (!this.mounted) {
+      return;
+    }
+
     this.setState({
-      timerId: window.setInterval(
-        () => this.setState({ currentTime: this.state.currentTime + 1 }),
-        1000
-      ),
+      timerId: window.setInterval(() => {
+        this.setState({ currentTime: this.state.currentTime + 1 });
+      }, 1000),
     });
   }
 

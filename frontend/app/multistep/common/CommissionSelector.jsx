@@ -1,13 +1,12 @@
 import React from "react";
 import PropTypes from "prop-types";
-import ErrorViewComponent from "./ErrorViewComponent.jsx";
 import FilterableList from "../../common/FilterableList.jsx";
 
 class CommissionSelector extends React.Component {
   static propTypes = {
-    workingGroupId: PropTypes.number.isRequired,
-    selectedCommissionId: PropTypes.number.isRequired,
-    showStatus: PropTypes.string.isRequired,
+    workingGroupId: PropTypes.number,
+    selectedCommissionId: PropTypes.number,
+    showStatus: PropTypes.string,
     valueWasSet: PropTypes.func.isRequired,
   };
 
@@ -21,7 +20,7 @@ class CommissionSelector extends React.Component {
     this.makeSearchDoc = this.makeSearchDoc.bind(this);
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps) {
     if (
       prevProps.workingGroupId !== this.props.workingGroupId ||
       prevProps.showStatus !== this.props.showStatus
@@ -36,10 +35,12 @@ class CommissionSelector extends React.Component {
   }
 
   makeSearchDoc(enteredText) {
+    const { workingGroupId, showStatus: status } = this.props;
+
     return {
       title: enteredText,
-      workingGroupId: this.props.workingGroupId,
-      status: this.props.showStatus,
+      workingGroupId,
+      status,
       match: "W_CONTAINS",
     };
   }
@@ -48,7 +49,7 @@ class CommissionSelector extends React.Component {
     return (
       <FilterableList
         onChange={(newValue) => this.props.valueWasSet(parseInt(newValue))}
-        value={this.props.selectedCommissionId}
+        value={this.props.selectedCommissionId?.toString()}
         size={10}
         unfilteredContentFetchUrl="/api/pluto/commission/list?length=150"
         unfilteredContentConverter={CommissionSelector.convertContent}

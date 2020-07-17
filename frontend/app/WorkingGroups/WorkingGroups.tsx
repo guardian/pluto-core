@@ -21,7 +21,7 @@ import {
 } from "@material-ui/core";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { getWorkingGroupsOnPage, deleteWorkingGroup } from "./helpers";
-import { sortListByOrder, Order } from "../utils/utils";
+import { sortListByOrder, SortDirection } from "../utils/lists";
 import { isLoggedIn } from "../utils/api";
 import SystemNotification, {
   SystemNotificationKind,
@@ -74,7 +74,7 @@ const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
-  const [order, setOrder] = useState<Order>("asc");
+  const [order, setOrder] = useState<SortDirection>("asc");
   const [orderBy, setOrderBy] = useState<keyof WorkingGroup>("name");
 
   useEffect(() => {
@@ -192,7 +192,7 @@ const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortListByOrder(workingGroups, order, orderBy).map(
+              {sortListByOrder(workingGroups, orderBy, order).map(
                 ({ id, name, commissioner, hide }) => (
                   <TableRow
                     hover={true}

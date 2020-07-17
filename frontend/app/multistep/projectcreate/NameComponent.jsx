@@ -6,7 +6,7 @@ import moment from "moment";
 class NameComponent extends CommonMultistepComponent {
   static propTypes = {
     projectName: PropTypes.string.isRequired,
-    fileName: PropTypes.string.isRequired,
+    fileName: PropTypes.string,
     selectionUpdated: PropTypes.func.isRequired,
   };
 
@@ -14,19 +14,12 @@ class NameComponent extends CommonMultistepComponent {
     super(props);
 
     this.state = {
-      projectName: "",
-      fileName: "",
+      projectName: props.projectName ?? "",
+      fileName: props.fileName ?? "",
       autoNameFile: true,
     };
     this.projectNameChanged = this.projectNameChanged.bind(this);
     this.fileNameChanged = this.fileNameChanged.bind(this);
-  }
-
-  componentWillMount() {
-    this.setState({
-      projectName: this.props.projectName,
-      fileName: this.props.fileName,
-    });
   }
 
   makeAutoFilename(title) {
