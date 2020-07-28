@@ -31,7 +31,7 @@ class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSyst
 
   val logger: Logger = Logger(getClass)
   val rmqFactory = new ConnectionFactory()
-  rmqFactory.setUri(configuration.get[String]("pluto.rabbitmq-uri"))
+  rmqFactory.setUri(configuration.get[String]("rabbitmq.uri"))
   val rmqConnection: ActorRef = system.actorOf(ConnectionActor.props(rmqFactory, reconnectionDelay = 10.seconds), "pluto-core")
   val rmqChannel: ActorRef = rmqConnection.createChannel(ChannelActor.props(channelSetup))
   val rmqRouteBase = "core"
