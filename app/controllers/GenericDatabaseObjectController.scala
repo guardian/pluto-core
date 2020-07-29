@@ -248,9 +248,7 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends BaseController with
                                             (implicit writes: Writes[N]): Future[Unit] = {
     selectid(id).map({
       case Success(Seq(model : N)) => rabbitMqPropagator ! ChangeEvent(model, operation)
-      case _ => {
-        logger.error("Failed to propagate changes")
-      }
+      case _ => logger.error("Failed to propagate changes")
     })
   }
 

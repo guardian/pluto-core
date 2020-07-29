@@ -40,7 +40,10 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
 
   override def insert(entry: PlutoWorkingGroup, uid: String): Future[Try[Int]] = db.run(
     (TableQuery[PlutoWorkingGroupRow] returning TableQuery[PlutoWorkingGroupRow].map(_.id) += entry).asTry)
-    .flatMap (id => sendToRabbitMq(CreateOperation, id, rabbitMqPropagator))
+    .map (id => {
+      sendToRabbitMq(CreateOperation, id, rabbitMqPropagator)
+      id
+    })
 
   override def deleteid(requestedId: Int):Future[Try[Int]] = db.run(
     TableQuery[PlutoWorkingGroupRow].filter(_.id === requestedId).delete.asTry
@@ -52,7 +55,10 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
       case None=>entry.copy(id=Some(itemId))
     }
     db.run(TableQuery[PlutoWorkingGroupRow].filter(_.id===itemId).update(newRecord).asTry)
-        .flatMap(rows => sendToRabbitMq(UpdateOperation, itemId, rabbitMqPropagator).map(_ => rows))
+      .map(rows => {
+        sendToRabbitMq(UpdateOperation, itemId, rabbitMqPropagator)
+        rows
+      })
   }
 
   /*these are handled through implict translation*/

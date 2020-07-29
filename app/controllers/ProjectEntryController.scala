@@ -99,7 +99,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     dbConfig.db.run (
       TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
     )
-      .flatMap(rows => sendToRabbitMq(UpdateOperation, requestedId, rabbitMqPropagator).map(_ => rows))
+    .map(rows => {
+      sendToRabbitMq(UpdateOperation, requestedId, rabbitMqPropagator)
+      rows
+    })
   }
 
   /**
@@ -140,7 +143,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       dbConfig.db.run (
         TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
       )
-        .flatMap(rows => sendToRabbitMq(UpdateOperation, requestedId, rabbitMqPropagator).map(_ => rows))
+      .map(rows => {
+        sendToRabbitMq(UpdateOperation, requestedId, rabbitMqPropagator)
+        rows
+      })
     }
   }
 

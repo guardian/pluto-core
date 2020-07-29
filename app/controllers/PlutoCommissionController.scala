@@ -73,7 +73,10 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
 
     override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(
       (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
-      .flatMap(id => sendToRabbitMq(CreateOperation, id, rabbitMqPropagator))
+      .map(id => {
+        sendToRabbitMq(CreateOperation, id, rabbitMqPropagator)
+        id
+      })
 
     override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
 
@@ -125,14 +128,14 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
             invalidErrs=>
                 Future(BadRequest(Json.obj("status"->"bad_request","detail"->JsError.toJson(invalidErrs)))),
             requiredUpdate=>
-                updateStatusColumn(commissionId, requiredUpdate.status).flatMap(rowsUpdated=>{
+                updateStatusColumn(commissionId, requiredUpdate.status).map(rowsUpdated=>{
                     if(rowsUpdated==0){
-                        Future(NotFound(Json.obj("status"->"not_found","detail"->s"No commission with id $commissionId")))
+                        NotFound(Json.obj("status"->"not_found","detail"->s"No commission with id $commissionId"))
                     } else {
                         if(rowsUpdated>1) logger.error(s"Status update request for commission $commissionId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
                         commissionStatusPropagator ! CommissionStatusPropagator.CommissionStatusUpdate(commissionId, requiredUpdate.status)
-                        sendToRabbitMq(UpdateOperation, commissionId, rabbitMqPropagator)
-                          .map(_ => Ok(Json.obj("status"->"ok","detail"->"commission status updated")))
+                        sendToRabbitMq(UpdateOperation, commissionId, rabbitMqPropagator).foreach(_ => ())
+                        Ok(Json.obj("status"->"ok","detail"->"commission status updated"))
                     }
                 }).recover({
                     case err:Throwable=>
