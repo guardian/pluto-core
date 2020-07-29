@@ -30,7 +30,7 @@ trait ProjectTemplateSerializer {
     )(ProjectTemplate.apply _)
 }
 
-case class ProjectTemplate (id: Option[Int],name: String, projectTypeId: Int, fileRef: Int, plutoSubtypeRef: Option[Int], deprecated: Option[Boolean]) {
+case class ProjectTemplate (id: Option[Int],name: String, projectTypeId: Int, fileRef: Int, plutoSubtypeRef: Option[Int], deprecated: Option[Boolean]) extends PlutoModel {
   def projectType(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[ProjectType] = db.run(
     TableQuery[ProjectTypeRow].filter(_.id===projectTypeId).result.asTry
   ).map({

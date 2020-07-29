@@ -9,7 +9,7 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import auth.Security
 import exceptions.{AlreadyExistsException, BadDataException}
-import models.PlutoModel
+import models.{PlutoCommission, PlutoModel, PlutoWorkingGroup, ProjectEntry}
 import services.ChangeOperation
 import services.RabbitMqPropagator.ChangeEvent
 
@@ -18,7 +18,7 @@ import services.RabbitMqPropagator.ChangeEvent
   * stub implementations of @selectFiltered and @validateFilterParams which raise RuntimeExceptions when called.
   * @tparam M - type of the case class which represents the objects that ultimately get returned by Slick
   */
-trait GenericDatabaseObjectController[M] extends GenericDatabaseObjectControllerWithFilter[M,Nothing]
+trait GenericDatabaseObjectController[M<:PlutoModel] extends GenericDatabaseObjectControllerWithFilter[M,Nothing]
 {
   def selectFiltered(startAt: Int, limit:Int, terms:Nothing) = Future(Failure(new RuntimeException("Not implemented")))
   def validateFilterParams(request:Request[JsValue]) = throw new RuntimeException("Not implemented")
@@ -33,7 +33,7 @@ trait GenericDatabaseObjectController[M] extends GenericDatabaseObjectController
   * @tparam M - type of the case class which represents the objects that ultimately get returned by Slick
   * @tparam F - type of the case class which represents supported search filter terms (the provided json is marshalled to this)
   */
-trait GenericDatabaseObjectControllerWithFilter[M,F] extends BaseController with Security {
+trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseController with Security {
   /**
     * Implement this method in your subclass to validate that the incoming record (passed in request) does indeed match
     * your case class.
@@ -238,22 +238,30 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends BaseController with
       deleteAction(requestedId)
   }}
 
+  private def getItemType(m:PlutoModel) = m match {
+    case _:PlutoWorkingGroup=>Some("workinggroup")
+    case _:PlutoCommission=>Some("commission")
+    case _:ProjectEntry=>Some("project")
+    case _=>None
+  }
+
   def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, tryId: Try[Int], rabbitMqPropagator: ActorRef)
                                             (implicit writes: Writes[N]): Future[Try[Int]] = {
     tryId.map(id => sendToRabbitMq(operation, id, rabbitMqPropagator))
     Future(tryId)
   }
 
-  def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, id: Int, rabbitMqPropagator: ActorRef)
-                                            (implicit writes: Writes[N]): Future[Unit] = {
+  def sendToRabbitMq(operation: ChangeOperation, id: Int, rabbitMqPropagator: ActorRef): Future[Unit] = {
+    logger.debug(s"sendToRabbitMq looking up id $id")
     selectid(id).map({
-      case Success(Seq(model : N)) => rabbitMqPropagator ! ChangeEvent(model, operation)
+      case Success(modelList) => modelList.foreach(model=>rabbitMqPropagator ! ChangeEvent(jstranslate(model), getItemType(model), operation))
+
       case _ => logger.error("Failed to propagate changes")
     })
   }
 
   def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, model: N, rabbitMqPropagator: ActorRef)
                                             (implicit writes: Writes[N]): Unit =
-    rabbitMqPropagator ! ChangeEvent(model, operation)
+    rabbitMqPropagator ! ChangeEvent(jstranslate(model),getItemType(model), operation)
 
 }

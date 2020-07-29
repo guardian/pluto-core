@@ -33,7 +33,7 @@ import scala.concurrent.{Await, Future}
   * @param hasLink - boolean flag representing whether this entitiy is linked to anything (i.e. a project) yet.
   */
 case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String, version:Int,
-                     ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean) {
+                     ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean) extends PlutoModel {
 
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id

@@ -40,9 +40,12 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
 
   override def insert(entry: PlutoWorkingGroup, uid: String): Future[Try[Int]] = db.run(
     (TableQuery[PlutoWorkingGroupRow] returning TableQuery[PlutoWorkingGroupRow].map(_.id) += entry).asTry)
-    .map (id => {
-      sendToRabbitMq(CreateOperation, id, rabbitMqPropagator)
-      id
+    .map ({
+        case Success(newEntryId)=>
+          //sendToRabbitMq(CreateOperation, id, rabbitMqPropagator)
+          sendToRabbitMq(CreateOperation, entry.copy(id=Some(newEntryId)), rabbitMqPropagator)
+          Success(newEntryId)
+        case err@Failure(_)=>err
     })
 
   override def deleteid(requestedId: Int):Future[Try[Int]] = db.run(

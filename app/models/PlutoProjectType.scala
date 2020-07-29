@@ -23,7 +23,7 @@ case class IncomingProjectSubtype(name:String, uuid:String, parent_name:String) 
   }
 }
 
-case class PlutoProjectType(id: Option[Int], name: String, uuid: String, parent:Option[Int], defaultProjectTemplate:Option[Int]) {
+case class PlutoProjectType(id: Option[Int], name: String, uuid: String, parent:Option[Int], defaultProjectTemplate:Option[Int]) extends PlutoModel {
   val logger = Logger(getClass)
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
