@@ -34,8 +34,8 @@ class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSyst
   rmqFactory.setUri(configuration.get[String]("rabbitmq.uri"))
   val rmqConnection: ActorRef = system.actorOf(ConnectionActor.props(rmqFactory, reconnectionDelay = 10.seconds), "pluto-core")
   val rmqChannel: ActorRef = rmqConnection.createChannel(ChannelActor.props(channelSetup))
-  val rmqRouteBase = "core"
-  val rmqExchange = "pluto-core-model"
+  val rmqRouteBase = configuration.getOptional[String]("rabbitmq.route-base").getOrElse("core")
+  val rmqExchange = configuration.getOptional[String]("rabbitmq.exchange").getOrElse("pluto-core")
 
   def channelSetup(channel: Channel, self: ActorRef): Exchange.DeclareOk = {
     channel.exchangeDeclare(rmqExchange, "topic")
