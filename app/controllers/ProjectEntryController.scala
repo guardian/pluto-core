@@ -354,7 +354,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       .filter(_.status === EntryStatus.New)
       .map(p => p.status).update(EntryStatus.InProduction).map(rows => {
         if (rows > 0) {
-          sendToRabbitMq(UpdateOperation, id)
+          sendToRabbitMq(UpdateOperation, id, rabbitMqPropagator)
         }
       })
 
