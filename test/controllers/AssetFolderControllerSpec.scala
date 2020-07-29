@@ -22,8 +22,6 @@ class AssetFolderControllerSpec extends Specification with utils.BuildMyApp with
     private val injector = app.injector
     protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
     protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
-
-    println("inserts")
     val insertFut = db.run(
         TableQuery[ProjectMetadataRow] ++= Seq(
           ProjectMetadata(id=None,projectRef=1,key="somekey",value=Some("somevalue")),
@@ -33,7 +31,6 @@ class AssetFolderControllerSpec extends Specification with utils.BuildMyApp with
     )
 
     Await.ready(insertFut, 10 seconds)
-    println("done")
   }
 
   override def after = new WithApplication(buildApp) {
