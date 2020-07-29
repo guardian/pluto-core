@@ -27,7 +27,7 @@ class AssetFolderControllerSpec extends Specification with utils.BuildMyApp with
     val insertFut = db.run(
         TableQuery[ProjectMetadataRow] ++= Seq(
           ProjectMetadata(id=None,projectRef=1,key="somekey",value=Some("somevalue")),
-          ProjectMetadata(None,2,key=ProjectMetadata.ASSET_FOLDER_KEY, value=Some("/path/to/otherassets")),
+          ProjectMetadata(None,3,key=ProjectMetadata.ASSET_FOLDER_KEY, value=Some("/path/to/otherassets")),
           ProjectMetadata(None, projectRef=1,key=ProjectMetadata.ASSET_FOLDER_KEY, value=Some("/path/to/assets"))
         )
     )
