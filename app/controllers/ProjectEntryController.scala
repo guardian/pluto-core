@@ -352,11 +352,9 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     def updateProject() = TableQuery[ProjectEntryRow]
       .filter(_.id === id)
       .filter(_.status === EntryStatus.New)
-      .map(p => p.status).update(EntryStatus.InProduction).flatMap(rows => {
+      .map(p => p.status).update(EntryStatus.InProduction).map(rows => {
         if (rows > 0) {
-          DBIOAction.from(sendToRabbitMq(UpdateOperation, id))
-        } else {
-          DBIOAction.successful(())
+          sendToRabbitMq(UpdateOperation, id)
         }
       })
 
