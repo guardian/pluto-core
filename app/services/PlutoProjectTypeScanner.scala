@@ -6,7 +6,7 @@ import akka.actor.{Actor, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.{Configuration, Logger}
@@ -23,13 +23,12 @@ object PlutoProjectTypeScanner {
   case object RefreshProjectSubtypes
 }
 
-class PlutoProjectTypeScanner @Inject() (playConfig:Configuration, actorSystemI:ActorSystem, dbConfigProvider: DatabaseConfigProvider)
+class PlutoProjectTypeScanner @Inject() (playConfig:Configuration, actorSystemI:ActorSystem, dbConfigProvider: DatabaseConfigProvider)(implicit val materializer:Materializer)
   extends Actor with JsonComms with PlutoProjectTypeSerializer  {
   import PlutoProjectTypeScanner._
 
   implicit val actorSystem = actorSystemI
   implicit val configuration = playConfig
-  implicit val materializer = ActorMaterializer()
   implicit val executionContext = actorSystem.dispatcher
   protected val logger = Logger(getClass)
 

@@ -18,7 +18,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import postrun.PojoPostrun
 import slick.jdbc.PostgresProfile
 
-import collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import collection.mutable._
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
@@ -37,7 +37,7 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
   implicit val db = dbConfigProvider.get[PostgresProfile].db
   implicit val configImplicit = config
 
-  def initialise() {
+  def initialise:Unit = {
     //call out to JythonRunner to ensure that scripts are precompiled when we start up.
     JythonRunner.precompile.map(results => {
       results.foreach({
@@ -93,7 +93,7 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
     addIfNotExists(scriptFile.getName, scriptFile.getName)
   }
 
-  initialise()
+  initialise
 
   override def receive: Receive = {
     case PostrunActionScanner.Rescan=>

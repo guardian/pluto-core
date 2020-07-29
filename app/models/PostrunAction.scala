@@ -126,7 +126,7 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     val logger = Logger(this.getClass)
     logger.debug(s"Initiating java based postrun $className...")
     try {
-      val postrunClass = Class.forName(className).newInstance().asInstanceOf[PojoPostrun]
+      val postrunClass = Class.forName(className).getDeclaredConstructor().newInstance().asInstanceOf[PojoPostrun]
 
       postrunClass.postrun(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe).map({
         case Success(newDataCache) => Success(JythonOutput("", "", newDataCache, raisedError = None))

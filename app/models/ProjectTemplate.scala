@@ -61,7 +61,7 @@ class ProjectTemplateRow(tag: Tag) extends Table[ProjectTemplate](tag,"ProjectTe
   def plutoSubtype=column[Option[Int]]("k_pluto_subtype")
   def fkProjectType=foreignKey("fk_project_type",projectType,TableQuery[ProjectTypeRow])(_.id)
   def fkFileRef=foreignKey("fk_file_ref",fileRef,TableQuery[FileEntryRow])(_.id)
-  def fkPlutoSubtype=foreignKey("fk_pluto_subtype", plutoSubtype,TableQuery[PlutoProjectTypeRow])(_.id)
+  def fkPlutoSubtype=foreignKey("fk_pluto_subtype", plutoSubtype,TableQuery[PlutoProjectTypeRow])(_.id.?)
   def deprecated=column[Option[Boolean]]("b_deprecated")
   def * = (id.?, name, projectType, fileRef, plutoSubtype, deprecated) <> (ProjectTemplate.tupled, ProjectTemplate.unapply)
 }
