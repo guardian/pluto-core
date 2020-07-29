@@ -36,15 +36,14 @@ class AssetFolderController @Inject() (override val controllerComponents:Control
     if(pathParts.isEmpty) return Future(None)
 
     val pathToCheck = pathParts.mkString("/")
-    println(pathToCheck)
-    //Think this could be done much better, probably by getting a superset of data and then filtering it in-memory
+    //Think this could be done much better, probably by getting a superset of data and then filtering it in-memory;
+    //but I can't work out how to query for the relevant superset right now
     db.run(
       TableQuery[ProjectMetadataRow]
         .filter(_.key===ProjectMetadata.ASSET_FOLDER_KEY)
         .filter(_.value===pathToCheck)
         .result
     ).flatMap(results=>{
-      println(results)
       if(results.isEmpty) {
         recursiveSearch(pathParts.dropRight(1))
       } else {
