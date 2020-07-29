@@ -36,6 +36,9 @@ case class ProjectMetadata (id:Option[Int],projectRef:Int,key:String,value:Optio
 
 object ProjectMetadata extends ((Option[Int], Int, String, Option[String])=>ProjectMetadata){
   private val logger = Logger(getClass)
+
+  val ASSET_FOLDER_KEY = "created_asset_folder"
+
   /**
     * Gets a metadata entry for the given project
     * @param projectRef projectEntry ID
