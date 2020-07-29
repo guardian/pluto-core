@@ -99,7 +99,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     dbConfig.db.run (
       TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
     )
-      .flatMap(rows => sendToRabbitMq(UpdateOperation, requestedId).map(_ => rows))
+      .flatMap(rows => sendToRabbitMq(UpdateOperation, requestedId, rabbitMqPropagator).map(_ => rows))
   }
 
   /**
@@ -140,7 +140,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       dbConfig.db.run (
         TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
       )
-        .flatMap(rows => sendToRabbitMq(UpdateOperation, requestedId).map(_ => rows))
+        .flatMap(rows => sendToRabbitMq(UpdateOperation, requestedId, rabbitMqPropagator).map(_ => rows))
     }
   }
 
@@ -156,7 +156,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         TableQuery[ProjectEntryRow].filter(_.id === record.id.get).update(updatedProjectEntry).asTry
       )
         .map(rows => {
-          sendToRabbitMq(UpdateOperation, record)
+          sendToRabbitMq(UpdateOperation, record, rabbitMqPropagator)
           rows
         })
     }
@@ -243,7 +243,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     (projectCreationActor ? msg).mapTo[CreationMessage].map({
       case GenericCreationActor.ProjectCreateSucceeded(succeededRequest, projectEntry)=>
         logger.info(s"Created new project: $projectEntry")
-        sendToRabbitMq(CreateOperation, projectEntry)
+        sendToRabbitMq(CreateOperation, projectEntry, rabbitMqPropagator)
         Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))
       case GenericCreationActor.ProjectCreateFailed(failedRequest, error)=>
         logger.error("Could not create new project", error)

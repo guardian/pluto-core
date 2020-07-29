@@ -238,14 +238,14 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends BaseController with
       deleteAction(requestedId)
   }}
 
-  def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, tryId: Try[Int])(implicit rabbitMqPropagator: ActorRef,
-                                                                                       writes: Writes[N]): Future[Try[Int]] = {
-    tryId.map(id => sendToRabbitMq(operation, id))
+  def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, tryId: Try[Int], rabbitMqPropagator: ActorRef)
+                                            (implicit writes: Writes[N]): Future[Try[Int]] = {
+    tryId.map(id => sendToRabbitMq(operation, id, rabbitMqPropagator))
     Future(tryId)
   }
 
-  def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, id: Int)(implicit rabbitMqPropagator: ActorRef,
-                                                                                  writes: Writes[N]): Future[Unit] = {
+  def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, id: Int, rabbitMqPropagator: ActorRef)
+                                            (implicit writes: Writes[N]): Future[Unit] = {
     selectid(id).map({
       case Success(Seq(model : N)) => rabbitMqPropagator ! ChangeEvent(model, operation)
       case _ => {
@@ -254,8 +254,8 @@ trait GenericDatabaseObjectControllerWithFilter[M,F] extends BaseController with
     })
   }
 
-  def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, model: N)(implicit rabbitMqPropagator: ActorRef,
-                                                                                  writes: Writes[N]): Unit =
+  def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, model: N, rabbitMqPropagator: ActorRef)
+                                            (implicit writes: Writes[N]): Unit =
     rabbitMqPropagator ! ChangeEvent(model, operation)
 
 }

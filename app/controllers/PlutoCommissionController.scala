@@ -29,7 +29,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                                           cacheImpl:SyncCacheApi,
                                           config:Configuration,
                                          @Named("commission-status-propagator") commissionStatusPropagator:ActorRef,
-                                         @Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef)
+                                         @Named("rabbitmq-propagator") rabbitMqPropagator:ActorRef)
   extends GenericDatabaseObjectControllerWithFilter[PlutoCommission,PlutoCommissionFilterTerms]
     with PlutoCommissionSerializer with PlutoCommissionFilterTermsSerializer {
 
@@ -73,7 +73,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
 
     override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(
       (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
-      .flatMap(id => sendToRabbitMq(CreateOperation, id))
+      .flatMap(id => sendToRabbitMq(CreateOperation, id, rabbitMqPropagator))
 
     override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
 
@@ -131,7 +131,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                     } else {
                         if(rowsUpdated>1) logger.error(s"Status update request for commission $commissionId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
                         commissionStatusPropagator ! CommissionStatusPropagator.CommissionStatusUpdate(commissionId, requiredUpdate.status)
-                        sendToRabbitMq(UpdateOperation, commissionId)
+                        sendToRabbitMq(UpdateOperation, commissionId, rabbitMqPropagator)
                           .map(_ => Ok(Json.obj("status"->"ok","detail"->"commission status updated")))
                     }
                 }).recover({
