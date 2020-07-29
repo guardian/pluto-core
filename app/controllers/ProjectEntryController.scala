@@ -13,12 +13,13 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc._
-import services.ValidateProject
+import services.{CreateOperation, UpdateOperation, ValidateProject}
 import services.actors.creation.{CreationMessage, GenericCreationActor}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateTransientData}
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
@@ -31,6 +32,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         config: Configuration,
                                         dbConfigProvider: DatabaseConfigProvider,
                                         cacheImpl:SyncCacheApi,
+                                        @Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
@@ -97,6 +99,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     dbConfig.db.run (
       TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
     )
+    .map(rows => {
+      sendToRabbitMq(UpdateOperation, requestedId, rabbitMqPropagator)
+      rows
+    })
   }
 
   /**
@@ -137,6 +143,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       dbConfig.db.run (
         TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
       )
+      .map(rows => {
+        sendToRabbitMq(UpdateOperation, requestedId, rabbitMqPropagator)
+        rows
+      })
     }
   }
 
@@ -151,6 +161,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       dbConfig.db.run(
         TableQuery[ProjectEntryRow].filter(_.id === record.id.get).update(updatedProjectEntry).asTry
       )
+        .map(rows => {
+          sendToRabbitMq(UpdateOperation, record, rabbitMqPropagator)
+          rows
+        })
     }
   }
 
@@ -235,6 +249,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     (projectCreationActor ? msg).mapTo[CreationMessage].map({
       case GenericCreationActor.ProjectCreateSucceeded(succeededRequest, projectEntry)=>
         logger.info(s"Created new project: $projectEntry")
+        sendToRabbitMq(CreateOperation, projectEntry, rabbitMqPropagator)
         Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))
       case GenericCreationActor.ProjectCreateFailed(failedRequest, error)=>
         logger.error("Could not create new project", error)

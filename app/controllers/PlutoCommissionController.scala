@@ -9,10 +9,10 @@ import models._
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.http.HttpEntity
+import play.api.http.{HttpEntity, Status}
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
 import play.api.mvc.{ControllerComponents, EssentialAction, Request, ResponseHeader, Result}
-import services.CommissionStatusPropagator
+import services.{CommissionStatusPropagator, CreateOperation, UpdateOperation}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
@@ -28,7 +28,8 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                                           dbConfigProvider:DatabaseConfigProvider,
                                           cacheImpl:SyncCacheApi,
                                           config:Configuration,
-                                         @Named("commission-status-propagator") commissionStatusPropagator:ActorRef)
+                                         @Named("commission-status-propagator") commissionStatusPropagator:ActorRef,
+                                         @Named("rabbitmq-propagator") rabbitMqPropagator:ActorRef)
   extends GenericDatabaseObjectControllerWithFilter[PlutoCommission,PlutoCommissionFilterTerms]
     with PlutoCommissionSerializer with PlutoCommissionFilterTermsSerializer {
 
@@ -58,28 +59,6 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         }.drop(startAt).take(limit).sortBy(_.title.asc.nullsLast).result.asTry
     )
 
-    def doCreateCommissionRecord(newEntry:PlutoCommission, uid:String) =
-        shouldCreateEntry(newEntry) match {
-            case Right(_) =>
-                this.insert(newEntry, uid).map({
-                    case Success(result) =>
-                        logger.info(s"Successfully created commission record ${result.asInstanceOf[Int]} for ${newEntry.title}")
-                        Ok(Json.obj("status" -> "ok", "detail" -> "added", "id" -> result.asInstanceOf[Int]))
-                    case Failure(error) =>
-                        logger.error(error.toString)
-                        error match {
-                            case e: BadDataException =>
-                                Conflict(Json.obj("status" -> "error", "detail" -> e.toString))
-                            case e: AlreadyExistsException =>
-                                Conflict(Json.obj("status" -> "error", "detail" -> e.toString))
-                            case _ =>
-                                handleConflictErrors(error, "object", isInsert = true)
-                        }
-                })
-            case Left(errDetail) =>
-                Future(Conflict(Json.obj("status" -> "error", "detail" -> errDetail)))
-        }
-
     def calculateProjectCount(entries: Seq[PlutoCommission]): Future[ListMap[Int, Int]] = {
       val commissionIds = entries.flatMap(entry => entry.id)
       db.run (
@@ -93,7 +72,11 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
     }
 
     override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(
-        (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
+      (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
+      .map(id => {
+        sendToRabbitMq(CreateOperation, id, rabbitMqPropagator)
+        id
+      })
 
     override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
 
@@ -151,6 +134,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                     } else {
                         if(rowsUpdated>1) logger.error(s"Status update request for commission $commissionId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
                         commissionStatusPropagator ! CommissionStatusPropagator.CommissionStatusUpdate(commissionId, requiredUpdate.status)
+                        sendToRabbitMq(UpdateOperation, commissionId, rabbitMqPropagator).foreach(_ => ())
                         Ok(Json.obj("status"->"ok","detail"->"commission status updated"))
                     }
                 }).recover({

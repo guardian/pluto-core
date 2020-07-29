@@ -1,5 +1,6 @@
 import com.google.inject.AbstractModule
-import helpers.{JythonRunner}
+import com.newmotion.akka.rabbitmq.ConnectionActor
+import helpers.JythonRunner
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import services.actors.{MessageProcessorActor, ProjectCreationActor}
@@ -24,5 +25,6 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     bindActor[StorageScanner]("storage-scanner")
     bindActor[ValidateProject]("validate-project-actor")
     bindActor[CommissionStatusPropagator]("commission-status-propagator")
+    bindActor[RabbitMqPropagator]("rabbitmq-propagator")
   }
 }

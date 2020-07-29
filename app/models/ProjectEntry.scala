@@ -18,7 +18,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId: Option[String],
                          projectTitle: String, created:Timestamp, user: String, workingGroupId: Option[Int],
                          commissionId: Option[Int], deletable: Option[Boolean], deep_archive: Option[Boolean],
-                         sensitive: Option[Boolean], status:EntryStatus.Value, productionOffice: ProductionOffice.Value) {
+                         sensitive: Option[Boolean], status:EntryStatus.Value, productionOffice: ProductionOffice.Value)
+extends PlutoModel{
   def associatedFiles(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Seq[FileEntry]] = {
     db.run(
       TableQuery[FileAssociationRow].filter(_.projectEntry===this.id.get).result.asTry

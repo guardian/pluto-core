@@ -14,7 +14,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class PlutoWorkingGroup (id:Option[Int], hide:Boolean, name:String, commissioner_name:String) {
+case class PlutoWorkingGroup (id:Option[Int], hide:Boolean, name:String, commissioner_name:String) extends PlutoModel {
   private val logger = Logger(getClass)
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
