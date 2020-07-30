@@ -21,6 +21,8 @@ import scala.util.{Failure, Success, Try}
 import play.api.test.WithApplication
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
+import scala.language.reflectiveCalls //needed for testDoByteCopy
+
 
 class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp {
   private val logger = LoggerFactory.getLogger(getClass)
