@@ -346,13 +346,15 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
-  def openProject(id: Int): EssentialAction = IsAuthenticatedAsync { uid=> { request => {
+  def openProject(id: Int): EssentialAction = IsAuthenticatedAsync { uid=> request =>
     import models.EntryStatusMapper._
 
     def updateProject() = TableQuery[ProjectEntryRow]
       .filter(_.id === id)
       .filter(_.status === EntryStatus.New)
-      .map(p => p.status).update(EntryStatus.InProduction).map(rows => {
+      .map(_.status)
+      .update(EntryStatus.InProduction)
+      .map(rows => {
         if (rows > 0) {
           sendToRabbitMq(UpdateOperation, id, rabbitMqPropagator)
         }
@@ -361,7 +363,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     def updateCommission(commissionId: Option[Int]) = TableQuery[PlutoCommissionRow]
       .filter(_.id === commissionId)
       .filter(_.status === EntryStatus.New)
-      .map(p => p.status)
+      .map(_.status)
       .update(EntryStatus.InProduction).flatMap(rows => {
       if (rows > 0) {
         TableQuery[PlutoCommissionRow].filter(_.id === commissionId).result.map({
@@ -377,16 +379,15 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     })
 
     dbConfig.db.run(
-        TableQuery[ProjectEntryRow].filter(_.id === id).result.flatMap(result => {
-          val acts =
-            result match {
+        TableQuery[ProjectEntryRow]
+          .filter(_.id === id)
+          .result
+          .flatMap({
             case Seq() => DBIOAction.successful(NotFound)
             case Seq(project: ProjectEntry) =>
               DBIO.seq(updateProject(), updateCommission(project.commissionId)).map(_ => Ok)
             case _ => DBIOAction.successful(InternalServerError)
-          }
-          acts
-        })
-    ) }
-  } }
+          })
+    )
+  }
 }
