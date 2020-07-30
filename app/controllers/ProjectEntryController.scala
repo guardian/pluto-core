@@ -346,7 +346,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
-  def openProject(id: Int): EssentialAction = IsAuthenticatedAsync { uid=> request =>
+  def projectWasOpened(id: Int): EssentialAction = IsAuthenticatedAsync { uid=>request =>
     import models.EntryStatusMapper._
 
     def updateProject() = TableQuery[ProjectEntryRow]
@@ -367,11 +367,16 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       .update(EntryStatus.InProduction).flatMap(rows => {
       if (rows > 0) {
         TableQuery[PlutoCommissionRow].filter(_.id === commissionId).result.map({
+          case Seq() =>
+            logger.error(s"Failed to update commission, commission not updated: $commissionId")
+            throw new IllegalStateException(s"Failed to update commission, commission not updated: $commissionId")
           case Seq(commission) =>
             val commissionsSerializer = new PlutoCommissionSerializer {}
             implicit val commissionsWrites: Writes[PlutoCommission] = commissionsSerializer.plutoCommissionWrites
             rabbitMqPropagator ! ChangeEvent(commission, UpdateOperation)
-          case _ => ()
+          case _ =>
+            logger.error(s"Failed to update commission, multiple commissions updated: $commissionId")
+            throw new IllegalStateException(s"Failed to update commission, multiple commissions updated: $commissionId")
         })
       } else {
         DBIOAction.successful(())
@@ -387,10 +392,16 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
               case Seq() => DBIOAction.successful(NotFound)
               case Seq(project: ProjectEntry) =>
                 DBIO.seq(updateProject(), updateCommission(project.commissionId)).map(_ => Ok)
-              case _ => DBIOAction.successful(InternalServerError)
+              case _ =>
+                logger.error(s"Database inconsistency, multiple projects found for id=$id")
+                DBIOAction.successful(InternalServerError)
             }
             acts
           })
-    )
+    ).recover({
+      case err: Throwable =>
+        logger.error("Failed to mark project as opened", err)
+        InternalServerError(Json.obj("status" -> "error", "detail" -> "Failed to mark project as opened"))
+    })
   }
 }
