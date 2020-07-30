@@ -65,17 +65,6 @@ class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSyst
       logger.error(s"RabbitMQPropagator got an unexpected message: ${other}")
   }
 
-  private def getRoute(model: PlutoModel, operation: ChangeOperation): Option[String] = {
-    val modelPath: Option[String] = model match {
-      case _: PlutoCommission => Some("commission")
-      case _: PlutoWorkingGroup => Some("workinggroup")
-      case _: ProjectEntry => Some("project")
-      case _ => None
-    }
-
-    modelPath.map(mp => List(rmqRouteBase, mp, operationPath(operation)).mkString("."))
-  }
-
   def operationPath(operation: ChangeOperation): String = operation match {
     case CreateOperation => "create"
     case UpdateOperation => "update"
