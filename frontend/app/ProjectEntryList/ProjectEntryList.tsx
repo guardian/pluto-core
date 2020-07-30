@@ -66,6 +66,7 @@ const useStyles = makeStyles({
     width: 1,
   },
 });
+declare var deploymentRootPath: string;
 const pageSizeOptions = [25, 50, 100];
 
 interface ProjectFilterTerms extends FilterTerms {
@@ -80,10 +81,10 @@ const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
     className="icons"
     style={{ display: isAdmin ? "inherit" : "none", whiteSpace: "nowrap" }}
   >
-    <IconButton href={`/project/${id}`}>
+    <IconButton href={`${deploymentRootPath}project/${id}`}>
       <EditIcon></EditIcon>
     </IconButton>
-    <IconButton href={`/project/${id}/delete`}>
+    <IconButton href={`${deploymentRootPath}project/${id}/delete`}>
       <DeleteIcon></DeleteIcon>
     </IconButton>
   </span>
