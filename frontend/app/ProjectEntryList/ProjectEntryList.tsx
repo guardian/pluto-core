@@ -66,6 +66,7 @@ const useStyles = makeStyles({
     width: 1,
   },
 });
+declare var deploymentRootPath: string;
 const pageSizeOptions = [25, 50, 100];
 
 interface ProjectFilterTerms extends FilterTerms {
