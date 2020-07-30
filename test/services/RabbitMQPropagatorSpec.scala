@@ -8,9 +8,9 @@ class RabbitMQPropagatorSpec extends Specification with PlutoWorkingGroupSeriali
     "json encode the given data model" in {
       val testdata = PlutoWorkingGroup(None,false,"Workworkwork","me")
 
-      val change = RabbitMqPropagator.ChangeEvent(testdata, CreateOperation)
+      val change = RabbitMqPropagator.ChangeEvent(Seq(testdata), Some("workinggroup"), CreateOperation)
 
-      change.json mustEqual "{\"hide\":false,\"name\":Workworkwork\",\"commissioner\":\"me\"}"
+      change.json mustEqual "[{\"hide\":false,\"name\":\"Workworkwork\",\"commissioner\":\"me\"}]"
 
     }
   }

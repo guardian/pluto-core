@@ -245,8 +245,7 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
     case _=>None
   }
 
-  def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, tryId: Try[Int], rabbitMqPropagator: ActorRef)
-                                            (implicit writes: Writes[N]): Future[Try[Int]] = {
+  def sendToRabbitMq(operation: ChangeOperation, tryId: Try[Int], rabbitMqPropagator: ActorRef): Future[Try[Int]] = {
     tryId.map(id => sendToRabbitMq(operation, id, rabbitMqPropagator))
     Future(tryId)
   }
@@ -254,14 +253,13 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
   def sendToRabbitMq(operation: ChangeOperation, id: Int, rabbitMqPropagator: ActorRef): Future[Unit] = {
     logger.debug(s"sendToRabbitMq looking up id $id")
     selectid(id).map({
-      case Success(modelList) => modelList.foreach(model=>rabbitMqPropagator ! ChangeEvent(jstranslate(model), getItemType(model), operation))
+      case Success(modelList) => rabbitMqPropagator ! ChangeEvent(modelList.map(jstranslate), modelList.headOption.flatMap(getItemType), operation)
 
       case _ => logger.error("Failed to propagate changes")
     })
   }
 
-  def sendToRabbitMq[N <: M with PlutoModel](operation: ChangeOperation, model: N, rabbitMqPropagator: ActorRef)
-                                            (implicit writes: Writes[N]): Unit =
-    rabbitMqPropagator ! ChangeEvent(jstranslate(model),getItemType(model), operation)
+  def sendToRabbitMq(operation: ChangeOperation, model: M, rabbitMqPropagator: ActorRef): Unit =
+    rabbitMqPropagator ! ChangeEvent(Seq(jstranslate(model)),getItemType(model), operation)
 
 }

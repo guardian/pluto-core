@@ -15,11 +15,9 @@ object RabbitMqPropagator {
   trait RabbitMqEvent {
   }
 
-  case class ChangeEvent(content: JsValueWrapper, itemType: Option[String], operation: ChangeOperation)
+  case class ChangeEvent(content: Seq[JsValueWrapper], itemType: Option[String], operation: ChangeOperation)
     extends RabbitMqEvent with JacksonSerializable {
-    def json: String = {
-      Json.stringify(Json.arr(content))
-    }
+    def json: String = Json.stringify(Json.arr(content:_*))
   }
 }
 
