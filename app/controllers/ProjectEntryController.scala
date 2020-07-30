@@ -382,11 +382,14 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         TableQuery[ProjectEntryRow]
           .filter(_.id === id)
           .result
-          .flatMap({
-            case Seq() => DBIOAction.successful(NotFound)
-            case Seq(project: ProjectEntry) =>
-              DBIO.seq(updateProject(), updateCommission(project.commissionId)).map(_ => Ok)
-            case _ => DBIOAction.successful(InternalServerError)
+          .flatMap(result => {
+            val acts = result match {
+              case Seq() => DBIOAction.successful(NotFound)
+              case Seq(project: ProjectEntry) =>
+                DBIO.seq(updateProject(), updateCommission(project.commissionId)).map(_ => Ok)
+              case _ => DBIOAction.successful(InternalServerError)
+            }
+            acts
           })
     )
   }
