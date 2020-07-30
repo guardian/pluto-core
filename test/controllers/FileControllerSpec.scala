@@ -4,13 +4,14 @@ import java.io.{File, FileOutputStream}
 import java.sql.Timestamp
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import models.{ProjectEntry, ProjectEntrySerializer, ProjectTemplate, ProjectTemplateSerializer}
 import org.junit.runner._
 import org.specs2.runner._
 import org.specs2.specification.{AfterAll, BeforeAll}
 import play.api.test.Helpers._
 import play.api.test._
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.io.Source
@@ -62,8 +63,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
 
   "FileController.create" should {
     "refuse to over-write an existing record with another that has the same filename and storage" in new WithApplication(buildApp) {
-      implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(app.actorSystem)
       val testInvalidDocument =
         """{
           |"filepath":"/path/to/a/video.mxf",
@@ -109,7 +109,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
 
     "accept data for an existing file" in new WithApplication(buildApp) {
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
       val testbuffer = "this is my test data\nwith another line"
       val response = route(app, FakeRequest(
         method="PUT",
@@ -128,7 +128,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
 
     "refuse to over-write a file with existing data" in new WithApplication(buildApp) {
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
       val testbuffer = "this is my test data\nwith another line"
       val response = route(app, FakeRequest(
         method="PUT",
@@ -148,7 +148,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
   "FileController.references" should {
     "return lists of the things that reference a given file" in new WithApplication(buildApp) {
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
       val response = route(app, FakeRequest("GET","/api/file/2/associations").withSession("uid"->"testuser")).get
 
       status(response) mustEqual OK

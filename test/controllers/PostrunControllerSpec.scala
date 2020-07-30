@@ -1,7 +1,7 @@
 package controllers
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import org.junit.runner._
 import org.specs2.runner._
 import play.api.libs.json._
@@ -37,7 +37,7 @@ class PostrunControllerSpec extends GenericControllerSpec {
   "PostrunActionController.associate" should {
     "create an association between postrun action and project type" in new WithApplication(buildApp) {
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
       val response= route(app, FakeRequest(PUT, s"$uriRoot/1/projecttype/4").withSession("uid"->"testuser")).get
 
       status(response) must equalTo(OK)
@@ -50,7 +50,7 @@ class PostrunControllerSpec extends GenericControllerSpec {
   "PostrunActionController.unassociate" should {
     "remove an association between postrun action and project type" in new WithApplication(buildApp) {
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
       val response= route(app, FakeRequest(DELETE, s"$uriRoot/3/projecttype/4").withSession("uid"->"testuser")).get
 
       status(response) must equalTo(OK)

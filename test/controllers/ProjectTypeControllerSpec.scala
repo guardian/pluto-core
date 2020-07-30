@@ -1,7 +1,7 @@
 package controllers
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import org.junit.runner._
 import org.specs2.runner._
 import play.api.libs.json._
@@ -36,7 +36,7 @@ class ProjectTypeControllerSpec extends GenericControllerSpec {
   "ProjectTypeController.listPostrun" should {
     "return a list of the postrun ids associated with the project type" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer:ActorMaterializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
       val response = route(app, FakeRequest(
         method = "GET",
         uri = s"$uriRoot/$testGetId/postrun",

@@ -1,7 +1,7 @@
 package controllers
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import models.{Defaults, DefaultsSerializer}
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
@@ -34,7 +34,7 @@ class DefaultsControllerSpec extends Specification with BuildMyApp with Defaults
     "return data for a valid key" in new WithApplication(buildApp) {
       //needed for body.consumeData
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
 
       //needed for database access
       private val injector = app.injector
@@ -52,7 +52,7 @@ class DefaultsControllerSpec extends Specification with BuildMyApp with Defaults
     "return a 404 if key does not exist" in new WithApplication(buildApp) {
       //needed for body.consumeData
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
 
       //needed for database access
       private val injector = app.injector
@@ -71,7 +71,7 @@ class DefaultsControllerSpec extends Specification with BuildMyApp with Defaults
     "write a new value to the database" in new WithApplication(buildApp) {
       //needed for body.consumeData
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
 
       //needed for database access
       private val injector = app.injector
@@ -103,7 +103,7 @@ class DefaultsControllerSpec extends Specification with BuildMyApp with Defaults
     "update an existing value to the database" in new WithApplication(buildApp) {
       //needed for body.consumeData
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
 
       //needed for database access
       private val injector = app.injector
@@ -133,7 +133,7 @@ class DefaultsControllerSpec extends Specification with BuildMyApp with Defaults
     "delete an existing value from the database" in new WithApplication(buildApp) {
       //needed for body.consumeData
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
 
       //needed for database access
       private val injector = app.injector
@@ -154,7 +154,7 @@ class DefaultsControllerSpec extends Specification with BuildMyApp with Defaults
     "return 404 if the requested key does not exist" in new WithApplication(buildApp) {
       //needed for body.consumeData
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
 
       //needed for database access
       private val injector = app.injector
@@ -171,7 +171,7 @@ class DefaultsControllerSpec extends Specification with BuildMyApp with Defaults
     "return a list of all defaults values" in new WithApplication(buildApp) {
       //needed for body.consumeData
       implicit val system:ActorSystem = app.actorSystem
-      implicit val materializer = ActorMaterializer()
+      implicit val materializer = Materializer.createMaterializer(system)
 
       //needed for database access
       private val injector = app.injector

@@ -140,7 +140,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
       mockedFileEntry.id returns Some(1)  //this must be a valid fileID otherwise primary-key association fails
 
       val mockedProjectEntry = mock[ProjectEntry]
-      mockedProjectEntry.removeFromDatabase(any) returns Future(Success(1))
+      mockedProjectEntry.removeFromDatabase(any) returns Future(Success( () ))
 
       val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
 
