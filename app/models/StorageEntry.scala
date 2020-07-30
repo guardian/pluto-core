@@ -63,7 +63,8 @@ trait StorageSerializer {
 
 
 case class StorageEntry(id: Option[Int], nickname:Option[String], rootpath: Option[String], clientpath: Option[String], storageType: String,
-                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int], device:Option[String], supportsVersions: Boolean, @JsonScalaEnumeration(classOf[StorageStatusType]) status:Option[StorageStatus.Value]) {
+                        user:Option[String], password:Option[String], host:Option[String], port:Option[Int], device:Option[String],
+                        supportsVersions: Boolean, @JsonScalaEnumeration(classOf[StorageStatusType]) status:Option[StorageStatus.Value]) extends PlutoModel {
 
   def getStorageDriver(implicit mat:Materializer):Option[StorageDriver] = {
     val logger: Logger = Logger(this.getClass)

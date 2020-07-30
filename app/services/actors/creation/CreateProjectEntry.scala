@@ -128,10 +128,7 @@ class CreateProjectEntry @Inject() (@Named("message-processor-actor") messagePro
               case Some(createdProjectEntry) =>
                 logger.info(s"Rolling back created project file entry $createdProjectEntry, deleting it from database")
                 createdProjectEntry.removeFromDatabase.map({
-                  case Success(rows) =>
-                    if (rows == 0)
-                      originalSender ! StepFailed(rollbackRequest.data, new RuntimeException("Nothing was deleted from database"))
-                    else
+                  case Success(_) =>
                       originalSender ! StepSucceded(rollbackRequest.data.copy(createdProjectEntry = None))
                   case Failure(error) =>
                     originalSender ! StepFailed(rollbackRequest.data, error)

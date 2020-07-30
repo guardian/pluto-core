@@ -22,6 +22,7 @@
     </appender>-->
 
     <logger name="play" level="INFO" />
+    <logger name="jackson" level="DEBUG"/>
     <logger name="application" level="ERROR" />
     <logger name="services.PostrunActionScanner" level="OFF"/>
     <logger name="services.RabbitMqPropagator" level="DEBUG"/>

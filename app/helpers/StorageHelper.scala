@@ -147,7 +147,7 @@ class StorageHelper @Inject() (implicit mat:Materializer) {
       case Right((bytesCopied,metaDict))=>
         logger.debug(s"Copied $bytesCopied bytes")
         //need to check if the number of bytes copied is the same as the source file. If so return Right() otherwise Left()
-        val fileSize = metaDict('size).toLong
+        val fileSize = metaDict(Symbol("size")).toLong
         logger.debug(s"Destination size is $fileSize")
         if(bytesCopied!=fileSize){
           Left(Seq(s"Copied file byte size $bytesCopied did not match source file $fileSize"))

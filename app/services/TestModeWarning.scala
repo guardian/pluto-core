@@ -15,9 +15,9 @@ class TestModeWarning @Inject() (actorSystem:ActorSystem){
   private val logger=Logger(getClass)
 
 
-  val cancellable = actorSystem.scheduler.schedule(1 second,60 seconds) {
-    if(sys.env.contains("CI")){
+  val cancellable = actorSystem.scheduler.scheduleAtFixedRate(1 second,60 seconds)(()=>{
+    if (sys.env.contains("CI")) {
       logger.error("SYSTEM IS IN TEST MODE BECAUSE ENVIRONMENT VARIABLE CI IS SET")
     }
-  }
+  })
 }

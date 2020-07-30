@@ -45,7 +45,7 @@ trait ProjectTypeSerializer {
 
 case class ProjectTypeForPluto(id: Option[Int], name: String, plutoType:Option[String], plutoSubtype:Option[String])
 
-case class ProjectType(id: Option[Int],name:String, opensWith: String, targetVersion: String, fileExtension:Option[String]=None, plutoType:Option[Int]) {
+case class ProjectType(id: Option[Int],name:String, opensWith: String, targetVersion: String, fileExtension:Option[String]=None, plutoType:Option[Int]) extends PlutoModel {
   /**
     * Get a list of the postrun actions assocaited with this project type.
     * @param db implicitly provided database object

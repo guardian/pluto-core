@@ -22,7 +22,7 @@ import com.nimbusds.jwt.JWTClaimsSet
 import play.api.mvc._
 import play.api.libs.Files.TemporaryFile
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import play.api.{ConfigLoader, Configuration, Logger}
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._

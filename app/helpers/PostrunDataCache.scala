@@ -3,7 +3,7 @@ package helpers
 import org.python.core._
 import play.api.Logger
 
-import collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.immutable.HashMap
 
 class PostrunDataCache(entries:PyDictionary) {

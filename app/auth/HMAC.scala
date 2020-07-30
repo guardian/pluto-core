@@ -7,7 +7,7 @@ import javax.crypto.spec.SecretKeySpec
 import java.security._
 import java.util.Base64
 
-import collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object HMAC {
   val logger: Logger = Logger(this.getClass)
@@ -48,7 +48,7 @@ object HMAC {
     * Returns information about the available crypto algorithms on this platform
     * @return
     */
-  def getAlgos:Array[Tuple3[String,String,String]] = {
+  def getAlgos:Array[(String,String,String)] = {
     for {
       provider <- Security.getProviders
       key <- provider.stringPropertyNames.asScala

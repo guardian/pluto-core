@@ -77,8 +77,8 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
   override def getMetadata(path: String, version:Int): Map[Symbol, String] = {
     val f = this.fileForPath(path)
     Map(
-      'size->f.length().toString,
-      'lastModified->ZonedDateTime.ofInstant(Instant.ofEpochSecond(f.lastModified()),ZoneId.systemDefault()).toString
+      Symbol("size")->f.length().toString,
+      Symbol("lastModified")->ZonedDateTime.ofInstant(Instant.ofEpochSecond(f.lastModified()),ZoneId.systemDefault()).toString
     )
   }
 

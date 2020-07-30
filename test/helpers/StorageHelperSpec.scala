@@ -21,6 +21,8 @@ import scala.util.{Failure, Success, Try}
 import play.api.test.WithApplication
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
+import scala.language.reflectiveCalls //needed for testDoByteCopy
+
 
 class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -104,7 +106,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       val mockedStorageDriver = mock[PathStorage]
       mockedStorageDriver.getReadStream(any[String],any)
       mockedStorageDriver.getReadStream(any[String],any) answers((_,_)=>Success(new NullInputStream(60*1024L)))
-      mockedStorageDriver.getMetadata(any[String],any) answers((_,_)=>Map('size->"1234"))
+      mockedStorageDriver.getMetadata(any[String],any) answers((_,_)=>Map(Symbol("size")->"1234"))
 
       val mockedStorage = mock[StorageEntry]
       mockedStorage.getStorageDriver answers((_,_)=>{println("in mockedStorage"); Some(mockedStorageDriver)})
@@ -231,10 +233,9 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
 
       result must beLeft
-      println(result.left.get)
-      result.left.get.length mustEqual 2
-      result.left.get.head mustEqual "java.lang.RuntimeException: Kaboom!"
-      result.left.get(1) mustEqual ""
+      result.swap.getOrElse(Seq()).length mustEqual 2
+      result.swap.getOrElse(Seq()).head mustEqual "java.lang.RuntimeException: Kaboom!"
+      result.swap.getOrElse(Seq("no values present"))(1) mustEqual ""
     }
 
     "return an error if getting the destination stream failed" in {
@@ -256,10 +257,9 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
 
       result must beLeft
-      println(result.left.get)
-      result.left.get.length mustEqual 2
-      result.left.get.head mustEqual ""
-      result.left.get(1) mustEqual "java.lang.RuntimeException: Kaboom!"
+      result.swap.getOrElse(Seq()).length mustEqual 2
+      result.swap.getOrElse(Seq()).head mustEqual ""
+      result.swap.getOrElse(Seq())(1) mustEqual "java.lang.RuntimeException: Kaboom!"
     }
 
     "catch and pass along any exception thrown from copyStream as a Left stringvalue" in {
@@ -288,9 +288,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
 
       result must beLeft
-      println(result.left.get)
-      result.left.get.length mustEqual 1
-      result.left.get.head mustEqual "java.lang.RuntimeException: **raspberry**"
+      result.swap.getOrElse(Seq()).length mustEqual 1
+      result.swap.getOrElse(Seq()).head mustEqual "java.lang.RuntimeException: **raspberry**"
     }
   }
 }

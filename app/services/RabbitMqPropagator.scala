@@ -5,7 +5,8 @@ import com.google.inject.Inject
 import com.rabbitmq.client.AMQP.Exchange
 import javax.inject.Singleton
 import models.{PlutoCommission, PlutoModel, PlutoWorkingGroup, ProjectEntry}
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json.JsValueWrapper
+import play.api.libs.json.{JsValue, Json, Writes}
 import play.api.{Configuration, Logger}
 
 
@@ -14,11 +15,12 @@ object RabbitMqPropagator {
   trait RabbitMqEvent {
   }
 
-  case class ChangeEvent[M<:PlutoModel](model: M, operation: ChangeOperation)(implicit writes: Writes[M])
+  case class ChangeEvent(content: Seq[JsValueWrapper], itemType: Option[String], operation: ChangeOperation)
     extends RabbitMqEvent with JacksonSerializable {
-    val json: String = Json.stringify(writes.writes(model))
+    def json: String = Json.stringify(Json.arr(content:_*))
   }
 }
+
 /**
  * Propagates model changes to rabbit mq for others to consume.
  *
@@ -48,26 +50,19 @@ class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSyst
      * it is restarted, so another instance will pick up the update)
      */
 
-    case ev@ChangeEvent(model: PlutoModel, operation) =>
-      getRoute(model, operation) match {
-        case Some(route) =>
+    case ev:ChangeEvent =>
+      ev.itemType match {
+        case Some(itemtype) =>
+          val route = s"$rmqRouteBase.$itemtype.${operationPath(ev.operation)}"
           rmqChannel ! ChannelMessage(channel => channel.basicPublish(rmqExchange, route, null, ev.json.getBytes), dropIfNoChannel = false)
           sender() ! akka.actor.Status.Success(())
         case None =>
-          logger.error("Unknown object type for rabbitmq propagation: " + model)
+          logger.error("Unknown object type for rabbitmq propagation")
           sender() ! akka.actor.Status.Failure(new IllegalArgumentException("Unknown object type for rabbitmq propagation"))
       }
-  }
 
-  private def getRoute(model: PlutoModel, operation: ChangeOperation): Option[String] = {
-    val modelPath: Option[String] = model match {
-      case _: PlutoCommission => Some("commission")
-      case _: PlutoWorkingGroup => Some("workinggroup")
-      case _: ProjectEntry => Some("project")
-      case _ => None
-    }
-
-    modelPath.map(mp => List(rmqRouteBase, mp, operationPath(operation)).mkString("."))
+    case other:Any=>
+      logger.error(s"RabbitMQPropagator got an unexpected message: ${other}")
   }
 
   def operationPath(operation: ChangeOperation): String = operation match {

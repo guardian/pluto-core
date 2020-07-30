@@ -12,6 +12,8 @@ javaOptions in Universal ++= Seq(
   "-Dpidfile.path=/dev/null"
 )
 
+scalacOptions ++= Seq("-deprecation", "-feature")
+
 lazy val `projectlocker` = (project in file("."))
   .enablePlugins(PlayScala)
   .enablePlugins(AshScriptPlugin) //needed for alpine-based images
@@ -25,6 +27,7 @@ lazy val `projectlocker` = (project in file("."))
       dockerBaseImage := "openjdk:11-jre-slim-buster",
       dockerPermissionStrategy := DockerPermissionStrategy.Run,
       dockerAlias := docker.DockerAlias(None,sys.props.get("docker.username"),"pluto-core",Some(sys.props.getOrElse("build.number","DEV"))),
+      scalacOptions ++= Seq("-deprecation", "-feature"),
       dockerCommands ++= Seq(
         Cmd("USER", "root"),
         Cmd("RUN", "apt-get","-y", "update", "&&", "apt-get", "-y", "install", "sudo", "perl"),

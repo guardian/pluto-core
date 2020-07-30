@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class PostrunAction (id:Option[Int],runnable:String, title:String, description:Option[String],
-                          owner:String, version:Int, ctime: Timestamp) {
+                          owner:String, version:Int, ctime: Timestamp) extends PlutoModel {
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
     * was set, then returns the same object. */
@@ -126,7 +126,7 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     val logger = Logger(this.getClass)
     logger.debug(s"Initiating java based postrun $className...")
     try {
-      val postrunClass = Class.forName(className).newInstance().asInstanceOf[PojoPostrun]
+      val postrunClass = Class.forName(className).getDeclaredConstructor().newInstance().asInstanceOf[PojoPostrun]
 
       postrunClass.postrun(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe).map({
         case Success(newDataCache) => Success(JythonOutput("", "", newDataCache, raisedError = None))

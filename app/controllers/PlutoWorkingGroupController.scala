@@ -22,7 +22,7 @@ import scala.language.postfixOps
 @Singleton
 class PlutoWorkingGroupController @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
                                              dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi,
-                                             @Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef)
+                                             @Named("rabbitmq-propagator") val rabbitMqPropagator:ActorRef)
   extends GenericDatabaseObjectController[PlutoWorkingGroup] with PlutoWorkingGroupSerializer {
 
   implicit val timeout:akka.util.Timeout = 55 seconds
@@ -40,9 +40,11 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
 
   override def insert(entry: PlutoWorkingGroup, uid: String): Future[Try[Int]] = db.run(
     (TableQuery[PlutoWorkingGroupRow] returning TableQuery[PlutoWorkingGroupRow].map(_.id) += entry).asTry)
-    .map (id => {
-      sendToRabbitMq(CreateOperation, id, rabbitMqPropagator)
-      id
+    .map ({
+        case suc@Success(newEntryId)=>
+          sendToRabbitMq(CreateOperation, entry.copy(id=Some(newEntryId)), rabbitMqPropagator)
+          suc
+        case err@Failure(_)=>err
     })
 
   override def deleteid(requestedId: Int):Future[Try[Int]] = db.run(

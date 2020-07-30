@@ -30,11 +30,9 @@ object ValidateProject {
 }
 
 @Singleton
-class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseConfigProvider, actorSystem:ActorSystem) extends Actor {
+class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseConfigProvider, actorSystem:ActorSystem)(implicit mat:Materializer) extends Actor {
   import ValidateProject._
   private val logger = LoggerFactory.getLogger(getClass)
-
-  private implicit val mat:Materializer = ActorMaterializer.create(actorSystem)
 
   /**
     * build a stream to perform the validation.

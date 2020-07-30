@@ -71,9 +71,9 @@ class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
       s.writeDataToPath("/tmp/testfile5", 123, testbuffer.toCharArray.map(_.toByte))
 
       val metaDict = s.getMetadata("/tmp/testfile5", 123)
-      metaDict.get('size) must beSome("20")
-      metaDict.get('lastModified) must beSome[String]
-      metaDict.get('zzzzz) must beNone
+      metaDict.get(Symbol("size")) must beSome("20")
+      metaDict.get(Symbol("lastModified")) must beSome[String]
+      metaDict.get(Symbol("zzzzz")) must beNone
     }
 
     "not support version numbers" in {

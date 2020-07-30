@@ -48,7 +48,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       val finalResult = Await.result(resultFuture, 10.seconds)
 
       finalResult must beFailedTry
-      finalResult.toEither.left.get.toString mustEqual "java.lang.RuntimeException: Can't update a file record that has not been saved"
+      finalResult.failed.get.toString mustEqual "java.lang.RuntimeException: Can't update a file record that has not been saved"
     }
   }
 
