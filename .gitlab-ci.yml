@@ -112,7 +112,7 @@ deploy:
     - ls -lh /certs/*
     - mkdir ~/.docker && cp -a /certs/client/*.pem ~/.docker
     - docker version
-    - tar xvzf postrunlibs.tgz
+    - tar xzf postrunlibs.tgz
     - docker login -u "${DOCKER_USER}" -p "${DOCKER_PAT}"
     - JAVA_OPTS="-Dbuild.number=${CI_PIPELINE_IID} -Ddocker.username=guardianmultimedia" sbt docker:publish
   cache:
