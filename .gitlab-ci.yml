@@ -27,6 +27,32 @@ frontend:
     - master
     - merge_requests
 
+postruns:
+  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200615_1
+  stage: build
+  script:
+    - mkdir -p jython_junit
+    - ~/jython/bin/pip install -r postrun/requirements.txt
+    - mkdir -p postrun/lib/python
+    - cp -a ~/jython/Lib postrun/lib/python
+    - tar c postrun/lib/python | gzip > postrunlibs.tgz
+    - PYTHONPATH=postrun/scripts ~/jython/bin/nosetests -w postrun/tests --with-xunit --xunit-file=jython_junit/junit.xml
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}-jython
+    paths:
+    - postrun/lib/python
+  artifacts:
+    paths:
+      - postrunlibs.tgz
+    reports:
+      junit: jython_junit/junit.xml
+  tags:
+    - gnm
+    - docker
+  only:
+    - master
+    - merge_requests
+
 backend:
   image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200615_1
   stage: build
@@ -86,6 +112,7 @@ deploy:
     - ls -lh /certs/*
     - mkdir ~/.docker && cp -a /certs/client/*.pem ~/.docker
     - docker version
+    - tar xvzf postrunlibs.tgz
     - docker login -u "${DOCKER_USER}" -p "${DOCKER_PAT}"
     - JAVA_OPTS="-Dbuild.number=${CI_PIPELINE_IID} -Ddocker.username=guardianmultimedia" sbt docker:publish
   cache:
