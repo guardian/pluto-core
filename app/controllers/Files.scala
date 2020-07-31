@@ -47,10 +47,8 @@ class Files @Inject() (override val controllerComponents:ControllerComponents, o
       TableQuery[FileEntryRow].drop(startAt).take(limit).result
     )
   )
-    .map(result=>Success(result))
-    .recover({
-      case err:Throwable=>Failure(err)
-    })
+    .map(Success(_))
+    .recover(Failure(_))
 
   override def validateFilterParams(request: Request[JsValue]): JsResult[FileEntryFilterTerms] = request.body.validate[FileEntryFilterTerms]
 
