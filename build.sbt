@@ -77,7 +77,7 @@ libraryDependencies ++= Seq(
 )
 
 // https://mvnrepository.com/artifact/org.python/jython
-libraryDependencies += "org.python" % "jython" % "2.7.1b2"
+libraryDependencies += "org.python" % "jython" % "2.7.2"
 
 // upgrade jackson-databind to remove Deserialization of Untrusted Data vuln
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.4"
