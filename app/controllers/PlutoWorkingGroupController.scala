@@ -30,9 +30,11 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
   implicit val db = dbConfigProvider.get[PostgresProfile].db
   implicit val cache:SyncCacheApi = cacheImpl
 
-  override def selectall(startAt: Int, limit: Int): Future[Try[Seq[PlutoWorkingGroup]]] = db.run(
-    TableQuery[PlutoWorkingGroupRow].drop(startAt).take(limit).sortBy(_.name.asc.nullsLast).result.asTry
-  )
+  override def selectall(startAt: Int, limit: Int): Future[Try[(Int,Seq[PlutoWorkingGroup])]] = db.run(
+    TableQuery[PlutoWorkingGroupRow].length.result.zip(
+      TableQuery[PlutoWorkingGroupRow].drop(startAt).take(limit).sortBy(_.name.asc.nullsLast).result
+    )
+  ).map(Success(_)).recover(Failure(_))
 
   override def selectid(requestedId: Int): Future[Try[Seq[PlutoWorkingGroup]]] = db.run(
     TableQuery[PlutoWorkingGroupRow].filter(_.id===requestedId).sortBy(_.name.asc.nullsLast).result.asTry

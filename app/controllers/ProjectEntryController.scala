@@ -220,15 +220,21 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   }}
 
   override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
-    TableQuery[ProjectEntryRow].sortBy(_.created.desc).drop(startAt).take(limit).result.asTry //simple select *
-  )
-
-  override def selectFiltered(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms): Future[Try[Seq[ProjectEntry]]] = {
-    dbConfig.db.run(
-      terms.addFilterTerms {
-        TableQuery[ProjectEntryRow]
-      }.sortBy(_.created.desc).drop(startAt).take(limit).result.asTry
+    TableQuery[ProjectEntryRow].length.result.zip(
+      TableQuery[ProjectEntryRow].sortBy(_.created.desc).drop(startAt).take(limit).result
     )
+  ).map(Success(_)).recover(Failure(_))
+
+  override def selectFiltered(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms): Future[Try[(Int, Seq[ProjectEntry])]] = {
+    val basequery = terms.addFilterTerms {
+      TableQuery[ProjectEntryRow]
+    }
+
+    dbConfig.db.run(
+      basequery.length.result.zip(
+        basequery.sortBy(_.created.desc).drop(startAt).take(limit).result
+      )
+    ).map(Success(_)).recover(Failure(_))
   }
 
   override def jstranslate(result: Seq[ProjectEntry]):Json.JsValueWrapper = result

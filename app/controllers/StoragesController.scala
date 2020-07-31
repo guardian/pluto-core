@@ -45,8 +45,17 @@ class StoragesController @Inject()
   )
 
   override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
-    TableQuery[StorageEntryRow].drop(startAt).take(limit).result.asTry //simple select *
-  ).map(_.map(_.map(_.copy(password=Some("****")))))
+    TableQuery[StorageEntryRow].length.result.zip(
+      TableQuery[StorageEntryRow].drop(startAt).take(limit).result
+    )
+  ).map(results=>{
+    Success((
+      results._1,
+      results._2.map(_.copy(password=Some("****")))
+    ))
+  }).recover({
+    case err:Throwable=>Failure(err)
+  })
 
   override def jstranslate(result: Seq[StorageEntry]) = result.asInstanceOf[Seq[StorageEntry]]  //implicit translation should handle this
   override def jstranslate(result: StorageEntry) = result  //implicit translation should handle this

@@ -37,8 +37,10 @@ class ProjectTypeController @Inject() (override val controllerComponents:Control
   )
 
   override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
-    TableQuery[ProjectTypeRow].drop(startAt).take(limit).result.asTry //simple select *
-  )
+    TableQuery[ProjectTypeRow].length.result.zip(
+      TableQuery[ProjectTypeRow].drop(startAt).take(limit).result
+    )
+  ).map(Success(_)).recover(Failure(_))
 
   override def jstranslate(result: Seq[ProjectType]) = result
   override def jstranslate(result: ProjectType) = result  //implicit translation should handle this

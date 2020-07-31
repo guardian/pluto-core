@@ -33,9 +33,11 @@ class PostrunActionController  @Inject() (override val controllerComponents:Cont
     TableQuery[PostrunActionRow].filter(_.id === requestedId).result.asTry
   )
 
-  override def selectall(startAt: Int, limit: Int): Future[Try[Seq[PostrunAction]]] = dbConfig.db.run(
-    TableQuery[PostrunActionRow].drop(startAt).take(limit).result.asTry
-  )
+  override def selectall(startAt: Int, limit: Int): Future[Try[(Int, Seq[PostrunAction])]] = dbConfig.db.run(
+    TableQuery[PostrunActionRow].length.result.zip(
+      TableQuery[PostrunActionRow].drop(startAt).take(limit).result
+    )
+  ).map(Success(_)).recover(Failure(_))
 
   override def jstranslate(result: PostrunAction): Json.JsValueWrapper = result
 
