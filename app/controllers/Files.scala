@@ -43,17 +43,29 @@ class Files @Inject() (override val controllerComponents:ControllerComponents, o
   }
 
   override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
-    TableQuery[FileEntryRow].drop(startAt).take(limit).result.asTry //simple select *
+    TableQuery[FileEntryRow].length.result.zip(
+      TableQuery[FileEntryRow].drop(startAt).take(limit).result
+    )
   )
+    .map(result=>Success(result))
+    .recover({
+      case err:Throwable=>Failure(err)
+    })
 
   override def validateFilterParams(request: Request[JsValue]): JsResult[FileEntryFilterTerms] = request.body.validate[FileEntryFilterTerms]
 
-  override def selectFiltered(startAt: Int, limit: Int, terms: FileEntryFilterTerms): Future[Try[Seq[FileEntry]]] = {
+  override def selectFiltered(startAt: Int, limit: Int, terms: FileEntryFilterTerms): Future[Try[(Int, Seq[FileEntry])]] = {
+    val basequery = terms.addFilterTerms {
+      TableQuery[FileEntryRow]
+    }
+
     dbConfig.db.run(
-      terms.addFilterTerms {
-        TableQuery[FileEntryRow]
-      }.drop(startAt).take(limit).result.asTry
+      basequery.length.result.zip(
+        basequery.drop(startAt).take(limit).result
+      )
     )
+      .map(result=>Success(result))
+      .recover(err=>Failure(err))
   }
 
   override def jstranslate(result: Seq[FileEntry]) = result //implicit translation should handle this

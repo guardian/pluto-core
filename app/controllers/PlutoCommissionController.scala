@@ -36,28 +36,44 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
     implicit val db = dbConfigProvider.get[PostgresProfile].db
     implicit val cache:SyncCacheApi = cacheImpl
 
-    override def selectall(startAt: Int, limit: Int): Future[Try[Seq[PlutoCommission]]] = {
-      val results: Future[Try[Seq[PlutoCommission]]] = db.run(
-        TableQuery[PlutoCommissionRow].drop(startAt).take(limit).sortBy(_.title.asc).result.asTry
+    override def selectall(startAt: Int, limit: Int): Future[Try[(Int, Seq[PlutoCommission])]] = {
+      val results: Future[(Int, Seq[PlutoCommission])] = db.run(
+        TableQuery[PlutoCommissionRow].length.result.zip(
+          TableQuery[PlutoCommissionRow].drop(startAt).take(limit).sortBy(_.title.asc).result
+        )
       )
-      results.flatMap {
-        case s@Success(commissions) => calculateProjectCount(commissions).map(counts => {
+
+      results.flatMap { result => {
+        val count=result._1
+        val commissions=result._2 //wouldn't implicitly unpack for some reason!
+        calculateProjectCount(commissions).map(counts => {
           commissions.foreach(commission => commission.projectCount = commission.id.flatMap(counts.get).orElse(Some(0)))
-          s
-         }).recover(_ => s)
-        case f@Failure(_) => Future(f)
-      }
+          Success((count,commissions))
+        })
+      }}.recover({
+        case err:Throwable=>
+          Failure(err)
+      })
     }
 
     override def selectid(requestedId: Int): Future[Try[Seq[PlutoCommission]]] = db.run(
       TableQuery[PlutoCommissionRow].filter(_.id===requestedId).result.asTry
     )
 
-    override def selectFiltered(startAt: Int, limit: Int, terms: PlutoCommissionFilterTerms): Future[Try[Seq[PlutoCommission]]] = db.run(
-        terms.addFilterTerms {
-            TableQuery[PlutoCommissionRow]
-        }.drop(startAt).take(limit).sortBy(_.title.asc.nullsLast).result.asTry
-    )
+    override def selectFiltered(startAt: Int, limit: Int, terms: PlutoCommissionFilterTerms): Future[Try[(Int, Seq[PlutoCommission])]] = {
+      val basequery = terms.addFilterTerms {
+        TableQuery[PlutoCommissionRow]
+      }
+
+      db.run(
+        basequery.length.result.zip(
+          basequery.drop(startAt).take(limit).sortBy(_.title.asc.nullsLast).result
+        )
+      ).map(result=>Success(result))
+        .recover({
+          case err=>Failure(err)
+        })
+    }
 
     def calculateProjectCount(entries: Seq[PlutoCommission]): Future[ListMap[Int, Int]] = {
       val commissionIds = entries.flatMap(entry => entry.id)

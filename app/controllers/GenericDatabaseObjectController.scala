@@ -58,7 +58,7 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
     * @param limit limit number of returned items to this
     * @return Future of Try of Sequence of record type [[M]]
     */
-  def selectall(startAt:Int, limit:Int):Future[Try[Seq[M]]]
+  def selectall(startAt:Int, limit:Int):Future[Try[(Int, Seq[M])]]
 
   /**
     * Implement this method in your subclass to return a Future of all records that match the given filter terms.
@@ -68,7 +68,7 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
     * @param terms case class of type [[F]] representing the filter terms
     * @return Future of Try of Sequence of record type [[M]]
     */
-  def selectFiltered(startAt:Int, limit:Int, terms:F):Future[Try[Seq[M]]]
+  def selectFiltered(startAt:Int, limit:Int, terms:F):Future[Try[(Int, Seq[M])]]
   def selectid(requestedId: Int):Future[Try[Seq[M]]]
 
   def deleteid(requestedId: Int):Future[Try[Int]]
@@ -127,7 +127,7 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
     */
   def list(startAt:Int, limit: Int) = IsAuthenticatedAsync {uid=>{request=>
     selectall(startAt, limit).map({
-      case Success(result)=>Ok(Json.obj("status"->"ok","result"->this.jstranslate(result)))
+      case Success((count, result))=>Ok(Json.obj("status"->"ok","count"->count, "result"->this.jstranslate(result)))
       case Failure(error)=>
         logger.error(error.toString)
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
@@ -149,7 +149,7 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
       },
       filterTerms => {
         this.selectFiltered(startAt, limit, filterTerms).map({
-          case Success(result)=>Ok(Json.obj("status" -> "ok","result"->this.jstranslate(result)))
+          case Success((count,result))=>Ok(Json.obj("status" -> "ok","count"->count,"result"->this.jstranslate(result)))
           case Failure(error)=>
             logger.error(error.toString)
             InternalServerError(Json.obj("status"->"error", "detail"->error.toString))

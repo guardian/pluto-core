@@ -24,9 +24,11 @@ class PlutoProjectTypeController @Inject()(override val controllerComponents:Con
 
   implicit val cache:SyncCacheApi = cacheImpl
 
-  override def selectall(startAt: Int, limit: Int): Future[Try[Seq[PlutoProjectType]]] = db.run(
-    TableQuery[PlutoProjectTypeRow].drop(startAt).take(limit).result.asTry
-  )
+  override def selectall(startAt: Int, limit: Int): Future[Try[(Int,Seq[PlutoProjectType])]] = db.run(
+    TableQuery[PlutoProjectTypeRow].length.result.zip(
+      TableQuery[PlutoProjectTypeRow].drop(startAt).take(limit).result
+    )
+  ).map(result=>Success(result)).recover(err=>Failure(err))
 
   override def selectid(requestedId: Int): Future[Try[Seq[PlutoProjectType]]] = db.run(
     TableQuery[PlutoProjectTypeRow].filter(_.id===requestedId).result.asTry
