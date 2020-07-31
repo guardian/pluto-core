@@ -238,7 +238,7 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
       deleteAction(requestedId)
   }}
 
-  private def getItemType(m:PlutoModel) = m match {
+  protected def getItemType(m:PlutoModel) = m match {
     case _:PlutoWorkingGroup=>Some("workinggroup")
     case _:PlutoCommission=>Some("commission")
     case _:ProjectEntry=>Some("project")
