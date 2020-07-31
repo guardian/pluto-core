@@ -11,11 +11,13 @@ import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
-import play.api.libs.json.{JsError, JsResult, JsValue, Json}
+import play.api.libs.json.{JsError, JsResult, JsValue, Json, Writes}
 import play.api.mvc._
+import services.RabbitMqPropagator.ChangeEvent
 import services.{CreateOperation, UpdateOperation, ValidateProject}
 import services.actors.creation.{CreationMessage, GenericCreationActor}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateTransientData}
+import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
@@ -342,5 +344,64 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         logger.warn(s"Invalid CORS preflight request for authentication: $other")
         Forbidden("")
     }
+  }
+
+  def projectWasOpened(id: Int): EssentialAction = IsAuthenticatedAsync { uid=>request =>
+    import models.EntryStatusMapper._
+
+    def updateProject() = TableQuery[ProjectEntryRow]
+      .filter(_.id === id)
+      .filter(_.status === EntryStatus.New)
+      .map(_.status)
+      .update(EntryStatus.InProduction)
+      .map(rows => {
+        if (rows > 0) {
+          sendToRabbitMq(UpdateOperation, id, rabbitMqPropagator)
+        }
+      })
+
+    def updateCommission(commissionId: Option[Int]) = TableQuery[PlutoCommissionRow]
+      .filter(_.id === commissionId)
+      .filter(_.status === EntryStatus.New)
+      .map(_.status)
+      .update(EntryStatus.InProduction).flatMap(rows => {
+      if (rows > 0) {
+        TableQuery[PlutoCommissionRow].filter(_.id === commissionId).result.map({
+          case Seq() =>
+            logger.error(s"Failed to update commission, commission not updated: $commissionId")
+            throw new IllegalStateException(s"Failed to update commission, commission not updated: $commissionId")
+          case Seq(commission) =>
+            val commissionsSerializer = new PlutoCommissionSerializer {}
+            implicit val commissionsWrites: Writes[PlutoCommission] = commissionsSerializer.plutoCommissionWrites
+            rabbitMqPropagator ! ChangeEvent(Seq(commissionsWrites.writes(commission)), getItemType(commission), UpdateOperation)
+          case _ =>
+            logger.error(s"Failed to update commission, multiple commissions updated: $commissionId")
+            throw new IllegalStateException(s"Failed to update commission, multiple commissions updated: $commissionId")
+        })
+      } else {
+        DBIOAction.successful(())
+      }
+    })
+
+    dbConfig.db.run(
+        TableQuery[ProjectEntryRow]
+          .filter(_.id === id)
+          .result
+          .flatMap(result => {
+            val acts = result match {
+              case Seq() => DBIOAction.successful(NotFound)
+              case Seq(project: ProjectEntry) =>
+                DBIO.seq(updateProject(), updateCommission(project.commissionId)).map(_ => Ok)
+              case _ =>
+                logger.error(s"Database inconsistency, multiple projects found for id=$id")
+                DBIOAction.successful(InternalServerError)
+            }
+            acts
+          })
+    ).recover({
+      case err: Throwable =>
+        logger.error("Failed to mark project as opened", err)
+        InternalServerError(Json.obj("status" -> "error", "detail" -> "Failed to mark project as opened"))
+    })
   }
 }
