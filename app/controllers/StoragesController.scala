@@ -44,11 +44,6 @@ class StoragesController @Inject()
     TableQuery[StorageEntryRow].filter(_.id === requestedId).delete.asTry
   )
 
-//  override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
-//    TableQuery[StorageEntryRow].drop(startAt).take(limit).result.asTry //simple select *
-//  ).map(_.map(_.map(_.copy(password=Some("****")))))
-//
-
   override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
     TableQuery[StorageEntryRow].length.result.zip(
       TableQuery[StorageEntryRow].drop(startAt).take(limit).result

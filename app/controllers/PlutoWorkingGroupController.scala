@@ -34,8 +34,7 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
     TableQuery[PlutoWorkingGroupRow].length.result.zip(
       TableQuery[PlutoWorkingGroupRow].drop(startAt).take(limit).sortBy(_.name.asc.nullsLast).result
     )
-  ).map(result=>Success(result))
-    .recover({case err:Throwable=>Failure(err)})
+  ).map(Success(_)).recover(Failure(_))
 
   override def selectid(requestedId: Int): Future[Try[Seq[PlutoWorkingGroup]]] = db.run(
     TableQuery[PlutoWorkingGroupRow].filter(_.id===requestedId).sortBy(_.name.asc.nullsLast).result.asTry

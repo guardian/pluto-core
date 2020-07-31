@@ -28,7 +28,7 @@ class PlutoProjectTypeController @Inject()(override val controllerComponents:Con
     TableQuery[PlutoProjectTypeRow].length.result.zip(
       TableQuery[PlutoProjectTypeRow].drop(startAt).take(limit).result
     )
-  ).map(result=>Success(result)).recover(err=>Failure(err))
+  ).map(Success(_)).recover(Failure(_))
 
   override def selectid(requestedId: Int): Future[Try[Seq[PlutoProjectType]]] = db.run(
     TableQuery[PlutoProjectTypeRow].filter(_.id===requestedId).result.asTry

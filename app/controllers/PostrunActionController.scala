@@ -37,8 +37,7 @@ class PostrunActionController  @Inject() (override val controllerComponents:Cont
     TableQuery[PostrunActionRow].length.result.zip(
       TableQuery[PostrunActionRow].drop(startAt).take(limit).result
     )
-  ).map(result=>Success(result))
-    .recover(err=>Failure(err))
+  ).map(Success(_)).recover(Failure(_))
 
   override def jstranslate(result: PostrunAction): Json.JsValueWrapper = result
 

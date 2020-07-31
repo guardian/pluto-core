@@ -50,10 +50,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
           commissions.foreach(commission => commission.projectCount = commission.id.flatMap(counts.get).orElse(Some(0)))
           Success((count,commissions))
         })
-      }}.recover({
-        case err:Throwable=>
-          Failure(err)
-      })
+      }}.recover(Failure(_))
     }
 
     override def selectid(requestedId: Int): Future[Try[Seq[PlutoCommission]]] = db.run(
@@ -69,10 +66,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         basequery.length.result.zip(
           basequery.drop(startAt).take(limit).sortBy(_.title.asc.nullsLast).result
         )
-      ).map(result=>Success(result))
-        .recover({
-          case err=>Failure(err)
-        })
+      ).map(Success(_)).recover(Failure(_))
     }
 
     def calculateProjectCount(entries: Seq[PlutoCommission]): Future[ListMap[Int, Int]] = {

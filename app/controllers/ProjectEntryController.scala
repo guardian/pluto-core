@@ -223,7 +223,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     TableQuery[ProjectEntryRow].length.result.zip(
       TableQuery[ProjectEntryRow].sortBy(_.created.desc).drop(startAt).take(limit).result
     )
-  ).map(result=>Success(result)).recover(err=>Failure(err))
+  ).map(Success(_)).recover(Failure(_))
 
   override def selectFiltered(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms): Future[Try[(Int, Seq[ProjectEntry])]] = {
     val basequery = terms.addFilterTerms {
@@ -234,7 +234,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       basequery.length.result.zip(
         basequery.sortBy(_.created.desc).drop(startAt).take(limit).result
       )
-    ).map(result=>Success(result)).recover(err=>Failure(err))
+    ).map(Success(_)).recover(Failure(_))
   }
 
   override def jstranslate(result: Seq[ProjectEntry]):Json.JsValueWrapper = result
