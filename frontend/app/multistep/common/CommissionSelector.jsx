@@ -52,7 +52,7 @@ class CommissionSelector extends React.Component {
         value={this.props.selectedCommissionId?.toString()}
         size={10}
         unfilteredContentFetchUrl={
-          window.deploymentRootPath + "api/pluto/commission/list?length=150"
+          deploymentRootPath + "api/pluto/commission/list?length=150"
         }
         unfilteredContentConverter={CommissionSelector.convertContent}
         makeSearchDoc={this.makeSearchDoc}
