@@ -221,8 +221,9 @@ class Application @Inject() (val cc:ControllerComponents, override val bearerTok
     checkFutures.map(resultSeq=>{
       val ldapCheck = resultSeq.head
       val dbCheck = resultSeq(1)
+      val ldapMode = config.getOptional[String]("ldap.ldapProtocol").getOrElse("ldap")
 
-      if(ldapCheck.isFailure || dbCheck.isFailure){
+      if( (ldapMode!="none" && ldapCheck.isFailure) || dbCheck.isFailure){
         if(ldapCheck.isFailure) logger.error(s"LDAP Healthcheck is failing: ${ldapCheck.failed.get.toString}")
         if(dbCheck.isFailure) logger.error(s"DB Healthcheck is failing: ${dbCheck.failed.get.toString}")
         InternalServerError(makeHealthcheckBody("error",ldapCheck,dbCheck))
