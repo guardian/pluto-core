@@ -267,17 +267,16 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                         variant="contained"
                         color="primary"
                         onClick={async () => {
+                          window.open(`pluto:openproject:${id}`, "_blank");
+
                           try {
                             await updateProjectOpenedStatus(id);
 
                             // Reload projects to fetch the updated project status
                             fetchProjectsOnPage();
-                          } catch {
-                            //
+                          } catch (error) {
+                            console.error(error);
                           }
-
-                          // TODO Open the project
-                          window.open(`pluto:openproject:${id}`, "_blank");
                         }}
                       >
                         Open project
