@@ -3,6 +3,8 @@ import { shallow, mount } from "enzyme";
 import sinon from "sinon";
 import CommissionSelector from "../../../app/multistep/common/CommissionSelector";
 
+global.deploymentRootPath = "";
+
 describe("CommissionSelector", () => {
   it("should prepare content correctly", () => {
     const result = CommissionSelector.convertContent({
