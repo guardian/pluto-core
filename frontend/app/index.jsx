@@ -87,6 +87,7 @@ class App extends React.Component {
       currentUsername: "",
       isAdmin: false,
       loading: false,
+      plutoConfig: {},
     };
 
     this.onLoggedIn = this.onLoggedIn.bind(this);
@@ -96,7 +97,11 @@ class App extends React.Component {
     axios.interceptors.response.use(
       (response) => response,
       async (error) => {
-        handleUnauthorized(error, this.handleUnauthorizedFailed);
+        handleUnauthorized(
+          this.state.plutoConfig,
+          error,
+          this.handleUnauthorizedFailed
+        );
 
         return Promise.reject(error);
       }
@@ -161,7 +166,7 @@ class App extends React.Component {
     this.setState({ loading: true, haveChecked: true }, () =>
       axios
         .get("/api/isLoggedIn")
-        .then((response) => {
+        .then(async (response) => {
           //200 response means we are logged in
           this.setState({
             isLoggedIn: true,
@@ -169,6 +174,18 @@ class App extends React.Component {
             currentUsername: response.data.uid,
             isAdmin: response.data.isAdmin,
           });
+
+          // Fetch the oauth config
+          try {
+            const response = await fetch("/meta/oauth/config.json");
+
+            if (response.status === 200) {
+              const data = await response.json();
+              this.setState({ plutoConfig: data });
+            }
+          } catch (error) {
+            console.error(error);
+          }
         })
         .catch((error) => {
           this.setState({

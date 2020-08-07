@@ -23,13 +23,18 @@ interface RefreshTokenResponse {
   refresh_token: string;
 }
 
+interface PlutoConfig {
+  tokenUri: string;
+  clientId: string;
+}
+
 /**
  * Refreshes a token e.g. an expired token and returns an active token.
  */
-export const refreshToken = async (): Promise<RefreshTokenResponse> => {
-  const tokenUri = sessionStorage.getItem("pluto:token-uri") as string;
-  const clientId = sessionStorage.getItem("pluto:client-id") as string;
-
+export const refreshToken = async (
+  plutoConfig: PlutoConfig
+): Promise<RefreshTokenResponse> => {
+  const { tokenUri, clientId } = plutoConfig;
   const postdata: { [key: string]: string } = {
     grant_type: "refresh_token",
     client_id: clientId,
@@ -86,6 +91,7 @@ const processQueue = (error: any, token: string | null) => {
  * Retries the API call with a refresh token on 401 Unauthorized.
  */
 export const handleUnauthorized = async (
+  plutoConfig: PlutoConfig,
   error: any,
   failureCallback: () => void
 ): Promise<AxiosResponse | void> => {
@@ -118,7 +124,7 @@ export const handleUnauthorized = async (
     isRefreshing = true;
 
     try {
-      const data = await refreshToken();
+      const data = await refreshToken(plutoConfig);
 
       sessionStorage.setItem("pluto:access-token", data.access_token);
       sessionStorage.setItem("pluto:refresh-token", data.refresh_token);
