@@ -88,9 +88,9 @@ class AssetFolderController @Inject() (override val controllerComponents:Control
         NotFound(Json.obj("status"->"not_found","detail"->"No asset folder registered under that project id"))
       } else if(resultCount>1){
         logger.warn(s"Multiple asset folders found for project $projectId: $results")
-        Ok(Json.obj("status"->"ok","warning"->"Multiple values exist", "data"->results.head))
+        Ok(Json.obj("status"->"ok","warning"->"Multiple values exist", "result"->results.head))
       } else {
-        Ok(Json.obj("status"->"ok","data"->results.head))
+        Ok(Json.obj("status"->"ok","result"->results.head))
       }
     })
   }

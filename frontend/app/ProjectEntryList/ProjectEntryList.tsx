@@ -29,7 +29,7 @@ import ProjectEntryFilterComponent from "../filter/ProjectEntryFilterComponent.j
 import { isLoggedIn } from "../utils/api";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import { getProjectsOnPage, updateProjectOpenedStatus } from "./helpers";
-
+import AssetFolderLink from "./AssetFolderLink";
 interface HeaderTitles {
   label: string;
   key?: keyof Project;
@@ -281,6 +281,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                       >
                         Open project
                       </Button>
+                      <AssetFolderLink projectId={id} />
                     </TableCell>
                   </TableRow>
                 )
@@ -302,7 +303,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
           onChangeRowsPerPage={handleChangeRowsPerPage}
           // FIXME: remove when count is correct
           labelDisplayedRows={({ from, to }) => `${from}-${to}`}
-        ></TablePagination>
+        />
       </Paper>
       {typeof commissionId === "string" && projects.length === 0 && (
         <Typography variant="subtitle1" style={{ marginTop: "1rem" }}>

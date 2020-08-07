@@ -85,7 +85,7 @@ class AssetFolderControllerSpec extends Specification with utils.BuildMyApp with
       val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
       println(jsondata)
       (jsondata \ "status").as[String] must equalTo("ok")
-      val returnedRecord = (jsondata \ "data").as[ProjectMetadata]
+      val returnedRecord = (jsondata \ "result").as[ProjectMetadata]
       returnedRecord.projectRef mustEqual 1
       returnedRecord.value must beSome("/path/to/assets")
 
