@@ -35,10 +35,10 @@ import scala.util.{Failure, Success, Try}
 
 sealed trait LoginResult
 
-case class LoginResultOK[A](content:A) extends LoginResult
-case class LoginResultInvalid[A](content:A) extends LoginResult
-case class LoginResultExpired[A](content:A) extends LoginResult
-case class LoginResultMisconfigured[A](content:A) extends LoginResult
+final case class LoginResultOK[A](content:A) extends LoginResult
+final case class LoginResultInvalid[A](content:A) extends LoginResult
+final case class LoginResultExpired[A](content:A) extends LoginResult
+final case class LoginResultMisconfigured[A](content:A) extends LoginResult
 case object LoginResultNotPresent extends LoginResult
 
 object Security {
