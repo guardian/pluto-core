@@ -96,6 +96,7 @@ PUT     /api/pluto/commission/list         @controllers.PlutoCommissionControlle
 OPTIONS /api/pluto/commission/list          @controllers.PlutoCommissionController.listOptions
 
 GET     /api/assetfolder/lookup            @controllers.AssetFolderController.assetFolderForPath(path:String)
+GET     /api/project/:projectId/assetfolder @controllers.AssetFolderController.assetFolderForProject(projectId:Int)
 
 POST    /api/login                         @controllers.Application.authenticate
 OPTIONS /api/login                         @controllers.Application.authenticateOptions
