@@ -92,6 +92,10 @@ class AssetFolderController @Inject() (override val controllerComponents:Control
       } else {
         Ok(Json.obj("status"->"ok","result"->results.head))
       }
+    }).recover({
+      case err: Throwable =>
+        logger.error(s"Could not look up asset folder for project id $projectId: ", err)
+        InternalServerError(Json.obj("status"->"error","detail"->err.getMessage))
     })
   }
 }
