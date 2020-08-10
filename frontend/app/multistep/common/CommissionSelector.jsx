@@ -46,16 +46,12 @@ class CommissionSelector extends React.Component {
   }
 
   render() {
-    const deploymentRoot = window.deploymentRootPath ?? "/";
-
     return (
       <FilterableList
         onChange={(newValue) => this.props.valueWasSet(parseInt(newValue))}
         value={this.props.selectedCommissionId?.toString()}
         size={10}
-        unfilteredContentFetchUrl={
-          deploymentRoot + "api/pluto/commission/list?length=150"
-        }
+        unfilteredContentFetchUrl="/api/pluto/commission/list?length=150"
         unfilteredContentConverter={CommissionSelector.convertContent}
         makeSearchDoc={this.makeSearchDoc}
         triggerRefresh={this.state.refreshCounter}
