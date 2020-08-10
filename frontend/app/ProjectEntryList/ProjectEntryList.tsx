@@ -28,7 +28,7 @@ import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView.jsx";
 import ProjectEntryFilterComponent from "../filter/ProjectEntryFilterComponent.jsx";
 import { isLoggedIn } from "../utils/api";
 import { SortDirection, sortListByOrder } from "../utils/lists";
-import { getProjectsOnPage } from "./helpers";
+import { getProjectsOnPage, updateProjectOpenedStatus } from "./helpers";
 
 interface HeaderTitles {
   label: string;
@@ -53,6 +53,9 @@ const useStyles = makeStyles({
     display: "flex",
     marginLeft: "auto",
     marginBottom: "0.625rem",
+  },
+  openProjectButton: {
+    whiteSpace: "nowrap",
   },
   visuallyHidden: {
     border: 0,
@@ -259,11 +262,25 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                       <ActionIcons id={id} isAdmin={user?.isAdmin ?? false} />
                     </TableCell>
                     <TableCell>
-                      {
-                        <a target="_blank" href={`pluto:openproject:${id}`}>
-                          Open project
-                        </a>
-                      }
+                      <Button
+                        className={classes.openProjectButton}
+                        variant="contained"
+                        color="primary"
+                        onClick={async () => {
+                          window.open(`pluto:openproject:${id}`, "_blank");
+
+                          try {
+                            await updateProjectOpenedStatus(id);
+
+                            // Reload projects to fetch the updated project status
+                            fetchProjectsOnPage();
+                          } catch (error) {
+                            console.error(error);
+                          }
+                        }}
+                      >
+                        Open project
+                      </Button>
                     </TableCell>
                   </TableRow>
                 )
