@@ -2,7 +2,7 @@ package controllers
 
 import auth.{BearerTokenAuth, Security}
 import javax.inject.Inject
-import models.{ProjectMetadata, ProjectMetadataRow}
+import models.{ProjectMetadata, ProjectMetadataRow, ProjectMetadataSerializer}
 import play.api.{Configuration, Logger}
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -19,7 +19,7 @@ class AssetFolderController @Inject() (override val controllerComponents:Control
                                        override val bearerTokenAuth:BearerTokenAuth,
                                        configuration: Configuration,
                                        dbConfigProvider: DatabaseConfigProvider,
-                                       override val cache:SyncCacheApi) extends AbstractController(controllerComponents) with Security {
+                                       override val cache:SyncCacheApi) extends AbstractController(controllerComponents) with Security with ProjectMetadataSerializer {
   override val logger = Logger(getClass)
 
   private val db = dbConfigProvider.get[PostgresProfile].db
@@ -73,6 +73,29 @@ class AssetFolderController @Inject() (override val controllerComponents:Control
       case err:Throwable=>
         logger.error(s"Could not look up asset folder for path $path: ", err)
         InternalServerError(Json.obj("status"->"db_error", "detail"->err.getMessage))
+    })
+  }
+
+  def assetFolderForProject(projectId:Int) = IsAuthenticatedAsync { uid=> request=>
+    db.run(
+      TableQuery[ProjectMetadataRow]
+        .filter(_.key===ProjectMetadata.ASSET_FOLDER_KEY)
+        .filter(_.projectRef===projectId)
+        .result
+    ).map(results=>{
+      val resultCount = results.length
+      if(resultCount==0){
+        NotFound(Json.obj("status"->"not_found","detail"->"No asset folder registered under that project id"))
+      } else if(resultCount>1){
+        logger.warn(s"Multiple asset folders found for project $projectId: $results")
+        Ok(Json.obj("status"->"ok","warning"->"Multiple values exist", "result"->results.head))
+      } else {
+        Ok(Json.obj("status"->"ok","result"->results.head))
+      }
+    }).recover({
+      case err: Throwable =>
+        logger.error(s"Could not look up asset folder for project id $projectId: ", err)
+        InternalServerError(Json.obj("status"->"error","detail"->err.getMessage))
     })
   }
 }

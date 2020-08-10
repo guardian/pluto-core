@@ -1,6 +1,6 @@
 package controllers
 
-import models.{ProjectEntry, ProjectMetadata, ProjectMetadataRow}
+import models.{ProjectEntry, ProjectMetadata, ProjectMetadataRow, ProjectMetadataSerializer}
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterEach
 import play.api.db.slick.DatabaseConfigProvider
@@ -15,7 +15,7 @@ import play.api.test._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class AssetFolderControllerSpec extends Specification with utils.BuildMyApp with BeforeAfterEach {
+class AssetFolderControllerSpec extends Specification with utils.BuildMyApp with BeforeAfterEach with ProjectMetadataSerializer {
   sequential
 
   override def before = new WithApplication(buildApp) {
@@ -73,7 +73,34 @@ class AssetFolderControllerSpec extends Specification with utils.BuildMyApp with
       (jsondata \ "status").as[String] must equalTo("notfound")
       status(response) must equalTo(NOT_FOUND)
     }
+  }
 
+  "AssetFolderController.assetFolderForProject" should {
+    "return asset folder data for an existing project" in new WithApplication(buildApp) {
+      val response = route(app, FakeRequest(
+        "GET",
+        "/api/project/1/assetfolder",
+      ).withSession("uid"->"testuser")).get
 
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      println(jsondata)
+      (jsondata \ "status").as[String] must equalTo("ok")
+      val returnedRecord = (jsondata \ "result").as[ProjectMetadata]
+      returnedRecord.projectRef mustEqual 1
+      returnedRecord.value must beSome("/path/to/assets")
+
+      status(response) must equalTo(OK)
+    }
+
+    "return 404 if the project has no asset folder" in new WithApplication(buildApp) {
+      val response = route(app, FakeRequest(
+        "GET",
+        "/api/project/2/assetfolder",
+      ).withSession("uid"->"testuser")).get
+
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      (jsondata \ "status").as[String] must equalTo("not_found")
+      status(response) must equalTo(NOT_FOUND)
+    }
   }
 }

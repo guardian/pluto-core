@@ -48,3 +48,10 @@ interface PlutoUser {
 interface PlutoApiResponse<T> {
   result: T;
 }
+
+interface ProjectMetadataResponse {
+  id: number;
+  projectEntryRef: number;
+  key: string;
+  value: string;
+}

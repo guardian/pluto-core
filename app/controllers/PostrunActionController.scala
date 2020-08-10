@@ -1,6 +1,7 @@
 package controllers
 
-import javax.inject.{Inject, Singleton}
+import akka.actor.ActorRef
+import javax.inject.{Inject, Named, Singleton}
 import akka.http.scaladsl.Http
 import auth.{BearerTokenAuth, Security}
 import exceptions.AlreadyExistsException
@@ -14,6 +15,7 @@ import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 import play.api.libs.json._
+import services.PostrunActionScanner
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -21,9 +23,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 
 @Singleton
-class PostrunActionController  @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
+class PostrunActionController  @Inject() (override val controllerComponents:ControllerComponents,
+                                          override val bearerTokenAuth:BearerTokenAuth,
                                           config: Configuration, dbConfigProvider: DatabaseConfigProvider,
-                                          cacheImpl:SyncCacheApi)
+                                          cacheImpl:SyncCacheApi,
+                                          @Named("postrun-action-scanner") postrunActionScanner:ActorRef)
   extends GenericDatabaseObjectController[PostrunAction] with PostrunActionSerializer with PostrunDependencySerializer with Security {
 
   implicit val cache:SyncCacheApi = cacheImpl
@@ -140,4 +144,9 @@ class PostrunActionController  @Inject() (override val controllerComponents:Cont
       case Failure(error) => handleConflictErrors(error,"postrun dependency", isInsert=false)
     })
   }}
+
+  def startScan = IsAdmin {uid=> request=>
+    postrunActionScanner ! PostrunActionScanner.Rescan
+    Ok(Json.obj("status"->"ok","detail"->"scan started"))
+  }
 }
