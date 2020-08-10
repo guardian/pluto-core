@@ -291,8 +291,9 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
       val resultList = (jsondata \ "result").as[List[ProjectEntry]]
       resultList.length mustEqual 2
-      resultList.head.id must beSome(3)
-      resultList(1).id must beSome(4)
+      //the actual id number can be different depending on the order of the tests
+      resultList.head.projectTitle mustEqual "ThatTestProject"
+      resultList(1).projectTitle mustEqual "ThatTestProject"
     }
 
     "show projectentry items filtered by vidispine id" in new WithApplication(buildApp){
@@ -320,8 +321,8 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
       val resultList = (jsondata \ "result").as[List[ProjectEntry]]
       resultList.length mustEqual 2
-      resultList.head.id must beSome(3)
-      resultList(1).id must beSome(4)
+      resultList.head.vidispineProjectId must beSome("VX-2345")
+      resultList(1).vidispineProjectId must beSome("VX-2345")
     }
 
     "return an empty list for a filename that is not associated with any projects" in new WithApplication(buildApp){
