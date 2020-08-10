@@ -26,11 +26,47 @@ import scala.jdk.CollectionConverters._
 import play.api.{ConfigLoader, Configuration, Logger}
 import play.api.cache.SyncCacheApi
 import play.api.libs.json._
+import play.api.libs.streams.Accumulator
 import play.api.libs.typedmap.TypedKey
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
+
+sealed trait LoginResult
+
+final case class LoginResultOK[A](content:A) extends LoginResult
+final case class LoginResultInvalid[A](content:A) extends LoginResult
+final case class LoginResultExpired[A](content:A) extends LoginResult
+final case class LoginResultMisconfigured[A](content:A) extends LoginResult
+case object LoginResultNotPresent extends LoginResult
+
+object Security {
+  /**
+    * this is a copy of the regular Security.Authenticated method from Play, adjusted to use an Either instead of an
+    * Option so we can pass on information about why a login failed
+    * @param userinfo a function that takes the request header and must return either a Left with a LoginResult
+    *                 indicating failure or Right with a LoginResult indicating success
+    * @param onUnauthorized a function that takes the request header and the login status returned by `userinfo`,
+    *                       if it was a failure. It must return a Play response that will get returned to the client.
+    * @param action the play action being wrapped
+    * @tparam A the type of data that the LoginResult will contain
+    * @return the wrapped Play action
+    */
+  def MyAuthenticated[A](
+                          userinfo: RequestHeader => Either[LoginResult, LoginResultOK[A]],
+                          onUnauthorized: (RequestHeader, LoginResult) => Result
+                        )(action: A => EssentialAction): EssentialAction = {
+    EssentialAction { request =>
+      userinfo(request) match {
+        case Right(result) =>
+          action(result.content)(request)
+        case Left(loginProblem) =>
+          Accumulator.done(onUnauthorized(request, loginProblem))
+      }
+    }
+  }
+}
 
 trait Security extends BaseController {
   implicit val cache:SyncCacheApi
@@ -43,9 +79,12 @@ trait Security extends BaseController {
     * @param request HTTP request object
     * @return Option containing uid if present or None
     */
-  private def ldapUsername(request: RequestHeader) = Conf.ldapProtocol match {
-    case "none"=>Some("noldap")
-    case _=>request.session.get("uid")
+  private def ldapUsername(request: RequestHeader):Either[LoginResult,LoginResultOK[String]] = Conf.ldapProtocol match {
+    case "none"=>Right(LoginResultOK("noldap"))
+    case _=>request.session.get("uid") match {
+      case Some(uid)=>Right(LoginResultOK(uid))
+      case None=>Left(LoginResultNotPresent)
+    }
   }
 
   /**
@@ -53,17 +92,22 @@ trait Security extends BaseController {
     * @param header HTTP request object
     * @param auth Authorization token as passed from the client
     */
-  private def hmacUsername(header: RequestHeader, auth: String):Option[String] = {
+  private def hmacUsername(header: RequestHeader, auth: String):Either[LoginResult, LoginResultOK[String]] = {
     val authparts = auth.split(":")
 
     logger.debug(s"authparts: ${authparts.mkString(":")}")
     logger.debug(s"headers: ${header.headers.toSimpleMap.toString}")
     if(Conf.sharedSecret.isEmpty){
       logger.error("Unable to process server->server request, shared_secret is not set in application.conf")
-      return None
+      Left(LoginResultMisconfigured(auth))
+    } else {
+      HMAC
+        .calculateHmac(header, Conf.sharedSecret)
+        .map(calculatedSig => {
+          if (calculatedSig == authparts(1)) Right(LoginResultOK(authparts(0))) else Left(LoginResultInvalid(authparts(0)))
+        })
+        .getOrElse(Left(LoginResultInvalid("")))
     }
-
-    HMAC.calculateHmac(header, Conf.sharedSecret).flatMap(calculatedSig=>{if(calculatedSig==authparts(1)) Some(authparts(0)) else None})
   }
 
   object AuthType extends Enumeration {
@@ -72,37 +116,47 @@ trait Security extends BaseController {
   final val AuthTypeKey = TypedKey[AuthType.Value]("auth_type")
 
   //if this returns something, then we are logged in
-  private def username(request:RequestHeader) = Seq("X-Hmac-Authorization","Authorization").map(request.headers.get) match {
+  private def username(request:RequestHeader):Either[LoginResult, LoginResultOK[String]] = Seq("X-Hmac-Authorization","Authorization").map(request.headers.get) match {
     case Seq(Some(auth),_)=>
       logger.debug("got Auth header, doing hmac auth")
       val updatedRequest = request.addAttr(AuthTypeKey, AuthType.AuthHmac)
       hmacUsername(updatedRequest,auth)
     case Seq(None, Some(bearer))=>
       logger.debug("got Authorization header, doing bearer auth with 'subject' field as uid")
-      bearerTokenAuth(request).map(_.getSubject).toOption
+      bearerTokenAuth(request).map(result=>LoginResultOK(result.content.getSubject))
     case Seq(None,None)=>
       logger.debug("no Auth header, doing session auth")
       ldapUsername(request)
   }
 
-  private def onUnauthorized(request: RequestHeader) = {
-    Results.Forbidden(Json.obj("status"->"error","detail"->"Not logged in"))
+  private def onUnauthorized(request: RequestHeader, loginResult: LoginResult) = loginResult match {
+    case LoginResultInvalid(_)=>
+      Results.Forbidden(Json.obj("status"->"error","detail"->"Invalid credentials"))
+    case LoginResultExpired(user:String)=>
+      Results.Unauthorized(Json.obj("status"->"expired","detail"->"Your login has expired","username"->user))
+    case LoginResultMisconfigured(_)=>
+      Results.InternalServerError(Json.obj("status"->"error","detail"->"Server configuration error, please check the logs"))
+    case LoginResultNotPresent=>
+      Results.Forbidden(Json.obj("status"->"error","detail"->"No credentials provided"))
+    case LoginResultOK(user)=>
+      logger.error(s"LoginResultOK passed to onUnauthorized! This must be a bug. Username is $user.")
+      Results.InternalServerError(Json.obj("status"->"logic_error","detail"->"Login should have succeeded but error handler called. This is a server bug."))
   }
 
-  def IsAuthenticated(f: => String => Request[AnyContent] => Result) = Security.Authenticated(username, onUnauthorized) {
+  def IsAuthenticated(f: => String => Request[AnyContent] => Result) = Security.MyAuthenticated(username, onUnauthorized) {
     uid => Action(request => f(uid)(request))
   }
 
-  def IsAuthenticatedAsync(f: => String => Request[AnyContent] => Future[Result]) = Security.Authenticated(username, onUnauthorized) {
+  def IsAuthenticatedAsync(f: => String => Request[AnyContent] => Future[Result]) = Security.MyAuthenticated(username, onUnauthorized) {
     uid => Action.async(request => f(uid)(request))
   }
 
-  def IsAuthenticatedAsync[A](b: BodyParser[A])(f: => String => Request[A] => Future[Result]) = Security.Authenticated(username, onUnauthorized) {
+  def IsAuthenticatedAsync[A](b: BodyParser[A])(f: => String => Request[A] => Future[Result]) = Security.MyAuthenticated(username, onUnauthorized) {
     uid=> Action.async(b)(request => f(uid)(request))
   }
 
   def IsAuthenticated(b: BodyParser[MultipartFormData[TemporaryFile]] = parse.multipartFormData)(f: => String => Request[MultipartFormData[TemporaryFile]] => Result) = {
-    Security.Authenticated(username, onUnauthorized) { uid => Action(b)(request => f(uid)(request)) }
+    Security.MyAuthenticated(username, onUnauthorized) { uid => Action(b)(request => f(uid)(request)) }
   }
 
   /**
@@ -137,16 +191,19 @@ trait Security extends BaseController {
       //FIXME: seems a bit rubbish to validate the token twice, once for login and once for admin
       val adminClaimContent = for {
         tok <- bearerTokenAuth.extractAuthorization(bearer)
-        maybeClaims <- bearerTokenAuth.validateToken(tok).toOption
-        maybeAdminClaim <- Option(maybeClaims.getStringClaim(bearerTokenAuth.isAdminClaimName()))
+        maybeClaims <- bearerTokenAuth.validateToken(tok)
+        maybeAdminClaim <- Option(maybeClaims.content.getStringClaim(bearerTokenAuth.isAdminClaimName())) match {
+          case Some(str)=>Right(LoginResultOK(str))
+          case None=>Left(LoginResultNotPresent)
+        }
       } yield maybeAdminClaim
 
       adminClaimContent match {
-        case Some(stringValue)=>
+        case Right(LoginResultOK(stringValue))=>
           logger.debug(s"got value for isAdminClaim ${bearerTokenAuth.isAdminClaimName()}: $stringValue, downcasing and testing for 'true' or 'yes'")
           val downcased = stringValue.toLowerCase()
           downcased == "true" || downcased == "yes"
-        case None=>
+        case Left(_)=>
           logger.debug(s"got nothing for isAdminClaim ${bearerTokenAuth.isAdminClaimName()}")
           false
       }

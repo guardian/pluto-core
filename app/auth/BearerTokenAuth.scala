@@ -12,7 +12,6 @@ import play.api.mvc.RequestHeader
 import play.api.Configuration
 import play.api.libs.typedmap.TypedKey
 import scala.util.{Failure, Success, Try}
-
 object BearerTokenAuth {
   final val ClaimsAttributeKey = TypedKey[JWTClaimsSet]("claims")
 }
@@ -67,14 +66,14 @@ class BearerTokenAuth @Inject() (config:Configuration) {
    * @param fromString complete Authorization header text
    * @return None if the header text does not match the expected format. The raw bearer token if it does.
    */
-  def extractAuthorization(fromString:String):Option[String] =
+  def extractAuthorization(fromString:String):Either[LoginResult,LoginResultOK[String]] =
     fromString match {
       case authXtractor(token)=>
         logger.debug("found valid base64 bearer")
-        Some(token)
+        Right(LoginResultOK(token))
       case _=>
         logger.warn("no bearer token found or it failed to validate")
-        None
+        Left(LoginResultInvalid("no token"))
     }
 
   /**
@@ -92,21 +91,28 @@ class BearerTokenAuth @Inject() (config:Configuration) {
     * @param token JWT token to verify
     * @return a Try, containing a JWTClaimsSet or an error
     */
-  def validateToken(token:String) = {
+  def validateToken(token:LoginResultOK[String]):Either[LoginResult,LoginResultOK[JWTClaimsSet]] = {
     logger.debug(s"validating token $token")
-    Try { SignedJWT.parse(token) }.flatMap(signedJWT=>
-      maybeVerifier match {
-        case Some(verifier) =>
-          if (signedJWT.verify(verifier)) {
-            logger.debug("verified JWT")
-            logger.debug(s"${signedJWT.getJWTClaimsSet.toJSONObject(true).toJSONString}")
-            Success(signedJWT.getJWTClaimsSet)
-          } else {
-            Failure(new RuntimeException("Failed to validate JWT"))
-          }
-        case None =>
-          Failure(new RuntimeException("No signing cert configured"))
-      })
+    Try {
+      SignedJWT.parse(token.content)
+    } match {
+      case Success(signedJWT) =>
+        maybeVerifier match {
+          case Some(verifier) =>
+            if (signedJWT.verify(verifier)) {
+              logger.debug("verified JWT")
+              logger.debug(s"${signedJWT.getJWTClaimsSet.toJSONObject(true).toJSONString}")
+              Right(LoginResultOK(signedJWT.getJWTClaimsSet))
+            } else {
+              Left(LoginResultInvalid(token.content))
+            }
+          case None =>
+            Left(LoginResultMisconfigured("No signing cert configured"))
+        }
+      case Failure(err) =>
+        logger.error(s"Failed to validate token for ${token.content}: ${err.getMessage}")
+        Left(LoginResultInvalid(token.content))
+    }
   }
 
   /**
@@ -115,12 +121,12 @@ class BearerTokenAuth @Inject() (config:Configuration) {
    * @return a Try, containing either the claims set or a failure indicating the reason authentication failed. This is
    *         to make composition easier.
    */
-  def checkExpiry(claims:JWTClaimsSet) = {
+  def checkExpiry(claims:JWTClaimsSet):Either[LoginResult,LoginResultOK[JWTClaimsSet]] = {
     if(claims.getExpirationTime.before(Date.from(Instant.now()))) {
       logger.debug(s"JWT was valid but expired at ${claims.getExpirationTime.formatted("YYYY-MM-dd HH:mm:ss")}")
-      Failure(new RuntimeException("Token has expired"))
+      Left(LoginResultExpired(claims.getSubject))
     } else {
-      Success(claims)
+      Right(LoginResultOK(claims))
     }
   }
 
@@ -128,22 +134,21 @@ class BearerTokenAuth @Inject() (config:Configuration) {
     * performs the JWT authentication against a given header.
    * This should not be called directly, but is done in the Security trait as part of IsAuthenticated or IsAdmin.
     * @param rh request header
-    * @return a Try, containing the "username" parameter if successful or a Failure if not
+    * @return a LoginResult subclass, as a Left if something failed or a Right if it succeeded
     */
-  def apply(rh: RequestHeader): Try[JWTClaimsSet] = {
+  def apply(rh: RequestHeader): Either[LoginResult,LoginResultOK[JWTClaimsSet]] = {
     rh.headers.get("Authorization") match {
       case Some(authValue)=>
         extractAuthorization(authValue)
-          .map(validateToken)
-          .getOrElse(Failure(new RuntimeException("No authorization was present")))
-          .flatMap(checkExpiry)
-          .map(claims=>{
-            rh.addAttr(BearerTokenAuth.ClaimsAttributeKey, claims)
-            claims
+          .flatMap(validateToken)
+          .flatMap(result=>checkExpiry(result.content))
+          .map(result=>{
+            rh.addAttr(BearerTokenAuth.ClaimsAttributeKey, result.content)
+            result
           })
       case None=>
         logger.error("Attempt to access without authorization")
-        Failure(new RuntimeException("Attempt to access without authorization"))
+        Left(LoginResultNotPresent)
     }
   }
 }
