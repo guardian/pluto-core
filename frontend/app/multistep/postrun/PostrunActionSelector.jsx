@@ -9,38 +9,15 @@ class PostrunActionSelector extends React.Component {
     shouldExclude: PropTypes.array,
   };
 
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      selectedEntries: [],
-    };
-  }
-
-  componentDidMount() {
-    this.setState({
-      selectedEntries: this.props.selectedEntries
-        ? this.props.selectedEntries
-        : [],
-    });
-  }
-
   checkboxUpdated(event, selectedId, cb) {
     if (!event.target.checked) {
-      this.setState(
-        {
-          selectedEntries: this.state.selectedEntries.filter(
-            (value) => value !== selectedId
-          ),
-        },
-        () => cb(this.state.selectedEntries)
+      const updatedEntries = this.props.selectedEntries.filter(
+        (value) => value !== selectedId
       );
+      cb(updatedEntries);
     } else {
-      const newval = this.state.selectedEntries;
-      newval.push(selectedId);
-      this.setState({ selectedEntries: newval }, () =>
-        cb(this.state.selectedEntries)
-      );
+      const newval = this.props.selectedEntries.concat(selectedId);
+      cb(newval);
     }
   }
 
@@ -54,6 +31,7 @@ class PostrunActionSelector extends React.Component {
       return this.props.actionsList;
     }
   }
+
   render() {
     return (
       <ul className="selection-list">
@@ -67,7 +45,7 @@ class PostrunActionSelector extends React.Component {
                 onChange={(event) =>
                   this.checkboxUpdated(event, action.id, this.props.valueWasSet)
                 }
-                defaultChecked={this.state.selectedEntries.includes(action.id)}
+                checked={this.props.selectedEntries.includes(action.id)}
               />
               {action.title}
             </label>

@@ -9,7 +9,7 @@ import PostrunActionComponent from "./projecttype/PostrunActionComponent.jsx";
 
 class ProjectTypeMultistep extends React.Component {
   static propTypes = {
-    match: PropTypes.object.required,
+    match: PropTypes.object.isRequired,
   };
 
   constructor(props) {
