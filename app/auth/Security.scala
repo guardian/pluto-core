@@ -134,6 +134,8 @@ trait Security extends BaseController {
       Results.Forbidden(Json.obj("status"->"error","detail"->"Invalid credentials"))
     case LoginResultExpired(user:String)=>
       Results.Unauthorized(Json.obj("status"->"expired","detail"->"Your login has expired","username"->user))
+    case LoginResultExpired(_)=>  //this shouldn't happen, but it keeps the compiler happy
+      Results.Unauthorized(Json.obj("status"->"expired"))
     case LoginResultMisconfigured(_)=>
       Results.InternalServerError(Json.obj("status"->"error","detail"->"Server configuration error, please check the logs"))
     case LoginResultNotPresent=>

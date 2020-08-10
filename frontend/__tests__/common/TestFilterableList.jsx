@@ -3,11 +3,13 @@ import { shallow, mount } from "enzyme";
 import FilterableList from "../../app/common/FilterableList.jsx";
 import sinon from "sinon";
 import expect from "expect";
+import moxios from "moxios";
 
 describe("FilterableList", () => {
   const timeoutIterationLimit = 10;
 
-  beforeEach(() => fetch.resetMocks());
+  beforeEach(() => moxios.install());
+  afterEach(() => moxios.uninstall());
 
   it("should load data on mount if initialLoad is true", (done) => {
     let shouldContinue = false;
@@ -37,21 +39,28 @@ describe("FilterableList", () => {
       />
     );
 
-    rendered.setProps({}, () => {
-      timeoutWaiter(() => shouldContinue)
+    return moxios.wait(() => {
+      const request = moxios.requests.mostRecent();
+      try {
+        expect(request.url).toEqual("http://mock-server/endpoint?oid=");
+      } catch (err) {
+        done.fail(err);
+      }
+
+      request
+        .respondWith({
+          status: 200,
+          response: mockData,
+        })
         .then(() => {
           rendered.update();
           const select = rendered.find("select");
           const elements = select.children();
-          expect(fetch.mock.calls.length).toBe(1);
-          expect(fetch.mock.calls[0][0]).toEqual(
-            "http://mock-server/endpoint?oid="
-          ); //there is no search value for initial load
           expect(elements.length).toBe(3);
           done();
         })
         .catch((err) => done.fail(err));
-    }); //force a re-render - see https://airbnb.io/enzyme/docs/api/ShallowWrapper/update.html
+    });
   });
 
   it("should load data on textbox change with a GET request", (done) => {
@@ -68,8 +77,6 @@ describe("FilterableList", () => {
       return mockData;
     });
 
-    fetch.mockResponse(JSON.stringify(mockData));
-
     const rendered = shallow(
       <FilterableList
         onChange={onChangeMock}
@@ -83,21 +90,29 @@ describe("FilterableList", () => {
 
     const searchbox = rendered.find("input").first();
     searchbox.simulate("change", { target: { value: "test" } });
-    rendered.setProps({}, () => {
-      timeoutWaiter(() => shouldContinue)
+
+    return moxios.wait(() => {
+      const request = moxios.requests.mostRecent();
+      try {
+        expect(request.url).toEqual("http://mock-server/endpoint?oid=test");
+      } catch (err) {
+        done.fail(err);
+      }
+
+      request
+        .respondWith({
+          status: 200,
+          response: mockData,
+        })
         .then(() => {
           rendered.update();
           const select = rendered.find("select");
           const elements = select.children();
-          expect(fetch.mock.calls.length).toBe(1);
-          expect(fetch.mock.calls[0][0]).toEqual(
-            "http://mock-server/endpoint?oid=test"
-          );
           expect(elements.length).toBe(3);
           done();
         })
         .catch((err) => done.fail(err));
-    }); //force a re-render - see https://airbnb.io/enzyme/docs/api/ShallowWrapper/update.html
+    });
   });
 
   it("should perform a PUT request with a body from the makeSearchDoc callback if makeSearchDoc is specified", (done) => {
@@ -117,8 +132,6 @@ describe("FilterableList", () => {
       return mockData;
     });
 
-    fetch.mockResponse(JSON.stringify(mockData));
-
     const rendered = shallow(
       <FilterableList
         onChange={onChangeMock}
@@ -132,26 +145,30 @@ describe("FilterableList", () => {
 
     const searchbox = rendered.find("input").first();
     searchbox.simulate("change", { target: { value: "test" } });
-    rendered.setProps({}, () => {
-      timeoutWaiter(() => shouldContinue)
+
+    return moxios.wait(() => {
+      const request = moxios.requests.mostRecent();
+      try {
+        expect(request.url).toEqual("http://mock-server/endpoint");
+      } catch (err) {
+        done.fail(err);
+      }
+
+      request
+        .respondWith({
+          status: 200,
+          response: mockData,
+        })
         .then(() => {
           rendered.update();
           const select = rendered.find("select");
           const elements = select.children();
-          expect(fetch.mock.calls.length).toBe(1);
-          expect(fetch.mock.calls[0][0]).toEqual("http://mock-server/endpoint");
-          expect(fetch.mock.calls[0][1]).toEqual({
-            method: "PUT",
-            credentials: "omit",
-            body: '{"some":"key"}',
-            headers: { "Content-Type": "application/json" },
-          });
           expect(elements.length).toBe(3);
           expect(makeSearchDocMock.calledOnce).toBeTruthy();
           done();
         })
         .catch((err) => done.fail(err));
-    }); //force a re-render - see https://airbnb.io/enzyme/docs/api/ShallowWrapper/update.html
+    });
   });
 
   function timeoutWaiter(checkFunc, ctr) {
@@ -188,8 +205,6 @@ describe("FilterableList", () => {
       { name: "row3", value: "value3" },
     ];
 
-    fetch.mockResponse(JSON.stringify(mockData));
-
     let valueHolder = "";
 
     const rendered = shallow(
@@ -205,17 +220,28 @@ describe("FilterableList", () => {
 
     const searchbox = rendered.find("input").first();
     searchbox.simulate("change", { target: { value: "test" } });
-    rendered.setProps({}, () => {
-      timeoutWaiter(() => shouldContinue)
+
+    return moxios.wait(() => {
+      const request = moxios.requests.mostRecent();
+      try {
+        expect(request.url).toEqual("http://mock-server/endpoint?oid=test");
+      } catch (err) {
+        done.fail(err);
+      }
+
+      request
+        .respondWith({
+          status: 200,
+          response: mockData,
+        })
         .then(() => {
           const select = rendered.find("select");
           const elements = select.children();
-          expect(fetch.mock.calls.length).toBe(1);
           expect(contentConverterMock.calledWith(mockData)).toBe(true);
           done();
         })
         .catch((err) => done.fail(err));
-    }); //force a re-render - see https://airbnb.io/enzyme/docs/api/ShallowWrapper/update.html
+    });
   });
 
   it("should call the onChange callback when something is selected", () => {
