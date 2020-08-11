@@ -240,35 +240,33 @@ class Files @Inject() (override val controllerComponents:ControllerComponents, o
     })
   }}
 
+  def projectEntryForFile(fileId:Int)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Seq[ProjectEntry]] = {
+    val query = for {
+      (assocRow, projectEntry) <- TableQuery[FileAssociationRow] join TableQuery[ProjectEntryRow] on (_.projectEntry===_.id) if assocRow.fileEntry===fileId
+    } yield projectEntry
+
+    db.run(
+      query.result
+    )
+  }
+
   def projectFromFile(filename:String) = IsAuthenticatedAsync(parse.anyContent) {uid=>{ request =>
     implicit val db = dbConfig.db
-    request.body.asRaw match {
-      case Some(buffer) =>
-        dbConfig.db.run(
-          TableQuery[FileEntryRow].filter(_.filepath===filename).sortBy(_.version.desc.nullsLast).result.asTry
-        ).flatMap({
-          case Success(rows: Seq[FileEntry]) =>
-            if (rows.isEmpty) {
-              logger.error(s"File with name $filename not found")
-              Future(NotFound(Json.obj("status" -> "error", "detail" -> s"File with name $filename not found")))
-            } else {
-              val fileId = rows(0).id
-              val query = for {
-                (assocRow, projectEntry) <- TableQuery[FileAssociationRow] join TableQuery[ProjectEntryRow] on (_.projectEntry===_.id) if assocRow.fileEntry===fileId
-              } yield projectEntry
-              val projectOutput = db.run(
-                query.result
-              )
-              val json_output: Seq[ProjectEntry] = Await.result(projectOutput, 1000000 millis)
-              Future(Ok(Json.obj("status" -> "ok", "detail" -> s"File found for $filename", "file_data" -> rows, "project_data" -> json_output)))
-            }
-          case Failure(error) =>
-            logger.error(s"Could not look up file: ${error.toString}")
-            Future(InternalServerError(Json.obj("status" -> "error", "detail" -> s"Could not look up file: ${error.toString}")))
-        })
-      case None =>
-        Future(BadRequest(Json.obj("status" -> "error", "detail" -> "Bad request when attempting to look up file")))
-    }
+    dbConfig.db.run(
+      TableQuery[FileEntryRow].filter(_.filepath===filename).sortBy(_.version.desc.nullsLast).result.asTry
+    ).flatMap({
+      case Success(rows: Seq[FileEntry]) =>
+        if (rows.isEmpty) {
+          logger.error(s"File with name $filename not found")
+          Future(NotFound(Json.obj("status" -> "error", "detail" -> s"File with name $filename not found")))
+        } else {
+          val projectEntriesFut:Future[Seq[Option[ProjectEntry]]] = Future.sequence(rows.map(_.id).collect({case Some(id)=>id}).map(projectEntryForFile).map(_.map(_.headOption)))
+          projectEntriesFut.map(json_output=>Ok(Json.obj("status" -> "ok", "detail" -> s"File found for $filename", "file_data" -> rows, "project_data" -> json_output.collect({case Some(record)=>record}))))
+        }
+      case Failure(error) =>
+        logger.error(s"Could not look up file: ${error.toString}")
+        Future(InternalServerError(Json.obj("status" -> "error", "detail" -> s"Could not look up file: ${error.toString}")))
+    })
   }}
 }
 

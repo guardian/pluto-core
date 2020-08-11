@@ -21,7 +21,6 @@ PUT     /api/file/:id                      @controllers.Files.update(id: Int)
 DELETE  /api/file/:id                      @controllers.Files.delete(id: Int,deleteReferenced:Boolean ?=false)
 GET     /api/file/:id/checkOnDisk          @controllers.Files.checkOnDisk(id: Int)
 GET     /api/file/:id/storageMetadata      @controllers.Files.fileMetadata(id:Int)
-GET     /api/file/:filename/projectfromfile      @controllers.Files.projectFromFile(filename:String)
 GET     /api/storage                       @controllers.StoragesController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/storage                       @controllers.StoragesController.create
 GET     /api/storage/knowntypes            @controllers.StoragesController.types
@@ -41,6 +40,7 @@ PUT     /api/project/list                   @controllers.ProjectEntryController.
 GET     /api/project/distinctowners         @controllers.ProjectEntryController.distinctOwners
 
 PUT     /api/project                        @controllers.ProjectEntryController.create
+GET     /api/project/forFilename            @controllers.Files.projectFromFile(filename: String)
 GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int)
 PUT     /api/project/:id/title              @controllers.ProjectEntryController.updateTitle(id: Int)
 PUT     /api/project/:id/vsid               @controllers.ProjectEntryController.updateVsid(id: Int)
