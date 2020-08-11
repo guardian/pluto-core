@@ -40,7 +40,7 @@ sub update_file_perm {
         print "$filename gid is still wrong, expected $gid got ". $statinfo->gid . ".";
         $failed = 1;
     }
-    if($statinfo->mode & 07777 != $perm) {
+    if(($statinfo->mode & 07777) != $perm) {
         print "$filename mode is still wrong, expected $perm got ". $statinfo->mode & 07777 . ".";
         $failed = 1;
     }
