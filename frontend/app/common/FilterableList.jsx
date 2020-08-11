@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import axios from "axios";
 
 /**
  * presents a listbox with a filter control above it to the user.
@@ -88,28 +89,29 @@ class FilterableList extends React.Component {
     const credentialsValue = allowCredentials ? "include" : "omit";
 
     console.log(getUrl, credentialsValue);
-    const result = await (makeSearchDoc
-      ? fetch(unfilteredContentFetchUrl, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(makeSearchDoc(searchParam)),
-          credentials: credentialsValue,
-        })
-      : fetch(getUrl));
-    const content = await result.json();
-
     try {
-      if (!result.ok) return this.setStatePromise({ contentFromServer: [] });
+      const result = await (makeSearchDoc
+        ? axios.put(unfilteredContentFetchUrl, makeSearchDoc(searchParam), {
+            headers: { "Content-Type": "application/json" },
+            credentials: credentialsValue,
+          })
+        : axios.get(getUrl));
+      const content = result.data;
 
-      const convertedContent = unfilteredContentConverter
-        ? unfilteredContentConverter(content)
-        : FilterableList.defaultContentConverter(content);
-      return this.setStatePromise({
-        contentFromServer: convertedContent,
-        loading: false,
-      });
+      try {
+        const convertedContent = unfilteredContentConverter
+          ? unfilteredContentConverter(content)
+          : FilterableList.defaultContentConverter(content);
+        return this.setStatePromise({
+          contentFromServer: convertedContent,
+          loading: false,
+        });
+      } catch (err) {
+        console.error("Could not convert content: ", err);
+      }
     } catch (err) {
-      console.error("Could not convert content: ", err);
+      console.error("Could not load in data from server: ", err);
+      return this.setStatePromise({ contentFromServer: [], loading: false });
     }
   }
 
