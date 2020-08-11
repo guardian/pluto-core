@@ -84,6 +84,7 @@ class App extends React.Component {
 
     this.state = {
       isLoggedIn: false,
+      tokenExpired: false,
       currentUsername: "",
       isAdmin: false,
       loading: false,
@@ -121,6 +122,7 @@ class App extends React.Component {
   handleUnauthorizedFailed() {
     // Redirect to login screen
     this.setState({
+      tokenExpired: true,
       isLoggedIn: false,
       loading: false,
       currentUsername: "",
@@ -281,7 +283,7 @@ class App extends React.Component {
       window.location.pathname !== "/"
     ) {
       console.log("not logged in, redirecting to route");
-      return <NotLoggedIn timeOut={5} />;
+      return <NotLoggedIn tokenExpired={this.state.tokenExpired} timeOut={5} />;
     }
 
     return (
