@@ -8,6 +8,7 @@ use strict;
 use File::Path qw/make_path/;
 use Data::Dumper;
 use File::Find;
+use File::stat;
 
 sub sanitize {
     my $str=shift;
@@ -22,12 +23,28 @@ our $gid;
 
 #http://stackoverflow.com/questions/3738295/how-do-i-recursively-set-read-only-permission-using-perl
 sub update_file_perm {
-    my $perm = -d $File::Find::name ? 0775 : 0664; #include execute permissions if it's a directory
+    my $filename = sanitize($File::Find::name);
+    print "update_file_perm: checking $filename...\n";
+    my $perm = -d $filename ? 0775 : 0664; #include execute permissions if it's a directory
 
-    my $n_modified = chmod $perm, sanitize($File::Find::name);
-    die "Unable to set file mode on ".$File::Find::name if($n_modified<1);
-    $n_modified = chown $uid, $gid, sanitize($File::Find::name);
-    die "Unable to set file ownership on ".$File::Find::name if($n_modified<1);
+    chmod $perm, $filename;
+    chown $uid, $gid, $filename;
+
+    my $statinfo = stat $filename;
+    my $failed = 0;
+    if($statinfo->uid != $uid) {
+        print "$filename uid is still wrong, expected $uid got ". $statinfo->uid . ".";
+        $failed = 1;
+    }
+    if($statinfo->gid != $gid) {
+        print "$filename gid is still wrong, expected $gid got ". $statinfo->gid . ".";
+        $failed = 1;
+    }
+    if($statinfo->mode & 07777 != $perm) {
+        print "$filename mode is still wrong, expected $perm got ". $statinfo->mode & 07777 . ".";
+        $failed = 1;
+    }
+    die "Unable to correctly update permissions on ".$File::Find::name if($failed);
 }
 
 $ENV{'PATH'} = "/bin:/usr/bin:/usr/local/bin";
