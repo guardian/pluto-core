@@ -160,7 +160,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
       val projectList = (responseBody \ "projects").as[List[ProjectEntry]]
       //we can't assert directly as the title value is changed by another test, which may run before or after us.
       projectList.length mustEqual 1
-      projectList.head.id must beSome(1)
+      projectList.head.id must beSome(2)
       projectList.head.vidispineProjectId must beSome("VX-1234")
       projectList.head.user mustEqual "you"
       projectList.head.created mustEqual Timestamp.valueOf("2016-12-11 12:21:11.021")
