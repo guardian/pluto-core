@@ -30,12 +30,8 @@ import { isLoggedIn } from "../utils/api";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import { getProjectsOnPage, updateProjectOpenedStatus } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
-interface HeaderTitles {
-  label: string;
-  key?: keyof Project;
-}
 
-const tableHeaderTitles: HeaderTitles[] = [
+const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Project title", key: "title" },
   { label: "Commission title", key: "commissionId" },
   { label: "Created", key: "created" },
@@ -45,9 +41,13 @@ const tableHeaderTitles: HeaderTitles[] = [
   { label: "" },
   { label: "Open" },
 ];
+
 const useStyles = makeStyles({
   table: {
     maxWidth: "100%",
+    "& .MuiTableRow-root": {
+      cursor: "pointer",
+    },
   },
   createButton: {
     display: "flex",
@@ -95,7 +95,7 @@ const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
 
 const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // React Router
-  const history = useHistory();
+  const history = useHistory<Project>();
   const { search } = useLocation();
   const { commissionId } = useParams<{ commissionId?: string }>();
 
@@ -233,8 +233,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortListByOrder(projects, orderBy, order).map(
-                ({
+              {sortListByOrder(projects, orderBy, order).map((project) => {
+                const {
                   id,
                   title,
                   commissionId,
@@ -242,8 +242,15 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                   workingGroupId,
                   status,
                   user: projectUser,
-                }) => (
-                  <TableRow key={id}>
+                } = project;
+                return (
+                  <TableRow
+                    key={id}
+                    onClick={() => {
+                      history.push(`/project/${id}`, project);
+                    }}
+                    hover
+                  >
                     <TableCell>{title}</TableCell>
                     <TableCell>
                       <CommissionEntryView entryId={commissionId} />
@@ -284,8 +291,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                       <AssetFolderLink projectId={id} />
                     </TableCell>
                   </TableRow>
-                )
-              )}
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>

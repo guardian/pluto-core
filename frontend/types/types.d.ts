@@ -18,6 +18,9 @@ interface WorkingGroup extends CreateWorkingGroup {
   hide: boolean;
 }
 
+type ProductionOffice = "UK" | "US" | "Aus";
+type ProjectStatus = "New" | "In Production";
+
 interface Project {
   id: number;
   projectTypeId: number;
@@ -29,8 +32,8 @@ interface Project {
   deletable: boolean;
   deep_archive: boolean;
   sensitive: boolean;
-  status: string;
-  productionOffice: string;
+  status: ProjectStatus;
+  productionOffice: ProductionOffice;
 }
 
 type FilterOrderType = "W_STARTSWITH" | "W_ENDSWITH" | "W_CONTAINS" | "W_EXACT";
@@ -50,8 +53,13 @@ interface PlutoApiResponse<T> {
 }
 
 interface ProjectMetadataResponse {
-  id: number;
-  projectEntryRef: number;
-  key: string;
-  value: string;
+	id: number;
+	projectEntryRef: number;
+	key: string;
+	value: string;
+}
+
+interface HeaderTitle<T> {
+  label: string;
+  key?: keyof T;
 }

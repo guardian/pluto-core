@@ -16,12 +16,7 @@ import { useHistory } from "react-router-dom";
 import { getCommissionsOnPage, getWorkingGroupNameMap } from "./helpers";
 import { sortListByOrder, SortDirection } from "../utils/lists";
 
-interface HeaderTitles {
-  label: string;
-  key?: keyof Commission;
-}
-
-const tableHeaderTitles: HeaderTitles[] = [
+const tableHeaderTitles: HeaderTitle<Commission>[] = [
   { label: "Title", key: "title" },
   { label: "Projects", key: "projectCount" },
   { label: "Created", key: "created" },
