@@ -50,7 +50,7 @@ import { loadInSigningKey, validateAndDecode } from "./JwtHelpers";
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
 import SystemNotification from "./SystemNotification.tsx";
-import { handleUnauthorized } from "./utils/api";
+import { handleUnauthorized } from "./utils/interceptor";
 
 import "./styles/app.css";
 
