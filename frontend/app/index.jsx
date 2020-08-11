@@ -50,6 +50,7 @@ import { loadInSigningKey, validateAndDecode } from "./JwtHelpers";
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
 import SystemNotification from "./SystemNotification.tsx";
+import { handleUnauthorized } from "./utils/interceptor";
 
 import "./styles/app.css";
 
@@ -83,13 +84,30 @@ class App extends React.Component {
 
     this.state = {
       isLoggedIn: false,
+      tokenExpired: false,
       currentUsername: "",
       isAdmin: false,
       loading: false,
+      plutoConfig: {},
     };
 
     this.onLoggedIn = this.onLoggedIn.bind(this);
     this.onLoggedOut = this.onLoggedOut.bind(this);
+    this.handleUnauthorizedFailed = this.handleUnauthorizedFailed.bind(this);
+
+    axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        handleUnauthorized(
+          this.state.plutoConfig,
+          error,
+          this.handleUnauthorizedFailed
+        );
+
+        return Promise.reject(error);
+      }
+    );
+
     axios
       .get("/system/publicdsn")
       .then((response) => {
@@ -99,6 +117,16 @@ class App extends React.Component {
       .catch((error) => {
         console.error("Could not intialise sentry", error);
       });
+  }
+
+  handleUnauthorizedFailed() {
+    // Redirect to login screen
+    this.setState({
+      tokenExpired: true,
+      isLoggedIn: false,
+      loading: false,
+      currentUsername: "",
+    });
   }
 
   setStatePromise(newState) {
@@ -140,7 +168,7 @@ class App extends React.Component {
     this.setState({ loading: true, haveChecked: true }, () =>
       axios
         .get("/api/isLoggedIn")
-        .then((response) => {
+        .then(async (response) => {
           //200 response means we are logged in
           this.setState({
             isLoggedIn: true,
@@ -148,6 +176,18 @@ class App extends React.Component {
             currentUsername: response.data.uid,
             isAdmin: response.data.isAdmin,
           });
+
+          // Fetch the oauth config
+          try {
+            const response = await fetch("/meta/oauth/config.json");
+
+            if (response.status === 200) {
+              const data = await response.json();
+              this.setState({ plutoConfig: data });
+            }
+          } catch (error) {
+            console.error(error);
+          }
         })
         .catch((error) => {
           this.setState({
@@ -243,7 +283,7 @@ class App extends React.Component {
       window.location.pathname !== "/"
     ) {
       console.log("not logged in, redirecting to route");
-      return <NotLoggedIn timeOut={5} />;
+      return <NotLoggedIn tokenExpired={this.state.tokenExpired} timeOut={5} />;
     }
 
     return (

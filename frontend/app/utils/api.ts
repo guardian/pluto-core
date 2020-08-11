@@ -1,11 +1,11 @@
-import Axios from "axios";
+import axios from "axios";
 
 const API = "/api";
 const API_IS_LOGGED_IN = `${API}/isLoggedIn`;
 
 export const isLoggedIn = async (): Promise<PlutoUser> => {
   try {
-    const { status, data } = await Axios.get<PlutoUser>(`${API_IS_LOGGED_IN}`);
+    const { status, data } = await axios.get<PlutoUser>(`${API_IS_LOGGED_IN}`);
 
     if (status === 200) {
       return data;

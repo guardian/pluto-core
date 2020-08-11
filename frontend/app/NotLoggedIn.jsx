@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 class NotLoggedIn extends React.Component {
   static propTypes = {
     timeOut: PropTypes.number.isRequired,
+    tokenExpired: PropTypes.bool.isRequired,
   };
 
   constructor(props) {
@@ -13,6 +14,7 @@ class NotLoggedIn extends React.Component {
 
     this.state = {
       timeRemaining: props.timeOut,
+      expired: props.tokenExpired,
       timerId: null,
     };
 
@@ -50,8 +52,10 @@ class NotLoggedIn extends React.Component {
       <div className="inline-dialog">
         <h2 className="inline-dialog-title">Not logged in</h2>
         <p className="inline-dialog-content centered">
-          You are not currently logged in as anybody. Redirecting to login page
-          in {this.state.timeRemaining} seconds
+          {this.state.expired
+            ? "Your login has expired and can't be refreshed, you need to log in again"
+            : "You are not currently logged in as anybody"}
+          . Redirecting to login page in {this.state.timeRemaining} seconds
         </p>
       </div>
     );
