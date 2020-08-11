@@ -23,7 +23,7 @@ class FileAssociationRow(tag: Tag) extends Table[(Int,Int)](tag, "ProjectFileAss
 object FileAssociation {
   def projectsForFile(fileId:Int)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[ProjectEntry]]] = {
     val query = for {
-      (assocRow, projectEntry) <- TableQuery[FileAssociationRow] join TableQuery[ProjectEntryRow] on (_.fileEntry===_.id) if assocRow.fileEntry===fileId
+      (assocRow, projectEntry) <- TableQuery[FileAssociationRow] join TableQuery[ProjectEntryRow] on (_.projectEntry===_.id) if assocRow.fileEntry===fileId
     } yield projectEntry
 
     db.run(
