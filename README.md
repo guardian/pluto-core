@@ -143,11 +143,13 @@ There is a working example of how to do this in Python in `scripts/test_hmac_aut
 
 ### Prerequisites
 
+- You should have Docker installed and working both to run postgres and rabbitmq and to build packages locally.
 - You need a working postgres installation. You could install postgres using a package manager, or you can quickly run a Dockerised version by
   running the `setup_docker_postgres.sh` script in `scripts`.
-- You need an installation of node.js to build the frontend. It's easiest to first install the Node Version Manager, nvm, and then use this to install node: `nvm install 8.1.3`
-- You need a version 1.8+ JDK. On Linux this is normally as simple as `apt-get install openjdk-8-jdk` or the yum equivalent
-- If you are not using the postgres docker image, you will need to set up the test database before the tests will work:
+- You should have a working rabbitmq installation too.  You can get this quickly by running the `setup_docker_rabbit.sh` script in `scripts`.
+- You need an installation of node.js to build the frontend. We normally use the "Erbium" long-term-support version, 12.18.1.  It's easiest to first install the Node Version Manager, nvm, and then use this to install node: `nvm install 12.18.1`
+- You need a version 1.11 JDK. On Linux this is normally as simple as `apt-get install openjdk-11-jdk` or the yum equivalent
+- If you are not using the postgres docker image (not recommended!!), you will need to set up the test database before the tests will work:
   `sudo -u postgres ./scripts/create_dev_db.sh` (**Note**: if installing through homebrew, postgres runs as the current
   user so the `sudo -u postgres` part is not required)
 
