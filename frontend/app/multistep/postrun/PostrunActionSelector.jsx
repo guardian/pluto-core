@@ -10,10 +10,11 @@ class PostrunActionSelector extends React.Component {
   };
 
   checkboxUpdated(event, selectedId, cb) {
+    console.log(selectedId, this.props.selectedEntries, event.target.checked);
     const updatedEntries = event.target.checked
-      ? this.props.selectedEntries.concat(selectedId)
+      ? this.props.selectedEntries.concat([selectedId])
       : this.props.selectedEntries.filter((value) => value !== selectedId);
-
+    console.log(updatedEntries);
     cb(updatedEntries);
   }
 

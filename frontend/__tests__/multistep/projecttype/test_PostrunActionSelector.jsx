@@ -70,8 +70,12 @@ describe("PostrunActionSelector", () => {
 
     rendered
       .find("input")
-      .at(0)
+      .at(2)
       .simulate("change", { target: { checked: true } });
-    expect(callbackMock.calledWith([4, 1])).toBeTruthy();
+    /*
+    this test is slightly inaccurate. in the real world, the selectedEntries prop is bound to the parents state which the
+    callback updates.  Here, this prop is static; so the previous checkbox change has not changed it.
+     */
+    expect(callbackMock.calledWith([4, 1, 3])).toBeTruthy();
   });
 });
