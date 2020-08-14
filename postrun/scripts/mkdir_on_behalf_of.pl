@@ -33,15 +33,15 @@ sub update_file_perm {
     my $statinfo = stat $filename;
     my $failed = 0;
     if($statinfo->uid != $uid) {
-        print "$filename uid is still wrong, expected $uid got ". $statinfo->uid . ".";
+        print "$filename uid is still wrong, expected $uid got ". $statinfo->uid . ".\n";
         $failed = 1;
     }
     if($statinfo->gid != $gid) {
-        print "$filename gid is still wrong, expected $gid got ". $statinfo->gid . ".";
+        print "$filename gid is still wrong, expected $gid got ". $statinfo->gid . ".\n";
         $failed = 1;
     }
     if(($statinfo->mode & 07777) != $perm) {
-        print "$filename mode is still wrong, expected $perm got ". $statinfo->mode & 07777 . ".";
+        print "$filename mode is still wrong, expected $perm got ". $statinfo->mode & 07777 . ".\n";
         $failed = 1;
     }
     die "Unable to correctly update permissions on ".$File::Find::name if($failed);
