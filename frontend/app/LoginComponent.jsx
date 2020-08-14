@@ -96,7 +96,7 @@ class LoginComponent extends React.Component {
             <Link to="/project/?mine">Go to my projects {">"}</Link>
           </p>
           <p className="intro-banner">
-            Or, please select an option on the left
+            Or, please select an option from the menus above
           </p>
           <button className="inline-dialog" onClick={this.doLogout}>
             Log out
