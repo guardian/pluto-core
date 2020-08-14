@@ -9,9 +9,9 @@ import { Redirect } from "react-router-dom";
 class ProjectTypeCompletionComponent extends CommonCompletionComponent {
   static propTypes = {
     currentEntry: PropTypes.number.isRequired,
-    postrunActions: PropTypes.array.isRequired,
-    selectedPostruns: PropTypes.array.isRequired,
-    originalPostruns: PropTypes.array.isRequired,
+    postrunActions: PropTypes.array,
+    selectedPostruns: PropTypes.array,
+    originalPostruns: PropTypes.array,
   };
 
   constructor(props) {

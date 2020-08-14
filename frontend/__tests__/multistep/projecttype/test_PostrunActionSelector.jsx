@@ -27,15 +27,15 @@ describe("PostrunActionSelector", () => {
 
     expect(rendered.find("li").length).toEqual(4);
     expect(rendered.find("input").at(0).props().id).toEqual("action-check-1");
-    expect(rendered.find("input").at(0).props().defaultChecked).toBeTruthy();
+    expect(rendered.find("input").at(0).props().checked).toBeTruthy();
     expect(rendered.find("label").at(0).text()).toEqual("First action");
 
     expect(rendered.find("input").at(3).props().id).toEqual("action-check-4");
-    expect(rendered.find("input").at(3).props().defaultChecked).toBeTruthy();
+    expect(rendered.find("input").at(3).props().checked).toBeTruthy();
     expect(rendered.find("label").at(3).text()).toEqual("Fourth action");
 
-    expect(rendered.find("input").at(1).props().defaultChecked).toBeFalsy();
-    expect(rendered.find("input").at(2).props().defaultChecked).toBeFalsy();
+    expect(rendered.find("input").at(1).props().checked).toBeFalsy();
+    expect(rendered.find("input").at(2).props().checked).toBeFalsy();
   });
 
   it("should notify callback when selection changes", () => {
@@ -59,7 +59,7 @@ describe("PostrunActionSelector", () => {
 
     expect(rendered.find("li").length).toEqual(4);
     expect(rendered.find("input").at(0).props().id).toEqual("action-check-1");
-    expect(rendered.find("input").at(0).props().defaultChecked).toBeTruthy();
+    expect(rendered.find("input").at(0).props().checked).toBeTruthy();
     expect(rendered.find("label").at(0).text()).toEqual("First action");
 
     rendered
@@ -70,8 +70,12 @@ describe("PostrunActionSelector", () => {
 
     rendered
       .find("input")
-      .at(0)
+      .at(2)
       .simulate("change", { target: { checked: true } });
-    expect(callbackMock.calledWith([4, 1])).toBeTruthy();
+    /*
+    this test is slightly inaccurate. in the real world, the selectedEntries prop is bound to the parents state which the
+    callback updates.  Here, this prop is static; so the previous checkbox change has not changed it.
+     */
+    expect(callbackMock.calledWith([4, 1, 3])).toBeTruthy();
   });
 });

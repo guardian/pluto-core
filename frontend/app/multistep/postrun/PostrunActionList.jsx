@@ -17,7 +17,9 @@ class PostrunActionList extends React.Component {
         {this.props.actionList
           .filter((entry) => this.props.selectedActions.includes(entry.id))
           .map((entry) => (
-            <li className="postrun-action-list">{entry.title}</li>
+            <li className="postrun-action-list" key={entry.id}>
+              {entry.title}
+            </li>
           ))}
       </ul>
     );

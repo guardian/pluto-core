@@ -131,6 +131,8 @@ class GeneralListComponent extends React.Component {
   /* this method supplies the edit and delete icons. Can't be static as <Link> relies on the object context to access
    * history. */
   actionIcons() {
+    const deploymentRoot = deploymentRootPath ?? "/";
+
     const componentName = this.breakdownPathComponents()[1];
     return {
       header: "",
@@ -141,10 +143,18 @@ class GeneralListComponent extends React.Component {
           style={{ display: this.state.isAdmin ? "inherit" : "none" }}
         >
           <Link to={"/" + componentName + "/" + id}>
-            <img className="smallicon" src="/assets/images/edit.png" />
+            <img
+              className="smallicon"
+              src={deploymentRoot + "assets/images/edit.png"}
+              alt="Edit"
+            />
           </Link>
           <Link to={"/" + componentName + "/" + id + "/delete"}>
-            <img className="smallicon" src="/assets/images/delete.png" />
+            <img
+              className="smallicon"
+              src={deploymentRoot + "assets/images/delete.png"}
+              alt="Delete"
+            />
           </Link>
         </span>
       ),
