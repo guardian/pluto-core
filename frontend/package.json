@@ -42,6 +42,7 @@
   "author": "Andy Gallagher <andy.gallagher@theguardian.com>",
   "license": "ISC",
   "devDependencies": {
+    "@svgr/webpack": "^5.4.0",
     "@types/react": "^16.9.36",
     "@types/react-dom": "^16.9.8",
     "@types/react-router-dom": "^5.1.5",
@@ -64,7 +65,8 @@
     "terser-webpack-plugin": "^1.4.3",
     "ts-jest": "^26.1.0",
     "ts-loader": "^7.0.5",
-    "typescript": "^3.9.5"
+    "typescript": "^3.9.5",
+    "url-loader": "^4.1.0"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.26",
@@ -82,6 +84,7 @@
     "lodash": "^4.17.15",
     "lodash.omit": "^4.5.0",
     "moment": "^2.20.1",
+    "pluto-headers": "git+ssh://git@gitlab.com:codmill/customer-projects/guardian/pluto-headers.git#master",
     "raven-js": "^3.24.1",
     "react": "^16.12.0",
     "react-codemirror": "^1.0.0",

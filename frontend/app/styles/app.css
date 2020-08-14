@@ -15,20 +15,8 @@ body {
 
 .app {
   display: flex;
-}
-
-div.leftmenu {
-  float: left;
-  padding-right: 10px;
-  padding-left: 10px;
-  background-color: #cdcdcd;
-  border-radius: 15px;
-  width: 150px;
-  height: 100%;
-}
-
-ul.leftmenu {
-  list-style-type: none;
+  flex-direction: column;
+  position: relative;
 }
 
 tr.dashboardheader,
@@ -117,7 +105,6 @@ button.inline-dialog {
 }
 
 .mainbody {
-  width: 100%;
   padding: 1rem;
 }
 
@@ -296,10 +283,10 @@ p {
   margin-top: 0;
 }
 
-a {
+a:not(.MuiButtonBase-root) {
   color: #1eaedb;
 }
-a:hover {
+a:hover:not(.MuiButtonBase-root) {
   color: #0fa0ce;
 }
 

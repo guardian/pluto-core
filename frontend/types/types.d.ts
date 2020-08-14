@@ -53,13 +53,25 @@ interface PlutoApiResponse<T> {
 }
 
 interface ProjectMetadataResponse {
-	id: number;
-	projectEntryRef: number;
-	key: string;
-	value: string;
+  id: number;
+  projectEntryRef: number;
+  key: string;
+  value: string;
 }
 
 interface HeaderTitle<T> {
   label: string;
   key?: keyof T;
+}
+
+declare module "*.svg" {
+  const content: any;
+  export default content;
+}
+
+declare module "*.svg" {
+  import React = require("react");
+  export const ReactComponent: React.FC<React.SVGProps<SVGSVGElement>>;
+  const src: string;
+  export default src;
 }
