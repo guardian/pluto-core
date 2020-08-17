@@ -38,10 +38,6 @@ var config = {
         test: /\.(css|s[ac]ss)$/,
         use: ["style-loader", "css-loader", "sass-loader"],
       },
-      {
-        test: /\.svg$/,
-        use: ["@svgr/webpack", "url-loader"],
-      },
     ],
   },
   devtool: "source-map",
