@@ -7656,9 +7656,9 @@ pluralize@^7.0.0:
   resolved "https://registry.yarnpkg.com/pluralize/-/pluralize-7.0.0.tgz#298b89df8b93b0221dbf421ad2b1b1ea23fc6777"
   integrity sha512-ARhBOdzS3e41FbkW/XWrTEtukqqLoK5+Z/4UeDaLuSW+39JPeFgs4gCGqsrJHVZX0fUrx//4OF0K1CUGwlIFow==
 
-"pluto-headers@https://gitlab.com/codmill/customer-projects/guardian/pluto-headers.git#v1.0.2-0":
-  version "1.0.2-0"
-  resolved "https://gitlab.com/codmill/customer-projects/guardian/pluto-headers.git#9a4f2bdeea38f845a1d18837f43299bfaea54c95"
+"pluto-headers@https://gitlab.com/codmill/customer-projects/guardian/pluto-headers.git#v1.0.2-1":
+  version "1.0.2-1"
+  resolved "https://gitlab.com/codmill/customer-projects/guardian/pluto-headers.git#3540750ed52e6645eca99990a01f821a2960f031"
 
 pn@^1.1.0:
   version "1.1.0"
