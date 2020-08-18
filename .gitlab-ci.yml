@@ -6,6 +6,9 @@ frontend:
   image: node:12.18-alpine3.12
   stage: build
   script:
+    #git  is required for yarn to be able to checkout the shared components
+    - apk add --no-cache git
+    - sh ./ci-build/setup_headers.sh 
     - cd frontend
     - yarn install
     - yarn lint

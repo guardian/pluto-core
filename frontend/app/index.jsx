@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "react-dom";
-import { BrowserRouter, Link, Route, Switch } from "react-router-dom";
+import { BrowserRouter, Route, Switch } from "react-router-dom";
 import { ThemeProvider, createMuiTheme } from "@material-ui/core";
 import StorageListComponent from "./StorageComponent.jsx";
 
@@ -51,6 +51,7 @@ import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
 import SystemNotification from "./SystemNotification.tsx";
 import { handleUnauthorized } from "./utils/interceptor";
+import { Header, AppSwitcher } from "pluto-headers";
 
 import "./styles/app.css";
 
@@ -94,6 +95,7 @@ class App extends React.Component {
     this.onLoggedIn = this.onLoggedIn.bind(this);
     this.onLoggedOut = this.onLoggedOut.bind(this);
     this.handleUnauthorizedFailed = this.handleUnauthorizedFailed.bind(this);
+    this.doLogout = this.doLogout.bind(this);
 
     axios.interceptors.response.use(
       (response) => response,
@@ -221,59 +223,25 @@ class App extends React.Component {
     this.setState({ currentUsername: "", isLoggedIn: false });
   }
 
-  /*show left menu if logged in*/
-  maybeLeftMenu() {
-    if (this.state.isLoggedIn) {
-      return (
-        <ul className="leftmenu">
-          <li>
-            <Link to="/">Home</Link>
-          </li>
-          <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/storage/">Storages</Link>
-          </li>
-          <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/type/">Project Types</Link>
-          </li>
-          <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/template/">Project Templates</Link>
-          </li>
-          <li>
-            <Link to="/commission/">Commissions</Link>
-          </li>
-          <li>
-            <Link to="/working-group/">Working Groups</Link>
-          </li>
-          <li>
-            <Link to={this.state.isAdmin ? "/project/" : "/project/?mine"}>
-              Projects
-            </Link>
-          </li>
-          <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/validate/project">Validate projectfiles</Link>
-          </li>
-          <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/postrun/">Postrun Actions</Link>
-          </li>
-          <li>
-            <Link to={this.state.isAdmin ? "/file/" : "/file/?mine"}>
-              Files
-            </Link>
-          </li>
-          <li style={{ display: this.state.isAdmin ? "inherit" : "none" }}>
-            <Link to="/defaults/">Server Defaults</Link>
-          </li>
-        </ul>
-      );
-    } else {
-      return (
-        <ul className="leftmenu">
-          <li>
-            <i>Not logged in</i>
-          </li>
-        </ul>
-      );
-    }
+  doLogout() {
+    this.setState({ loading: true }, () =>
+      axios
+        .post("/api/logout")
+        .then(() => {
+          this.setState(
+            {
+              loading: false,
+            },
+            () => {
+              this.onLoggedOut();
+            }
+          );
+        })
+        .catch((error) => {
+          this.setState({ loading: false });
+          console.error(error);
+        })
+    );
   }
 
   render() {
@@ -289,9 +257,9 @@ class App extends React.Component {
     return (
       <ThemeProvider theme={theme}>
         <div className="app">
-          <div id="leftmenu" className="leftmenu">
-            {this.maybeLeftMenu()}
-          </div>
+          <Header></Header>
+          <AppSwitcher onLoggedOut={this.doLogout}></AppSwitcher>
+
           <div id="mainbody" className="mainbody">
             <Switch>
               <Route
