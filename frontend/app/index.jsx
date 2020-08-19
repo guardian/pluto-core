@@ -50,8 +50,7 @@ import { loadInSigningKey, validateAndDecode } from "./JwtHelpers";
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
 import SystemNotification from "./SystemNotification.tsx";
-import { handleUnauthorized } from "./utils/interceptor";
-import { Header, AppSwitcher } from "pluto-headers";
+import { Header, AppSwitcher, handleUnauthorized } from "pluto-headers";
 
 import "./styles/app.css";
 
@@ -163,7 +162,7 @@ class App extends React.Component {
         isLoggedIn: true,
         loading: false,
         currentUsername: loginData ? loginData.username : "",
-        isAdmin: loginData[data.adminClaimName],
+        isAdmin: loginData ?? loginData[data.adminClaimName],
       });
     }
 
