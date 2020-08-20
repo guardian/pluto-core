@@ -50,8 +50,7 @@ import { loadInSigningKey, validateAndDecode } from "./JwtHelpers";
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
 import SystemNotification from "./SystemNotification.tsx";
-import { handleUnauthorized } from "./utils/interceptor";
-import { Header, AppSwitcher } from "pluto-headers";
+import { Header, AppSwitcher, handleUnauthorized } from "pluto-headers";
 
 import "./styles/app.css";
 
@@ -95,7 +94,7 @@ class App extends React.Component {
     this.onLoggedIn = this.onLoggedIn.bind(this);
     this.onLoggedOut = this.onLoggedOut.bind(this);
     this.handleUnauthorizedFailed = this.handleUnauthorizedFailed.bind(this);
-    this.doLogout = this.doLogout.bind(this);
+    this.onLoginValid = this.onLoginValid.bind(this);
 
     axios.interceptors.response.use(
       (response) => response,
@@ -137,72 +136,41 @@ class App extends React.Component {
     );
   }
 
-  checkLogin() {
-    // await this.setStatePromise({ loading: true });
-    // try {
-    //   const signingKey = await loadInSigningKey();
-    //   const token = window.sessionStorage.getItem("pluto:access-token");
-    //   if (token) {
-    //     const decoded = await validateAndDecode(token, signingKey, undefined);
-    //     return this.setStatePromise({
-    //       isLoggedIn: true,
-    //       loading: false,
-    //       currentUsername: decoded.username,
-    //       isAdmin: true, //FIXME: temporary state so we can see stuff, need to get hold of the server-side config for adminClaim
-    //     });
-    //   } else {
-    //     return this.setStatePromise({
-    //       isLoggedIn: false,
-    //       loading: false,
-    //       currentUsername: "",
-    //       isAdmin: false,
-    //     });
-    //   }
-    // } catch (err) {
-    //   console.error("Could not validate login: ", err);
-    //   return this.setStatePromise({
-    //     loading: false,
-    //     isAdmin: false,
-    //     currentUsername: "",
-    //     isLoggedIn: false,
-    //   });
-    // }
-    this.setState({ loading: true, haveChecked: true }, () =>
-      axios
-        .get("/api/isLoggedIn")
-        .then(async (response) => {
-          //200 response means we are logged in
-          this.setState({
-            isLoggedIn: true,
-            loading: false,
-            currentUsername: response.data.uid,
-            isAdmin: response.data.isAdmin,
-          });
-
-          // Fetch the oauth config
-          try {
-            const response = await fetch("/meta/oauth/config.json");
-
-            if (response.status === 200) {
-              const data = await response.json();
-              this.setState({ plutoConfig: data });
-            }
-          } catch (error) {
-            console.error(error);
-          }
-        })
-        .catch((error) => {
-          this.setState({
-            isLoggedIn: false,
-            loading: false,
-            currentUsername: "",
-          });
-        })
-    );
+  componentDidMount() {
+    this.setState({
+      loading: true,
+      haveChecked: true,
+    });
   }
 
-  componentDidMount() {
-    this.checkLogin();
+  async onLoginValid(valid, loginData) {
+    // Fetch the oauth config
+    let data;
+    try {
+      const response = await fetch("/meta/oauth/config.json");
+
+      if (response.status === 200) {
+        data = await response.json();
+        this.setState({ plutoConfig: data });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
+    if (valid) {
+      return this.setState({
+        isLoggedIn: true,
+        loading: false,
+        currentUsername: loginData ? loginData.username : "",
+        isAdmin: loginData ?? loginData[data.adminClaimName],
+      });
+    }
+
+    this.setState({
+      isLoggedIn: false,
+      loading: false,
+      currentUsername: "",
+    });
   }
 
   onLoggedIn(userid, isAdmin) {
@@ -223,27 +191,6 @@ class App extends React.Component {
     this.setState({ currentUsername: "", isLoggedIn: false });
   }
 
-  doLogout() {
-    this.setState({ loading: true }, () =>
-      axios
-        .post("/api/logout")
-        .then(() => {
-          this.setState(
-            {
-              loading: false,
-            },
-            () => {
-              this.onLoggedOut();
-            }
-          );
-        })
-        .catch((error) => {
-          this.setState({ loading: false });
-          console.error(error);
-        })
-    );
-  }
-
   render() {
     if (
       !this.state.loading &&
@@ -258,7 +205,7 @@ class App extends React.Component {
       <ThemeProvider theme={theme}>
         <div className="app">
           <Header></Header>
-          <AppSwitcher onLoggedOut={this.doLogout}></AppSwitcher>
+          <AppSwitcher onLoginValid={this.onLoginValid}></AppSwitcher>
 
           <div id="mainbody" className="mainbody">
             <Switch>
