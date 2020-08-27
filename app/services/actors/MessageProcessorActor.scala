@@ -7,13 +7,17 @@ import java.util.UUID
 import com.google.inject.Inject
 import akka.actor.{ActorSystem, Props}
 import akka.cluster.pubsub.DistributedPubSub
+import akka.cluster.sharding.external.ExternalShardAllocationStrategy.ShardRegion
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.stream.Materializer
 import models.messages.{NewAdobeUuid, NewAssetFolder, NewProjectCreated, QueuedMessage}
 import play.api.{Configuration, Logger}
 import services.{JacksonSerializable, ListenAssetFolder, ListenNewUuid, ListenProjectCreate}
 import akka.persistence._
 import models.ProjectEntry
+import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.Injector
 import slick.jdbc.PostgresProfile
 
 import scala.concurrent.Future
@@ -21,6 +25,8 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 object MessageProcessorActor {
+  val logger = LoggerFactory.getLogger(getClass)
+
   def props = Props[MessageProcessorActor]
 
   trait MessageEvent {
@@ -33,12 +39,42 @@ object MessageProcessorActor {
   case class NewAssetFolderEvent(rq: NewAssetFolder, eventId: UUID, receivedAt:ZonedDateTime) extends MessageEvent with JacksonSerializable
 
   case class EventHandled(eventId: UUID) extends JacksonSerializable
-  case class RetryFromState() extends JacksonSerializable
+  case class RetryFromState(eventId: UUID) extends JacksonSerializable
+
+  val extractEntityId:ShardRegion.ExtractEntityId = {
+    case msg @ NewProjectCreatedEvent(_, eventId)=>(eventId.toString, msg)
+    case msg @ NewAdobeUuidEvent(_, eventId, _) => (eventId.toString, msg)
+    case msg @ NewAssetFolderEvent(_, eventId, _) => (eventId.toString, msg)
+    case msg @ EventHandled(eventId) => (eventId.toString, msg)
+    case msg @ RetryFromState(eventId) => (eventId.toString, msg)
+  }
+
+  val maxNumberOfShards = 100
+
+  val extractShardId:ShardRegion.ExtractShardId = {
+    case NewProjectCreatedEvent(_, eventId)=>(eventId.hashCode() % maxNumberOfShards).toString
+    case NewAdobeUuidEvent(_, eventId, _) => (eventId.hashCode() % maxNumberOfShards).toString
+    case NewAssetFolderEvent(_, eventId, _) => (eventId.hashCode() % maxNumberOfShards).toString
+    case EventHandled(eventId) => (eventId.hashCode() % maxNumberOfShards).toString
+    case RetryFromState(eventId) => (eventId.toString.hashCode() % maxNumberOfShards).toString
+  }
+
+  def startupSharding(system:ActorSystem, injector:Injector) = {
+    logger.info("Setting up cluster sharding")
+    ClusterSharding(system).start(
+      typeName = "message-processor-actor",
+      entityProps = Props(injector.instanceOf(classOf[MessageProcessorActor])),
+      settings = ClusterShardingSettings(system),
+      extractEntityId = extractEntityId,
+      extractShardId = extractShardId
+    )
+  }
 }
 
 class MessageProcessorActor @Inject()(configurationI: Configuration, actorSystemI: ActorSystem, dbConfigProvider:DatabaseConfigProvider)(override implicit val materializer:Materializer) extends PersistentActor
   with ListenAssetFolder with ListenProjectCreate with ListenNewUuid {
-  override def persistenceId = "message-processor-actor"
+
+  override def persistenceId = "message-processor-" + self.path.name
 
   var state = MessageProcessorState()
 

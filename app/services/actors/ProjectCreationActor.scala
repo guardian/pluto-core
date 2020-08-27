@@ -1,13 +1,14 @@
 package services.actors
 
 import javax.inject.Inject
-
 import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.pattern.ask
 import models.ProjectRequestFull
 import org.slf4j.MDC
 import play.api.{Application, Logger}
 import play.api.inject.Injector
+import services.actors.MessageProcessorActor.{EventHandled, NewAdobeUuidEvent, NewAssetFolderEvent, NewProjectCreatedEvent, RetryFromState, logger}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, NewProjectRollback, StepFailed, StepSucceded}
 import services.actors.creation._
 
@@ -16,8 +17,31 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
+object ProjectCreationActor {
+  val extractEntityId:ShardRegion.ExtractEntityId = {
+    case msg @ NewProjectRequest(rq, createTime, _)=>(createTime.map(_.toString).getOrElse(rq.filename), msg)
+  }
+
+  val maxNumberOfShards = 100
+
+  val extractShardId:ShardRegion.ExtractShardId = {
+    case NewProjectRequest(rq, createTime, _)=>(createTime.map(_.toString).getOrElse(rq.filename).hashCode() % maxNumberOfShards).toString
+  }
+
+  def startupSharding(system:ActorSystem, injector:Injector) = {
+    logger.info("Setting up sharding for ProjectCreationActor")
+    ClusterSharding(system).start(
+      typeName = "project-creation-actor",
+      entityProps = Props(injector.instanceOf(classOf[ProjectCreationActor])),
+      settings = ClusterShardingSettings(system),
+      extractEntityId = extractEntityId,
+      extractShardId = extractShardId
+    )
+  }
+}
+
 class ProjectCreationActor @Inject() (system:ActorSystem, app:Application) extends GenericCreationActor {
-  override val persistenceId = "project-creation-actor"
+  override val persistenceId = "project-creation-actor-" + self.path.name
   override protected val logger=Logger(getClass)
 
   import GenericCreationActor._

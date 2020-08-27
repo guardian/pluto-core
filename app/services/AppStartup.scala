@@ -10,6 +10,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.Configuration
 import play.api.inject.Injector
+import services.actors.MessageProcessorActor
 
 @Singleton
 class AppStartup @Inject()(config:Configuration, injector:Injector)(implicit system:ActorSystem, mat:Materializer){
@@ -35,6 +36,9 @@ class AppStartup @Inject()(config:Configuration, injector:Injector)(implicit sys
       settings = ClusterSingletonManagerSettings(system)
     ), name="ClockSingleton"
     )
+
+    logger.info("Initiating cluster shards")
+    MessageProcessorActor.startupSharding(system, injector)
   }
 
   initialise()

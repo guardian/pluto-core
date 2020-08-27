@@ -1,5 +1,7 @@
 package services
 
+import java.util.UUID
+
 import akka.actor.{Actor, ActorRef, ActorSystem, Timers}
 import javax.inject.{Inject, Named}
 import play.api.{Configuration, Logger}
@@ -55,7 +57,7 @@ class ClockSingleton @Inject() (config:Configuration,
 
     case ResendTick=>
       logger.debug("ResendTick")
-      messageProcessorActor ! MessageProcessorActor.RetryFromState()
+      messageProcessorActor ! MessageProcessorActor.RetryFromState(UUID.randomUUID())
 
   }
 }

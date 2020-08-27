@@ -2,7 +2,7 @@ import NativePackagerHelper._
 import RpmConstants._
 import com.typesafe.sbt.packager.docker
 import com.typesafe.sbt.packager.docker._
-name := "projectlocker"
+name := "pluto-core"
 
 version := "1.0-dev"
 
@@ -100,6 +100,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-cluster-metrics" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion,
   "com.typesafe.akka" %% "akka-discovery" % akkaVersion,
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
