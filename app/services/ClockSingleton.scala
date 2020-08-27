@@ -19,7 +19,6 @@ object ClockSingleton {
 class ClockSingleton @Inject() (config:Configuration,
                                @Named("message-processor-actor") messageProcessorActor:ActorRef,
                                @Named("postrun-action-scanner") postrunActionScanner:ActorRef,
-                               @Named("pluto-project-type-scanner") plutoProjectTypeScanner:ActorRef,
                                @Named("storage-scanner") storageScanner: ActorRef,
                                @Named("commission-status-propagator") commissionStatusPropagator: ActorRef,
                                )(implicit system:ActorSystem) extends Actor with Timers{
@@ -48,7 +47,6 @@ class ClockSingleton @Inject() (config:Configuration,
       storageScanner ! StorageScanner.Rescan
     case SlowClockTick=>
       logger.debug("SlowClockTick")
-      plutoProjectTypeScanner ! PlutoProjectTypeScanner.RefreshProjectTypes
       commissionStatusPropagator ! CommissionStatusPropagator.RetryFromState
 
     case VerySlowClockTick=>
