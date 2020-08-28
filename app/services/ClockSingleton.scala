@@ -1,5 +1,7 @@
 package services
 
+import java.util.UUID
+
 import akka.actor.{Actor, ActorRef, ActorSystem, Timers}
 import javax.inject.{Inject, Named}
 import play.api.{Configuration, Logger}
@@ -36,7 +38,6 @@ class ClockSingleton @Inject() (config:Configuration,
     timers.startTimerAtFixedRate(SlowClockTick, SlowClockTick, 5.minutes)
     timers.startTimerAtFixedRate(VerySlowClockTick, VerySlowClockTick, 1.hours)
     logger.info(s"Timer setup complete")
-    //self ! SlowClockTick
   }
 
   override def receive: Receive = {
@@ -45,7 +46,7 @@ class ClockSingleton @Inject() (config:Configuration,
       storageScanner ! StorageScanner.Rescan
     case SlowClockTick=>
       logger.debug("SlowClockTick")
-      commissionStatusPropagator ! CommissionStatusPropagator.RetryFromState
+      commissionStatusPropagator ! CommissionStatusPropagator.RetryFromState(UUID.randomUUID())
 
     case VerySlowClockTick=>
       logger.debug("VerySlowClockTick")
