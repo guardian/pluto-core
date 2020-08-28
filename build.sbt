@@ -35,7 +35,7 @@ lazy val `projectlocker` = (project in file("."))
         Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
         Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence", "&&", "chown","demiourgos728", "/opt/docker/target/persistence"),
         Cmd("RUN", "mkdir", "-p", "/data", "&&", "chown", "demiourgos728", "/data"),
-        Cmd("RUN", "chmod", "a+rx", "/opt/docker/bin/projectlocker"),
+        Cmd("RUN", "chmod", "a+rx", "/opt/docker/bin/pluto-core"),
         Cmd("USER", "demiourgos728"),
       )
     )
