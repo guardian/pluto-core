@@ -15,47 +15,12 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 
-class CreateProjectEntry @Inject() (@Named("message-processor-actor") messageProcessor:ActorRef, dbConfigProvider:DatabaseConfigProvider) extends GenericCreationActor {
-  override val persistenceId = "creation-project-entry-actor"
+class CreateProjectEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extends GenericCreationActor {
+  override val persistenceId = "creation-project-entry-actor-" + self.path.name
 
   import GenericCreationActor._
   private implicit val db=dbConfigProvider.get[JdbcProfile].db
 
-  /**
-    * sends a message to the message processor actor to update Pluto that the project has been created
-    * @param createdProjectEntry [[ProjectEntry]] instance that was created
-    * @param projectTemplate [[ProjectTemplate]] instance used to create it
-    * @return
-    */
-  def sendCreateMessage(createdProjectEntry: ProjectEntry, projectTemplate: ProjectTemplate):Future[Unit] = {
-    Future.sequence(Seq(
-      projectTemplate.projectType,
-      createdProjectEntry.getCommission
-    )).map(results=>{
-      val projectType = results.head.asInstanceOf[ProjectType]
-      val maybeCommission = results(1).asInstanceOf[Option[PlutoCommission]]
-
-      if(maybeCommission.isDefined){
-        projectType.forPluto(projectTemplate).onComplete({
-          case Success(projectTypeForPluto)=>
-            logger.debug(s"messageProcessor is $messageProcessor")
-            logger.info("Requesting send to pluto")
-            messageProcessor ! NewProjectCreated(createdProjectEntry,
-              projectTypeForPluto,
-              maybeCommission.get,
-              ZonedDateTime.now().toEpochSecond,
-              createdProjectEntry.deletable.getOrElse(false),
-              createdProjectEntry.deep_archive.getOrElse(false),
-              createdProjectEntry.sensitive.getOrElse(false)
-            )
-          case Failure(error)=>
-            logger.error(s"Can't sync project ${createdProjectEntry.projectTitle} to pluto: ", error)
-        })
-      } else {
-        logger.error(s"Can't sync project ${createdProjectEntry.projectTitle} (${createdProjectEntry.id}) to Pluto - missing commission")
-      }
-    })
-  }
 
   def validateNewProjectRequest(createRequest:NewProjectRequest):Try[NewProjectRequest] = {
     if(createRequest.data.destFileEntry.isDefined &&
@@ -96,11 +61,7 @@ class CreateProjectEntry @Inject() (@Named("message-processor-actor") messagePro
               .map({
                 case Success(createdProjectEntry) =>
                   logger.info(s"Project entry created as id ${createdProjectEntry.id}")
-                  if (rq.shouldNotify) {
-                    sendCreateMessage(createdProjectEntry, rq.projectTemplate)
-                  } else {
-                    logger.warn(s"Not notifying pluto about creation of project $createdProjectEntry because shouldNotify is false")
-                  }
+
                   originalSender ! StepSucceded(updatedData = createRequest.data.copy(createdProjectEntry = Some(createdProjectEntry)))
                   Success(rq.projectTemplate)
                 case Failure(error) =>

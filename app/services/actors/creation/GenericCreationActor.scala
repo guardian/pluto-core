@@ -4,17 +4,22 @@ import java.sql.Timestamp
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.persistence._
 import models.{FileEntry, PostrunAction, ProjectEntry, ProjectRequestFull}
+import org.slf4j.LoggerFactory
 import play.api.Logger
+import play.api.inject.Injector
 import services.JacksonSerializable
 
 import scala.concurrent.Future
 import scala.concurrent.duration.{Duration, FiniteDuration, durationToPair}
+import scala.reflect.{ClassTag, classTag}
 import scala.util.{Failure, Success, Try}
 
 object GenericCreationActor {
+  val logger = LoggerFactory.getLogger(getClass)
   def props = Props[GenericCreationActor]
 
   trait CreationEvent {
@@ -47,6 +52,29 @@ object GenericCreationActor {
   case class NewCreationEvent(rq:CreationMessage, eventId:UUID) extends CreationEvent with JacksonSerializable
 
   case class CreateEventHandled(eventId: UUID)  extends JacksonSerializable
+
+  val extractEntityId:ShardRegion.ExtractEntityId = {
+    case msg@ NewProjectRequest(rq,_,_)=>(rq.filename + "-f", msg)
+    case msg@ NewProjectRollback(rq,_)=>(rq.filename + "-r", msg)
+  }
+
+  val maxShards = 100
+
+  val extractShardId:ShardRegion.ExtractShardId = {
+    case NewProjectRequest(rq,_,_) => ((rq.filename + "-f").hashCode%100).toString
+    case NewProjectRollback(rq,_) => ((rq.filename + "-r").hashCode%100).toString
+  }
+
+  def startupSharding(typeName:String, props:Props)(implicit system:ActorSystem, injector:Injector): ActorRef = {
+    logger.info("Setting up sharding for generic creation actor")
+    ClusterSharding(system).start(
+      typeName = typeName,
+      entityProps = props,
+      settings = ClusterShardingSettings(system),
+      extractEntityId = extractEntityId,
+      extractShardId = extractShardId
+    )
+  }
 }
 
 trait GenericCreationActor extends PersistentActor {

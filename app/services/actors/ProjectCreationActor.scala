@@ -5,19 +5,20 @@ import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.pattern.ask
 import models.ProjectRequestFull
-import org.slf4j.MDC
+import org.slf4j.{LoggerFactory, MDC}
 import play.api.{Application, Logger}
 import play.api.inject.Injector
-import services.actors.MessageProcessorActor.{EventHandled, NewAdobeUuidEvent, NewAssetFolderEvent, NewProjectCreatedEvent, RetryFromState, logger}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, NewProjectRollback, StepFailed, StepSucceded}
 import services.actors.creation._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
+import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 
 object ProjectCreationActor {
+  val logger = LoggerFactory.getLogger(getClass)
   val extractEntityId:ShardRegion.ExtractEntityId = {
     case msg @ NewProjectRequest(rq, createTime, _)=>(createTime.map(_.toString).getOrElse(rq.filename), msg)
   }
@@ -40,7 +41,7 @@ object ProjectCreationActor {
   }
 }
 
-class ProjectCreationActor @Inject() (system:ActorSystem, app:Application) extends GenericCreationActor {
+class ProjectCreationActor @Inject() (app:Application)(implicit system:ActorSystem,injector: Injector) extends GenericCreationActor {
   override val persistenceId = "project-creation-actor-" + self.path.name
   override protected val logger=Logger(getClass)
 
@@ -51,14 +52,21 @@ class ProjectCreationActor @Inject() (system:ActorSystem, app:Application) exten
     * This property defines the step chain to create a project, in terms of actors required.
     * It's overridden in the tests, to create an artificial chain with TestProbes.
     */
-  val creationActorChain:Seq[ActorRef] = Seq(
-    system.actorOf(Props(app.injector.instanceOf(classOf[CreateFileEntry]))),
-    system.actorOf(Props(app.injector.instanceOf(classOf[CopySourceFile]))),
-    system.actorOf(Props(app.injector.instanceOf(classOf[CreateProjectEntry]))),
-    system.actorOf(Props(app.injector.instanceOf(classOf[RetrievePostruns]))),
-    system.actorOf(Props(app.injector.instanceOf(classOf[PostrunExecutor]))),
-  )
+//  val creationActorChain:Seq[ActorRef] = Seq(
+//    system.actorOf(Props(app.injector.instanceOf(classOf[CreateFileEntry]))),
+//    system.actorOf(Props(app.injector.instanceOf(classOf[CopySourceFile]))),
+//    system.actorOf(Props(app.injector.instanceOf(classOf[CreateProjectEntry]))),
+//    system.actorOf(Props(app.injector.instanceOf(classOf[RetrievePostruns]))),
+//    system.actorOf(Props(app.injector.instanceOf(classOf[PostrunExecutor]))),
+//  )
 
+  val creationActorChain:Seq[ActorRef] = Seq(
+    GenericCreationActor.startupSharding("create-file-entry", Props(app.injector.instanceOf(classOf[CreateFileEntry]))),
+    GenericCreationActor.startupSharding("copy-source-file",Props(app.injector.instanceOf(classOf[CopySourceFile]))),
+    GenericCreationActor.startupSharding("create-proejct-entry",Props(app.injector.instanceOf(classOf[CreateProjectEntry]))),
+    GenericCreationActor.startupSharding("retrieve-postruns",Props(app.injector.instanceOf(classOf[RetrievePostruns]))),
+    GenericCreationActor.startupSharding("postrun-executor",Props(app.injector.instanceOf(classOf[PostrunExecutor])))
+  )
   /**
     * Runs the next actor in the given sequence recursively by sending it [[NewProjectRequest]].
     * If it fails, then [[NewProjectRollback]] is sent to it and the recursion ends; as the recursion unwinds all of the

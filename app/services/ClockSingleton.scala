@@ -1,11 +1,8 @@
 package services
 
-import java.util.UUID
-
 import akka.actor.{Actor, ActorRef, ActorSystem, Timers}
 import javax.inject.{Inject, Named}
 import play.api.{Configuration, Logger}
-import services.actors.MessageProcessorActor
 
 import scala.concurrent.duration._
 
@@ -19,7 +16,6 @@ object ClockSingleton {
 }
 
 class ClockSingleton @Inject() (config:Configuration,
-                               @Named("message-processor-actor") messageProcessorActor:ActorRef,
                                @Named("postrun-action-scanner") postrunActionScanner:ActorRef,
                                @Named("storage-scanner") storageScanner: ActorRef,
                                @Named("commission-status-propagator") commissionStatusPropagator: ActorRef,
@@ -57,7 +53,6 @@ class ClockSingleton @Inject() (config:Configuration,
 
     case ResendTick=>
       logger.debug("ResendTick")
-      messageProcessorActor ! MessageProcessorActor.RetryFromState(UUID.randomUUID())
 
   }
 }

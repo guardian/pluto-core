@@ -57,7 +57,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       mockedPostrunSeq.head.run(argThat(===("/tmp/someproject.prj")),argThat(===(mockedProjectEntry)),any,any,argThat(===(None)),argThat(===(None)))(any) returns Future(Success(JythonOutput("Something Worked", "", mockedDataCache, None)))
       mockedPostrunSeq(1).run(argThat(===("/tmp/someproject.prj")),argThat(===(mockedProjectEntry)),any,any,argThat(===(None)),argThat(===(None)))(any) returns Future(Success(JythonOutput("Something else worked", "", mockedDataCache, None)))
 
-      val ac = system.actorOf(Props(new PostrunExecutor(testMessageProcessor.ref, dbConfigProvider, app.configuration)))
+      val ac = system.actorOf(Props(new PostrunExecutor(dbConfigProvider, app.configuration)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
@@ -103,7 +103,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       mockedPostrunSeq.head.run(argThat(===("/tmp/someproject.prj")),argThat(===(mockedProjectEntry)),any,any,argThat(===(None)),argThat(===(None)))(any) returns Future(Success(JythonOutput("Something Worked", "", mockedDataCache, None)))
       mockedPostrunSeq(1).run(argThat(===("/tmp/someproject.prj")),argThat(===(mockedProjectEntry)),any,any,argThat(===(None)),argThat(===(None)))(any) returns Future(Success(JythonOutput("Something else worked", "", mockedDataCache, None)))
 
-      val ac = system.actorOf(Props(new PostrunExecutor(testMessageProcessor.ref, dbConfigProvider, app.configuration)))
+      val ac = system.actorOf(Props(new PostrunExecutor(dbConfigProvider, app.configuration)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
@@ -143,7 +143,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
 
       val mockedPostrunSeq = Seq()
 
-      val ac = system.actorOf(Props(new PostrunExecutor(testMessageProcessor.ref, dbConfigProvider, app.configuration)))
+      val ac = system.actorOf(Props(new PostrunExecutor( dbConfigProvider, app.configuration)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
@@ -189,7 +189,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       mockedPostrunSeq.head.run(argThat(===("/tmp/someproject.prj")),argThat(===(mockedProjectEntry)),any,any,argThat(===(None)),argThat(===(None)))(any) returns Future(Success(JythonOutput("Something failed", "", mockedDataCache, Some(new RuntimeException("leakage!")))))
       mockedPostrunSeq(1).run(argThat(===("/tmp/someproject.prj")),argThat(===(mockedProjectEntry)),any,any,argThat(===(None)),argThat(===(None)))(any) returns Future(Success(JythonOutput("Something else worked", "", mockedDataCache, None)))
 
-      val ac = system.actorOf(Props(new PostrunExecutor(testMessageProcessor.ref, dbConfigProvider, app.configuration)))
+      val ac = system.actorOf(Props(new PostrunExecutor( dbConfigProvider, app.configuration)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
@@ -235,7 +235,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       mockedPostrunSeq.head.run(argThat(===("/tmp/someproject.prj")),argThat(===(mockedProjectEntry)),any,any,argThat(===(None)),argThat(===(None)))(any) returns Future(Failure(new RuntimeException("The end is nigh!")))
       mockedPostrunSeq(1).run(argThat(===("/tmp/someproject.prj")),argThat(===(mockedProjectEntry)),any,any,argThat(===(None)),argThat(===(None)))(any) returns Future(Success(JythonOutput("Something else worked", "", mockedDataCache, None)))
 
-      val ac = system.actorOf(Props(new PostrunExecutor(testMessageProcessor.ref, dbConfigProvider, app.configuration)))
+      val ac = system.actorOf(Props(new PostrunExecutor(dbConfigProvider, app.configuration)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
@@ -282,7 +282,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       mockedPostrunSeq.head.run(argThat(===("/tmp/someproject.prj")),argThat(===(mockedProjectEntry)),any,any,argThat(===(None)),argThat(===(None)))(any) returns Future(Failure(new RuntimeException("The end is nigh!")))
       mockedPostrunSeq(1).run(argThat(===("/tmp/someproject.prj")),argThat(===(mockedProjectEntry)),any,any,argThat(===(None)),argThat(===(None)))(any) returns Future(Success(JythonOutput("Something else worked", "", mockedDataCache, None)))
 
-      val ac = system.actorOf(Props(new PostrunExecutor(testMessageProcessor.ref, dbConfigProvider, app.configuration)))
+      val ac = system.actorOf(Props(new PostrunExecutor(dbConfigProvider, app.configuration)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
@@ -307,7 +307,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
 
       val testMessageProcessor = TestProbe()
 
-      val ac = system.actorOf(Props(new PostrunExecutor(testMessageProcessor.ref, dbConfigProvider, app.configuration)))
+      val ac = system.actorOf(Props(new PostrunExecutor(dbConfigProvider, app.configuration)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None,deletable=true, deep_archive=false, sensitive=false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome

@@ -30,7 +30,7 @@ object CopySourceFile {
   * and updates it to have no content again
   */
 class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider, storageHelper:StorageHelper)(implicit mat:Materializer) extends GenericCreationActor {
-  override val persistenceId = "creation-get-storage-actor"
+  override val persistenceId = "creation-get-storage-actor-" + self.path.name
 
   import CopySourceFile._
   import GenericCreationActor._

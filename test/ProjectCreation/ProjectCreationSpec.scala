@@ -26,7 +26,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
 
   "runNextActorInSequence" should {
     "run a list of actors providing that they all return successfully" in new WithApplication(buildApp){
-      private val injector = app.injector
+      private implicit val injector = app.injector
 
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
@@ -37,7 +37,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       val probe3 = TestProbe()
 
       val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
-      val ac = system.actorOf(Props(new ProjectCreationActor(system, app) {
+      val ac = system.actorOf(Props(new ProjectCreationActor(app) {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
 
@@ -65,7 +65,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
     }
 
     "stop when an actor reports a failure and roll back the ones that had run before" in new WithApplication(buildApp){
-      private val injector = app.injector
+      private implicit val injector = app.injector
 
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
@@ -78,7 +78,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       val initialData = ProjectCreateTransientData(None, None, None)
 
       val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
-      val ac = system.actorOf(Props(new ProjectCreationActor(system, app) {
+      val ac = system.actorOf(Props(new ProjectCreationActor(app) {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
 
@@ -105,7 +105,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
     }
 
     "continue rollback even if a rollback fails" in new WithApplication(buildApp){
-      private val injector = app.injector
+      private implicit val injector = app.injector
 
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
@@ -116,7 +116,7 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       val probe3 = TestProbe()
 
       val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
-      val ac = system.actorOf(Props(new ProjectCreationActor(system, app) {
+      val ac = system.actorOf(Props(new ProjectCreationActor(app) {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
       val initialData = ProjectCreateTransientData(None, None, None)

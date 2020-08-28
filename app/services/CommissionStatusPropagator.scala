@@ -10,7 +10,6 @@ import com.google.inject.Inject
 import models.{EntryStatus, ProjectEntry, ProjectEntryRow}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.{Configuration, Logger}
-import services.actors.MessageProcessorActor.{EventHandled, MessageEvent}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
@@ -34,6 +33,8 @@ object CommissionStatusPropagator {
   object CommissionStatusUpdate {
     def apply(commissionId:Int, newStatus:EntryStatus.Value) = new CommissionStatusUpdate(commissionId, newStatus, UUID.randomUUID())
   }
+
+  case class EventHandled(uuid: UUID) extends CommissionStatusEvent
 }
 
 /**
@@ -86,8 +87,8 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
     case evt:CommissionStatusEvent=>
       updateState(evt)
     case handledEvt:EventHandled =>
-      logger.debug(s"receiveRecover got message handled: ${handledEvt.eventId}")
-      state = state.removed(handledEvt.eventId)
+      logger.debug(s"receiveRecover got message handled: ${handledEvt.uuid}")
+      state = state.removed(handledEvt.uuid)
     case RecoveryCompleted=>
       logger.info(s"Completed journal recovery, kicking off pending items")
       restoreCompleted=true

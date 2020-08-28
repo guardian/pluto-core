@@ -2,8 +2,6 @@ package services.actors.creation
 
 import java.util.UUID
 
-import services.actors.MessageProcessorActor.MessageEvent
-import services.actors.MessageProcessorState
 import services.actors.creation.GenericCreationActor.CreationEvent
 
 case class CreationStepState(events: Map[UUID, CreationEvent] = Map()) {
