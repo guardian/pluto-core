@@ -61,8 +61,8 @@ const CommissionsList: React.FC = () => {
   );
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
-  const [order, setOrder] = useState<SortDirection>("asc");
-  const [orderBy, setOrderBy] = useState<keyof Commission>("title");
+  const [order, setOrder] = useState<SortDirection>("desc");
+  const [orderBy, setOrderBy] = useState<keyof Commission>("created");
 
   const history = useHistory();
 
