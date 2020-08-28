@@ -30,12 +30,12 @@ class UpdatePremiereScratchpaths extends PojoPostrun with AdobeXml {
     val maybeNewPath = dataCache.get("created_asset_folder").map(f=>pathForClient(f))
     if(maybeNewPath.isEmpty) return Future(Failure(new RuntimeException("no value for created_asset_folder")))
 
-    getXmlFromGzippedFile(projectFileName).map({
-      case Failure(err)=>Failure(err)
+    getXmlFromGzippedFile(projectFileName) match {
+      case Failure(err)=>Future(Failure(err))
       case Success(xmlData)=>
         val updatedXml = new RuleTransformer(new UpdateAudioVideoLocations(maybeNewPath.get, maybeNewPath.get)).transform(xmlData).head
         putXmlToGzippedFile(projectFileName,Elem.apply(updatedXml.prefix, updatedXml.label, updatedXml.attributes, updatedXml.scope, false, updatedXml.child :_*))
-        Success(dataCache)
-    })
+        Future(Success(dataCache))
+    }
   }
 }
