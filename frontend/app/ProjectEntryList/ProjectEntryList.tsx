@@ -110,11 +110,13 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // Material-UI
   const classes = useStyles();
 
-  const fetchProjectsOnPage = async () => {
+  const fetchProjectsOnPage = async (
+    updatedFilterTerms?: ProjectFilterTerms
+  ) => {
     const projects = await getProjectsOnPage({
       page,
       pageSize,
-      filterTerms,
+      filterTerms: updatedFilterTerms ?? filterTerms,
     });
 
     setProjects(projects);
@@ -155,7 +157,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   useEffect(() => {
     console.log("filter terms or search changed, updating...");
     fetchProjectsOnPage();
-  }, [filterTerms, page, pageSize, order, orderBy]);
+  }, [page, pageSize, order, orderBy]);
 
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
@@ -183,7 +185,11 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
     <>
       <ProjectEntryFilterComponent
         filterTerms={filterTerms}
-        filterDidUpdate={setFilterTerms}
+        filterDidUpdate={(newFilters: ProjectFilterTerms) => {
+          console.log("filterDidUpdate", newFilters);
+          fetchProjectsOnPage(newFilters);
+          setFilterTerms(newFilters);
+        }}
       />
       <Button
         className={classes.createButton}
@@ -202,7 +208,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                 {tableHeaderTitles.map((title, index) => (
                   <TableCell
                     key={title.label ? title.label : index}
-                    sortDirection={orderBy === title.key ? order : false}
+                    sortDirection={order}
                   >
                     {title.key ? (
                       <TableSortLabel
