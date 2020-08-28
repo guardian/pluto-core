@@ -1,5 +1,7 @@
 package controllers
 
+import java.util.UUID
+
 import javax.inject.{Inject, Named, Singleton}
 import akka.actor.ActorRef
 import akka.pattern.ask
@@ -379,7 +381,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
           case Seq(commission) =>
             val commissionsSerializer = new PlutoCommissionSerializer {}
             implicit val commissionsWrites: Writes[PlutoCommission] = commissionsSerializer.plutoCommissionWrites
-            rabbitMqPropagator ! ChangeEvent(Seq(commissionsWrites.writes(commission)), getItemType(commission), UpdateOperation)
+            rabbitMqPropagator ! ChangeEvent(Seq(commissionsWrites.writes(commission)), getItemType(commission), UpdateOperation, UUID.randomUUID())
           case _ =>
             logger.error(s"Failed to update commission, multiple commissions updated: $commissionId")
             throw new IllegalStateException(s"Failed to update commission, multiple commissions updated: $commissionId")

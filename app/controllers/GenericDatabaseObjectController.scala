@@ -1,5 +1,7 @@
 package controllers
 
+import java.util.UUID
+
 import akka.actor.ActorRef
 import play.api.libs.json._
 import play.api.mvc._
@@ -253,13 +255,13 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
   def sendToRabbitMq(operation: ChangeOperation, id: Int, rabbitMqPropagator: ActorRef): Future[Unit] = {
     logger.debug(s"sendToRabbitMq looking up id $id")
     selectid(id).map({
-      case Success(modelList) => rabbitMqPropagator ! ChangeEvent(modelList.map(jstranslate), modelList.headOption.flatMap(getItemType), operation)
+      case Success(modelList) => rabbitMqPropagator ! ChangeEvent(modelList.map(jstranslate), modelList.headOption.flatMap(getItemType), operation, UUID.randomUUID())
 
       case _ => logger.error("Failed to propagate changes")
     })
   }
 
   def sendToRabbitMq(operation: ChangeOperation, model: M, rabbitMqPropagator: ActorRef): Unit =
-    rabbitMqPropagator ! ChangeEvent(Seq(jstranslate(model)),getItemType(model), operation)
+    rabbitMqPropagator ! ChangeEvent(Seq(jstranslate(model)),getItemType(model), operation, UUID.randomUUID())
 
 }

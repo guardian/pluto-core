@@ -33,8 +33,6 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
 
-      val testMessageProcessor = TestProbe()
-
       val mockedFileEntry = mock[FileEntry]
       mockedFileEntry.getFullPath(any) returns Future("/tmp/someproject.prj")
       mockedFileEntry.hasContent returns true
@@ -67,8 +65,6 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       val result = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
 
       result must beAnInstanceOf[StepSucceded]
-      testMessageProcessor.expectMsg(NewAssetFolder("/path/to/my/assetfolder", mockedProjectEntry.id, mockedProjectEntry.vidispineProjectId))
-      testMessageProcessor.expectMsg(NewAdobeUuid(mockedProjectEntry, "b8254566-0c69-4000-b990-8082b4b2dd32"))
     }
 
     "run a list of postrun actions and not mind if there is no asset folder nor uuid" in new WithApplication(buildApp){

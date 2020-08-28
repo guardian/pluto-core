@@ -30,8 +30,6 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
 
-      val testMessageProcessor = TestProbe()
-
       val mockedFileEntry = mock[FileEntry]
       mockedFileEntry.hasContent returns true
       mockedFileEntry.id returns Some(1)  //this must be a valid fileID otherwise primary-key association fails
@@ -46,7 +44,6 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
       val result = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
       result must beAnInstanceOf[StepSucceded]
       result.asInstanceOf[StepSucceded].updatedData.createdProjectEntry must beSome
-      testMessageProcessor.expectMsgClass(classOf[NewProjectCreated])
     }
 
     "create a new entry in the database and not call out to send a created message, if there is no commission" in new WithApplication(buildApp){
