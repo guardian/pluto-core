@@ -153,10 +153,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   }, [commissionId, user?.uid]);
 
   useEffect(() => {
-    if (!user) {
-      return;
-    }
-
+    console.log("filter terms or search changed, updating...");
     fetchProjectsOnPage();
   }, [filterTerms, page, pageSize, order, orderBy]);
 

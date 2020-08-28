@@ -24,12 +24,6 @@ class GenericEntryFilterComponent extends React.Component {
         validator: (input) => null,
       },
       {
-        key: "vidispineId",
-        label: "PLUTO project id",
-        //validator: (input)=>vsidValidator.test(input) ? null : "This must be in the form of XX-nnnnn"
-        validator: validateVsid,
-      },
-      {
         key: "filename",
         label: "Project file name",
         validator: (input) => null,
