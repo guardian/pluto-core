@@ -43,8 +43,11 @@ object MessageProcessorActor {
 
   val extractEntityId:ShardRegion.ExtractEntityId = {
     case msg @ NewProjectCreatedEvent(_, eventId)=>(eventId.toString, msg)
+    case msg @ NewProjectCreated(_, _,_,timestamp,_,_,_)=>(timestamp.toString, msg)
     case msg @ NewAdobeUuidEvent(_, eventId, _) => (eventId.toString, msg)
+    case msg @ NewAdobeUuid(_,uuid)=> (uuid,msg)
     case msg @ NewAssetFolderEvent(_, eventId, _) => (eventId.toString, msg)
+    case msg @ NewAssetFolder(path, _, _) => (path.hashCode.toString, msg)
     case msg @ EventHandled(eventId) => (eventId.toString, msg)
     case msg @ RetryFromState(eventId) => (eventId.toString, msg)
   }
@@ -53,8 +56,11 @@ object MessageProcessorActor {
 
   val extractShardId:ShardRegion.ExtractShardId = {
     case NewProjectCreatedEvent(_, eventId)=>(eventId.hashCode() % maxNumberOfShards).toString
+    case NewProjectCreated(_,_,_,timestamp,_,_,_)=>(timestamp % maxNumberOfShards).toString
     case NewAdobeUuidEvent(_, eventId, _) => (eventId.hashCode() % maxNumberOfShards).toString
+    case NewAdobeUuid(_, uuid)=>(uuid.hashCode() % maxNumberOfShards).toString
     case NewAssetFolderEvent(_, eventId, _) => (eventId.hashCode() % maxNumberOfShards).toString
+    case NewAssetFolder(path, _,_) => (path.hashCode() % maxNumberOfShards).toString
     case EventHandled(eventId) => (eventId.hashCode() % maxNumberOfShards).toString
     case RetryFromState(eventId) => (eventId.toString.hashCode() % maxNumberOfShards).toString
   }
