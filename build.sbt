@@ -14,7 +14,7 @@ javaOptions in Universal ++= Seq(
 
 scalacOptions ++= Seq("-deprecation", "-feature")
 
-lazy val `projectlocker` = (project in file("."))
+lazy val `pluto-core` = (project in file("."))
   .enablePlugins(PlayScala)
   .enablePlugins(AshScriptPlugin) //needed for alpine-based images
     .settings(
