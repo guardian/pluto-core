@@ -381,7 +381,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
           case Seq(commission) =>
             val commissionsSerializer = new PlutoCommissionSerializer {}
             implicit val commissionsWrites: Writes[PlutoCommission] = commissionsSerializer.plutoCommissionWrites
-            rabbitMqPropagator ! ChangeEvent(Seq(commissionsWrites.writes(commission)), getItemType(commission), UpdateOperation, UUID.randomUUID())
+            rabbitMqPropagator ! ChangeEvent(Seq(commissionsWrites.writes(commission)), getItemType(commission), UpdateOperation)
           case _ =>
             logger.error(s"Failed to update commission, multiple commissions updated: $commissionId")
             throw new IllegalStateException(s"Failed to update commission, multiple commissions updated: $commissionId")
