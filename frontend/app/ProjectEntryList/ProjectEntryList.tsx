@@ -103,8 +103,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   const [user, setUser] = useState<PlutoUser | null>(null);
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
-  const [order, setOrder] = useState<SortDirection>("asc");
-  const [orderBy, setOrderBy] = useState<keyof Project>("title");
+  const [order, setOrder] = useState<SortDirection>("desc");
+  const [orderBy, setOrderBy] = useState<keyof Project>("created");
   const [projects, setProjects] = useState<Project[]>([]);
   const [filterTerms, setFilterTerms] = useState<ProjectFilterTerms>({
     match: "W_CONTAINS",
@@ -244,13 +244,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                   user: projectUser,
                 } = project;
                 return (
-                  <TableRow
-                    key={id}
-                    onClick={() => {
-                      history.push(`/project/${id}`, project);
-                    }}
-                    hover
-                  >
+                  <TableRow key={id} hover>
                     <TableCell>{title}</TableCell>
                     <TableCell>
                       <CommissionEntryView entryId={commissionId} />
