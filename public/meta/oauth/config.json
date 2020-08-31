@@ -1,0 +1,7 @@
+{
+  "clientId": "prexit-local",
+  "resource": "https://keycloak.local",
+  "oAuthUri": "https://keycloak.local/auth/realms/master/protocol/openid-connect/auth",
+  "tokenUri": "https://keycloak.local/auth/realms/master/protocol/openid-connect/token",
+  "adminClaimName": "azp"
+}

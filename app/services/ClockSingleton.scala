@@ -1,9 +1,10 @@
 package services
 
+import java.util.UUID
+
 import akka.actor.{Actor, ActorRef, ActorSystem, Timers}
 import javax.inject.{Inject, Named}
 import play.api.{Configuration, Logger}
-import services.actors.MessageProcessorActor
 
 import scala.concurrent.duration._
 
@@ -17,7 +18,6 @@ object ClockSingleton {
 }
 
 class ClockSingleton @Inject() (config:Configuration,
-                               @Named("message-processor-actor") messageProcessorActor:ActorRef,
                                @Named("postrun-action-scanner") postrunActionScanner:ActorRef,
                                @Named("storage-scanner") storageScanner: ActorRef,
                                @Named("commission-status-propagator") commissionStatusPropagator: ActorRef,
@@ -38,7 +38,6 @@ class ClockSingleton @Inject() (config:Configuration,
     timers.startTimerAtFixedRate(SlowClockTick, SlowClockTick, 5.minutes)
     timers.startTimerAtFixedRate(VerySlowClockTick, VerySlowClockTick, 1.hours)
     logger.info(s"Timer setup complete")
-    //self ! SlowClockTick
   }
 
   override def receive: Receive = {
@@ -47,7 +46,7 @@ class ClockSingleton @Inject() (config:Configuration,
       storageScanner ! StorageScanner.Rescan
     case SlowClockTick=>
       logger.debug("SlowClockTick")
-      commissionStatusPropagator ! CommissionStatusPropagator.RetryFromState
+      commissionStatusPropagator ! CommissionStatusPropagator.RetryFromState(UUID.randomUUID())
 
     case VerySlowClockTick=>
       logger.debug("VerySlowClockTick")
@@ -55,7 +54,6 @@ class ClockSingleton @Inject() (config:Configuration,
 
     case ResendTick=>
       logger.debug("ResendTick")
-      messageProcessorActor ! MessageProcessorActor.RetryFromState()
 
   }
 }

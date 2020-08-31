@@ -35,6 +35,7 @@ class AppStartup @Inject()(config:Configuration, injector:Injector)(implicit sys
       settings = ClusterSingletonManagerSettings(system)
     ), name="ClockSingleton"
     )
+
   }
 
   initialise()

@@ -2,7 +2,7 @@ import NativePackagerHelper._
 import RpmConstants._
 import com.typesafe.sbt.packager.docker
 import com.typesafe.sbt.packager.docker._
-name := "projectlocker"
+name := "pluto-core"
 
 version := "1.0-dev"
 
@@ -14,7 +14,7 @@ javaOptions in Universal ++= Seq(
 
 scalacOptions ++= Seq("-deprecation", "-feature")
 
-lazy val `projectlocker` = (project in file("."))
+lazy val `pluto-core` = (project in file("."))
   .enablePlugins(PlayScala)
   .enablePlugins(AshScriptPlugin) //needed for alpine-based images
     .settings(
@@ -35,7 +35,7 @@ lazy val `projectlocker` = (project in file("."))
         Cmd("RUN", "mv", "/opt/docker/conf/docker-application.conf", "/opt/docker/conf/application.conf"),
         Cmd("RUN", "mkdir", "-p", "/opt/docker/target/persistence", "&&", "chown","demiourgos728", "/opt/docker/target/persistence"),
         Cmd("RUN", "mkdir", "-p", "/data", "&&", "chown", "demiourgos728", "/data"),
-        Cmd("RUN", "chmod", "a+rx", "/opt/docker/bin/projectlocker"),
+        Cmd("RUN", "chmod", "a+rx", "/opt/docker/bin/pluto-core"),
         Cmd("USER", "demiourgos728"),
       )
     )
@@ -100,6 +100,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-cluster-metrics" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion,
   "com.typesafe.akka" %% "akka-discovery" % akkaVersion,
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,

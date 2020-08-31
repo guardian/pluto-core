@@ -1,23 +1,49 @@
 package services
 
-import akka.actor.{Actor, ActorRef, ActorSystem}
+import java.util.UUID
+
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import com.google.inject.Inject
 import com.rabbitmq.client.AMQP.Exchange
 import javax.inject.Singleton
-import models.{PlutoCommission, PlutoModel, PlutoWorkingGroup, ProjectEntry}
+import org.slf4j.LoggerFactory
+import play.api.inject.Injector
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsValue, Json, Writes}
 import play.api.{Configuration, Logger}
 
 
 object RabbitMqPropagator {
-
+  private val logger = LoggerFactory.getLogger(getClass)
   trait RabbitMqEvent {
   }
 
-  case class ChangeEvent(content: Seq[JsValueWrapper], itemType: Option[String], operation: ChangeOperation)
+  case class ChangeEvent(content: Seq[JsValueWrapper], itemType: Option[String], operation: ChangeOperation, uuid:UUID=UUID.randomUUID())
     extends RabbitMqEvent with JacksonSerializable {
     def json: String = Json.stringify(Json.arr(content:_*))
+  }
+
+
+  val extractEntityId:ShardRegion.ExtractEntityId = {
+    case msg @ ChangeEvent(_,_,_,uuid)=>(uuid.toString, msg)
+  }
+
+  val maxNumberOfShards = 100
+
+  val extractShardId:ShardRegion.ExtractShardId = {
+    case ChangeEvent(_,_,_,uuid)=>(uuid.hashCode() % 100).toString
+  }
+
+  def startupSharding(system:ActorSystem, injector:Injector) = {
+    logger.info("Setting up sharding for RabbitMQPropagator")
+    ClusterSharding(system).start(
+      typeName = "rabbitmq-propagator",
+      entityProps = Props(injector.instanceOf(classOf[RabbitMqPropagator])),
+      settings = ClusterShardingSettings(system),
+      extractEntityId = extractEntityId,
+      extractShardId = extractShardId
+    )
   }
 }
 

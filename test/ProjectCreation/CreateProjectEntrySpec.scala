@@ -30,13 +30,11 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
 
-      val testMessageProcessor = TestProbe()
-
       val mockedFileEntry = mock[FileEntry]
       mockedFileEntry.hasContent returns true
       mockedFileEntry.id returns Some(1)  //this must be a valid fileID otherwise primary-key association fails
 
-      val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
+      val ac = system.actorOf(Props(new CreateProjectEntry(dbConfigProvider)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
@@ -46,7 +44,6 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
       val result = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
       result must beAnInstanceOf[StepSucceded]
       result.asInstanceOf[StepSucceded].updatedData.createdProjectEntry must beSome
-      testMessageProcessor.expectMsgClass(classOf[NewProjectCreated])
     }
 
     "create a new entry in the database and not call out to send a created message, if there is no commission" in new WithApplication(buildApp){
@@ -62,7 +59,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
       mockedFileEntry.hasContent returns true
       mockedFileEntry.id returns Some(1)  //this must be a valid fileID otherwise primary-key association fails
 
-      val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
+      val ac = system.actorOf(Props(new CreateProjectEntry(dbConfigProvider)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
@@ -88,7 +85,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
       mockedFileEntry.hasContent returns false
       mockedFileEntry.id returns Some(1)  //this must be a valid fileID otherwise primary-key association fails
 
-      val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
+      val ac = system.actorOf(Props(new CreateProjectEntry(dbConfigProvider)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
@@ -112,7 +109,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
       mockedFileEntry.hasContent returns false
       mockedFileEntry.id returns Some(548)  //deliberately not a valid fileID
 
-      val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
+      val ac = system.actorOf(Props(new CreateProjectEntry( dbConfigProvider)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome
@@ -142,7 +139,7 @@ class CreateProjectEntrySpec extends Specification with BuildMyApp with Mockito 
       val mockedProjectEntry = mock[ProjectEntry]
       mockedProjectEntry.removeFromDatabase(any) returns Future(Success( () ))
 
-      val ac = system.actorOf(Props(new CreateProjectEntry(testMessageProcessor.ref, dbConfigProvider)))
+      val ac = system.actorOf(Props(new CreateProjectEntry( dbConfigProvider)))
 
       val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
       maybeRq must beSome

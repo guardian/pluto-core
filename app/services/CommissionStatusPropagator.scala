@@ -2,15 +2,19 @@ package services
 
 import java.util.UUID
 
-import akka.actor.Props
+import akka.actor.{ActorSystem, Props}
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
 import com.google.inject.Inject
 import models.{EntryStatus, ProjectEntry, ProjectEntryRow}
+import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.Injector
 import play.api.{Configuration, Logger}
-import services.actors.MessageProcessorActor.{EventHandled, MessageEvent}
+import services.actors.ProjectCreationActor
+import services.actors.creation.GenericCreationActor.NewProjectRequest
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
@@ -20,6 +24,7 @@ import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object CommissionStatusPropagator {
+  private val logger = LoggerFactory.getLogger(getClass)
   def props = Props[CommissionStatusPropagator]
 
   trait CommissionStatusEvent {
@@ -29,10 +34,37 @@ object CommissionStatusPropagator {
   class EnumStatusType extends TypeReference[EntryStatus.type] {}
 
   case class CommissionStatusUpdate(commissionId:Int, @JsonScalaEnumeration(classOf[EnumStatusType]) newValue:EntryStatus.Value, override val uuid:UUID) extends CommissionStatusEvent with JacksonSerializable
-  case object RetryFromState extends JacksonSerializable
+  case class RetryFromState(override val uuid: UUID) extends JacksonSerializable with CommissionStatusEvent
 
   object CommissionStatusUpdate {
     def apply(commissionId:Int, newStatus:EntryStatus.Value) = new CommissionStatusUpdate(commissionId, newStatus, UUID.randomUUID())
+  }
+
+  case class EventHandled(uuid: UUID) extends CommissionStatusEvent
+
+  val extractEntityId:ShardRegion.ExtractEntityId = {
+    case msg @ CommissionStatusUpdate(_,_,uuid)=>(uuid.toString, msg)
+    case msg @ EventHandled(uuid)=>(uuid.toString, msg)
+    case msg @ RetryFromState(uuid)=>(uuid.toString, msg)
+  }
+
+  val maxNumberOfShards = 100
+
+  val extractShardId:ShardRegion.ExtractShardId = {
+    case CommissionStatusUpdate(_,_,uuid)=>(uuid.hashCode() % maxNumberOfShards).toString
+    case EventHandled(uuid)=>(uuid.hashCode() % maxNumberOfShards).toString
+    case RetryFromState(uuid)=>(uuid.hashCode() % maxNumberOfShards).toString
+  }
+
+  def startupSharding(system:ActorSystem, injector:Injector) = {
+    logger.info("Setting up sharding for CommissionStatusPropagatgor")
+    ClusterSharding(system).start(
+      typeName = "commission-status-propagator",
+      entityProps = Props(injector.instanceOf(classOf[CommissionStatusPropagator])),
+      settings = ClusterShardingSettings(system),
+      extractEntityId = extractEntityId,
+      extractShardId = extractShardId
+    )
   }
 }
 
@@ -51,7 +83,7 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
   import CommissionStatusPropagator._
   import models.EntryStatusMapper._
 
-  override def persistenceId = "commission-status-propagator"
+  override def persistenceId = "commission-status-propagator-" + self.path.name
 
   private final var state:CommissionStatusPropagatorState = CommissionStatusPropagatorState(Map())
   private final var restoreCompleted = false
@@ -86,8 +118,8 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
     case evt:CommissionStatusEvent=>
       updateState(evt)
     case handledEvt:EventHandled =>
-      logger.debug(s"receiveRecover got message handled: ${handledEvt.eventId}")
-      state = state.removed(handledEvt.eventId)
+      logger.debug(s"receiveRecover got message handled: ${handledEvt.uuid}")
+      state = state.removed(handledEvt.uuid)
     case RecoveryCompleted=>
       logger.info(s"Completed journal recovery, kicking off pending items")
       restoreCompleted=true

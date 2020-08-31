@@ -1,5 +1,7 @@
 package controllers
 
+import java.util.UUID
+
 import javax.inject.{Inject, Named, Singleton}
 import akka.actor.ActorRef
 import akka.pattern.ask

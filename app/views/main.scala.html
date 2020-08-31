@@ -5,10 +5,9 @@
 <html>
     <head>
         <title>@title</title>
-        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
-        <link rel="stylesheet" media="screen" href="@routes.Assets.at("font-awesome-4.7.0/css/font-awesome.min.css")">
-        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
-        <script src="@routes.Assets.at("javascripts/jquery-1.9.0.min.js")" type="text/javascript"></script>
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("/public", "stylesheets/main.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("/public", "font-awesome-4.7.0/css/font-awesome.min.css")">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("/public", "images/favicon.png")">
     </head>
     <body>
         @content

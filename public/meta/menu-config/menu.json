@@ -1,0 +1,90 @@
+[
+    {
+        "type": "link",
+        "text": "Home",
+        "href": "/"
+    },
+    {
+        "type": "link",
+        "text": "Commissions",
+        "href": "/commission/"
+    },
+    {
+        "type": "link",
+        "text": "Working Groups",
+        "href": "/working-group/"
+    },
+    {
+        "type": "link",
+        "text": "Projects",
+        "href": "/project/?mine"
+    },
+    {
+        "type": "link",
+        "text": "Files",
+        "href": "/file/?mine"
+    },
+    {
+        "type": "submenu",
+        "text": "Assets",
+        "content": [
+            {
+                "text": "Last 15",
+                "type": "link",
+                "href": "/vs/last/15"
+            },
+            {
+                "text": "Search",
+                "type": "link",
+                "href": "/search"
+            }
+        ]
+    },
+    {
+        "type": "submenu",
+        "text": "Admin",
+        "adminOnly": true,
+        "content": [
+            {
+                "type": "link",
+                "text": "Projects",
+                "href": "/project/"
+            },
+            {
+                "type": "link",
+                "text": "Files",
+                "href": "/file/"
+            },
+            {
+                "type": "link",
+                "text": "Storages",
+                "href": "/storage/"
+            },
+            {
+                "type": "link",
+                "text": "Project Types",
+                "href": "/type/"
+            },
+            {
+                "type": "link",
+                "text": "Project Templates",
+                "href": "/template/"
+            },
+            {
+                "type": "link",
+                "text": "Validate projectfiles",
+                "href": "/validate/project"
+            },
+            {
+                "type": "link",
+                "text": "Postrun Actions",
+                "href": "/postrun/"
+            },
+            {
+                "type": "link",
+                "text": "Server defaults",
+                "href": "/defaults/"
+            }
+        ]
+    }
+]

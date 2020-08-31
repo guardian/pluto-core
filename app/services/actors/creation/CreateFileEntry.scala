@@ -23,7 +23,7 @@ object CreateFileEntry {
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extends GenericCreationActor {
-  override val persistenceId = "create-file-entry"
+  override val persistenceId = "create-file-entry-" + self.path.name
 
   import GenericCreationActor._
   import CreateFileEntry._

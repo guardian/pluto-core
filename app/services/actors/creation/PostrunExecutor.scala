@@ -16,8 +16,8 @@ import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class PostrunExecutor @Inject() (@Named("message-processor-actor") messageProcessor:ActorRef,dbConfigProvider:DatabaseConfigProvider, config:Configuration) extends GenericCreationActor {
-  override val persistenceId = "postrun-executor-actor"
+class PostrunExecutor @Inject() (dbConfigProvider:DatabaseConfigProvider, config:Configuration) extends GenericCreationActor {
+  override val persistenceId = "postrun-executor-actor-" + self.path.name
   implicit val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("30 seconds"))
 
   import GenericCreationActor._
@@ -118,29 +118,6 @@ class PostrunExecutor @Inject() (@Named("message-processor-actor") messageProces
         Future(Right(s"Successfully ran $successfulActions postrun actions for project $writtenPath"))
   }
 
-  def sendAssetFolderMessage(reversedResults: Seq[JythonOutput], createdProjectEntry:ProjectEntry):Unit =
-    locateCacheValue(reversedResults, "created_asset_folder") match {
-      case Some(createdAssetFolder) =>
-        //It doesn't matter that the vidispine ID is almost certainly not set at this point.  The receiver for the message
-        //will use the Projectlocker project id to look it up from the database; if it's still not set the message will be re-sent
-        //to the back of the queue with a 1s delay.
-        messageProcessor ! NewAssetFolder(createdAssetFolder,
-          createdProjectEntry.id,
-          createdProjectEntry.vidispineProjectId
-        )
-      case None =>
-        logger.error("No asset folder was set, so I can't inform pluto about a new asset folder.")
-    }
-
-  def sendUpdatedUuidMessage(reversedResults: Seq[JythonOutput], createdProjectEntry: ProjectEntry):Unit =
-    locateCacheValue(reversedResults, "new_adobe_uuid") match {
-      case Some(newUuid)=>
-        logger.info(s"Updated adobe uuid to $newUuid, saving update to database and informing pluto")
-        messageProcessor ! NewAdobeUuid(createdProjectEntry,newUuid)
-      case None=>
-        logger.debug("No adobe uuid set, probably not an adobe project")
-    }
-
   override def receiveCommand: Receive = {
     case createRequest:NewProjectRequest=>
       //FIXME: should validate createRequest here, before entering persistence block
@@ -198,8 +175,6 @@ class PostrunExecutor @Inject() (@Named("message-processor-actor") messageProces
 
                   val reversedResults = results.reverse
 
-                  sendAssetFolderMessage(reversedResults, createdProjectEntry)
-                  sendUpdatedUuidMessage(reversedResults, createdProjectEntry)
                   persistMetadataToDatabase(reversedResults.headOption, createdProjectEntry, results.length, writtenPath)
                   Success(msg)
                 }

@@ -161,7 +161,9 @@ class App extends React.Component {
       return this.setState({
         isLoggedIn: true,
         loading: false,
-        currentUsername: loginData ? loginData.username : "",
+        currentUsername: loginData
+          ? loginData.preferred_username ?? loginData.username
+          : "",
         isAdmin: loginData ?? loginData[data.adminClaimName],
       });
     }

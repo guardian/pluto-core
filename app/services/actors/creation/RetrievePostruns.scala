@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 
 class RetrievePostruns @Inject() (dbConfigProvider:DatabaseConfigProvider) extends GenericCreationActor {
-  override val persistenceId = "creation-retrieve-postruns-actor"
+  override val persistenceId = "creation-retrieve-postruns-actor-" + self.path.name
 
   import GenericCreationActor._
   private implicit val db=dbConfigProvider.get[JdbcProfile].db
