@@ -1,12 +1,13 @@
 package controllers
 
-import java.util.UUID
-
+import java.sql.Timestamp
+import java.time.Instant
 import javax.inject.{Inject, Named, Singleton}
 import akka.actor.ActorRef
 import akka.pattern.ask
 import auth.{BearerTokenAuth, Security}
 import exceptions.RecordNotFoundException
+import exceptions.ConflictException
 import helpers.AllowCORSFunctions
 import models._
 import play.api.cache.SyncCacheApi
@@ -99,10 +100,12 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     * @return a Future containing a Try containing an Int describing the number of records updated
     */
   def doUpdateVsid(requestedId:Int, newVsid:Option[String]):Future[Seq[Try[Int]]] = doUpdateGeneric(requestedId){ record=>
-    val updatedProjectEntry = record.copy (vidispineProjectId = newVsid)
+    val updatedProjectEntry = record.copy (vidispineProjectId = newVsid, updated = Option(Timestamp.from(Instant.now)))
     dbConfig.db.run (
-      TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
+      TableQuery[ProjectEntryRow].filter (row => row.id === requestedId && updatedMatches(row, record.updated.get))
+        .update (updatedProjectEntry).asTry
     )
+    .map(handleUpdateConflict)
     .map(rows => {
       sendToRabbitMq(UpdateOperation, requestedId, rabbitMqPropagator)
       rows
@@ -116,12 +119,13 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     * @tparam T type of @reqestedId
     * @return a Future[Response]
     */
-  def genericUpdateTitleEndpoint[T](requestedId:T)(updater:(T,String)=>Future[Seq[Try[Int]]]) = IsAuthenticatedAsync(parse.json) {uid=>{request=>
+  def genericUpdateTitleEndpoint[T](requestedId:T)(updater:(T,String, Timestamp)=>Future[Seq[Try[Int]]]) = IsAuthenticatedAsync(parse
+    .json) {uid=>{request=>
     request.body.validate[UpdateTitleRequest].fold(
       errors=>
         Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
       updateTitleRequest=> {
-        val results = updater(requestedId, updateTitleRequest.newTitle).map(_.partition(_.isSuccess))
+        val results = updater(requestedId, updateTitleRequest.newTitle, updateTitleRequest.updated).map(_.partition(_.isSuccess))
 
         results.map(resultTuple => {
           val failures = resultTuple._2
@@ -141,12 +145,14 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     * @param requestedId
     * @return
     */
-  def updateTitle(requestedId:Int) = genericUpdateTitleEndpoint[Int](requestedId) { (requestedId,newTitle)=>
+  def updateTitle(requestedId:Int) = genericUpdateTitleEndpoint[Int](requestedId) { (requestedId,newTitle, updated)=>
     doUpdateGeneric(requestedId) {record=>
-      val updatedProjectEntry = record.copy (projectTitle = newTitle)
-      dbConfig.db.run (
-        TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
+      val updatedProjectEntry = record.copy (projectTitle = newTitle, updated = Option(Timestamp.from(Instant.now)))
+      dbConfig.db.run(
+        TableQuery[ProjectEntryRow].filter(row => row.id === requestedId && updatedMatches(row, updated))
+          .update(updatedProjectEntry).asTry
       )
+      .map(handleUpdateConflict)
       .map(rows => {
         sendToRabbitMq(UpdateOperation, requestedId, rabbitMqPropagator)
         rows
@@ -156,15 +162,18 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
   /**
     * endoint to update project title field of record based on vidispine id
+ *
     * @param vsid
     * @return
     */
-  def updateTitleByVsid(vsid:String) = genericUpdateTitleEndpoint[String](vsid) { (vsid,newTitle)=>
+  def updateTitleByVsid(vsid:String) = genericUpdateTitleEndpoint[String](vsid) { (vsid,newTitle, updated)=>
     doUpdateGenericSelector[String](vsid,selectVsid) { record=> //this lambda function is called once for each record
-      val updatedProjectEntry = record.copy(projectTitle = newTitle)
+      val updatedProjectEntry = record.copy(projectTitle = newTitle, updated = Option(Timestamp.from(Instant.now)))
       dbConfig.db.run(
-        TableQuery[ProjectEntryRow].filter(_.id === record.id.get).update(updatedProjectEntry).asTry
+        TableQuery[ProjectEntryRow].filter(row => row.id === record.id.get && updatedMatches(row, updated))
+          .update(updatedProjectEntry).asTry
       )
+        .map(handleUpdateConflict)
         .map(rows => {
           sendToRabbitMq(UpdateOperation, record, rabbitMqPropagator)
           rows
@@ -172,12 +181,22 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
+  def updatedMatches(entry: ProjectEntryRow, updated: Timestamp): Rep[Boolean] = entry.updated === updated
+
+  private def handleUpdateConflict: Try[Int] => Try[Int] = {
+    case Success(0) => Failure(new ConflictException())
+    case x => x
+  }
+
 
   def genericHandleFailures[T](failures:Seq[Try[Int]], requestedId:T) = {
     val notFoundFailures = failures.filter(_.failed.get.getClass==classOf[RecordNotFoundException])
+    val conflictFailures = failures.filter(_.failed.get.getClass==classOf[ConflictException])
 
     if(notFoundFailures.length==failures.length) {
       NotFound(Json.obj("status" -> "error", "detail" -> s"no records found for $requestedId"))
+    } else if (conflictFailures.length == failures.length) {
+      Conflict(Json.obj("status" -> "error", "detail" -> s"update conflict for $requestedId"))
     } else {
       InternalServerError(Json.obj("status" -> "error", "detail" -> failures.map(_.failed.get.toString)))
     }
@@ -354,25 +373,33 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
+  def head(requestedId: Int): EssentialAction = head(requestedId, _.updated.get)
+
   def projectWasOpened(id: Int): EssentialAction = IsAuthenticatedAsync { uid=>request =>
     import models.EntryStatusMapper._
 
-    def updateProject() = TableQuery[ProjectEntryRow]
+    def updateProject(project: ProjectEntry): DBIOAction[Any, NoStream, Effect.Write] = {
+      if (project.updated != extractETagHeader(request)) {
+        throw new ConflictException()
+      }
+      TableQuery[ProjectEntryRow]
       .filter(_.id === id)
       .filter(_.status === EntryStatus.New)
-      .map(_.status)
-      .update(EntryStatus.InProduction)
+      .map(row => (row.status, row.updated))
+      .update(EntryStatus.InProduction, Timestamp.from(Instant.now))
       .map(rows => {
         if (rows > 0) {
           sendToRabbitMq(UpdateOperation, id, rabbitMqPropagator)
         }
       })
+    }
 
-    def updateCommission(commissionId: Option[Int]) = TableQuery[PlutoCommissionRow]
+    def updateCommission(commissionId: Option[Int]) = { logger.info("Commission update!")
+      TableQuery[PlutoCommissionRow]
       .filter(_.id === commissionId)
       .filter(_.status === EntryStatus.New)
-      .map(_.status)
-      .update(EntryStatus.InProduction).flatMap(rows => {
+      .map(row => (row.status, row.updated))
+      .update(EntryStatus.InProduction, Timestamp.from(Instant.now())).flatMap(rows => {
       if (rows > 0) {
         TableQuery[PlutoCommissionRow].filter(_.id === commissionId).result.map({
           case Seq() =>
@@ -389,7 +416,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       } else {
         DBIOAction.successful(())
       }
-    })
+    }) }
 
     dbConfig.db.run(
         TableQuery[ProjectEntryRow]
@@ -399,7 +426,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             val acts = result match {
               case Seq() => DBIOAction.successful(NotFound)
               case Seq(project: ProjectEntry) =>
-                DBIO.seq(updateProject(), updateCommission(project.commissionId)).map(_ => Ok)
+                updateProject(project).flatMap(_ => updateCommission(project.commissionId)).map(_ => Ok)
               case _ =>
                 logger.error(s"Database inconsistency, multiple projects found for id=$id")
                 DBIOAction.successful(InternalServerError)
@@ -407,6 +434,8 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             acts
           })
     ).recover({
+      case err: ConflictException =>
+        Conflict(Json.obj("status" -> "error", "detail" -> "Etag mismatch"))
       case err: Throwable =>
         logger.error("Failed to mark project as opened", err)
         InternalServerError(Json.obj("status" -> "error", "detail" -> "Failed to mark project as opened"))

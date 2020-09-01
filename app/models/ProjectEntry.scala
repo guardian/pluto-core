@@ -3,7 +3,7 @@ package models
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 import java.sql.Timestamp
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDateTime}
 
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone.UTC
@@ -70,14 +70,14 @@ extends PlutoModel{
     case None=>
       val insertQuery = TableQuery[ProjectEntryRow] returning TableQuery[ProjectEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
       db.run(
-        (insertQuery+=this).asTry
+        (insertQuery+=this.copy(updated=Option(Timestamp.from(Instant.now)))).asTry
       ).map({
         case Success(insertResult)=>Success(insertResult)
         case Failure(error)=>Failure(error)
       })
     case Some(realEntityId)=>
       db.run(
-        TableQuery[ProjectEntryRow].filter(_.id===realEntityId).update(this).asTry
+        TableQuery[ProjectEntryRow].filter(_.id===realEntityId).update(this.copy(updated=Option(Timestamp.from(Instant.now)))).asTry
       ).map({
         case Success(rowsAffected)=>Success(this)
         case Failure(error)=>Failure(error)

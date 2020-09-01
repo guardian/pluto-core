@@ -1,7 +1,7 @@
 package controllers
 
-import java.util.UUID
-
+import java.sql.Timestamp
+import java.time.Instant
 import akka.actor.ActorRef
 import play.api.libs.json._
 import play.api.mvc._
@@ -197,6 +197,24 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
       }
     )
   }}
+
+  def head(requestedId: Int, etagExtractor: M => Timestamp): EssentialAction = IsAuthenticatedAsync { uid=>{ request=>
+    selectid(requestedId).map({
+      case Success(result)=>
+        if(result.isEmpty)
+          NotFound("")
+        else
+          NoContent.withHeaders(("ETag", etagExtractor(result.head).toInstant.toString))
+
+      case Failure(error)=>
+        logger.error(error.toString)
+        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
+  }}
+
+  def extractETagHeader(request: Request[_]): Option[Timestamp] = {
+    request.headers.get("ETag").map(Instant.parse).map(Timestamp.from)
+  }
 
   def getitem(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
     selectid(requestedId).map({

@@ -139,6 +139,8 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         }
     }
 
+    def head(id: Int): EssentialAction = head(id, _.updated)
+
     def exists(commissionId: Int): Future[Boolean] = db.run({
       TableQuery[PlutoCommissionRow].filter(_.id === commissionId).length.result
     }).map(_ > 0)

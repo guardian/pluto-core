@@ -1,5 +1,7 @@
 package services
 
+import java.sql.Timestamp
+import java.time.Instant
 import java.util.UUID
 
 import akka.actor.{ActorSystem, Props}
@@ -157,16 +159,16 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
                               .filter(_.commission === commissionId)
                               .filter(_.status =!= EntryStatus.Completed)
                               .filter(_.status =!= EntryStatus.Killed)
-                          } yield project.status
-            Some(q.update(newStatus))
+                          } yield (project.status, project.updated)
+            Some(q.update(newStatus, Timestamp.from(Instant.now)))
           case EntryStatus.Held=>
             val q = for { project <- TableQuery[ProjectEntryRow]
                               .filter(_.commission === commissionId)
                               .filter(_.status =!= EntryStatus.Completed)
                               .filter(_.status =!= EntryStatus.Killed)
                               .filter(_.status =!= EntryStatus.Held)
-                          } yield project.status
-            Some(q.update(EntryStatus.Held))
+                          } yield (project.status, project.updated)
+            Some(q.update(EntryStatus.Held, Timestamp.from(Instant.now)))
           case _=>None
         }
 
