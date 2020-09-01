@@ -73,13 +73,15 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
 
     val insertFut = commFut.flatMap(insertedRowId=>{
       println(s"inserting projects with parent $insertedRowId")
+      val ts = Timestamp.from(Instant.now())
+      val user = "testuser"
       db.run(
         (TableQuery[ProjectEntryRow] ++= Seq(
-          ProjectEntry(Some(1111),1,None,"TestNewProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.New, ProductionOffice.Aus),
-          ProjectEntry(Some(1112),1,None,"TestInProdProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.InProduction, ProductionOffice.Aus),
-          ProjectEntry(Some(1113),1,None,"TestHeldProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Held, ProductionOffice.Aus),
-          ProjectEntry(Some(1114),1,None,"TestCompletedProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Completed, ProductionOffice.Aus),
-          ProjectEntry(Some(1115),1,None,"TestKilledProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Killed,ProductionOffice.Aus),
+          ProjectEntry(Some(1111),1,None,"TestNewProject",ts, Option(ts), user, None,Some(insertedRowId),None, None,None,EntryStatus.New, ProductionOffice.Aus),
+          ProjectEntry(Some(1112),1,None,"TestInProdProject",ts, Option(ts), user, None,Some(insertedRowId), None,None,None,EntryStatus.InProduction, ProductionOffice.Aus),
+          ProjectEntry(Some(1113),1,None,"TestHeldProject",ts, Option(ts), user, None,Some(insertedRowId), None,None,None,EntryStatus.Held, ProductionOffice.Aus),
+          ProjectEntry(Some(1114),1,None,"TestCompletedProject",ts, Option(ts), user, None,Some(insertedRowId),None,None,None,EntryStatus.Completed, ProductionOffice.Aus),
+          ProjectEntry(Some(1115),1,None,"TestKilledProject",ts, Option(ts), user, None,Some(insertedRowId), None,None,None,EntryStatus.Killed,ProductionOffice.Aus),
         ))
       )
     })

@@ -1,5 +1,9 @@
 package controllers
 
+import java.sql.Timestamp
+import java.time.Instant
+import java.util.Date
+
 import akka.actor.ActorRef
 import auth.BearerTokenAuth
 import exceptions.{AlreadyExistsException, BadDataException}
@@ -82,7 +86,9 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
     }
 
     override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(
-      (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
+      (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) +=
+        entry.copy(updated = Timestamp.from(Instant.now())))
+        .asTry)
       .map(id => {
         sendToRabbitMq(CreateOperation, id, rabbitMqPropagator)
         id
@@ -123,14 +129,19 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         }
     }
 
-    private def updateStatusColumn(commissionId:Int, newValue:EntryStatus.Value) = {
+    private def updateStatusColumn(commissionId:Int, newValue:EntryStatus.Value, updated: Timestamp) = {
         import EntryStatusMapper._
 
         db.run {
-            val q = for {c <- TableQuery[PlutoCommissionRow] if c.id === commissionId} yield c.status
-            q.update(newValue)
+            val q = for {c <- TableQuery[PlutoCommissionRow] if c.id === commissionId && c.updated === updated}
+              yield (c.status, c.updated)
+            q.update(newValue, Timestamp.from(Instant.now()))
         }
     }
+
+    def exists(commissionId: Int): Future[Boolean] = db.run({
+      TableQuery[PlutoCommissionRow].filter(_.id === commissionId).length.result
+    }).map(_ > 0)
 
     def updateStatus(commissionId: Int) = IsAuthenticatedAsync(parse.json) {uid=> request=>
         import PlutoCommissionStatusUpdateRequestSerializer._
@@ -138,14 +149,17 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
             invalidErrs=>
                 Future(BadRequest(Json.obj("status"->"bad_request","detail"->JsError.toJson(invalidErrs)))),
             requiredUpdate=>
-                updateStatusColumn(commissionId, requiredUpdate.status).map(rowsUpdated=>{
+                updateStatusColumn(commissionId, requiredUpdate.status, requiredUpdate.updated).flatMap(rowsUpdated=>{
                     if(rowsUpdated==0){
-                        NotFound(Json.obj("status"->"not_found","detail"->s"No commission with id $commissionId"))
+                        exists(commissionId).map({
+                          case true => Conflict(Json.obj("status" -> "conflict", "detail" -> s"ETag did not match for $commissionId"))
+                          case false => NotFound(Json.obj("status" -> "not_found", "detail" -> s"No commission with id $commissionId"))
+                        })
                     } else {
                         if(rowsUpdated>1) logger.error(s"Status update request for commission $commissionId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
                         commissionStatusPropagator ! CommissionStatusPropagator.CommissionStatusUpdate(commissionId, requiredUpdate.status)
                         sendToRabbitMq(UpdateOperation, commissionId, rabbitMqPropagator).foreach(_ => ())
-                        Ok(Json.obj("status"->"ok","detail"->"commission status updated"))
+                        Future(Ok(Json.obj("status"->"ok","detail"->"commission status updated")))
                     }
                 }).recover({
                     case err:Throwable=>

@@ -1,9 +1,8 @@
 package models
 
 import java.sql.Timestamp
-import java.time.ZonedDateTime
+import java.time.{Instant}
 
-import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.functional.syntax.unlift
 import play.api.libs.json._
@@ -34,7 +33,7 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: Op
       logger.debug("Inserting commission record")
       val insertQuery = TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
       db.run(
-        (insertQuery+=this).asTry
+        (insertQuery+=this.copy(updated=Timestamp.from(Instant.now()))).asTry
       ).map({
         case Success(insertResult)=>
           logger.debug(s"Successful insert: $insertResult")
@@ -46,7 +45,7 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: Op
     case Some(realEntityId)=>
       logger.debug(s"Updating commission record $realEntityId")
       db.run(
-        TableQuery[PlutoCommissionRow].filter(_.id===realEntityId).update(this).asTry
+        TableQuery[PlutoCommissionRow].filter(_.id===realEntityId).update(this.copy(updated=Timestamp.from(Instant.now()))).asTry
       ).map({
         case Success(rowsAffected)=>Success(this)
         case Failure(error)=>Failure(error)
@@ -165,29 +164,4 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
 }
 
 object PlutoCommission extends ((Option[Int],Option[Int],Option[String],Timestamp,Timestamp,String,EntryStatus.Value,Option[String],Int,Option[String],Timestamp,String,Option[String],ProductionOffice.Value, Option[String])=>PlutoCommission)  {
-  def entryForVsid(vsid:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoCommission]] = {
-    val idparts = vsid.split("-")
-    if(idparts.length!=2) return Future(None)
-
-    db.run(
-      TableQuery[PlutoCommissionRow].filter(_.siteId===idparts.head).filter(_.collectionId===idparts(1).toInt).result.asTry
-    ).map({
-      case Success(resultSeq)=>resultSeq.headOption
-      case Failure(error)=>throw error
-    })
-  }
-
-  //handle different explicit time format
-  def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
-  def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
-  implicit val dateWrites = JodaWrites.jodaDateWrites("yyyy-MM-dd'T'HH:mm:ss.SSS") //this DOES take numeric timezones - Z means Zone, not literal letter Z
-  implicit val dateReads = JodaReads.jodaDateReads("yyyy-MM-dd'T'HH:mm:ss.SSS")
-
-  /**
-    *  performs a conversion from java.sql.Timestamp to Joda DateTime and back again
-    */
-  implicit val timestampFormat = new Format[Timestamp] {
-    def writes(t: Timestamp): JsValue = Json.toJson(timestampToDateTime(t))
-    def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[DateTime](json).map(dateTimeToTimestamp)
-  }
 }
