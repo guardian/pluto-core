@@ -64,6 +64,15 @@ interface HeaderTitle<T> {
   key?: keyof T;
 }
 
+interface ProjectType {
+  id: number;
+  name: string;
+  opensWith: string;
+  targetVersion: string;
+  fileExtension?: string;
+  plutoType?: string;
+}
+
 declare module "*.svg" {
   const content: any;
   export default content;
