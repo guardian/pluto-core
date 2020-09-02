@@ -99,10 +99,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     * @param newVsid new vidispine ID. Note that this is an Option[String] as the id can be null
     * @return a Future containing a Try containing an Int describing the number of records updated
     */
-  def doUpdateVsid(requestedId:Int, newVsid:Option[String]):Future[Seq[Try[Int]]] = doUpdateGeneric(requestedId){ record=>
+  def doUpdateVsid(requestedId:Int, newVsid:Option[String], updated: Timestamp):Future[Seq[Try[Int]]] = doUpdateGeneric(requestedId){ record=>
     val updatedProjectEntry = record.copy (vidispineProjectId = newVsid, updated = Option(Timestamp.from(Instant.now)))
     dbConfig.db.run (
-      TableQuery[ProjectEntryRow].filter (row => row.id === requestedId && updatedMatches(row, record.updated.get))
+      TableQuery[ProjectEntryRow].filter (row => row.id === requestedId && updatedMatches(row, updated))
         .update (updatedProjectEntry).asTry
     )
     .map(handleUpdateConflict)
@@ -207,7 +207,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       errors=>
         Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
       updateTitleRequest=>{
-        val results = doUpdateVsid(requestedId, updateTitleRequest.newVsid).map(_.partition(_.isSuccess))
+        val results = doUpdateVsid(requestedId, updateTitleRequest.newVsid, updateTitleRequest.updated).map(_.partition(_.isSuccess))
 
         results.map(resultTuple => {
           val failures = resultTuple._2

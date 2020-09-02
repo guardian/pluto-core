@@ -42,7 +42,6 @@ class PlutoCommissionControllerSpec extends Specification with Mockito with Afte
   "PlutoCommissionController.updateStatus" should {
     "update the given record" in new WithApplication(buildApp) {
       private val injector = app.injector
-      val testDocument = """{"status":"In Production"}"""
 
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
@@ -54,6 +53,7 @@ class PlutoCommissionControllerSpec extends Specification with Mockito with Afte
       saveResult must beSuccessfulTry
       val savedRecord = saveResult.get
 
+      val testDocument = s"""{"status":"In Production", "updated": "${savedRecord.updated.toInstant}"}"""
       println(s"saved record id is ${savedRecord.id}")
       val rq = FakeRequest(
         PUT,
@@ -73,7 +73,6 @@ class PlutoCommissionControllerSpec extends Specification with Mockito with Afte
 
     "return a bad data error if the provided status string is invalid" in new WithApplication(buildApp) {
       private val injector = app.injector
-      val testDocument = """{"status":"gdfgdsgdgdsgd"}"""
 
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
@@ -84,6 +83,7 @@ class PlutoCommissionControllerSpec extends Specification with Mockito with Afte
       val saveResult  = Await.result(initialTestRecord.save(db), 1 second)
       saveResult must beSuccessfulTry
       val savedRecord = saveResult.get
+      val testDocument = s"""{"status":"gdfgdsgdgdsgd", "updated": "${savedRecord.updated.toInstant}"}"""
 
       println(s"saved record id is ${savedRecord.id}")
       val rq = FakeRequest(

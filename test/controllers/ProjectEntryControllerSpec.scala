@@ -67,13 +67,14 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
 
+      val dbRecordBefore = Await.result(ProjectEntry.entryForId(1),5.seconds).get
       val testUpdateDocument =
-        """{
+        s"""{
+          |  "updated": "${dbRecordBefore.updated.get.toInstant}",
           |  "title": "some new title",
           |  "vsid": null
           |}""".stripMargin
 
-      val dbRecordBefore = Await.result(ProjectEntry.entryForId(1),5.seconds).get
       dbRecordBefore.projectTitle mustEqual "InitialTestProject"
 
       val response = route(app, FakeRequest(
@@ -100,6 +101,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
       val testUpdateDocument =
         """{
+          |  "updated": "2016-12-11T12:21:11.021Z",
           |  "title": "some new title",
           |  "vsid": null
           |}""".stripMargin
@@ -123,13 +125,14 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
 
+      val dbRecordBefore = Await.result(ProjectEntry.entryForId(2),5.seconds).get
       val testUpdateDocument =
-        """{
+        s"""{
+          |  "updated": "${dbRecordBefore.updated.get.toInstant}",
           |  "title": "some other new title",
           |  "vsid": null
           |}""".stripMargin
 
-      val dbRecordBefore = Await.result(ProjectEntry.entryForId(2),5.seconds).get
       dbRecordBefore.projectTitle mustEqual "AnotherTestProject"
 
       val response = route(app, FakeRequest(
@@ -154,13 +157,14 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
 
+      val dbRecordBefore = Await.result(ProjectEntry.entryForId(3),5.seconds).get
       val testUpdateDocument =
-        """{
+        s"""{
+          |  "updated": "${dbRecordBefore.updated.get.toInstant}",
           |  "title": "ThatTestProject",
           |  "vsid": null
           |}""".stripMargin
 
-      val dbRecordBefore = Await.result(ProjectEntry.entryForId(3),5.seconds).get
       dbRecordBefore.projectTitle mustEqual "ThatTestProject"
 
       val response = route(app, FakeRequest(
@@ -192,6 +196,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
       val testUpdateDocument =
         """{
           |  "title": "some new title",
+          |  "updated": "2016-12-11T12:21:11.021Z",
           |  "vsid": null
           |}""".stripMargin
 
@@ -216,13 +221,14 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
 
+      val dbRecordBefore = Await.result(ProjectEntry.entryForId(1),5.seconds).get
       val testUpdateDocument =
-        """{
+        s"""{
+          |  "updated": "${dbRecordBefore.updated.get.toInstant}",
           |  "title": "",
           |  "vsid": "VX-5678"
           |}""".stripMargin
 
-      val dbRecordBefore = Await.result(ProjectEntry.entryForId(1),5.seconds).get
       dbRecordBefore.vidispineProjectId must beNone
 
       val response = route(app, FakeRequest(
@@ -251,6 +257,7 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
       val testUpdateDocument =
         """{
           |  "title": "",
+          |  "updated": "2016-12-11T12:21:11.021Z",
           |  "vsid": "VX-5678"
           |}""".stripMargin
 
