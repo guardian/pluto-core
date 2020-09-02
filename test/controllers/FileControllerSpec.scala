@@ -54,7 +54,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
   }
 
   override val testGetId: Int = 1
-  override val testGetDocument: String = """{"filepath":"/path/to/a/video.mxf","storage":2,"user":"me","version":1,"ctime":"2017-01-17T15:55:00.123Z","mtime":"2017-01-17T15:55:00.123Z","atime":"2017-01-17T15:55:00.123Z", "hasContent": false, "hasLink": false}"""
+  override val testGetDocument: String = """{"filepath":"/path/to/a/video.mxf","storage":2,"user":"me","version":1,"ctime":"2017-01-17T16:55:00.123Z","mtime":"2017-01-17T16:55:00.123Z","atime":"2017-01-17T16:55:00.123Z", "hasContent": false, "hasLink": false}"""
   //the "user" parameter here is over-written by the server, so must be set to whatever the fake login is in [[GenericControllerSpec]]
   override val testCreateDocument: String =  """{"filepath":"/path/to/some/other.project","storage":1,"user":"testuser","version":3,"ctime":"2017-03-17T13:51:00.123Z","mtime":"2017-03-17T13:51:00.123Z","atime":"2017-03-17T13:51:00.123Z", "hasContent": false, "hasLink": false}"""
   override val minimumNewRecordId = 6
