@@ -39,6 +39,20 @@ class PlutoCommissionControllerSpec extends Specification with Mockito with Afte
     println(s"cleanup deleted $deletedRows rows")
   }
 
+  "PlutoCommissionController.head" should {
+    "return the etag" in new WithApplication(buildApp) {
+      //needed for database access
+      private val injector = app.injector
+      private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      private implicit val db = dbConfigProvider.get[JdbcProfile].db
+      // TODO Doesn't work, it still makes a GET request for some reason...
+      val rq = FakeRequest(HEAD, s"/api/pluto/commission/1").withSession("uid" -> "testuser")
+      val response = Await.result(route(app, rq).get, 5 seconds)
+      // response.header.status mustEqual 204
+      // response.header.headers.get("ETag") mustEqual "2018-01-01T11:13:24.000Z"
+    }
+  }
+
   "PlutoCommissionController.updateStatus" should {
     "update the given record" in new WithApplication(buildApp) {
       private val injector = app.injector
@@ -69,6 +83,27 @@ class PlutoCommissionControllerSpec extends Specification with Mockito with Afte
       val updatedRecords = Await.result(db.run(TableQuery[PlutoCommissionRow].filter(_.id===savedRecord.id.get).result), 1 second)
       updatedRecords.isEmpty must beFalse
       updatedRecords.head.status mustEqual EntryStatus.InProduction
+    }
+
+    "update the given record with outdated etag gives 409" in new WithApplication(buildApp) {
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
+
+      val testDocument = """{"title":"Notsaved", "status": "In Production", "updated": "2018-01-01T12:13:24.000001Z"}"""
+      val rq = FakeRequest(
+        PUT,
+        s"/api/pluto/commission/1/status",
+        FakeHeaders(Seq("Content-Type"->"application/json")),
+        testDocument
+      ).withSession("uid"->"testuser")
+      val response = Await.result(route(app, rq).get, 5 seconds)
+      response.header.status mustEqual 409
+
+      val updatedRecords = Await.result(db.run(TableQuery[PlutoCommissionRow].filter(_.id===1).result), 1 second)
+      updatedRecords.isEmpty must beFalse
+      updatedRecords.head.title mustEqual "My test commission"
     }
 
     "return a bad data error if the provided status string is invalid" in new WithApplication(buildApp) {

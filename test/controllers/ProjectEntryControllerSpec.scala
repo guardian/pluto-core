@@ -91,6 +91,35 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
       val dbRecordAfter = Await.result(ProjectEntry.entryForId(1),5.seconds).get
       dbRecordAfter.projectTitle mustEqual "some new title"
     }
+    "return 409 for outdated etag" in new WithApplication(buildApp){
+      implicit val system:ActorSystem = app.actorSystem
+      implicit val materializer:Materializer = Materializer(system)
+      //needed for database access
+      private val injector = app.injector
+      private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      private implicit val db = dbConfigProvider.get[JdbcProfile].db
+
+      val dbRecordBefore = Await.result(ProjectEntry.entryForId(1),5.seconds).get
+      val testUpdateDocument =
+        s"""{
+           |  "updated": "2016-12-11T11:21:11.021Z",
+           |  "title": "not updated",
+           |  "vsid": null
+           |}""".stripMargin
+
+      val response = route(app, FakeRequest(
+        method="PUT",
+        uri="/api/project/1/title",
+        headers=FakeHeaders(Seq(("Content-Type","application/json"))),
+        body=testUpdateDocument).withSession("uid"->"testuser")).get
+
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      status(response) must equalTo(CONFLICT)
+      (jsondata \ "status").as[String] must equalTo("error")
+
+      val dbRecordAfter = Await.result(ProjectEntry.entryForId(1),5.seconds).get
+      dbRecordAfter.projectTitle mustEqual "some new title"
+    }
     "return 404 for a record that does not exist" in new WithApplication(buildApp){
       implicit val system:ActorSystem = app.actorSystem
       implicit val materializer:Materializer = Materializer(system)
@@ -244,6 +273,35 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 
       val dbRecordAfter = Await.result(ProjectEntry.entryForId(1),5.seconds).get
       dbRecordAfter.vidispineProjectId must beSome("VX-5678")
+    }
+
+    "return 409 for outdated etag" in new WithApplication(buildApp) {
+      implicit val system:ActorSystem = app.actorSystem
+      implicit val materializer:Materializer = Materializer(system)
+      //needed for database access
+      private val injector = app.injector
+      private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      private implicit val db = dbConfigProvider.get[JdbcProfile].db
+
+      val testUpdateDocument =
+        """{
+           |  "updated": "2016-12-11T12:21:11.019Z",
+           |  "title": "notsaved",
+           |  "vsid": "VX-5678"
+           |}""".stripMargin
+
+      val response = route(app, FakeRequest(
+        method="PUT",
+        uri="/api/project/1/vsid",
+        headers=FakeHeaders(Seq(("Content-Type","application/json"))),
+        body=testUpdateDocument).withSession("uid"->"testuser")).get
+
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      status(response) must equalTo(CONFLICT)
+      (jsondata \ "status").as[String] must equalTo("error")
+
+      val dbRecordAfter = Await.result(ProjectEntry.entryForId(1),5.seconds).get
+      dbRecordAfter.vidispineProjectId mustNotEqual "notsaved"
     }
 
     "return 404 for a record that does not exist" in new WithApplication(buildApp){
@@ -439,4 +497,25 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
       status(response) must equalTo(BAD_REQUEST)
     }
   }
+
+  "wasopened returns 409 on conflict" in new WithApplication(buildApp) {
+    implicit val system:ActorSystem = app.actorSystem
+    implicit val materializer:Materializer = Materializer(system)
+    //needed for database access
+    private val injector = app.injector
+    private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+    private implicit val db = dbConfigProvider.get[JdbcProfile].db
+
+    val response = route(app, FakeRequest(
+      method="PUT",
+      uri="/api/project/1/wasopened",
+      headers=FakeHeaders(Seq(("ETag","2011-02-03T12:34:45.123Z"))),
+      body="").withSession("uid"->"testuser")).get
+
+    val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+    status(response) must equalTo(CONFLICT)
+    (jsondata \ "status").as[String] must equalTo("error")
+
+  }
+
 }
