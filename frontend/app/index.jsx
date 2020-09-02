@@ -46,7 +46,6 @@ import Raven from "raven-js";
 import ProjectValidationView from "./ProjectValidationView.jsx";
 import CommissionsList from "./CommissionsList/CommissionsList.tsx";
 import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx";
-import { loadInSigningKey, validateAndDecode } from "./JwtHelpers";
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
 import SystemNotification from "./SystemNotification.tsx";
@@ -72,7 +71,7 @@ const theme = createMuiTheme({
 //this is set in the index.scala.html template file and gives us the value of deployment-root from the server config
 axios.defaults.baseURL = deploymentRootPath;
 axios.interceptors.request.use(function (config) {
-  const token = window.sessionStorage.getItem("pluto:access-token");
+  const token = window.localStorage.getItem("pluto:access-token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
 
   return config;
