@@ -23,6 +23,7 @@ import {
 import SystemNotification, {
   SystemNotificationKind,
 } from "../SystemNotification";
+import ProjectEntryDeliverablesComponent from "./ProjectEntryDeliverablesComponent";
 
 const useStyles = makeStyles({
   root: {
@@ -30,10 +31,10 @@ const useStyles = makeStyles({
     flexDirection: "column",
     padding: "1rem",
     "& form": {
-      width: "400px",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "flex-start",
+      display: "grid",
+      gridTemplateColumns: "repeat(2, 1fr)",
+      width: "100%",
+      gridGap: "0 50px",
       margin: "0.625rem 0 0 0",
     },
     "& .MuiTextField-root": {
@@ -45,9 +46,13 @@ const useStyles = makeStyles({
       marginBottom: "1rem",
     },
   },
+  applicableRules: {
+    display: "flex",
+    flexDirection: "column",
+  },
   formButtons: {
     display: "flex",
-    marginTop: "2.5rem",
+    marginTop: "0.625rem",
     "& .cancel": {
       marginLeft: "1rem",
     },
@@ -155,110 +160,122 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   };
 
   return (
-    <Paper className={classes.root}>
-      <Typography variant="h2">Edit project information</Typography>
-      <Typography variant="subtitle1">
-        The only part of the project information that it's possible to edit is
-        the title.
-      </Typography>
+    <>
+      <Paper className={classes.root}>
+        <Typography variant="h2">Edit project information</Typography>
+        <Typography variant="subtitle1">
+          The only part of the project information that it's possible to edit is
+          the title.
+        </Typography>
 
-      <Typography variant="subtitle1">
-        Press Confirm to go ahead, or press Back to cancel.
-      </Typography>
-      <form onSubmit={onProjectSubmit}>
-        <TextField
-          label="Project name"
-          value={project.title}
-          autoFocus
-          onChange={(event) => fieldChanged(event, "title")}
-        ></TextField>
-        <TextField
-          label="Owner"
-          value={project.user}
-          onChange={(event) => fieldChanged(event, "user")}
-        ></TextField>
-        <FormControl>
-          <InputLabel id="label-status">Status</InputLabel>
-          <Select
-            labelId="label-status"
-            value={project.status}
-            onChange={(event) => fieldChanged(event, "status")}
-          >
-            {validProjectStatuses.map((status) => (
-              <MenuItem key={status} value={status}>
-                {status}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl>
-          <InputLabel id="demo-simple-select-label">
-            Production Office
-          </InputLabel>
-          <Select
-            labelId="demo-simple-select-label"
-            id="demo-simple-select"
-            value={project.productionOffice}
-            onChange={(event: any) => fieldChanged(event, "productionOffice")}
-          >
-            {validProductionOffices.map((productionOffice) => (
-              <MenuItem value={productionOffice} key={productionOffice}>
-                {productionOffice}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <Typography variant="h4">Applicable rules</Typography>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={project.deletable}
-              onChange={() => checkboxChanged("deletable", project.deletable)}
-              name="deletable"
-              color="primary"
-            />
-          }
-          label="Deletable"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={project.deep_archive}
-              onChange={() =>
-                checkboxChanged("deep_archive", project.deep_archive)
+        <Typography variant="subtitle1">
+          Press Confirm to go ahead, or press Back to cancel.
+        </Typography>
+        <form onSubmit={onProjectSubmit}>
+          <div>
+            <TextField
+              label="Project name"
+              value={project.title}
+              autoFocus
+              onChange={(event) => fieldChanged(event, "title")}
+            ></TextField>
+            <TextField
+              label="Owner"
+              value={project.user}
+              onChange={(event) => fieldChanged(event, "user")}
+            ></TextField>
+            <FormControl>
+              <InputLabel id="label-status">Status</InputLabel>
+              <Select
+                labelId="label-status"
+                value={project.status}
+                onChange={(event) => fieldChanged(event, "status")}
+              >
+                {validProjectStatuses.map((status) => (
+                  <MenuItem key={status} value={status}>
+                    {status}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl>
+              <InputLabel id="demo-simple-select-label">
+                Production Office
+              </InputLabel>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                value={project.productionOffice}
+                onChange={(event: any) =>
+                  fieldChanged(event, "productionOffice")
+                }
+              >
+                {validProductionOffices.map((productionOffice) => (
+                  <MenuItem value={productionOffice} key={productionOffice}>
+                    {productionOffice}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </div>
+          <div className={classes.applicableRules}>
+            <Typography variant="h4">Applicable rules</Typography>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={project.deletable}
+                  onChange={() =>
+                    checkboxChanged("deletable", project.deletable)
+                  }
+                  name="deletable"
+                  color="primary"
+                />
               }
-              name="deep_archive"
-              color="primary"
+              label="Deletable"
             />
-          }
-          label="Deep Archive"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={project.sensitive}
-              onChange={() => checkboxChanged("sensitive", project.sensitive)}
-              name="sensitive"
-              color="primary"
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={project.deep_archive}
+                  onChange={() =>
+                    checkboxChanged("deep_archive", project.deep_archive)
+                  }
+                  name="deep_archive"
+                  color="primary"
+                />
+              }
+              label="Deep Archive"
             />
-          }
-          label="Sensitive"
-        />
-        <div className={classes.formButtons}>
-          <Button type="submit" variant="outlined">
-            Confirm
-          </Button>
-          <Button
-            className="cancel"
-            variant="outlined"
-            onClick={() => history.goBack()}
-          >
-            Back
-          </Button>
-        </div>
-      </form>
-    </Paper>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={project.sensitive}
+                  onChange={() =>
+                    checkboxChanged("sensitive", project.sensitive)
+                  }
+                  name="sensitive"
+                  color="primary"
+                />
+              }
+              label="Sensitive"
+            />
+          </div>
+          <div className={classes.formButtons}>
+            <Button type="submit" variant="outlined">
+              Confirm
+            </Button>
+            <Button
+              className="cancel"
+              variant="outlined"
+              onClick={() => history.goBack()}
+            >
+              Back
+            </Button>
+          </div>
+        </form>
+      </Paper>
+      <ProjectEntryDeliverablesComponent project={project} />
+    </>
   );
 };
 

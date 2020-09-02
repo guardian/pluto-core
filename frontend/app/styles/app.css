@@ -401,11 +401,6 @@ select:focus {
   border: 1px solid #33c3f0;
   outline: 0;
 }
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-}
 fieldset {
   padding: 0;
   border-width: 0;
