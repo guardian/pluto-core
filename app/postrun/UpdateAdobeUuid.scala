@@ -53,17 +53,17 @@ class UpdateAdobeUuid extends PojoPostrun with AdobeXml {
   def postrun(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType,dataCache:PostrunDataCache,
               workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission]):Future[Try[PostrunDataCache]] = {
 
-    getXmlFromGzippedFile(projectFileName).map({
+    getXmlFromGzippedFile(projectFileName) match {
       case Failure(err)=>
         logger.error("Could not read adobe xml: ", err)
-        Failure(err)
+        Future(Failure(err))
       case Success(xmlData)=>
         val newUuid = UUID.randomUUID()
         logger.info(s"New adobe UUID is $newUuid")
         val updatedXml = new RuleTransformer(new UpdateUuidLocations(newUuid)).transform(xmlData).head
         putXmlToGzippedFile(projectFileName,Elem.apply(updatedXml.prefix, updatedXml.label, updatedXml.attributes, updatedXml.scope, false, updatedXml.child :_*))
         val updatedDataCache = dataCache ++ Map("new_adobe_uuid"->newUuid.toString)
-        Success(updatedDataCache)
-    })
+        Future(Success(updatedDataCache))
+    }
   }
 }

@@ -43,6 +43,31 @@ class UpdatePremiereScratchpathsSpec extends Specification with BuildMyApp {
       val result = Await.result(s.postrun("/tmp/blank_premiere_2017.prproj",pe,pt,dataCache,None,None),10 seconds)
       result must beSuccessfulTry
     }
+
+    "write back a readable file that can be processed again" in new WithApplication(buildApp) {
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
+      FileUtils.copyFileToDirectory(new File("postrun/tests/data/blank_premiere_2017.prproj"), new File("/tmp"))
+
+      val dataCache = PostrunDataCache(Map("created_asset_folder"->"/path/to/my/assets"))
+      val s = new UpdatePremiereScratchpaths
+      val futureResults = Await.result(Future.sequence(Seq(
+        ProjectEntry.entryForId(1),
+        ProjectType.entryFor(1)
+      )), 10 seconds)
+
+      val pe = futureResults.head.asInstanceOf[Try[ProjectEntry]].get
+      val pt = futureResults(1).asInstanceOf[ProjectType]
+
+      val result = Await.result(s.postrun("/tmp/blank_premiere_2017.prproj",pe,pt,dataCache,None,None),10 seconds)
+      result must beSuccessfulTry
+
+      val secondResult = Await.result(s.postrun("/tmp/blank_premiere_2017.prproj",pe,pt,dataCache,None,None),10 seconds)
+      secondResult must beSuccessfulTry
+    }
   }
 
   "UpdatePremiereScratchpaths.pathForClient" should {

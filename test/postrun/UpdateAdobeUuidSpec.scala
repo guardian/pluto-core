@@ -48,5 +48,31 @@ class UpdateAdobeUuidSpec extends Specification with BuildMyApp {
       logger.info(s"Updated adobe uuid is ${updateDataCache.get("new_adobe_uuid")}")
       updateDataCache.get("new_adobe_uuid") must beSome
     }
+
+    "write back a readable file that can be processed again" in new WithApplication(buildApp) {
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+
+      FileUtils.copyFile(new File("postrun/tests/data/blank_premiere_2017.prproj"), new File("/tmp/test_update_uuid.prproj"))
+
+      val dataCache = PostrunDataCache(Map())
+      val s = new UpdateAdobeUuid
+      val futureResults = Await.result(Future.sequence(Seq(
+        ProjectEntry.entryForId(1),
+        ProjectType.entryFor(1)
+      )), 10 seconds)
+
+      val pe = futureResults.head.asInstanceOf[Try[ProjectEntry]].get
+      val pt = futureResults(1).asInstanceOf[ProjectType]
+
+      val result = Await.result(s.postrun("/tmp/test_update_uuid.prproj",pe,pt,dataCache,None,None),10 seconds)
+      result must beSuccessfulTry
+
+      //if the file is ok, we can run again. If it isn't then this will fail on a zlib error
+      val secondResult = Await.result(s.postrun("/tmp/test_update_uuid.prproj",pe,pt,dataCache,None,None),10 seconds)
+      secondResult must beSuccessfulTry
+    }
   }
 }
