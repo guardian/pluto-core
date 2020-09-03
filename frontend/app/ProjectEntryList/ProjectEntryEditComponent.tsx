@@ -109,7 +109,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         const project = await getProject(id);
 
         if (isMounted) {
-          setProject(project);
+          setProject({ ...project, id });
         }
       };
       loadProject();
