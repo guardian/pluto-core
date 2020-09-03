@@ -11,8 +11,11 @@ import {
   TableBody,
   TableCell,
 } from "@material-ui/core";
-import { getProjectDeliverables } from "../utils/api";
+import { getProjectDeliverables, createProjectDeliverable } from "../utils/api";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
+import SystemNotification, {
+  SystemNotificationKind,
+} from "../SystemNotification";
 
 const useStyles = makeStyles({
   projectDeliverable: {
@@ -42,6 +45,12 @@ const useStyles = makeStyles({
       marginTop: "1rem",
     },
   },
+  loading: {
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+    alignItems: "center",
+  },
 });
 
 const tableHeaderTitles: string[] = ["Filename", "Size", "Status"];
@@ -55,6 +64,7 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
 ) => {
   const classes = useStyles();
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [failed, setFailed] = useState<string>("");
   const { project } = props;
 
@@ -65,18 +75,46 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
 
         setDeliverables(deliverables);
       } catch (error) {
-        let message = "Failed to fetch Deliverables!";
-        if (error?.response?.status === 503) {
-          message = `${message} - Reason: Pluto-Deliverables application is offline for some reason`;
-        }
+        if (error) {
+          let message = "Failed to fetch Deliverables!";
+          if (error?.response?.status === 503) {
+            message = `${message} - Reason: Pluto-Deliverables application is offline for some reason`;
+          }
 
-        setFailed(message);
-        console.error(message, error);
+          setFailed(message);
+          console.error(message, error);
+        }
       }
+
+      setLoading(false);
     };
 
+    setLoading(true);
     loadProjectDeliverables();
   }, []);
+
+  const createDeliverable = async (): Promise<void> => {
+    try {
+      await createProjectDeliverable(project);
+      window.location.assign("/deliverables/");
+    } catch (error) {
+      if (error) {
+        console.error(error);
+        SystemNotification.open(
+          SystemNotificationKind.Error,
+          "Failed to create Project Deliverable"
+        );
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className={classes.loading}>
+        <Typography variant="h4">Loading...</Typography>
+      </div>
+    );
+  }
 
   return (
     <Paper className={classes.projectDeliverable}>
@@ -90,9 +128,20 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
           </div>
         </Typography>
       )}
-      <Typography variant="subtitle1">
-        Amount of Deliverables: <b>{deliverables?.length}</b>
-      </Typography>
+
+      {(!deliverables || deliverables.length === 0) && (
+        <>
+          <Typography variant="subtitle1">
+            No deliverables exists. Click "Create Deliverable" to create a
+            deliverable
+          </Typography>
+          <div className="button-container">
+            <Button variant="outlined" onClick={createDeliverable}>
+              Create Deliverable
+            </Button>
+          </div>
+        </>
+      )}
 
       {deliverables?.length > 0 && (
         <TableContainer>
@@ -116,12 +165,6 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
           </Table>
         </TableContainer>
       )}
-
-      <div className="button-container">
-        <Button variant="outlined" href="/deliverables/">
-          Go to Deliverables
-        </Button>
-      </div>
     </Paper>
   );
 };
