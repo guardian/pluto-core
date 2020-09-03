@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Paper, Button, Typography, makeStyles } from "@material-ui/core";
+import {
+  Paper,
+  Button,
+  Typography,
+  makeStyles,
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableBody,
+  TableCell,
+} from "@material-ui/core";
 import { getProjectDeliverables } from "../utils/api";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 
@@ -28,10 +39,12 @@ const useStyles = makeStyles({
       },
     },
     "& .button-container": {
-      marginTop: "6px",
+      marginTop: "1rem",
     },
   },
 });
+
+const tableHeaderTitles: string[] = ["Filename", "Size", "Status"];
 
 interface ProjectEntryDeliverablesComponentProps {
   project: Project;
@@ -41,7 +54,7 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
   props
 ) => {
   const classes = useStyles();
-  const [deliverablesCount, setDeliverablesCount] = useState<number>(0);
+  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [failed, setFailed] = useState<string>("");
   const { project } = props;
 
@@ -50,7 +63,7 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
       try {
         const deliverables = await getProjectDeliverables(project.id);
 
-        setDeliverablesCount(deliverables?.length);
+        setDeliverables(deliverables);
       } catch (error) {
         let message = "Failed to fetch Deliverables!";
         if (error?.response?.status === 503) {
@@ -78,8 +91,31 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
         </Typography>
       )}
       <Typography variant="subtitle1">
-        Total number of Deliverables: {deliverablesCount}
+        Amount of Deliverables: <b>{deliverables?.length}</b>
       </Typography>
+
+      {deliverables?.length > 0 && (
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                {tableHeaderTitles.map((title, index) => (
+                  <TableCell key={index}>{title}</TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {deliverables.map((deliverable, index) => (
+                <TableRow key={index}>
+                  <TableCell>{deliverable.filename || ""}</TableCell>
+                  <TableCell>{deliverable.size_string || ""}</TableCell>
+                  <TableCell>{deliverable.status_string || ""}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       <div className="button-container">
         <Button variant="outlined" href="/deliverables/">
