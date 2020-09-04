@@ -1,7 +1,9 @@
 import axios from "axios";
+import Cookies from "js-cookie";
 
 const API = "/api";
 const API_IS_LOGGED_IN = `${API}/isLoggedIn`;
+const API_DELIVERABLES = `/deliverables${API}`;
 
 export const isLoggedIn = async (): Promise<PlutoUser> => {
   try {
@@ -15,5 +17,90 @@ export const isLoggedIn = async (): Promise<PlutoUser> => {
   } catch (error) {
     console.error(error);
     throw error;
+  }
+};
+
+export const getProjectDeliverableSummary = async (
+  projectId: number
+): Promise<DeliverablesCount | null> => {
+  try {
+    const response = await axios.get<DeliverablesCount>(
+      `${API_DELIVERABLES}/bundle/${projectId}/count`
+    );
+    return response.data;
+  } catch (err) {
+    if (err.response && err.response.status == 404) {
+      console.info(`Project ${projectId} has no deliverable bundle`);
+      return null;
+    }
+    console.error("Could not load deliverable summary: ", err);
+    throw err;
+  }
+};
+
+export const getProjectDeliverables = async (
+  projectId: number
+): Promise<Deliverable[]> => {
+  try {
+    const response = await axios.get<Deliverable[]>(
+      `${API_DELIVERABLES}/deliverables?project_id=${projectId}`
+    );
+
+    if (response?.status === 200) {
+      return response?.data;
+    }
+
+    if (response?.status === 404) {
+      throw "";
+    }
+
+    throw "Could not fetch Project deliverables";
+  } catch (error) {
+    if (error?.response?.status === 404) {
+      return Promise.reject();
+    }
+    console.error(error);
+    return Promise.reject(error);
+  }
+};
+
+export const createProjectDeliverable = async (
+  project: Project
+): Promise<Deliverable> => {
+  const csrftoken = Cookies.get("csrftoken");
+  if (!csrftoken) {
+    console.warn("Could not find a csrf token! Request will probably fail");
+  }
+
+  try {
+    const response = await axios.post<Deliverable>(
+      `${API_DELIVERABLES}/bundle/new`,
+      {
+        pluto_core_project_id: project.id,
+        commission_id: project.commissionId,
+        name: project.title,
+      },
+      {
+        headers: {
+          "X-CSRFToken": csrftoken,
+        },
+      }
+    );
+
+    if (response?.status == 200) {
+      return response?.data;
+    }
+
+    if (response?.status === 404) {
+      throw "";
+    }
+
+    throw "Could not create Project deliverable";
+  } catch (error) {
+    if (error?.response?.status === 404) {
+      return Promise.reject();
+    }
+    console.error(error);
+    return Promise.reject(error);
   }
 };
