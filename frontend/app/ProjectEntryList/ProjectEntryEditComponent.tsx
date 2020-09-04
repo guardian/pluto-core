@@ -178,12 +178,12 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
               value={project.title}
               autoFocus
               onChange={(event) => fieldChanged(event, "title")}
-            ></TextField>
+            />
             <TextField
               label="Owner"
               value={project.user}
               onChange={(event) => fieldChanged(event, "user")}
-            ></TextField>
+            />
             <FormControl>
               <InputLabel id="label-status">Status</InputLabel>
               <Select
@@ -274,7 +274,9 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           </div>
         </form>
       </Paper>
-      <ProjectEntryDeliverablesComponent project={project} />
+      {project === EMPTY_PROJECT ? null : (
+        <ProjectEntryDeliverablesComponent project={project} />
+      )}
     </>
   );
 };

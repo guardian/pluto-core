@@ -95,3 +95,8 @@ interface Deliverable {
   size_string: string;
   status_string: string;
 }
+
+interface DeliverablesCount {
+  total_asset_count: number;
+  unimported_asset_count: number;
+}

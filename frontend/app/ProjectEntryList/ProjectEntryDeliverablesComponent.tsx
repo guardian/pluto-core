@@ -11,8 +11,13 @@ import {
   TableBody,
   TableCell,
 } from "@material-ui/core";
-import { getProjectDeliverables, createProjectDeliverable } from "../utils/api";
+import {
+  getProjectDeliverables,
+  createProjectDeliverable,
+  getProjectDeliverableSummary,
+} from "../utils/api";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
+import WarningIcon from "@material-ui/icons/Warning";
 import SystemNotification, {
   SystemNotificationKind,
 } from "../SystemNotification";
@@ -63,17 +68,22 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
   props
 ) => {
   const classes = useStyles();
-  const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [deliverable, setDeliverables] = useState<Deliverable[]>([]);
+  const [
+    deliverableCount,
+    setDeliverableCount,
+  ] = useState<DeliverablesCount | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const [failed, setFailed] = useState<string>("");
   const { project } = props;
 
   useEffect(() => {
     const loadProjectDeliverables = async () => {
       try {
-        const deliverables = await getProjectDeliverables(project.id);
+        console.log("Loading from ", project);
+        const deliverableCount = await getProjectDeliverableSummary(project.id);
 
-        setDeliverables(deliverables);
+        setDeliverableCount(deliverableCount);
       } catch (error) {
         if (error) {
           let message = "Failed to fetch Deliverables!";
@@ -129,7 +139,29 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
         </Typography>
       )}
 
-      {(!deliverables || deliverables.length === 0) && (
+      {deliverableCount ? (
+        <>
+          <Typography variant="subtitle1">
+            There are currently {deliverableCount.total_asset_count}{" "}
+            deliverables attached to this project.
+          </Typography>
+          {deliverableCount.unimported_asset_count > 0 ? (
+            <Typography variant="subtitle1" style={{ color: "red" }}>
+              <WarningIcon style={{ color: "red" }} />{" "}
+              {deliverableCount.unimported_asset_count} are not correctly
+              imported! This needs to be fixed.
+            </Typography>
+          ) : null}
+          <div className="button-container">
+            <Button
+              variant="outlined"
+              onClick={() => window.open(`/deliverables/project/${project.id}`)}
+            >
+              View Deliverables
+            </Button>
+          </div>
+        </>
+      ) : (
         <>
           <Typography variant="subtitle1">
             No deliverables exists. Click "Create Deliverable" to create a
@@ -141,29 +173,6 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
             </Button>
           </div>
         </>
-      )}
-
-      {deliverables?.length > 0 && (
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                {tableHeaderTitles.map((title, index) => (
-                  <TableCell key={index}>{title}</TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {deliverables.map((deliverable, index) => (
-                <TableRow key={index}>
-                  <TableCell>{deliverable.filename || ""}</TableCell>
-                  <TableCell>{deliverable.size_string || ""}</TableCell>
-                  <TableCell>{deliverable.status_string || ""}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
       )}
     </Paper>
   );

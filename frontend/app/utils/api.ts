@@ -20,6 +20,24 @@ export const isLoggedIn = async (): Promise<PlutoUser> => {
   }
 };
 
+export const getProjectDeliverableSummary = async (
+  projectId: number
+): Promise<DeliverablesCount | null> => {
+  try {
+    const response = await axios.get<DeliverablesCount>(
+      `${API_DELIVERABLES}/bundle/${projectId}/count`
+    );
+    return response.data;
+  } catch (err) {
+    if (err.response && err.response.status == 404) {
+      console.info(`Project ${projectId} has no deliverable bundle`);
+      return null;
+    }
+    console.error("Could not load deliverable summary: ", err);
+    throw err;
+  }
+};
+
 export const getProjectDeliverables = async (
   projectId: number
 ): Promise<Deliverable[]> => {
