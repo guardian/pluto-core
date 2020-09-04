@@ -80,7 +80,6 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
   useEffect(() => {
     const loadProjectDeliverables = async () => {
       try {
-        console.log("Loading from ", project);
         const deliverableCount = await getProjectDeliverableSummary(project.id);
 
         setDeliverableCount(deliverableCount);
@@ -106,15 +105,13 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
   const createDeliverable = async (): Promise<void> => {
     try {
       await createProjectDeliverable(project);
-      window.location.assign("/deliverables/");
+      window.location.assign(`/deliverables/project/${project.id}`);
     } catch (error) {
-      if (error) {
-        console.error(error);
-        SystemNotification.open(
-          SystemNotificationKind.Error,
-          "Failed to create Project Deliverable"
-        );
-      }
+      console.error(error);
+      SystemNotification.open(
+        SystemNotificationKind.Error,
+        "Failed to create Project Deliverable"
+      );
     }
   };
 
@@ -164,12 +161,12 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
       ) : (
         <>
           <Typography variant="subtitle1">
-            No deliverables exists. Click "Create Deliverable" to create a
-            deliverable
+            There is no deliverables bundle for this project. Click "Add
+            Deliverables" to create one.
           </Typography>
           <div className="button-container">
             <Button variant="outlined" onClick={createDeliverable}>
-              Create Deliverable
+              Add Deliverables
             </Button>
           </div>
         </>

@@ -80,15 +80,12 @@ const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
   id,
   isAdmin = false,
 }) => (
-  <span
-    className="icons"
-    style={{ display: isAdmin ? "inherit" : "none", whiteSpace: "nowrap" }}
-  >
+  <span className="icons">
     <IconButton href={`${deploymentRootPath}project/${id}`}>
-      <EditIcon></EditIcon>
+      <EditIcon />
     </IconButton>
     <IconButton href={`${deploymentRootPath}project/${id}/delete`}>
-      <DeleteIcon></DeleteIcon>
+      <DeleteIcon />
     </IconButton>
   </span>
 );
