@@ -14,6 +14,7 @@ import {
   MenuItem,
   Checkbox,
   FormControlLabel,
+  Grid,
 } from "@material-ui/core";
 import { getProject, updateProject } from "./helpers";
 import {
@@ -23,20 +24,18 @@ import {
 import SystemNotification, {
   SystemNotificationKind,
 } from "../SystemNotification";
+
 import ProjectEntryDeliverablesComponent from "./ProjectEntryDeliverablesComponent";
+import { Breadcrumb } from "pluto-headers";
+import ApplicableRulesSelector from "./ApplicableRulesSelector";
+import moment from "moment";
+import axios from "axios";
 
 const useStyles = makeStyles({
   root: {
     display: "flex",
     flexDirection: "column",
     padding: "1rem",
-    "& form": {
-      display: "grid",
-      gridTemplateColumns: "repeat(2, 1fr)",
-      width: "100%",
-      gridGap: "0 50px",
-      margin: "0.625rem 0 0 0",
-    },
     "& .MuiTextField-root": {
       width: "100%",
       marginBottom: "1rem",
@@ -52,12 +51,15 @@ const useStyles = makeStyles({
   },
   formButtons: {
     display: "flex",
-    marginTop: "0.625rem",
-    "& .cancel": {
+    marginTop: "2.5rem",
+    justifyContent: "flex-end",
+    "& Button": {
       marginLeft: "1rem",
     },
   },
 });
+
+declare var deploymentRootPath: string;
 
 interface ProjectEntryEditComponentStateTypes {
   itemid?: string;
@@ -92,7 +94,19 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [project, setProject] = useState<Project>(
     projectFromList ?? EMPTY_PROJECT
   );
+  const [projectType, setProjectType] = useState<ProjectType | undefined>(
+    undefined
+  );
 
+  const getProjectTypeData = async (projectTypeId: number) => {
+    try {
+      const response = await axios.get(`/api/projecttype/${projectTypeId}`);
+      console.log("project type request got ", response.data);
+      setProjectType(response.data.result as ProjectType);
+    } catch (err) {
+      console.error("Could not load project type information: ", err);
+    }
+  };
   // Fetch project from URL path
   useEffect(() => {
     // No need to fetch data if we navigated from the project list.
@@ -111,6 +125,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         if (isMounted) {
           setProject({ ...project, id });
         }
+        await getProjectTypeData(project.projectTypeId);
       };
       loadProject();
     }
@@ -161,115 +176,99 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
   return (
     <>
-      <Paper className={classes.root}>
-        <Typography variant="h2">Edit project information</Typography>
-        <Typography variant="subtitle1">
-          The only part of the project information that it's possible to edit is
-          the title.
-        </Typography>
-
-        <Typography variant="subtitle1">
-          Press Confirm to go ahead, or press Back to cancel.
-        </Typography>
+      <div style={{ marginBottom: "0.8em" }}>
+        <Breadcrumb
+          projectId={project.id}
+          plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
+        />
+      </div>
+      <Paper className={classes.root} elevation={3}>
         <form onSubmit={onProjectSubmit}>
-          <div>
-            <TextField
-              label="Project name"
-              value={project.title}
-              autoFocus
-              onChange={(event) => fieldChanged(event, "title")}
-            />
-            <TextField
-              label="Owner"
-              value={project.user}
-              onChange={(event) => fieldChanged(event, "user")}
-            />
-            <FormControl>
-              <InputLabel id="label-status">Status</InputLabel>
-              <Select
-                labelId="label-status"
-                value={project.status}
-                onChange={(event) => fieldChanged(event, "status")}
-              >
-                {validProjectStatuses.map((status) => (
-                  <MenuItem key={status} value={status}>
-                    {status}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl>
-              <InputLabel id="demo-simple-select-label">
-                Production Office
-              </InputLabel>
-              <Select
-                labelId="demo-simple-select-label"
-                id="demo-simple-select"
-                value={project.productionOffice}
-                onChange={(event: any) =>
-                  fieldChanged(event, "productionOffice")
-                }
-              >
-                {validProductionOffices.map((productionOffice) => (
-                  <MenuItem value={productionOffice} key={productionOffice}>
-                    {productionOffice}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </div>
-          <div className={classes.applicableRules}>
-            <Typography variant="h4">Applicable rules</Typography>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={project.deletable}
-                  onChange={() =>
-                    checkboxChanged("deletable", project.deletable)
+          <Grid container xs={12} direction="row" spacing={3}>
+            <Grid item xs={6}>
+              <TextField
+                label="Project name"
+                value={project.title}
+                autoFocus
+                onChange={(event) => fieldChanged(event, "title")}
+              />
+              <TextField
+                label="Owner"
+                value={project.user}
+                onChange={(event) => fieldChanged(event, "user")}
+              />
+              <FormControl>
+                <InputLabel id="label-status">Status</InputLabel>
+                <Select
+                  labelId="label-status"
+                  value={project.status}
+                  onChange={(event) => fieldChanged(event, "status")}
+                >
+                  {validProjectStatuses.map((status) => (
+                    <MenuItem key={status} value={status}>
+                      {status}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl>
+                <InputLabel id="demo-simple-select-label">
+                  Production Office
+                </InputLabel>
+                <Select
+                  labelId="demo-simple-select-label"
+                  id="demo-simple-select"
+                  value={project.productionOffice}
+                  onChange={(event: any) =>
+                    fieldChanged(event, "productionOffice")
                   }
-                  name="deletable"
-                  color="primary"
+                >
+                  {validProductionOffices.map((productionOffice) => (
+                    <MenuItem value={productionOffice} key={productionOffice}>
+                      {productionOffice}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label="Owner"
+                value={project.user}
+                onChange={(event) => fieldChanged(event, "user")}
+              />
+            </Grid>
+
+            <Grid item xs={6}>
+              <TextField
+                disabled={true}
+                value={moment(project.created).format("MMM Do, YYYY, hh:mm a")}
+                label="Created"
+              />
+              {projectType ? (
+                <TextField
+                  disabled={true}
+                  value={`${projectType.name} v${projectType.targetVersion}`}
+                  label="Project type"
                 />
-              }
-              label="Deletable"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={project.deep_archive}
-                  onChange={() =>
-                    checkboxChanged("deep_archive", project.deep_archive)
-                  }
-                  name="deep_archive"
-                  color="primary"
-                />
-              }
-              label="Deep Archive"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={project.sensitive}
-                  onChange={() =>
-                    checkboxChanged("sensitive", project.sensitive)
-                  }
-                  name="sensitive"
-                  color="primary"
-                />
-              }
-              label="Sensitive"
-            />
-          </div>
+              ) : null}
+
+              <ApplicableRulesSelector
+                deletable={project.deletable}
+                deep_archive={project.deep_archive}
+                sensitive={project.sensitive}
+                onChange={checkboxChanged}
+              />
+            </Grid>
+          </Grid>
           <div className={classes.formButtons}>
-            <Button type="submit" variant="outlined">
-              Confirm
-            </Button>
             <Button
               className="cancel"
               variant="outlined"
               onClick={() => history.goBack()}
             >
               Back
+            </Button>
+            <Button type="submit" variant="outlined">
+              Update
             </Button>
           </div>
         </form>
