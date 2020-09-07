@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory
 import play.api.mvc.RequestHeader
 import play.api.Configuration
 import play.api.libs.typedmap.TypedKey
+
+import scala.io.Source
 import scala.util.{Failure, Success, Try}
 object BearerTokenAuth {
   final val ClaimsAttributeKey = TypedKey[JWTClaimsSet]("claims")
@@ -81,8 +83,14 @@ class BearerTokenAuth @Inject() (config:Configuration) {
    * @return either the passed JWK object or a Failure indicating why it would not load.
    */
   def loadInKey() = Try {
-    val pemCertData = config.get[String]("auth.tokenSigningCert")
-    JWK.parseFromPEMEncodedX509Cert(pemCertData)
+    val pemCertLocation = config.get[String]("auth.tokenSigningCertPath")
+    val s = Source.fromFile(pemCertLocation, "UTF-8")
+    try {
+      val pemCertData = s.getLines().reduce(_ + _)
+      JWK.parseFromPEMEncodedX509Cert(pemCertData)
+    } finally {
+      s.close()
+    }
   }
 
   /**
