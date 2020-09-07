@@ -183,27 +183,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
-  def updateVsid(requestedId:Int) = IsAuthenticatedAsync(parse.json) {uid=>{request=>
-    request.body.validate[UpdateTitleRequest].fold(
-      errors=>
-        Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
-      updateTitleRequest=>{
-        val results = doUpdateVsid(requestedId, updateTitleRequest.newVsid).map(_.partition(_.isSuccess))
-
-        results.map(resultTuple => {
-          val failures = resultTuple._2
-          val successes = resultTuple._1
-
-          if (failures.isEmpty)
-            Ok(Json.obj("status" -> "ok", "detail" -> s"${successes.length} record(s) updated"))
-          else {
-            genericHandleFailures(failures, requestedId)
-          }
-        })
-      }
-    )
-  }}
-
   def filesList(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
     implicit val db = dbConfig.db
 

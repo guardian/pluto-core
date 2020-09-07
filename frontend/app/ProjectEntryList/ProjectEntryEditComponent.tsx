@@ -173,103 +173,103 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   };
 
   return (
-      <>
-        <Paper className={classes.root} elevation={3}>
-          <Breadcrumb projectId={project.id} />
-          <form onSubmit={onProjectSubmit}>
-            <Grid container xs={12} direction="row" spacing={3}>
-              <Grid item xs={6}>
-                <TextField
-                  label="Project name"
-                  value={project.title}
-                  autoFocus
-                  onChange={(event) => fieldChanged(event, "title")}
-                />
-                <TextField
-                  label="Owner"
-                  value={project.user}
-                  onChange={(event) => fieldChanged(event, "user")}
-                />
-                <FormControl>
-                  <InputLabel id="label-status">Status</InputLabel>
-                  <Select
-                    labelId="label-status"
-                    value={project.status}
-                    onChange={(event) => fieldChanged(event, "status")}
-                  >
-                    {validProjectStatuses.map((status) => (
-                      <MenuItem key={status} value={status}>
-                        {status}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormControl>
-                  <InputLabel id="demo-simple-select-label">
-                    Production Office
-                  </InputLabel>
-                  <Select
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    value={project.productionOffice}
-                    onChange={(event: any) =>
-                      fieldChanged(event, "productionOffice")
-                    }
-                  >
-                    {validProductionOffices.map((productionOffice) => (
-                      <MenuItem value={productionOffice} key={productionOffice}>
-                        {productionOffice}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Owner"
-                  value={project.user}
-                  onChange={(event) => fieldChanged(event, "user")}
-                />
-              </Grid>
+    <>
+      <Paper className={classes.root} elevation={3}>
+        <Breadcrumb projectId={project.id} />
+        <form onSubmit={onProjectSubmit}>
+          <Grid container xs={12} direction="row" spacing={3}>
+            <Grid item xs={6}>
+              <TextField
+                label="Project name"
+                value={project.title}
+                autoFocus
+                onChange={(event) => fieldChanged(event, "title")}
+              />
+              <TextField
+                label="Owner"
+                value={project.user}
+                onChange={(event) => fieldChanged(event, "user")}
+              />
+              <FormControl>
+                <InputLabel id="label-status">Status</InputLabel>
+                <Select
+                  labelId="label-status"
+                  value={project.status}
+                  onChange={(event) => fieldChanged(event, "status")}
+                >
+                  {validProjectStatuses.map((status) => (
+                    <MenuItem key={status} value={status}>
+                      {status}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl>
+                <InputLabel id="demo-simple-select-label">
+                  Production Office
+                </InputLabel>
+                <Select
+                  labelId="demo-simple-select-label"
+                  id="demo-simple-select"
+                  value={project.productionOffice}
+                  onChange={(event: any) =>
+                    fieldChanged(event, "productionOffice")
+                  }
+                >
+                  {validProductionOffices.map((productionOffice) => (
+                    <MenuItem value={productionOffice} key={productionOffice}>
+                      {productionOffice}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label="Owner"
+                value={project.user}
+                onChange={(event) => fieldChanged(event, "user")}
+              />
+            </Grid>
 
-              <Grid item xs={6}>
+            <Grid item xs={6}>
+              <TextField
+                disabled={true}
+                value={moment(project.created).format("MMM Do, YYYY, hh:mm a")}
+                label="Created"
+              />
+              {projectType ? (
                 <TextField
                   disabled={true}
-                  value={moment(project.created).format("MMM Do, YYYY, hh:mm a")}
-                  label="Created"
+                  value={`${projectType.name} v${projectType.targetVersion}`}
+                  label="Project type"
                 />
-                {projectType ? (
-                  <TextField
-                    disabled={true}
-                    value={`${projectType.name} v${projectType.targetVersion}`}
-                    label="Project type"
-                  />
-                ) : null}
+              ) : null}
 
-                <ApplicableRulesSelector
-                  deletable={project.deletable}
-                  deep_archive={project.deep_archive}
-                  sensitive={project.sensitive}
-                  onChange={checkboxChanged}
-                />
-              </Grid>
+              <ApplicableRulesSelector
+                deletable={project.deletable}
+                deep_archive={project.deep_archive}
+                sensitive={project.sensitive}
+                onChange={checkboxChanged}
+              />
             </Grid>
-            <div className={classes.formButtons}>
-              <Button
-                className="cancel"
-                variant="outlined"
-                onClick={() => history.goBack()}
-              >
-                Back
-              </Button>
-              <Button type="submit" variant="outlined">
-                Update
-              </Button>
-            </div>
-          </form>
-        </Paper>
-        {project === EMPTY_PROJECT ? null : (
-          <ProjectEntryDeliverablesComponent project={project} />
-        )}
-  </>
+          </Grid>
+          <div className={classes.formButtons}>
+            <Button
+              className="cancel"
+              variant="outlined"
+              onClick={() => history.goBack()}
+            >
+              Back
+            </Button>
+            <Button type="submit" variant="outlined">
+              Update
+            </Button>
+          </div>
+        </form>
+      </Paper>
+      {project === EMPTY_PROJECT ? null : (
+        <ProjectEntryDeliverablesComponent project={project} />
+      )}
+    </>
   );
 };
 

@@ -84,7 +84,7 @@
     "lodash": "^4.17.15",
     "lodash.omit": "^4.5.0",
     "moment": "^2.20.1",
-    "pluto-headers": "https://gitlab.com/codmill/customer-projects/guardian/pluto-headers.git#v1.2.0",
+    "pluto-headers": "https://gitlab.com/codmill/customer-projects/guardian/pluto-headers.git#f6bf52f640fef267db565a0ec903f39bd2ac14b6",
     "query-string": "^6.13.1",
     "raven-js": "^3.24.1",
     "react": "^16.12.0",
