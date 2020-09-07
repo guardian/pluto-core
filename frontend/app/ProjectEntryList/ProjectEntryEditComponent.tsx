@@ -59,6 +59,8 @@ const useStyles = makeStyles({
   },
 });
 
+declare var deploymentRootPath: string;
+
 interface ProjectEntryEditComponentStateTypes {
   itemid?: string;
 }
@@ -174,8 +176,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
   return (
     <>
+      <div style={{ marginBottom: "0.8em" }}>
+        <Breadcrumb
+          projectId={project.id}
+          plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
+        />
+      </div>
       <Paper className={classes.root} elevation={3}>
-        <Breadcrumb projectId={project.id} />
         <form onSubmit={onProjectSubmit}>
           <Grid container xs={12} direction="row" spacing={3}>
             <Grid item xs={6}>
