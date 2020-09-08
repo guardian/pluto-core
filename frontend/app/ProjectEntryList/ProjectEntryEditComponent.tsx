@@ -230,11 +230,6 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                   ))}
                 </Select>
               </FormControl>
-              <TextField
-                label="Owner"
-                value={project.user}
-                onChange={(event) => fieldChanged(event, "user")}
-              />
             </Grid>
 
             <Grid item xs={6}>

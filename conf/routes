@@ -42,10 +42,9 @@ GET     /api/project/distinctowners         @controllers.ProjectEntryController.
 PUT     /api/project                        @controllers.ProjectEntryController.create
 GET     /api/project/forFilename            @controllers.Files.projectFromFile(filename: String)
 GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int)
-#PUT     /api/project/:id/title              @controllers.ProjectEntryController.updateTitle(id: Int)
 GET     /api/project/:id                    @controllers.ProjectEntryController.getitem(id: Int)
 PUT     /api/project/:id/wasopened          @controllers.ProjectEntryController.projectWasOpened(id: Int)
-PUT     /api/project/:id                   @controllers.ProjectEntryController.update(id: Int)
+PUT     /api/project/:id                    @controllers.ProjectEntryController.update(id: Int)
 #DELETE  /api/project/:id                   @controllers.ProjectEntryController.delete(id: Int)
 POST     /api/project/validate              @controllers.ProjectEntryController.performFullValidation
 

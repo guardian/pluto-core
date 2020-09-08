@@ -19,7 +19,7 @@ interface WorkingGroup extends CreateWorkingGroup {
 }
 
 type ProductionOffice = "UK" | "US" | "Aus";
-type ProjectStatus = "New" | "In Production";
+type ProjectStatus = "New" | "In Production" | "Held" | "Completed" | "Killed";
 
 interface Project {
   id: number;
