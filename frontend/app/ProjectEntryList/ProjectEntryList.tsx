@@ -186,7 +186,6 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
       <ProjectEntryFilterComponent
         filterTerms={filterTerms}
         filterDidUpdate={(newFilters: ProjectFilterTerms) => {
-          console.log("filterDidUpdate", newFilters);
           fetchProjectsOnPage(newFilters);
           setFilterTerms(newFilters);
         }}
