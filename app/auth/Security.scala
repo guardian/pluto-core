@@ -115,6 +115,20 @@ trait Security extends BaseController {
   }
   final val AuthTypeKey = TypedKey[AuthType.Value]("auth_type")
 
+  /**
+   * get a username from the claim.  This is determined from the first string entry of a list of claim fields.
+   * if none of them match (wrong data type or not present) then `subject` is used as a fallback
+   * @param claim the `JwtClaimsSet` to inspect
+   * @return a string the gives the user id for the given claims set
+   */
+  private def usernameFromClaim(claim:JWTClaimsSet) = {
+    val possibleFields = Array("preferred_username","username")
+    val possibleNames = possibleFields.map(name=>Try {Option(claim.getStringClaim(name))})
+    val successfulNames = possibleNames.collect({case Success(Some(username))=>username})
+
+    successfulNames.headOption.getOrElse(claim.getSubject)
+  }
+
   //if this returns something, then we are logged in
   private def username(request:RequestHeader):Either[LoginResult, LoginResultOK[String]] = Seq("X-Hmac-Authorization","Authorization").map(request.headers.get) match {
     case Seq(Some(auth),_)=>
@@ -122,8 +136,10 @@ trait Security extends BaseController {
       val updatedRequest = request.addAttr(AuthTypeKey, AuthType.AuthHmac)
       hmacUsername(updatedRequest,auth)
     case Seq(None, Some(bearer))=>
-      logger.debug("got Authorization header, doing bearer auth with 'subject' field as uid")
-      bearerTokenAuth(request).map(result=>LoginResultOK(result.content.getSubject))
+      logger.debug("got Authorization header, doing bearer auth")
+      bearerTokenAuth(request).map(result=>{
+        LoginResultOK(usernameFromClaim(result.content))
+      })
     case Seq(None,None)=>
       logger.debug("no Auth header, doing session auth")
       ldapUsername(request)
