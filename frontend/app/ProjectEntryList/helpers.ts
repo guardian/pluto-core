@@ -62,12 +62,14 @@ export const getProject = async (id: number): Promise<Project> => {
 export const updateProject = async (project: Project): Promise<void> => {
   try {
     const { status } = await Axios.put<PlutoApiResponse<void>>(
-      `${API_PROJECTS}/${project.id}/title`,
-      { title: project.title }
+      `${API_PROJECTS}/${project.id}`,
+      project
     );
 
     if (status !== 200) {
-      throw new Error(`Could not update project ${project.id}. ${status}`);
+      throw new Error(
+        `Could not update project ${project.id}: server said ${status}`
+      );
     }
   } catch (error) {
     console.error(error);

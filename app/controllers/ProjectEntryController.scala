@@ -60,7 +60,18 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     TableQuery[ProjectEntryRow].filter(_.vidispineProjectId === vsid).result.asTry
   )
 
-  override def dbupdate(itemId:Int, entry:ProjectEntry) = Future(Failure(new RuntimeException("Not implemented")))
+  override def dbupdate(itemId:Int, entry:ProjectEntry) :Future[Try[Int]] = {
+    val newRecord = entry.id match {
+      case Some(id)=>entry
+      case None=>entry.copy(id=Some(itemId))
+    }
+
+    dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id===itemId).update(newRecord).asTry)
+      .map(rows => {
+        sendToRabbitMq(UpdateOperation, itemId, rabbitMqPropagator)
+        rows
+      })
+  }
 
   /**
     * Fully generic container method to process an update request
