@@ -61,6 +61,8 @@ describe("GenericEntryFilterComponent", () => {
       <MyTestFilterComponent filterDidUpdate={updateCb} filterTerms={{}} />
     );
 
+    console.log(rendered.debug());
+
     rendered
       .find("input#field1")
       .simulate("change", { target: { value: "newsearch" } });
@@ -75,7 +77,6 @@ describe("GenericEntryFilterComponent", () => {
     expect(updateCb.callCount).toEqual(2);
     expect(
       updateCb.calledWith({
-        field1: "newsearch",
         selectorField: "value two",
         match: "W_CONTAINS",
       })

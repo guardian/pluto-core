@@ -38,11 +38,6 @@ class ProjectEntryFilterComponent extends GenericEntryFilterComponent {
         validator: (input) => null,
       },
       {
-        key: "vidispineId",
-        label: "PLUTO project id",
-        validator: validateVsid,
-      },
-      {
         key: "filename",
         label: "Project file name",
         validator: (input) => null,

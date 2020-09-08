@@ -17,25 +17,23 @@ class FilterTypeSelection extends React.Component {
     ];
 
     return (
-      <span
-        style={{ display: this.props.showFilters ? "inline-block" : "none" }}
+      <ul
+        style={{ display: this.props.showFilters ? "flex" : "none" }}
+        className="horizontal-list-flex"
+        onChange={(event) => this.props.selectionChanged(event.target.value)}
       >
-        <ul
-          onChange={(event) => this.props.selectionChanged(event.target.value)}
-        >
-          {options.map(({ key, name }) => (
-            <li className="horizontal-list-item" key={key}>
-              <input
-                type="radio"
-                value={key}
-                name="filter-type-selection"
-                defaultChecked={this.props.type === key}
-              />
-              {name}
-            </li>
-          ))}
-        </ul>
-      </span>
+        {options.map(({ key, name }) => (
+          <li className="horizontal-list-item" key={key}>
+            <input
+              type="radio"
+              value={key}
+              name="filter-type-selection"
+              defaultChecked={this.props.type === key}
+            />
+            {name}
+          </li>
+        ))}
+      </ul>
     );
   }
 }

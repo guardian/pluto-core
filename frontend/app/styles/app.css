@@ -172,9 +172,17 @@ li.selection-list {
   list-style: none;
 }
 
+ul.horizontal-list-flex {
+  display: flex;
+  align-content: space-around;
+  justify-content: center;
+}
+
 li.horizontal-list-item {
-  display: inline;
-  margin-right: 1em;
+  flex: 0;
+  min-width: 200px;
+  list-style: none;
+  marginleft: 0.6em;
 }
 
 p.warning-text {

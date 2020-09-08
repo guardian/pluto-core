@@ -3,6 +3,8 @@ import PropTypes from "prop-types";
 import Omit from "lodash.omit";
 import { validateVsid } from "../validators/VsidValidator.jsx";
 import FilterTypeSelection from "./FilterTypeSelection.jsx";
+import Grid from "@material-ui/core/Grid";
+import Paper from "@material-ui/core/Paper";
 
 class GenericEntryFilterComponent extends React.Component {
   static propTypes = {
@@ -22,12 +24,6 @@ class GenericEntryFilterComponent extends React.Component {
         //this is a called for every update. if it returns anything other than NULL it's considered an
         //error and displayed alongside the control
         validator: (input) => null,
-      },
-      {
-        key: "vidispineId",
-        label: "PLUTO project id",
-        //validator: (input)=>vsidValidator.test(input) ? null : "This must be in the form of XX-nnnnn"
-        validator: validateVsid,
       },
       {
         key: "filename",
@@ -52,6 +48,7 @@ class GenericEntryFilterComponent extends React.Component {
 
     this.props.filterDidUpdate(
       Object.assign(
+        {},
         this.props.filterTerms,
         { match: this.state.matchType },
         newFilters
@@ -144,7 +141,7 @@ class GenericEntryFilterComponent extends React.Component {
 
   render() {
     return (
-      <div className="filter-list-block">
+      <>
         <span className="filter-list-title">
           <i className="fa fa-search-plus" style={{ marginRight: "0.5em" }} />
           Filters
@@ -152,42 +149,45 @@ class GenericEntryFilterComponent extends React.Component {
             {this.state.showFilters ? "hide" : "show"}
           </a>
         </span>
-
-        {this.filterSpec.map((filterEntry) => (
-          <span
-            className="filter-list-entry"
-            style={{
-              display: this.state.showFilters ? "inline-block" : "none",
-            }}
-            key={filterEntry.key}
-          >
-            <label className="filter-entry-label" htmlFor={filterEntry.key}>
-              {filterEntry.label}
-            </label>
-            <div className="filter-entry-input">
-              {this.controlFor(filterEntry)}
-              {this.state.fieldErrors[filterEntry.key] ? (
-                <i
-                  className="fa fa-exclamation"
-                  style={{ color: "red", marginLeft: "0.5em" }}
-                />
-              ) : (
-                <i
-                  className="fa fa-check"
-                  style={{ color: "green", marginLeft: "0.5em" }}
-                />
-              )}
-              <br style={{ marginTop: "5px" }} />
-              {this.state.fieldErrors[filterEntry.key] ? (
-                <span className="filter-entry-error">
-                  {this.state.fieldErrors[filterEntry.key]}
-                </span>
-              ) : (
-                <span />
-              )}
-            </div>
-          </span>
-        ))}
+        <Grid
+          container
+          alignContent="space-around"
+          justify="center"
+          style={{ display: this.state.showFilters ? "flex" : "none" }}
+        >
+          {this.filterSpec.map((filterEntry) => (
+            <Grid item key={filterEntry.key}>
+              <label className="filter-entry-label" htmlFor={filterEntry.key}>
+                {filterEntry.label}
+              </label>
+              <div className="filter-entry-input">
+                {this.controlFor(filterEntry)}
+                {this.state.fieldErrors[filterEntry.key] ? (
+                  <i
+                    className="fa fa-exclamation"
+                    style={{ color: "red", marginLeft: "0.5em" }}
+                  />
+                ) : (
+                  <i
+                    className="fa fa-check"
+                    style={{ color: "green", marginLeft: "0.5em" }}
+                  />
+                )}
+                <br style={{ marginTop: "5px" }} />
+                {this.state.fieldErrors[filterEntry.key] ? (
+                  <span className="filter-entry-error">
+                    {this.state.fieldErrors[filterEntry.key]}
+                  </span>
+                ) : (
+                  <span />
+                )}
+              </div>
+            </Grid>
+          ))}
+          <Grid item>
+            <button onClick={this.doClear}>Clear</button>
+          </Grid>
+        </Grid>
 
         <FilterTypeSelection
           showFilters={this.state.showFilters}
@@ -196,16 +196,7 @@ class GenericEntryFilterComponent extends React.Component {
             this.setState({ matchType: newValue })
           }
         />
-        <span
-          className="filter-list-entry"
-          style={{
-            display: this.state.showFilters ? "inline-block" : "none",
-            float: "right",
-          }}
-        >
-          <button onClick={this.doClear}>Clear</button>
-        </span>
-      </div>
+      </>
     );
   }
 }
