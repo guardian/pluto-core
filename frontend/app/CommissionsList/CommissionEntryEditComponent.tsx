@@ -255,7 +255,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
         .catch((err) => {
           console.error("Could not load commission: ", err);
           setIsLoading(false);
-          if (err.response) {
+          if (err.hasOwnProperty("response")) {
             console.log("Error was from a response, ", err.response);
             switch (err.response.status) {
               case 404:
@@ -339,7 +339,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
                 })
                 .catch((err) => {
                   setIsSaving(false);
-                  if (err.response) {
+                  if (err.hasOwnProperty("response")) {
                     console.error(
                       "Server error saving record: ",
                       err.response.status
