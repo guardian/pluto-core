@@ -73,13 +73,14 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
 
     val insertFut = commFut.flatMap(insertedRowId=>{
       println(s"inserting projects with parent $insertedRowId")
+      val timestamp = Timestamp.from(Instant.now())
       db.run(
         (TableQuery[ProjectEntryRow] ++= Seq(
-          ProjectEntry(Some(1111),1,None,"TestNewProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.New, ProductionOffice.Aus),
-          ProjectEntry(Some(1112),1,None,"TestInProdProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.InProduction, ProductionOffice.Aus),
-          ProjectEntry(Some(1113),1,None,"TestHeldProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Held, ProductionOffice.Aus),
-          ProjectEntry(Some(1114),1,None,"TestCompletedProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Completed, ProductionOffice.Aus),
-          ProjectEntry(Some(1115),1,None,"TestKilledProject",Timestamp.from(Instant.now()), "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Killed,ProductionOffice.Aus),
+          ProjectEntry(Some(1111),1,None,"TestNewProject",timestamp, timestamp, "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.New, ProductionOffice.Aus),
+          ProjectEntry(Some(1112),1,None,"TestInProdProject",timestamp, timestamp, "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.InProduction, ProductionOffice.Aus),
+          ProjectEntry(Some(1113),1,None,"TestHeldProject",timestamp, timestamp, "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Held, ProductionOffice.Aus),
+          ProjectEntry(Some(1114),1,None,"TestCompletedProject",timestamp, timestamp,"testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Completed, ProductionOffice.Aus),
+          ProjectEntry(Some(1115),1,None,"TestKilledProject",timestamp, timestamp, "testuser", None,Some(insertedRowId),None,None,None,EntryStatus.Killed,ProductionOffice.Aus),
         ))
       )
     })
