@@ -2,12 +2,47 @@ interface Commission {
   id: number;
   title: string;
   projectCount: number;
-  created: number;
+  created: string;
   workingGroupId: number;
   status: string;
   owner: string;
 }
 
+interface CommissionFullRecord {
+  id: number;
+  title: string;
+  projectCount: number;
+  created: string;
+  workingGroupId: number;
+  status: string;
+  owner: string;
+  collectionId?: number;
+  siteId?: number;
+  updated: string;
+  description?: string;
+  originalCommissionerName?: string;
+  scheduledCompletion: string;
+  notes?: string;
+  productionOffice: string;
+  originalTitle: string;
+}
+/*
+    (JsPath \ "id").writeNullable[Int] and
+      (JsPath \ "collectionId").writeNullable[Int] and
+      (JsPath \ "siteId").writeNullable[String] and
+      (JsPath \ "created").write[Timestamp] and
+      (JsPath \ "updated").write[Timestamp] and
+      (JsPath \ "title").write[String] and
+      (JsPath \ "status").write[EntryStatus.Value] and
+      (JsPath \ "description").writeNullable[String] and
+      (JsPath \ "workingGroupId").write[Int] and
+      (JsPath \ "originalCommissionerName").writeNullable[String] and
+      (JsPath \ "scheduledCompletion").write[Timestamp] and
+      (JsPath \ "owner").write[String] and
+      (JsPath \ "notes").writeNullable[String] and
+      (JsPath \ "productionOffice").write[ProductionOffice.Value] and
+      (JsPath \ "originalTitle").writeNullable[String]
+ */
 interface CreateWorkingGroup {
   name: string;
   commissioner: string;

@@ -100,3 +100,20 @@ export const getCommissionsOnPage = async ({
 //     throw error;
 //   }
 // };
+
+export const loadCommissionData: (
+  id: number
+) => Promise<CommissionFullRecord> = async (commissionId: number) => {
+  const url = `/api/pluto/commission/${commissionId}`;
+  const response = await Axios.get(url);
+  //if response is not a 200 then we don't get here, an exception has been thrown. Caller should catch this failed promise.
+  return response.data.result as CommissionFullRecord;
+};
+
+export const updateCommissionData: (
+  record: CommissionFullRecord
+) => Promise<void> = async (record: CommissionFullRecord) => {
+  const url = `/api/pluto/commission/${record.id}`;
+  const response = await Axios.put(url, record);
+  return;
+};

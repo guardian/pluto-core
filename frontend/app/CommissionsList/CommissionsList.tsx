@@ -205,7 +205,7 @@ const CommissionsList: React.FC = () => {
           onChangeRowsPerPage={handleChangeRowsPerPage}
           // FIXME: remove when count is correct
           labelDisplayedRows={({ from, to }) => `${from}-${to}`}
-        ></TablePagination>
+        />
       </Paper>
     </>
   );
