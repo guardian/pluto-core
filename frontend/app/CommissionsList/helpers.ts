@@ -1,4 +1,5 @@
 import Axios from "axios";
+import { getProjectsOnPage } from "../ProjectEntryList/helpers";
 
 const API = "/api/pluto";
 const API_COMMISSION = `${API}/commission`;
@@ -116,4 +117,20 @@ export const updateCommissionData: (
   const url = `/api/pluto/commission/${record.id}`;
   const response = await Axios.put(url, record);
   return;
+};
+
+export const projectsForCommission: (
+  commissionId: number,
+  page: number,
+  pageSize: number
+) => Promise<Project[]> = async (
+  commissionId: number,
+  page: number,
+  pageSize: number
+) => {
+  return getProjectsOnPage({
+    page: page,
+    pageSize: pageSize,
+    filterTerms: { commissionId: commissionId, match: "W_STARTSWITH" },
+  });
 };

@@ -22,7 +22,11 @@ import DateFnsUtils from "@date-io/date-fns";
 import ParseDateISO from "date-fns/parseISO";
 import FormatDateISO from "date-fns/formatISO";
 import FormatDate from "date-fns/format";
-import { loadCommissionData, updateCommissionData } from "./helpers";
+import {
+  loadCommissionData,
+  projectsForCommission,
+  updateCommissionData,
+} from "./helpers";
 import ErrorIcon from "@material-ui/icons/Error";
 import LaunchIcon from "@material-ui/icons/Launch";
 import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView";
@@ -30,7 +34,7 @@ import ProductionOfficeSelector from "../common/ProductionOfficeSelector";
 import WorkingGroupSelector from "../common/WorkingGroupSelector";
 import StatusSelector from "../common/StatusSelector";
 import ChipInput from "material-ui-chip-input";
-
+import ProjectsTable from "../ProjectEntryList/ProjectsTable";
 declare var deploymentRootPath: string;
 
 const useStyles = makeStyles({
@@ -46,6 +50,12 @@ const useStyles = makeStyles({
     },
     "& form": {
       padding: "0.6em",
+    },
+  },
+  table: {
+    maxWidth: "100%",
+    "& .MuiTableRow-root": {
+      cursor: "pointer",
     },
   },
   inlineThrobber: {
@@ -243,6 +253,50 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   }
 
   /**
+   * load in member projects on launch
+   */
+  useEffect(() => {
+    const doLoadIn = () => {
+      projectsForCommission(commissionId, 0, 5)
+        .then((projects) => {
+          setProjectList(projects);
+          setLastError(null);
+        })
+        .catch((err) => {
+          if (err.hasOwnProperty("response")) {
+            console.error(
+              "Server returned an error loading projects list: ",
+              err.response
+            );
+            switch (err.response.status) {
+              case 400:
+                setLastError(
+                  "Could not load projects, client-side search error"
+                );
+                break;
+              case 500:
+                console.log("Server said", err.response.body);
+                setLastError(
+                  "Could not load projects, server error, see console"
+                );
+                break;
+              case 503:
+              case 504:
+                setLastError("Server not responding, retrying...");
+                window.setTimeout(doLoadIn, 1000);
+                break;
+            }
+          } else {
+            console.error("Browser error trying to load projects list: ", err);
+            setLastError("Browser error loading projects list");
+          }
+        });
+    };
+
+    doLoadIn();
+  }, []);
+
+  /**
    * load in commission data on launch
    */
   useEffect(() => {
@@ -372,6 +426,24 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
                 });
             }}
             onChange={(newValue) => setCommissionData(newValue)}
+          />
+        ) : null}
+      </Paper>
+      {/*will repace this with an icon*/}
+      <Typography variant="h4">Projects</Typography>
+      <Paper elevation={3}>
+        {projectList ? (
+          <ProjectsTable
+            className={classes.table}
+            pageSizeOptions={[5, 10, 20]}
+            updateRequired={(page, pageSize) => {
+              projectsForCommission(commissionId, page, pageSize)
+                .then((projects) => setProjectList(projects))
+                .catch((err) =>
+                  console.error("Could not update project list: ", err)
+                );
+            }}
+            projects={projectList}
           />
         ) : null}
       </Paper>

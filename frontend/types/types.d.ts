@@ -75,6 +75,7 @@ type FilterOrderType = "W_STARTSWITH" | "W_ENDSWITH" | "W_CONTAINS" | "W_EXACT";
 
 interface FilterTerms {
   match?: FilterOrderType;
+  commissionId?: number;
   user?: string;
 }
 

@@ -13,9 +13,6 @@ import {
   TableSortLabel,
   Typography,
 } from "@material-ui/core";
-import DeleteIcon from "@material-ui/icons/Delete";
-import EditIcon from "@material-ui/icons/Edit";
-import moment from "moment";
 import React, { useEffect, useState } from "react";
 import {
   RouteComponentProps,
@@ -23,24 +20,10 @@ import {
   useLocation,
   useParams,
 } from "react-router-dom";
-import CommissionEntryView from "../EntryViews/CommissionEntryView.jsx";
-import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView.jsx";
 import ProjectEntryFilterComponent from "../filter/ProjectEntryFilterComponent.jsx";
 import { isLoggedIn } from "../utils/api";
-import { SortDirection, sortListByOrder } from "../utils/lists";
 import { getProjectsOnPage, updateProjectOpenedStatus } from "./helpers";
-import AssetFolderLink from "./AssetFolderLink";
-
-const tableHeaderTitles: HeaderTitle<Project>[] = [
-  { label: "Project title", key: "title" },
-  { label: "Commission title", key: "commissionId" },
-  { label: "Created", key: "created" },
-  { label: "Group", key: "workingGroupId" },
-  { label: "Status", key: "status" },
-  { label: "Owner", key: "user" },
-  { label: "" },
-  { label: "Open" },
-];
+import ProjectsTable from "./ProjectsTable";
 
 const useStyles = makeStyles({
   table: {
@@ -69,26 +52,10 @@ const useStyles = makeStyles({
     width: 1,
   },
 });
-declare var deploymentRootPath: string;
-const pageSizeOptions = [25, 50, 100];
 
 interface ProjectFilterTerms extends FilterTerms {
   commissionId?: number;
 }
-
-const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
-  id,
-  isAdmin = false,
-}) => (
-  <span className="icons">
-    <IconButton href={`${deploymentRootPath}project/${id}`}>
-      <EditIcon />
-    </IconButton>
-    <IconButton href={`${deploymentRootPath}project/${id}/delete`}>
-      <DeleteIcon />
-    </IconButton>
-  </span>
-);
 
 const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // React Router
@@ -98,10 +65,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
 
   // React state
   const [user, setUser] = useState<PlutoUser | null>(null);
-  const [page, setPage] = useState(0);
-  const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
-  const [order, setOrder] = useState<SortDirection>("desc");
-  const [orderBy, setOrderBy] = useState<keyof Project>("created");
+  const [pageSize, setPageSize] = useState<number>(25);
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [filterTerms, setFilterTerms] = useState<ProjectFilterTerms>({
     match: "W_CONTAINS",
@@ -111,6 +76,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   const classes = useStyles();
 
   const fetchProjectsOnPage = async (
+    page: number,
+    pageSize: number,
     updatedFilterTerms?: ProjectFilterTerms
   ) => {
     const projects = await getProjectsOnPage({
@@ -154,39 +121,12 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
     setFilterTerms(newFilterTerms);
   }, [commissionId, user?.uid]);
 
-  useEffect(() => {
-    console.log("filter terms or search changed, updating...");
-    fetchProjectsOnPage();
-  }, [page, pageSize, order, orderBy]);
-
-  const handleChangePage = (
-    _event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
-    newPage: number
-  ) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setRowsPerPage(+event.target.value);
-    setPage(0);
-  };
-
-  const sortByColumn = (property: keyof Project) => (
-    _event: React.MouseEvent<unknown>
-  ) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
-  };
-
   return (
     <>
       <ProjectEntryFilterComponent
         filterTerms={filterTerms}
         filterDidUpdate={(newFilters: ProjectFilterTerms) => {
-          fetchProjectsOnPage(newFilters);
+          fetchProjectsOnPage(0, pageSize, newFilters);
           setFilterTerms(newFilters);
         }}
       />
@@ -200,109 +140,14 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
         New
       </Button>
       <Paper elevation={3}>
-        <TableContainer>
-          <Table className={classes.table}>
-            <TableHead>
-              <TableRow>
-                {tableHeaderTitles.map((title, index) => (
-                  <TableCell
-                    key={title.label ? title.label : index}
-                    sortDirection={order}
-                  >
-                    {title.key ? (
-                      <TableSortLabel
-                        active={orderBy === title.key}
-                        direction={orderBy === title.key ? order : "asc"}
-                        onClick={sortByColumn(title.key)}
-                      >
-                        {title.label}
-                        {orderBy === title.key && (
-                          <span className={classes.visuallyHidden}>
-                            {order === "desc"
-                              ? "sorted descending"
-                              : "sorted ascending"}
-                          </span>
-                        )}
-                      </TableSortLabel>
-                    ) : (
-                      title.label
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortListByOrder(projects, orderBy, order).map((project) => {
-                const {
-                  id,
-                  title,
-                  commissionId,
-                  created,
-                  workingGroupId,
-                  status,
-                  user: projectUser,
-                } = project;
-                return (
-                  <TableRow key={id} hover>
-                    <TableCell>{title}</TableCell>
-                    <TableCell>
-                      <CommissionEntryView entryId={commissionId} />
-                    </TableCell>
-                    <TableCell>
-                      <span className="datetime">
-                        {moment(created).format("DD/MM/YYYY HH:mm A")}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <WorkingGroupEntryView entryId={workingGroupId} />
-                    </TableCell>
-                    <TableCell>{status}</TableCell>
-                    <TableCell>{projectUser}</TableCell>
-                    <TableCell>
-                      <ActionIcons id={id} isAdmin={user?.isAdmin ?? false} />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        className={classes.openProjectButton}
-                        variant="contained"
-                        color="primary"
-                        onClick={async () => {
-                          window.open(`pluto:openproject:${id}`, "_blank");
-
-                          try {
-                            await updateProjectOpenedStatus(id);
-
-                            // Reload projects to fetch the updated project status
-                            fetchProjectsOnPage();
-                          } catch (error) {
-                            console.error(error);
-                          }
-                        }}
-                      >
-                        Open project
-                      </Button>
-                      <AssetFolderLink projectId={id} />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        <TablePagination
-          rowsPerPageOptions={pageSizeOptions}
-          component="div"
-          // FIXME: count = -1 causes the pagination component to be able to
-          // walk past the last page, which displays zero rows. Need an endpoint
-          // which returns the total, or is returned along the commissions data.
-          count={-1}
-          rowsPerPage={pageSize}
-          page={page}
-          onChangePage={handleChangePage}
-          onChangeRowsPerPage={handleChangeRowsPerPage}
-          // FIXME: remove when count is correct
-          labelDisplayedRows={({ from, to }) => `${from}-${to}`}
+        <ProjectsTable
+          className={classes.table}
+          pageSizeOptions={[25, 50, 100]}
+          updateRequired={(page, pageSize) => {
+            setPageSize(pageSize);
+            return fetchProjectsOnPage(page, pageSize, filterTerms);
+          }}
+          projects={projects}
         />
       </Paper>
       {typeof commissionId === "string" && projects.length === 0 && (

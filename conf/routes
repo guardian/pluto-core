@@ -89,11 +89,10 @@ GET     /api/pluto/commission/:id          @controllers.PlutoCommissionControlle
 
 POST    /api/pluto/commission              @controllers.PlutoCommissionController.create
 GET     /api/pluto/commission              @controllers.PlutoCommissionController.list(startAt:Int ?=0, length:Int ?=100)
-PUT     /api/pluto/commission/:id           @controllers.PlutoCommissionController.update(id:Int)
-PUT     /api/pluto/commission/:id/status   @controllers.PlutoCommissionController.updateStatus(id:Int)
-
 PUT     /api/pluto/commission/list         @controllers.PlutoCommissionController.listFiltered(startAt:Int ?=0, length:Int ?=100)
 OPTIONS /api/pluto/commission/list          @controllers.PlutoCommissionController.listOptions
+PUT     /api/pluto/commission/:id           @controllers.PlutoCommissionController.update(id:Int)
+PUT     /api/pluto/commission/:id/status   @controllers.PlutoCommissionController.updateStatus(id:Int)
 
 GET     /api/assetfolder/lookup            @controllers.AssetFolderController.assetFolderForPath(path:String)
 GET     /api/project/:projectId/assetfolder @controllers.AssetFolderController.assetFolderForProject(projectId:Int)

@@ -16,7 +16,7 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId: Option[String],
-                         projectTitle: String, created:Timestamp, user: String, workingGroupId: Option[Int],
+                         projectTitle: String, created:Timestamp, updated:Timestamp, user: String, workingGroupId: Option[Int],
                          commissionId: Option[Int], deletable: Option[Boolean], deep_archive: Option[Boolean],
                          sensitive: Option[Boolean], status:EntryStatus.Value, productionOffice: ProductionOffice.Value)
 extends PlutoModel{
@@ -120,6 +120,7 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
   def vidispineProjectId=column[Option[String]]("s_vidispine_id")
   def projectTitle=column[String]("s_title")
   def created=column[Timestamp]("t_created")
+  def updated = column[Timestamp]("t_updated")
   def user=column[String]("s_user")
   def workingGroup=column[Option[Int]]("k_working_group")
   def commission=column[Option[Int]]("k_commission")
@@ -132,7 +133,7 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
   def status = column[EntryStatus.Value]("s_status")
   def productionOffice = column[ProductionOffice.Value]("s_production_office")
 
-  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, user, workingGroup, commission, deletable, deep_archive, sensitive, status, productionOffice) <> (ProjectEntry.tupled, ProjectEntry.unapply)
+  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, updated, user, workingGroup, commission, deletable, deep_archive, sensitive, status, productionOffice) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }
 
 trait ProjectEntrySerializer extends TimestampSerialization {
@@ -146,6 +147,7 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "vidispineId").writeNullable[String] and
       (JsPath \ "title").write[String] and
       (JsPath \ "created").write[Timestamp] and
+      (JsPath \ "updated").write[Timestamp] and
       (JsPath \ "user").write[String] and
       (JsPath \ "workingGroupId").writeNullable[Int] and
       (JsPath \ "commissionId").writeNullable[Int] and
@@ -162,6 +164,7 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "vidispineId").readNullable[String] and
       (JsPath \ "title").read[String] and
       (JsPath \ "created").read[Timestamp] and
+      (JsPath \ "updated").read[Timestamp] and
       (JsPath \ "user").read[String] and
       (JsPath \ "workingGroupId").readNullable[Int] and
       (JsPath \ "commissionId").readNullable[Int] and
@@ -173,7 +176,7 @@ trait ProjectEntrySerializer extends TimestampSerialization {
     )(ProjectEntry.apply _)
 }
 
-object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean], EntryStatus.Value, ProductionOffice.Value)=>ProjectEntry) {
+object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean], EntryStatus.Value, ProductionOffice.Value)=>ProjectEntry) {
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String],
                      deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value)
@@ -204,7 +207,8 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
                     (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
 
     /* step one - create a new project entry */
-    val entry = ProjectEntry(None, projectTypeId, existingVidispineId, title, dateTimeToTimestamp(created.getOrElse(LocalDateTime.now())),
+    val timestamp = dateTimeToTimestamp(created.getOrElse(LocalDateTime.now()))
+    val entry = ProjectEntry(None, projectTypeId, existingVidispineId, title, timestamp, timestamp,
       user, workingGroupId, commissionId, Some(deletable), Some(deep_archive), Some(sensitive), EntryStatus.New, productionOffice)
     val savedEntry = entry.save
 
