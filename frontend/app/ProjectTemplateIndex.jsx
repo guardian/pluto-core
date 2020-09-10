@@ -29,12 +29,6 @@ class ProjectTemplateIndex extends GeneralListComponent {
         headerProps: { className: "dashboardheader" },
         render: (fileRef) => <FileEntryView entryId={fileRef} />,
       },
-      {
-        header: "Pluto subtype",
-        key: "plutoSubtype",
-        headerProps: { className: "dashboardheader" },
-        render: (subtyperef) => <PlutoSubtypeEntryView entryId={subtyperef} />,
-      },
       GeneralListComponent.boolColumn("Deprecated", "deprecated"),
       this.actionIcons(),
     ];

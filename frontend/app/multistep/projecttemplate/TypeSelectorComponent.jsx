@@ -6,7 +6,6 @@ import PlutoProjectTypeSelector from "../../Selectors/PlutoProjectTypeSelector.j
 class TypeSelectorComponent extends CommonMultistepComponent {
   static propTypes = {
     projectTypes: PropTypes.array.isRequired,
-    plutoTypesList: PropTypes.array.isRequired,
     selectedPlutoSubtype: PropTypes.number.isRequired,
     selectedType: PropTypes.number.isRequired,
     templateName: PropTypes.string.isRequired,
@@ -93,20 +92,6 @@ class TypeSelectorComponent extends CommonMultistepComponent {
             </option>
           ))}
         </select>
-        <label htmlFor="pluto_subtype_selector">
-          Pluto subtype, if applicable:
-        </label>
-        <PlutoProjectTypeSelector
-          id="pluto_subtype_selector"
-          plutoProjectTypesList={this.props.plutoTypesList}
-          selectionUpdated={(newValue) =>
-            this.setState({ selectedPlutoSubtype: newValue })
-          }
-          selectedType={this.state.selectedPlutoSubtype}
-          onlyShowSubtypes={true}
-          // FIXME: coercing this to Number to fix tests. Should be solved properly by typing.
-          subTypesFor={Number(this.getPlutoSubtypeForPlType())}
-        />
         <label htmlFor="projectNameSelector">Template name:</label>
         <input
           type="text"
