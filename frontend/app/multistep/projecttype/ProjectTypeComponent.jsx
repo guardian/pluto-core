@@ -18,23 +18,9 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount {
       opensWith: "",
       version: "",
       fileExtension: "",
-      plutoType: "",
-      plutoSubtype: "",
       loading: false,
       error: null,
-      knownPlutoTypes: [],
     };
-  }
-
-  componentDidMount() {
-    axios
-      .get("/api/plutoprojecttypeid")
-      .then((result) => {
-        this.setState({ knownPlutoTypes: result.data.result }, () =>
-          super.componentDidMount()
-        );
-      })
-      .catch((error) => console.error(error));
   }
 
   receivedExistingObject(projectType, cb) {
@@ -46,8 +32,6 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount {
         version: projectType.result.targetVersion,
         opensWith: projectType.result.opensWith,
         fileExtension: projectType.result.fileExtension,
-        plutoType: projectType.result.plutoType,
-        plutoSubtype: projectType.result.plutoSubtype,
       },
       cb
     );
@@ -115,24 +99,6 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount {
                     this.setState({ fileExtension: event.target.value })
                   }
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Pluto type identifier, if applicable</td>
-              <td>
-                <PlutoProjectTypeSelector
-                  id="pluto-type"
-                  plutoProjectTypesList={this.state.knownPlutoTypes}
-                  selectionUpdated={(newValue) =>
-                    this.setState({ plutoType: newValue })
-                  }
-                  selectedType={this.state.plutoType}
-                />
-              </td>
-              <td>
-                <a onClick={(event) => this.setState({ plutoType: "" })}>
-                  clear
-                </a>
               </td>
             </tr>
           </tbody>

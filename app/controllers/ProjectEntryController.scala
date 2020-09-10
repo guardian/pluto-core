@@ -41,7 +41,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
     with UpdateTitleRequestSerializer with FileEntrySerializer
-    with PlutoConflictReplySerializer with Security
+    with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
 
@@ -273,23 +273,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         })
       })
   }}
-
-  def handleMatchingProjects(rq:ProjectRequestFull, matchingProjects:Seq[ProjectEntry], force: Boolean):Future[Result] = {
-    implicit val db = dbConfig.db
-    logger.info(s"Got matching projects: $matchingProjects")
-    if (matchingProjects.nonEmpty) {
-      if (!force) {
-        Future.sequence(matchingProjects.map(proj => PlutoConflictReply.getForProject(proj)))
-          .map(plutoMatch => Conflict(Json.obj("status" -> "conflict","detail"->"projects already exist", "result" -> plutoMatch)))
-      } else {
-        logger.info("Conflicting projects potentially exist, but continuing anyway as force=true")
-        createFromFullRequest(rq)
-      }
-    } else {
-      logger.info("No matching projects, creating")
-      createFromFullRequest(rq)
-    }
-  }
 
   def getDistinctOwnersList:Future[Try[Seq[String]]] = {
     //work around distinctOn bug - https://github.com/slick/slick/issues/1712
