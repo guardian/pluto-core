@@ -52,6 +52,7 @@ import SystemNotification from "./SystemNotification.tsx";
 import { Header, AppSwitcher, handleUnauthorized } from "pluto-headers";
 
 import "./styles/app.css";
+import CommissionEntryEditComponent from "./CommissionsList/CommissionEntryEditComponent";
 
 library.add(faSearch);
 
@@ -262,12 +263,7 @@ class App extends React.Component {
               />
               <Route
                 path="/commission/:commissionId"
-                render={(props) => (
-                  <ProjectEntryList
-                    match={props.match}
-                    userName={this.state.currentUsername}
-                  />
-                )}
+                render={(props) => <CommissionEntryEditComponent {...props} />}
               />
               <Route path="/commission/" component={CommissionsList} />
               <Route path="/working-group/:itemid" component={WorkingGroup} />

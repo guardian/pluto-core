@@ -90,7 +90,18 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
 
     override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
 
-    override def dbupdate(itemId: Int, entry:PlutoCommission):Future[Try[Int]] = throw new RuntimeException("This is not supported")
+    override def dbupdate(itemId: Int, entry:PlutoCommission):Future[Try[Int]] = {
+      val newRecord = entry.id match {
+        case Some(_)=>entry
+        case None=>entry.copy(id=Some(itemId))
+      }
+
+      db.run(TableQuery[PlutoCommissionRow].filter(_.id===itemId).update(newRecord).asTry)
+        .map(maybeRows=>{
+          sendToRabbitMq(UpdateOperation,newRecord,rabbitMqPropagator)
+          maybeRows
+        })
+    }
 
     /*these are handled through implict translation*/
     override def jstranslate(result:Seq[PlutoCommission]):Json.JsValueWrapper = result

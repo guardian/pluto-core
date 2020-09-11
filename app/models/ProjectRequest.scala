@@ -29,7 +29,8 @@ case class ProjectRequest(filename:String,destinationStorageId:Int,title:String,
 
 case class ProjectRequestFull(filename:String,destinationStorage:StorageEntry,title:String,projectTemplate:ProjectTemplate,
                               user:String, workingGroupId: Option[Int], commissionId:Option[Int], existingVidispineId: Option[String],
-                              shouldNotify: Boolean, deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value) {
+                              shouldNotify: Boolean, deletable: Boolean, deep_archive: Boolean, sensitive: Boolean,
+                              productionOffice: ProductionOffice.Value) {
 
 }
 

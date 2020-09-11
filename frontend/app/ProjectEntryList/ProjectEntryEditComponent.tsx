@@ -17,10 +17,7 @@ import {
   Grid,
 } from "@material-ui/core";
 import { getProject, updateProject } from "./helpers";
-import {
-  validProductionOffices,
-  validProjectStatuses,
-} from "../utils/constants";
+import { validProjectStatuses } from "../utils/constants";
 import SystemNotification, {
   SystemNotificationKind,
 } from "../SystemNotification";
@@ -30,6 +27,8 @@ import { Breadcrumb } from "pluto-headers";
 import ApplicableRulesSelector from "./ApplicableRulesSelector";
 import moment from "moment";
 import axios from "axios";
+import ProductionOfficeSelector from "../common/ProductionOfficeSelector";
+import StatusSelector from "../common/StatusSelector";
 
 const useStyles = makeStyles({
   root: {
@@ -197,39 +196,15 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 value={project.user}
                 onChange={(event) => fieldChanged(event, "user")}
               />
-              <FormControl>
-                <InputLabel id="label-status">Status</InputLabel>
-                <Select
-                  labelId="label-status"
-                  value={project.status}
-                  onChange={(event) => fieldChanged(event, "status")}
-                >
-                  {validProjectStatuses.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl>
-                <InputLabel id="demo-simple-select-label">
-                  Production Office
-                </InputLabel>
-                <Select
-                  labelId="demo-simple-select-label"
-                  id="demo-simple-select"
-                  value={project.productionOffice}
-                  onChange={(event: any) =>
-                    fieldChanged(event, "productionOffice")
-                  }
-                >
-                  {validProductionOffices.map((productionOffice) => (
-                    <MenuItem value={productionOffice} key={productionOffice}>
-                      {productionOffice}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <StatusSelector
+                value={project.status}
+                onChange={(event) => fieldChanged(event, "status")}
+              />
+              <ProductionOfficeSelector
+                label="Production Office"
+                value={project.productionOffice}
+                onChange={(evt: any) => fieldChanged(evt, "productionOffice")}
+              />
             </Grid>
 
             <Grid item xs={6}>

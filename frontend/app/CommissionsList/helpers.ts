@@ -1,4 +1,5 @@
 import Axios from "axios";
+import { getProjectsOnPage } from "../ProjectEntryList/helpers";
 
 const API = "/api/pluto";
 const API_COMMISSION = `${API}/commission`;
@@ -100,3 +101,36 @@ export const getCommissionsOnPage = async ({
 //     throw error;
 //   }
 // };
+
+export const loadCommissionData: (
+  id: number
+) => Promise<CommissionFullRecord> = async (commissionId: number) => {
+  const url = `/api/pluto/commission/${commissionId}`;
+  const response = await Axios.get(url);
+  //if response is not a 200 then we don't get here, an exception has been thrown. Caller should catch this failed promise.
+  return response.data.result as CommissionFullRecord;
+};
+
+export const updateCommissionData: (
+  record: CommissionFullRecord
+) => Promise<void> = async (record: CommissionFullRecord) => {
+  const url = `/api/pluto/commission/${record.id}`;
+  const response = await Axios.put(url, record);
+  return;
+};
+
+export const projectsForCommission: (
+  commissionId: number,
+  page: number,
+  pageSize: number
+) => Promise<Project[]> = async (
+  commissionId: number,
+  page: number,
+  pageSize: number
+) => {
+  return getProjectsOnPage({
+    page: page,
+    pageSize: pageSize,
+    filterTerms: { commissionId: commissionId, match: "W_STARTSWITH" },
+  });
+};

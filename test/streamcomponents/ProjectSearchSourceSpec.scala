@@ -34,7 +34,7 @@ class ProjectSearchSourceSpec extends Specification with BuildMyApp {
       val result = Await.result(RunnableGraph.fromGraph(graph).run, 30 seconds)
 
       result.length must beGreaterThanOrEqualTo(4)
-      result.head mustEqual ProjectEntry(Some(1),1,None,"InitialTestProject",Timestamp.valueOf("2016-12-11 12:21:11.021"),"me",None,None,None,None,None, EntryStatus.InProduction, ProductionOffice.UK)
+      result.head mustEqual ProjectEntry(Some(1),1,None,"InitialTestProject",Timestamp.valueOf("2016-12-11 12:21:11.021"),Timestamp.valueOf("2016-12-11 12:21:11.021"),"me",None,None,None,None,None, EntryStatus.InProduction, ProductionOffice.UK)
     }
   }
 }
