@@ -169,7 +169,14 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
     */
   def shouldCreateEntry(newEntry:M):Either[String,Boolean] = Right(true)
 
-  def create = IsAdminAsync(parse.json) {uid=>{request =>
+  /**
+    * perform the actual create operation. this is because some classes of objects you must be an admin to create,
+    * but others need to be creatable by any user
+    * @param uid user id
+    * @param request full request object
+    * @return an async play response
+    */
+  private def internalCreate(uid:String, request:Request[JsValue]) = {
     this.validate(request).fold(
       errors => {
         logger.error(s"errors parsing content: $errors")
@@ -196,7 +203,15 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
         }
       }
     )
+  }
+
+  def create = IsAdminAsync(parse.json) {uid=>{request =>
+    internalCreate(uid, request)
   }}
+
+  def createByAnyone = IsAuthenticatedAsync(parse.json) {uid=> request=>
+    internalCreate(uid, request)
+  }
 
   def getitem(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
     selectid(requestedId).map({
