@@ -23,11 +23,11 @@ class ProjectSearchSource[E <:AbstractTable[_]](dbConfigProvider:DatabaseConfigP
     private var resultCounter = 0
 
     setHandler(out, new AbstractOutHandler(){
-      override def onPull() = {
-        val nextResultCb = createAsyncCallback[ProjectEntry](entry=>push(out,entry))
-        val failureCb = createAsyncCallback[Throwable](err=>fail(out, err))
-        val completionCb = createAsyncCallback[Unit](_=>complete(out))
+      val nextResultCb = createAsyncCallback[ProjectEntry](entry=>push(out,entry))
+      val failureCb = createAsyncCallback[Throwable](err=>fail(out, err))
+      val completionCb = createAsyncCallback[Unit](_=>complete(out))
 
+      override def onPull() = {
         if(cache.isEmpty) { //cache is empty, we need to pull more results from the database
           logger.debug("empty cache, fetching more results")
           dbConfig.db.run(queryFunc.drop(resultCounter).take(pageSize).result).map(results=>{
