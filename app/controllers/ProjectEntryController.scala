@@ -68,7 +68,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
     dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id===itemId).update(newRecord).asTry)
       .map(rows => {
-        sendToRabbitMq(UpdateOperation, itemId, rabbitMqPropagator)
+        sendToRabbitMq(UpdateOperation(), itemId, rabbitMqPropagator)
         rows
       })
   }
@@ -115,7 +115,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
     )
     .map(rows => {
-      sendToRabbitMq(UpdateOperation, requestedId, rabbitMqPropagator)
+      sendToRabbitMq(UpdateOperation(), requestedId, rabbitMqPropagator)
       rows
     })
   }
@@ -159,7 +159,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
       )
       .map(rows => {
-        sendToRabbitMq(UpdateOperation, requestedId, rabbitMqPropagator)
+        sendToRabbitMq(UpdateOperation(), requestedId, rabbitMqPropagator)
         rows
       })
     }
@@ -177,7 +177,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         TableQuery[ProjectEntryRow].filter(_.id === record.id.get).update(updatedProjectEntry).asTry
       )
         .map(rows => {
-          sendToRabbitMq(UpdateOperation, record, rabbitMqPropagator)
+          sendToRabbitMq(UpdateOperation(), record, rabbitMqPropagator)
           rows
         })
     }
@@ -249,7 +249,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     (projectCreationActor ? msg).mapTo[CreationMessage].map({
       case GenericCreationActor.ProjectCreateSucceeded(succeededRequest, projectEntry)=>
         logger.info(s"Created new project: $projectEntry")
-        sendToRabbitMq(CreateOperation, projectEntry, rabbitMqPropagator)
+        sendToRabbitMq(CreateOperation(), projectEntry, rabbitMqPropagator)
         Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))
       case GenericCreationActor.ProjectCreateFailed(failedRequest, error)=>
         logger.error("Could not create new project", error)
@@ -337,7 +337,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       .update(EntryStatus.InProduction)
       .map(rows => {
         if (rows > 0) {
-          sendToRabbitMq(UpdateOperation, id, rabbitMqPropagator)
+          sendToRabbitMq(UpdateOperation(), id, rabbitMqPropagator)
         }
       })
 
@@ -354,7 +354,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
           case Seq(commission) =>
             val commissionsSerializer = new PlutoCommissionSerializer {}
             implicit val commissionsWrites: Writes[PlutoCommission] = commissionsSerializer.plutoCommissionWrites
-            rabbitMqPropagator ! ChangeEvent(Seq(commissionsWrites.writes(commission)), getItemType(commission), UpdateOperation)
+            rabbitMqPropagator ! ChangeEvent(Seq(commissionsWrites.writes(commission)), getItemType(commission), UpdateOperation())
           case _ =>
             logger.error(s"Failed to update commission, multiple commissions updated: $commissionId")
             throw new IllegalStateException(s"Failed to update commission, multiple commissions updated: $commissionId")

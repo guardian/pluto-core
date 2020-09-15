@@ -84,7 +84,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
     override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(
       (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
       .map(id => {
-        sendToRabbitMq(CreateOperation, id, rabbitMqPropagator)
+        sendToRabbitMq(CreateOperation(), id, rabbitMqPropagator)
         id
       })
 
@@ -98,7 +98,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
 
       db.run(TableQuery[PlutoCommissionRow].filter(_.id===itemId).update(newRecord).asTry)
         .map(maybeRows=>{
-          sendToRabbitMq(UpdateOperation,newRecord,rabbitMqPropagator)
+          sendToRabbitMq(UpdateOperation(),newRecord,rabbitMqPropagator)
           maybeRows
         })
     }
@@ -155,7 +155,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                     } else {
                         if(rowsUpdated>1) logger.error(s"Status update request for commission $commissionId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
                         commissionStatusPropagator ! CommissionStatusPropagator.CommissionStatusUpdate(commissionId, requiredUpdate.status)
-                        sendToRabbitMq(UpdateOperation, commissionId, rabbitMqPropagator).foreach(_ => ())
+                        sendToRabbitMq(UpdateOperation(), commissionId, rabbitMqPropagator).foreach(_ => ())
                         Ok(Json.obj("status"->"ok","detail"->"commission status updated"))
                     }
                 }).recover({

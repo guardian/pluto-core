@@ -44,7 +44,7 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
     (TableQuery[PlutoWorkingGroupRow] returning TableQuery[PlutoWorkingGroupRow].map(_.id) += entry).asTry)
     .map ({
         case suc@Success(newEntryId)=>
-          sendToRabbitMq(CreateOperation, entry.copy(id=Some(newEntryId)), rabbitMqPropagator)
+          sendToRabbitMq(CreateOperation(), entry.copy(id=Some(newEntryId)), rabbitMqPropagator)
           suc
         case err@Failure(_)=>err
     })
@@ -60,7 +60,7 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
     }
     db.run(TableQuery[PlutoWorkingGroupRow].filter(_.id===itemId).update(newRecord).asTry)
       .map(rows => {
-        sendToRabbitMq(UpdateOperation, itemId, rabbitMqPropagator)
+        sendToRabbitMq(UpdateOperation(), itemId, rabbitMqPropagator)
         rows
       })
   }
