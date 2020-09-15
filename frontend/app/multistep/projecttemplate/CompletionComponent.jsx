@@ -10,7 +10,6 @@ class TemplateCompletionComponent extends React.Component {
     currentEntry: PropTypes.number.isRequired,
     fileId: PropTypes.number.isRequired,
     projectType: PropTypes.number.isRequired,
-    plutoSubtype: PropTypes.number,
     name: PropTypes.string.isRequired,
     deprecated: PropTypes.bool.isRequired,
   };
@@ -69,7 +68,6 @@ class TemplateCompletionComponent extends React.Component {
           fileId={this.props.fileId}
           projectType={this.props.projectType}
           name={this.props.name}
-          plutoSubtype={this.props.plutoSubtype}
           deprecated={this.props.deprecated}
         />
         <p className="information">

@@ -18,12 +18,6 @@ class ProjectTypeList extends GeneralListComponent {
       GeneralListComponent.standardColumn("Opens with", "opensWith"),
       GeneralListComponent.standardColumn("Target version", "targetVersion"),
       GeneralListComponent.standardColumn("File extension", "fileExtension"),
-      {
-        header: "Pluto type",
-        key: "plutoType",
-        headerProps: { className: "dashboardheader" },
-        render: (subtyperef) => <PlutoSubtypeEntryView entryId={subtyperef} />,
-      },
       this.actionIcons(),
     ];
   }

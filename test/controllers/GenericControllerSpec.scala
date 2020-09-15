@@ -73,7 +73,7 @@ trait GenericControllerSpec extends Specification with BuildMyApp {
       ).get
 
 
-      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+      val jsondata = Await.result(bodyAsJsonFuture(response), 25.seconds).as[JsValue]
       println(jsondata.toString)
       status(response) must equalTo(OK)
       (jsondata \ "status").as[String] must equalTo("ok")

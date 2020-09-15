@@ -1,9 +1,11 @@
 package services
 
+import java.lang.annotation.Annotation
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
+import com.fasterxml.jackson.annotation.{JsonSubTypes, JsonTypeInfo}
 import com.google.inject.Inject
 import com.rabbitmq.client.AMQP.Exchange
 import javax.inject.Singleton
@@ -19,10 +21,15 @@ object RabbitMqPropagator {
   trait RabbitMqEvent {
   }
 
-  case class ChangeEvent(content: Seq[JsValueWrapper], itemType: Option[String], operation: ChangeOperation, uuid:UUID=UUID.randomUUID())
-    extends RabbitMqEvent with JacksonSerializable {
-    def json: String = Json.stringify(Json.arr(content:_*))
+  object ChangeEvent {
+    def apply(content:Seq[JsValueWrapper], itemType:Option[String], operation: ChangeOperation, uuid:UUID=UUID.randomUUID()): ChangeEvent = {
+      val renderedJsonContent = Json.stringify(Json.arr(content:_*))
+      new ChangeEvent(renderedJsonContent, itemType, operation, uuid)
+    }
   }
+
+  case class ChangeEvent(json: String, itemType: Option[String], operation: ChangeOperation, uuid:UUID)
+    extends RabbitMqEvent with JacksonSerializable
 
 
   val extractEntityId:ShardRegion.ExtractEntityId = {
@@ -92,11 +99,19 @@ class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSyst
   }
 
   def operationPath(operation: ChangeOperation): String = operation match {
-    case CreateOperation => "create"
-    case UpdateOperation => "update"
+    case CreateOperation() => "create"
+    case UpdateOperation() => "update"
   }
 }
 
-sealed trait ChangeOperation
-case object CreateOperation extends ChangeOperation
-case object UpdateOperation extends ChangeOperation
+// Annotations to tell Jackson Databind how to handle the CreateOperation type
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property="change-operation")
+@JsonSubTypes(
+  Array(
+    new JsonSubTypes.Type(value = classOf[CreateOperation], name="create"),
+    new JsonSubTypes.Type(value = classOf[UpdateOperation], name="update"),
+  )
+)
+sealed trait ChangeOperation extends JacksonSerializable
+case class CreateOperation() extends ChangeOperation
+case class UpdateOperation() extends ChangeOperation

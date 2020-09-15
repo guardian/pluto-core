@@ -9,7 +9,6 @@ class SummaryComponent extends React.Component {
     fileId: PropTypes.number.isRequired,
     projectType: PropTypes.number.isRequired,
     name: PropTypes.string.isRequired,
-    plutoSubtype: PropTypes.number,
     deprecated: PropTypes.bool.isRequired,
   };
 
@@ -29,12 +28,6 @@ class SummaryComponent extends React.Component {
             <td>File</td>
             <td id="fileId">
               <FileEntryView entryId={this.props.fileId} />
-            </td>
-          </tr>
-          <tr>
-            <td>Pluto subtype</td>
-            <td>
-              <PlutoSubtypeEntryView entryId={this.props.plutoSubtype} />
             </td>
           </tr>
           <tr>

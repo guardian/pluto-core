@@ -34,7 +34,16 @@ class ProjectSearchSourceSpec extends Specification with BuildMyApp {
       val result = Await.result(RunnableGraph.fromGraph(graph).run, 30 seconds)
 
       result.length must beGreaterThanOrEqualTo(4)
-      result.head mustEqual ProjectEntry(Some(1),1,None,"InitialTestProject",Timestamp.valueOf("2016-12-11 12:21:11.021"),Timestamp.valueOf("2016-12-11 12:21:11.021"),"me",None,None,None,None,None, EntryStatus.InProduction, ProductionOffice.UK)
+      //other tests may have done a dummy update, so we can't assert the whole record as "updated" time may have changed
+      result.head.id must beSome(1)
+      result.head.projectTypeId mustEqual 1
+      result.head.vidispineProjectId must beNone
+      result.head.projectTitle mustEqual "InitialTestProject"
+      result.head.created mustEqual Timestamp.valueOf("2016-12-11 12:21:11.021")
+      result.head.user mustEqual "me"
+      result.head.status mustEqual EntryStatus.InProduction
+      result.head.productionOffice mustEqual ProductionOffice.UK
+
     }
   }
 }

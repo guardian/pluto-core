@@ -16,7 +16,6 @@ trait ProjectTemplateSerializer {
       (JsPath \ "name").write[String] and
       (JsPath \ "projectTypeId").write[Int] and
       (JsPath \ "fileRef").write[Int] and
-      (JsPath \ "plutoSubtype").writeNullable[Int] and
       (JsPath \ "deprecated").writeNullable[Boolean]
     )(unlift(ProjectTemplate.unapply))
 
@@ -25,12 +24,11 @@ trait ProjectTemplateSerializer {
       (JsPath \ "name").read[String] and
       (JsPath \ "projectTypeId").read[Int] and
       (JsPath \ "fileRef").read[Int] and
-      (JsPath \ "plutoSubtype").readNullable[Int] and
       (JsPath \ "deprecated").readNullable[Boolean]
     )(ProjectTemplate.apply _)
 }
 
-case class ProjectTemplate (id: Option[Int],name: String, projectTypeId: Int, fileRef: Int, plutoSubtypeRef: Option[Int], deprecated: Option[Boolean]) extends PlutoModel {
+case class ProjectTemplate (id: Option[Int],name: String, projectTypeId: Int, fileRef: Int, deprecated: Option[Boolean]) extends PlutoModel {
   def projectType(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[ProjectType] = db.run(
     TableQuery[ProjectTypeRow].filter(_.id===projectTypeId).result.asTry
   ).map({
@@ -45,12 +43,6 @@ case class ProjectTemplate (id: Option[Int],name: String, projectTypeId: Int, fi
     case Failure(error)=>throw error
   })
 
-  def plutoSubtype(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoProjectType]] = plutoSubtypeRef match {
-    case Some(plutoTypeId)=>
-      db.run(TableQuery[PlutoProjectTypeRow].filter(_.id===plutoTypeId).result).map(_.headOption)
-    case None=>Future(None)
-  }
-
 }
 
 class ProjectTemplateRow(tag: Tag) extends Table[ProjectTemplate](tag,"ProjectTemplate") {
@@ -58,37 +50,19 @@ class ProjectTemplateRow(tag: Tag) extends Table[ProjectTemplate](tag,"ProjectTe
   def name=column[String]("s_name")
   def projectType=column[Int]("k_project_type")
   def fileRef=column[Int]("k_file_ref")
-  def plutoSubtype=column[Option[Int]]("k_pluto_subtype")
   def fkProjectType=foreignKey("fk_project_type",projectType,TableQuery[ProjectTypeRow])(_.id)
   def fkFileRef=foreignKey("fk_file_ref",fileRef,TableQuery[FileEntryRow])(_.id)
-  def fkPlutoSubtype=foreignKey("fk_pluto_subtype", plutoSubtype,TableQuery[PlutoProjectTypeRow])(_.id.?)
   def deprecated=column[Option[Boolean]]("b_deprecated")
-  def * = (id.?, name, projectType, fileRef, plutoSubtype, deprecated) <> (ProjectTemplate.tupled, ProjectTemplate.unapply)
+  def * = (id.?, name, projectType, fileRef, deprecated) <> (ProjectTemplate.tupled, ProjectTemplate.unapply)
 }
 
-object ProjectTemplate extends ((Option[Int],String,Int,Int,Option[Int],Option[Boolean])=>ProjectTemplate) {
+object ProjectTemplate extends ((Option[Int],String,Int,Int,Option[Boolean])=>ProjectTemplate) {
   def entryFor(entryId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[ProjectTemplate]] =
     db.run(
       TableQuery[ProjectTemplateRow].filter(_.id===entryId).result.asTry
     ).map({
       case Success(result)=>result.headOption
       case Failure(error)=>throw error
-    })
-
-  def defaultEntryFor(plutoProjectTypeUuid:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Either[String, ProjectTemplate]] =
-    PlutoProjectType.entryForUuid(plutoProjectTypeUuid).flatMap({
-      case Some(plutoProjectType)=>
-        plutoProjectType.defaultProjectTemplate match {
-          case Some(defaultProjectTemplate)=>
-            ProjectTemplate.entryFor (defaultProjectTemplate).map({
-              case Some(projectTemplate)=>Right(projectTemplate)
-              case None=>Left(s"The default project template for ${plutoProjectType.name} (${plutoProjectType.uuid}) did not exist")
-            })
-          case None=>
-            Future(Left(s"Project type entry ${plutoProjectType.name} (${plutoProjectType.uuid} has no default project template set"))
-        }
-      case None=>
-        Future(Left(s"No record could be found for the pluto project type $plutoProjectTypeUuid"))
     })
 
   def templatesForFileId(fileId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[ProjectTemplate]]] =

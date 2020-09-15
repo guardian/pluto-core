@@ -167,7 +167,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
 
       println(responseBody.toString())
       println((responseBody \ "templates").as[List[ProjectTemplate]])
-      (responseBody \ "templates").as[List[ProjectTemplate]].contains(ProjectTemplate(Some(3),"Some random test template",2,2, None, None)) must beTrue
+      (responseBody \ "templates").as[List[ProjectTemplate]].contains(ProjectTemplate(Some(3),"Some random test template",2,2, None)) must beTrue
     }
   }
 }
