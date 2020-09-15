@@ -19,10 +19,15 @@ object RabbitMqPropagator {
   trait RabbitMqEvent {
   }
 
-  case class ChangeEvent(content: Seq[JsValueWrapper], itemType: Option[String], operation: ChangeOperation, uuid:UUID=UUID.randomUUID())
-    extends RabbitMqEvent with JacksonSerializable {
-    def json: String = Json.stringify(Json.arr(content:_*))
+  object ChangeEvent {
+    def apply(content:Seq[JsValueWrapper], itemType:Option[String], operation: ChangeOperation, uuid:UUID=UUID.randomUUID()): ChangeEvent = {
+      val renderedJsonContent = Json.stringify(Json.arr(content:_*))
+      new ChangeEvent(renderedJsonContent, itemType, operation, uuid)
+    }
   }
+
+  case class ChangeEvent(json: String, itemType: Option[String], operation: ChangeOperation, uuid:UUID)
+    extends RabbitMqEvent with JacksonSerializable
 
 
   val extractEntityId:ShardRegion.ExtractEntityId = {
