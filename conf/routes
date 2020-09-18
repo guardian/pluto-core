@@ -79,7 +79,7 @@ GET     /api/pluto/workinggroup/:id        @controllers.PlutoWorkingGroupControl
 POST    /api/pluto/workinggroup            @controllers.PlutoWorkingGroupController.create
 DELETE    /api/pluto/workinggroup/:id      @controllers.PlutoWorkingGroupController.delete(id:Int)
 
-POST    /api/prexit/commission             @controllers.PlutoCommissionController.POST    /api/pluto/commission              @controllers.PlutoCommissionController.createByAnyone
+POST    /api/prexit/commission             @controllers.PlutoCommissionController.createByAnyone
 
 GET     /api/pluto/commission/:id          @controllers.PlutoCommissionController.getitem(id:Int)
 
