@@ -226,7 +226,7 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
     })
   }}
 
-  def update(id: Int) = IsAdminAsync(parse.json) { uid=>{request =>
+  private def internalUpdate(id:Int, request: Request[JsValue]) =
     this.validate(request).fold(
       errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       validRecord=>
@@ -235,7 +235,14 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
           case Failure(error)=>InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
         }
     )
+
+  def update(id: Int) = IsAdminAsync(parse.json) { uid=>{request =>
+    internalUpdate(id,  request)
   }}
+
+  def updateByAnyone(id: Int) = IsAuthenticatedAsync(parse.json) { uid=> request=>
+    internalUpdate(id, request)
+  }
 
   def deleteAction(requestedId: Int) = {
     deleteid(requestedId).map({
