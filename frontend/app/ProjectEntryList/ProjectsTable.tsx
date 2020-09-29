@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import {
-  Button,
-  IconButton,
-  makeStyles,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
+    Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+    IconButton,
+    makeStyles,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    TableSortLabel,
 } from "@material-ui/core";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
@@ -21,6 +21,9 @@ import { updateProjectOpenedStatus } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
+import {deleteWorkingGroup} from "../WorkingGroups/helpers";
+import SystemNotification, {SystemNotificationKind} from "../SystemNotification";
+import { getProject, updateProject } from "./helpers";
 
 const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Project title", key: "title" },
@@ -47,6 +50,9 @@ const useStyles = makeStyles({
   },
 });
 
+const [openDialog, setOpenDialog] = useState<boolean>(false);
+const [updatingProject, setUpdatingProject] = useState<number>(0);
+
 const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
   id,
   isAdmin = false,
@@ -55,11 +61,48 @@ const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
     <IconButton href={`${deploymentRootPath}project/${id}`}>
       <EditIcon />
     </IconButton>
-    <IconButton href={`${deploymentRootPath}project/${id}/delete`}>
+    <IconButton
+        onClick={(event) => {
+            event.stopPropagation();
+            setUpdatingProject(
+                id
+            );
+            setOpenDialog(true);
+        }}
+    >
       <DeleteIcon />
     </IconButton>
   </span>
 );
+
+const closeDialog = () => {
+    setOpenDialog(false);
+};
+
+const onDeleteProject = async () => {
+    closeDialog();
+
+    try {
+        const projectId = updatingProject as number;
+        const projectToUpdate = await getProject(projectId);
+        projectToUpdate.status = 'Killed';
+        await updateProject(projectToUpdate)
+        //await deleteWorkingGroup(workingGroupId);
+        //setWorkingGroups(
+        //    workingGroups.filter((group) => group.id !== workingGroupId)
+        //);
+
+        SystemNotification.open(
+            SystemNotificationKind.Success,
+            `Successfully deleted project: "${updatingProject}"`
+        );
+    } catch {
+        SystemNotification.open(
+            SystemNotificationKind.Error,
+            `Failed to delete project "${updatingProject}"`
+        );
+    }
+};
 
 interface ProjectsTableProps {
   //CSS class to style the table
@@ -210,6 +253,26 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
         // FIXME: remove when count is correct
         labelDisplayedRows={({ from, to }) => `${from}-${to}`}
       />
+        <Dialog
+            open={openDialog}
+            onClose={closeDialog}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+        >
+            <DialogTitle id="alert-dialog-title">Delete Project</DialogTitle>
+            <DialogContent>
+                <DialogContentText id="alert-dialog-description">
+                    Are you sure you want to delete project "
+                    {updatingProject}"?
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={closeDialog}>Cancel</Button>
+                <Button color="secondary" onClick={onDeleteProject}>
+                    Ok
+                </Button>
+            </DialogActions>
+        </Dialog>
     </>
   );
 };
