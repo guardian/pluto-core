@@ -405,7 +405,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
           if(rowsUpdated==0){
             NotFound(Json.obj("status"->"not_found","detail"->s"No project with id $projectId"))
           } else {
-            if(rowsUpdated>1) logger.error(s"Status update request for commission $projectId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
+            if(rowsUpdated>1) logger.error(s"Status update request for project $projectId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
             sendToRabbitMq(UpdateOperation(), projectId, rabbitMqPropagator).foreach(_ => ())
             Ok(Json.obj("status"->"ok","detail"->"Project status updated"))
           }
