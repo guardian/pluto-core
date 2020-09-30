@@ -22,14 +22,13 @@ import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
 import moment from "moment";
 import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView";
-import { updateProjectOpenedStatus } from "./helpers";
+import { updateProjectOpenedStatus, setProjectStatusToKilled } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
 import SystemNotification, {
   SystemNotificationKind,
 } from "../SystemNotification";
-import { getProject, updateProject } from "./helpers";
 
 const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Project title", key: "title" },
@@ -83,6 +82,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   const [rowsPerPage, setRowsPerPage] = useState<number>(
     props.pageSizeOptions[0]
   );
+  const [refreshGeneration, setRefreshGeneration] = useState<number>(0);
 
   const [orderBy, setOrderBy] = useState<keyof Project>("created");
   const [order, setOrder] = useState<SortDirection>("desc");
@@ -94,7 +94,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   useEffect(() => {
     console.log("filter terms or search changed, updating...");
     props.updateRequired(page, rowsPerPage);
-  }, [page, rowsPerPage, order, orderBy]);
+  }, [page, rowsPerPage, order, orderBy, refreshGeneration]);
 
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
@@ -127,9 +127,9 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
 
     try {
       const projectId = updatingProject as number;
-      const projectToUpdate = await getProject(projectId);
-      projectToUpdate.status = "Killed";
-      await updateProject(projectToUpdate);
+      await setProjectStatusToKilled(projectId);
+
+      setRefreshGeneration(refreshGeneration + 1);
 
       SystemNotification.open(
         SystemNotificationKind.Success,

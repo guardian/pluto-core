@@ -93,3 +93,19 @@ export const updateProjectOpenedStatus = async (id: number): Promise<void> => {
     throw error;
   }
 };
+
+export const setProjectStatusToKilled = async (id: number): Promise<void> => {
+  try {
+    const { status } = await Axios.put<PlutoApiResponse<void>>(
+      `${API_PROJECTS}/${id}/status`,
+      { status: "Killed" }
+    );
+
+    if (status !== 200) {
+      throw new Error(`Could not update project status ${id}. ${status}`);
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
