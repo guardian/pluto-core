@@ -1,17 +1,22 @@
 import React, { useEffect, useState } from "react";
 import {
-    Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-    IconButton,
-    makeStyles,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  makeStyles,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
 } from "@material-ui/core";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
@@ -21,8 +26,9 @@ import { updateProjectOpenedStatus } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
-import {deleteWorkingGroup} from "../WorkingGroups/helpers";
-import SystemNotification, {SystemNotificationKind} from "../SystemNotification";
+import SystemNotification, {
+  SystemNotificationKind,
+} from "../SystemNotification";
 import { getProject, updateProject } from "./helpers";
 
 const tableHeaderTitles: HeaderTitle<Project>[] = [
@@ -50,59 +56,14 @@ const useStyles = makeStyles({
   },
 });
 
-const [openDialog, setOpenDialog] = useState<boolean>(false);
-const [updatingProject, setUpdatingProject] = useState<number>(0);
-
 const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
   id,
   isAdmin = false,
 }) => (
-  <span className="icons">
-    <IconButton href={`${deploymentRootPath}project/${id}`}>
-      <EditIcon />
-    </IconButton>
-    <IconButton
-        onClick={(event) => {
-            event.stopPropagation();
-            setUpdatingProject(
-                id
-            );
-            setOpenDialog(true);
-        }}
-    >
-      <DeleteIcon />
-    </IconButton>
-  </span>
+  <IconButton href={`${deploymentRootPath}project/${id}`}>
+    <EditIcon />
+  </IconButton>
 );
-
-const closeDialog = () => {
-    setOpenDialog(false);
-};
-
-const onDeleteProject = async () => {
-    closeDialog();
-
-    try {
-        const projectId = updatingProject as number;
-        const projectToUpdate = await getProject(projectId);
-        projectToUpdate.status = 'Killed';
-        await updateProject(projectToUpdate)
-        //await deleteWorkingGroup(workingGroupId);
-        //setWorkingGroups(
-        //    workingGroups.filter((group) => group.id !== workingGroupId)
-        //);
-
-        SystemNotification.open(
-            SystemNotificationKind.Success,
-            `Successfully deleted project: "${updatingProject}"`
-        );
-    } catch {
-        SystemNotification.open(
-            SystemNotificationKind.Error,
-            `Failed to delete project "${updatingProject}"`
-        );
-    }
-};
 
 interface ProjectsTableProps {
   //CSS class to style the table
@@ -127,6 +88,8 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   const [order, setOrder] = useState<SortDirection>("desc");
 
   const classes = useStyles();
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [updatingProject, setUpdatingProject] = useState<number>(0);
 
   useEffect(() => {
     console.log("filter terms or search changed, updating...");
@@ -153,6 +116,31 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
+  };
+
+  const closeDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const onDeleteProject = async () => {
+    closeDialog();
+
+    try {
+      const projectId = updatingProject as number;
+      const projectToUpdate = await getProject(projectId);
+      projectToUpdate.status = "Killed";
+      await updateProject(projectToUpdate);
+
+      SystemNotification.open(
+        SystemNotificationKind.Success,
+        `Successfully killed project: "${updatingProject}"`
+      );
+    } catch {
+      SystemNotification.open(
+        SystemNotificationKind.Error,
+        `Failed to kill project "${updatingProject}"`
+      );
+    }
   };
 
   return (
@@ -209,7 +197,18 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                   <TableCell>{status}</TableCell>
                   <TableCell>{projectUser}</TableCell>
                   <TableCell>
-                    <ActionIcons id={id} isAdmin={props.isAdmin ?? false} />
+                    <span className="icons">
+                      <ActionIcons id={id} isAdmin={props.isAdmin ?? false} />
+                      <IconButton
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setUpdatingProject(id);
+                          setOpenDialog(true);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </span>
                   </TableCell>
                   <TableCell>
                     <Button
@@ -253,26 +252,28 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
         // FIXME: remove when count is correct
         labelDisplayedRows={({ from, to }) => `${from}-${to}`}
       />
-        <Dialog
-            open={openDialog}
-            onClose={closeDialog}
-            aria-labelledby="alert-dialog-title"
-            aria-describedby="alert-dialog-description"
-        >
-            <DialogTitle id="alert-dialog-title">Delete Project</DialogTitle>
-            <DialogContent>
-                <DialogContentText id="alert-dialog-description">
-                    Are you sure you want to delete project "
-                    {updatingProject}"?
-                </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={closeDialog}>Cancel</Button>
-                <Button color="secondary" onClick={onDeleteProject}>
-                    Ok
-                </Button>
-            </DialogActions>
-        </Dialog>
+      <Dialog
+        open={openDialog}
+        onClose={closeDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Delete Project</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            This marks the project and all its media as deletable. While media
+            will not be removed immediately, you should not do this unless you
+            are happy that the attached media can be removed. Do you want to
+            continue?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>Cancel</Button>
+          <Button color="secondary" onClick={onDeleteProject}>
+            Okay
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
