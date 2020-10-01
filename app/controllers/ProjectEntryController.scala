@@ -385,4 +385,35 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         InternalServerError(Json.obj("status" -> "error", "detail" -> "Failed to mark project as opened"))
     })
   }
+
+  private def updateStatusColumn(projectId:Int, newValue:EntryStatus.Value) = {
+    import EntryStatusMapper._
+
+    dbConfig.db.run {
+      val q = for {c <- TableQuery[ProjectEntryRow] if c.id === projectId} yield c.status
+      q.update(newValue)
+    }
+  }
+
+  def updateStatus(projectId: Int) = IsAuthenticatedAsync(parse.json) {uid=> request=>
+    import PlutoCommissionStatusUpdateRequestSerializer._
+    request.body.validate[PlutoCommissionStatusUpdateRequest].fold(
+      invalidErrs=>
+        Future(BadRequest(Json.obj("status"->"bad_request","detail"->JsError.toJson(invalidErrs)))),
+      requiredUpdate=>
+        updateStatusColumn(projectId, requiredUpdate.status).map(rowsUpdated=>{
+          if(rowsUpdated==0){
+            NotFound(Json.obj("status"->"not_found","detail"->s"No project with id $projectId"))
+          } else {
+            if(rowsUpdated>1) logger.error(s"Status update request for project $projectId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
+            sendToRabbitMq(UpdateOperation(), projectId, rabbitMqPropagator).foreach(_ => ())
+            Ok(Json.obj("status"->"ok","detail"->"Project status updated"))
+          }
+        }).recover({
+          case err:Throwable=>
+            logger.error(s"Could not update status of project $projectId to ${requiredUpdate.status}: ", err)
+            InternalServerError(Json.obj("status"->"db_error","detail"->"Database error, see logs for details"))
+        })
+    )
+  }
 }

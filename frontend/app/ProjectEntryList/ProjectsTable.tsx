@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import {
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   IconButton,
   makeStyles,
   Paper,
@@ -12,15 +17,19 @@ import {
   TablePagination,
   TableRow,
   TableSortLabel,
+  Box,
 } from "@material-ui/core";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
 import moment from "moment";
 import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView";
-import { updateProjectOpenedStatus } from "./helpers";
+import { updateProjectOpenedStatus, setProjectStatusToKilled } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
+import SystemNotification, {
+  SystemNotificationKind,
+} from "../SystemNotification";
 
 const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Project title", key: "title" },
@@ -51,14 +60,9 @@ const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
   id,
   isAdmin = false,
 }) => (
-  <span className="icons">
-    <IconButton href={`${deploymentRootPath}project/${id}`}>
-      <EditIcon />
-    </IconButton>
-    <IconButton href={`${deploymentRootPath}project/${id}/delete`}>
-      <DeleteIcon />
-    </IconButton>
-  </span>
+  <IconButton href={`${deploymentRootPath}project/${id}`}>
+    <EditIcon />
+  </IconButton>
 );
 
 interface ProjectsTableProps {
@@ -79,16 +83,19 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   const [rowsPerPage, setRowsPerPage] = useState<number>(
     props.pageSizeOptions[0]
   );
+  const [refreshGeneration, setRefreshGeneration] = useState<number>(0);
 
   const [orderBy, setOrderBy] = useState<keyof Project>("created");
   const [order, setOrder] = useState<SortDirection>("desc");
 
   const classes = useStyles();
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [updatingProject, setUpdatingProject] = useState<number>(0);
 
   useEffect(() => {
     console.log("filter terms or search changed, updating...");
     props.updateRequired(page, rowsPerPage);
-  }, [page, rowsPerPage, order, orderBy]);
+  }, [page, rowsPerPage, order, orderBy, refreshGeneration]);
 
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
@@ -111,6 +118,33 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
     setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
   };
+
+  const closeDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const onDeleteProject = async () => {
+    closeDialog();
+
+    try {
+      const projectId = updatingProject as number;
+      await setProjectStatusToKilled(projectId);
+
+      setRefreshGeneration(refreshGeneration + 1);
+
+      SystemNotification.open(
+        SystemNotificationKind.Success,
+        `Successfully killed project: "${updatingProject}"`
+      );
+    } catch {
+      SystemNotification.open(
+        SystemNotificationKind.Error,
+        `Failed to kill project "${updatingProject}"`
+      );
+    }
+  };
+
+  const customCellStyle = { width: "200px" };
 
   return (
     <>
@@ -166,7 +200,20 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                   <TableCell>{status}</TableCell>
                   <TableCell>{projectUser}</TableCell>
                   <TableCell>
-                    <ActionIcons id={id} isAdmin={props.isAdmin ?? false} />
+                    <Box width="100px">
+                      <span className="icons">
+                        <ActionIcons id={id} isAdmin={props.isAdmin ?? false} />
+                        <IconButton
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setUpdatingProject(id);
+                            setOpenDialog(true);
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </span>
+                    </Box>
                   </TableCell>
                   <TableCell>
                     <Button
@@ -210,6 +257,28 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
         // FIXME: remove when count is correct
         labelDisplayedRows={({ from, to }) => `${from}-${to}`}
       />
+      <Dialog
+        open={openDialog}
+        onClose={closeDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Delete Project</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            This marks the project and all its media as deletable. While media
+            will not be removed immediately, you should not do this unless you
+            are happy that the attached media can be removed. Do you want to
+            continue?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>Cancel</Button>
+          <Button color="secondary" onClick={onDeleteProject}>
+            Okay
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
