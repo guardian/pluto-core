@@ -17,6 +17,7 @@ import {
   TablePagination,
   TableRow,
   TableSortLabel,
+  Box,
 } from "@material-ui/core";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
@@ -143,6 +144,8 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
     }
   };
 
+  const customCellStyle = { width: "200px" };
+
   return (
     <>
       <TableContainer>
@@ -197,18 +200,20 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                   <TableCell>{status}</TableCell>
                   <TableCell>{projectUser}</TableCell>
                   <TableCell>
-                    <span className="icons">
-                      <ActionIcons id={id} isAdmin={props.isAdmin ?? false} />
-                      <IconButton
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setUpdatingProject(id);
-                          setOpenDialog(true);
-                        }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </span>
+                    <Box width="100px">
+                      <span className="icons">
+                        <ActionIcons id={id} isAdmin={props.isAdmin ?? false} />
+                        <IconButton
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setUpdatingProject(id);
+                            setOpenDialog(true);
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </span>
+                    </Box>
                   </TableCell>
                   <TableCell>
                     <Button
