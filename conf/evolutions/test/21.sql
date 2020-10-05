@@ -49,7 +49,7 @@ INSERT INTO "PlutoWorkingGroup" (id, B_HIDE, S_NAME, S_COMMISSIONER) VALUES (1, 
 INSERT INTO "PlutoWorkingGroup" (id, B_HIDE, S_NAME, S_COMMISSIONER) VALUES (2, true, 'Multimedia Anti-Social', 'Boyd Paul');
 
 INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (1, 1234, 'VX', '2018-01-01T12:13:24.000', '2018-01-01T12:13:24.000', 'My test commission', 'New', 'some very long description goes here', 1);
-INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (2, 2345, 'VX', '2018-01-02T12:13:24.000', '2018-01-02T12:13:24.000', 'My test commission 2', 'In production', 'some very long description goes here', 1);
+INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (2, 2345, 'VX', '2018-01-02T12:13:24.000', '2018-01-02T12:13:24.000', 'My test commission 2', 'In Production', 'some very long description goes here', 1);
 INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (3, 3456, 'VX', '2018-01-03T12:13:24.000', '2018-01-03T12:13:24.000', 'My test commission 3', 'Held', 'some very long description goes here', 1);
 INSERT INTO "PlutoCommission" (id, I_COLLECTION_ID, S_SITE_ID, T_CREATED, T_UPDATED, S_TITLE, S_STATUS, S_DESCRIPTION, K_WORKING_GROUP) VALUES (4, 4567, 'VX', '2018-01-04T12:13:24.000', '2018-01-04T12:13:24.000', 'My test commission 4', 'Completed', 'some very long description goes here', 1);
 

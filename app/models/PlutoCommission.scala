@@ -170,12 +170,14 @@ object PlutoCommission extends ((Option[Int],Option[Int],Option[String],Timestam
     if(idparts.length!=2) return Future(None)
 
     db.run(
-      TableQuery[PlutoCommissionRow].filter(_.siteId===idparts.head).filter(_.collectionId===idparts(1).toInt).result.asTry
-    ).map({
-      case Success(resultSeq)=>resultSeq.headOption
-      case Failure(error)=>throw error
-    })
+      TableQuery[PlutoCommissionRow].filter(_.siteId===idparts.head).filter(_.collectionId===idparts(1).toInt).result
+    ).map(_.headOption)
   }
+
+  def forId(id:Int) (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoCommission]] =
+    db.run {
+      TableQuery[PlutoCommissionRow].filter(_.id===id).result
+    }.map(_.headOption)
 
   //handle different explicit time format
   def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)

@@ -1,0 +1,47 @@
+[
+  {
+    "pk": 732,
+    "model": "auth.user",
+    "fields": {
+      "username": "john_smith",
+      "first_name": "John",
+      "last_name": "Smith",
+      "is_active": true,
+      "is_superuser": false,
+      "is_staff": false,
+      "last_login": "2020-08-25T10:34:04.622",
+      "groups": [
+        7,
+        51,
+        154
+      ],
+      "user_permissions": [],
+      "password": "sdfasfdsfasfd",
+      "email": "ggsdfgdsfgdfgds",
+      "date_joined": "2020-02-11T11:50:30.452"
+    }
+  },
+  {
+    "pk": 80,
+    "model": "auth.user",
+    "fields": {
+      "username": "jane_jones",
+      "first_name": "Jane",
+      "last_name": "Jones",
+      "is_active": true,
+      "is_superuser": false,
+      "is_staff": false,
+      "last_login": "2020-08-28T10:51:03.381",
+      "groups": [
+        7,
+        51,
+        54,
+        152
+      ],
+      "user_permissions": [],
+      "password": "gfdhfghdfghfgdhfdh",
+      "email": "vbnvbcncvbvcnv",
+      "date_joined": "2014-11-25T14:44:51.741"
+    }
+  }
+]
