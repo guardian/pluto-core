@@ -28,9 +28,9 @@ object DataMigration {
 
   /**
    * look up the values for a given field in the metadata document
-   * @param doc
-   * @param fieldName
-   * @return
+   * @param doc JsValue representing the json MetadataDocument
+   * @param fieldName field to search for
+   * @return None if no field was found. Otherwise, a sequence of zero or more string values for the field.
    */
   def valuesForField(doc:JsValue, fieldName:String):Option[IndexedSeq[String]] = {
     val values = for {
@@ -49,7 +49,7 @@ object DataMigration {
 
 class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:String, sourceSystemId:String, userCache:VSUserCache)
                     (implicit system:ActorSystem, mat:Materializer, dbConfigProvider:DatabaseConfigProvider) {
-  private val http = Http()
+  private implicit val http:akka.http.scaladsl.HttpExt = Http()
   private implicit val dispatcher = system.dispatcher
   private final val logger = LoggerFactory.getLogger(getClass)
 

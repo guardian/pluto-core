@@ -14,12 +14,12 @@ import scala.concurrent.ExecutionContext
 
 
 object HttpHelper {
-  def requestJson(uri:String, user:String, passwd:String)(implicit system:ActorSystem, mat:Materializer, ec:ExecutionContext) = {
+  def requestJson(uri:String, user:String, passwd:String)(implicit http:akka.http.scaladsl.HttpExt, system:ActorSystem, mat:Materializer, ec:ExecutionContext) = {
     val auth = Authorization(BasicHttpCredentials(user, passwd))
     val accept = Accept(MediaRange(MediaType.applicationWithFixedCharset("json",HttpCharset.custom("UTF-8"))))
     val req = HttpRequest(uri = uri, headers=Seq(auth, accept))
 
-    Http().singleRequest(req).flatMap(response=> {
+    http.singleRequest(req).flatMap(response=> {
       val folderSink = Sink.fold[Array[Byte],ByteString](Array())((acc, elem)=>acc ++ elem.toArray)
       val finalBytesFut = response.entity.dataBytes.toMat(folderSink)(Keep.right).run()
 

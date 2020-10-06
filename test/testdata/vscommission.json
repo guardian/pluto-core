@@ -51,6 +51,13 @@
               "user": "joe_bloggs",
               "timestamp": "2020-09-23T11:29:12.948+0000",
               "change": "VX-58759929"
+            },
+            {
+              "value": "not-valid-entry",
+              "uuid": "02091284-2aa8-4fb2-9cdc-caa08794279d",
+              "user": "joe_bloggs",
+              "timestamp": "2020-09-23T11:29:12.948+0000",
+              "change": "VX-58759929"
             }
           ],
           "uuid": "f6b98e4d-93c9-4c6b-9cd4-bbc1476dc46b",
@@ -95,6 +102,22 @@
           "value": [
             {
               "value": "New",
+              "uuid": "8457df57-4631-4f44-866f-b89d01221f6e",
+              "user": "joe_bloggs",
+              "timestamp": "2020-09-23T11:29:12.948+0000",
+              "change": "VX-58759929"
+            }
+          ],
+          "uuid": "3505da89-05ed-4853-99db-a97f9e907dbd",
+          "user": "joe_bloggs",
+          "timestamp": "2020-09-23T11:29:12.948+0000",
+          "change": "VX-58759929"
+        },
+        {
+          "name": "gnm_commission_scheduledcompletion",
+          "value": [
+            {
+              "value": "2020-03-04",
               "uuid": "8457df57-4631-4f44-866f-b89d01221f6e",
               "user": "joe_bloggs",
               "timestamp": "2020-09-23T11:29:12.948+0000",

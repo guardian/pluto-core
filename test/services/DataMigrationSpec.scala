@@ -19,8 +19,7 @@ import slick.jdbc.PostgresProfile
 import utils.BuildMyApp
 
 import scala.concurrent.duration._
-import scala.concurrent.Await
-import scala.io.Source
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 class DataMigrationSpec extends Specification with Mockito with BuildMyApp {
   "DataMigration.valuesForField" should {
@@ -51,7 +50,7 @@ class DataMigrationSpec extends Specification with Mockito with BuildMyApp {
       jsonStream.close()
 
       val result = DataMigration.valuesForField(jsonContent, "gnm_commission_owner")
-      result must beSome(Seq("2","6"))
+      result must beSome(Seq("2","6","not-valid-entry"))
     }
   }
 
@@ -91,6 +90,93 @@ class DataMigrationSpec extends Specification with Mockito with BuildMyApp {
       updatedComm.get.notes must beSome("some new notes")
       updatedComm.get.productionOffice mustEqual ProductionOffice.Aus
       updatedComm.get.originalTitle must beSome("original title here")
+
+      //double-check that it has only affected the targetted commission
+      val notUpdatedComm = Await.result(PlutoCommission.forId(1), 5 seconds)
+      notUpdatedComm must beSome
+      notUpdatedComm.get.owner mustNotEqual "new_owner"
+      notUpdatedComm.get.notes must not beSome("some new notes")
+      notUpdatedComm.get.originalTitle must not beSome("original title here")
+    }
+  }
+
+  "DataMigration.migrateCommissionsData" should {
+    "call updateCommission for every entry in the database" in new WithApplication(buildApp) {
+      implicit val system:ActorSystem = app.injector.instanceOf(classOf[ActorSystem])
+      implicit val mat:Materializer   = app.injector.instanceOf(classOf[Materializer])
+      implicit val dbConfigProvider:DatabaseConfigProvider = app.injector.instanceOf(classOf[DatabaseConfigProvider])
+      implicit val db = dbConfigProvider.get[PostgresProfile].db
+      implicit val ec:ExecutionContext = system.dispatcher
+
+      val mockUpdateCommission = mock[(PlutoCommission)=>Future[Option[PlutoCommission]]]
+      mockUpdateCommission.apply(any) returns Future(Some(mock[PlutoCommission]))
+      val toTest = new DataMigration("source-base","user","password","VX",mock[VSUserCache]) {
+        override def updateCommission(itemToUpdate: PlutoCommission): Future[Option[PlutoCommission]] = mockUpdateCommission(itemToUpdate)
+      }
+
+      val finalCount = Await.result(toTest.migrateCommissionsData, 10 seconds)
+
+      val firstComm = Await.result(PlutoCommission.forId(1), 5 seconds)
+      val fourthComm = Await.result(PlutoCommission.forId(1), 5 seconds)
+      println(s"test db has $finalCount commissions")
+      //we don't know the exact number of comms in the database as other tests may have changed the state. But there should be at least 4
+      there were atLeast(4)(mockUpdateCommission).apply(any)
+      //spot-check a couple of the known commissions
+      there was one(mockUpdateCommission).apply(firstComm.get)
+      there was one(mockUpdateCommission).apply(fourthComm.get)
+    }
+  }
+
+  "DataMigration.updateCommission" should {
+    "call requestOriginalRecord to retrieve data from source and then call performCommissionFieldUpdate with values to update" in new WithApplication(buildApp) {
+      implicit val system:ActorSystem = app.injector.instanceOf(classOf[ActorSystem])
+      implicit val mat:Materializer   = app.injector.instanceOf(classOf[Materializer])
+      implicit val dbConfigProvider:DatabaseConfigProvider = app.injector.instanceOf(classOf[DatabaseConfigProvider])
+      implicit val db = dbConfigProvider.get[PostgresProfile].db
+      implicit val ec:ExecutionContext = system.dispatcher
+
+      val jsonSrc = new File("test/testdata/vscommission.json")
+      val jsonStream = new FileInputStream(jsonSrc)
+      val jsonContent = Json.parse(jsonStream)
+      jsonStream.close()
+
+      val mockRequestOriginal = mock[String=>Future[JsValue]]
+      mockRequestOriginal.apply(any) returns Future(jsonContent)
+
+      val mockPerformCommissionFieldUpdate = mock[(Int, Timestamp, String, Option[String], ProductionOffice.Value, Option[String])=>Future[Unit]]
+      mockPerformCommissionFieldUpdate.apply(any,any,any,any,any,any) returns Future( () )
+
+      val mockUserCache = mock[VSUserCache]
+      mockUserCache.lookup(any) returns Some("test-user")
+
+      val toTest = new DataMigration("source-base","user","passwrod","VX",mockUserCache) {
+        override def requestOriginalRecord(vsId: String): Future[JsValue] = mockRequestOriginal(vsId)
+
+        override def performCommissionFieldUpdate(recordId: Int,
+                                                  updatedScheduledCompletion: Timestamp,
+                                                  updatedOwner: String,
+                                                  updatedNotes: Option[String],
+                                                  updatedProductionOffice: ProductionOffice.Value,
+                                                  updatedOriginalTitle: Option[String]): Future[Unit] =
+          mockPerformCommissionFieldUpdate(recordId, updatedScheduledCompletion, updatedOwner, updatedNotes, updatedProductionOffice, updatedOriginalTitle)
+      }
+
+      val sourceCommission = mock[PlutoCommission]
+      sourceCommission.collectionId returns Some(1234)
+      sourceCommission.id returns Some(333)
+      val result = Await.result(toTest.updateCommission(sourceCommission), 5 seconds)
+      there was one(mockRequestOriginal).apply("VX-1234")
+
+      there was one(mockUserCache).lookup(2)
+      there was one(mockUserCache).lookup(6)
+      there was one(mockPerformCommissionFieldUpdate).apply(
+        333,
+        Timestamp.valueOf(LocalDateTime.of(2020,3,4,0,0,0)),
+        "test-user|test-user",
+        None,
+        ProductionOffice.UK,
+        None
+      )
     }
   }
 }
