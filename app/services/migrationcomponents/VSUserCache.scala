@@ -35,4 +35,6 @@ object VSUserCache {
 
 class VSUserCache(private val withContent:Map[Int,String]) {
   def lookup(forId:Int) = withContent.get(forId)
+
+  def size = withContent.count(_=>true)
 }

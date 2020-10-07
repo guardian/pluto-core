@@ -82,6 +82,7 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
     itemToUpdate.collectionId match {
       case Some(collId)=>
         val vsid = s"$sourceSystemId-$collId"
+        logger.info(s"Running collection migrate on ${itemToUpdate.title} ($vsid)...")
         requestOriginalRecord(vsid).flatMap(originalRecord=>{
           /*
           fields to update:
@@ -120,7 +121,10 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
             .flatMap(_.headOption)
 
           performCommissionFieldUpdate(itemToUpdate.id.get,updatedScheduledCompletion, updatedOwnerId,updatedNotes, updatedProductionOffice, updatedOriginalTitle)
-            .map(_=>Some(itemToUpdate))
+            .map(_=>{
+              logger.info(s"Migration of $vsid complete")
+              Some(itemToUpdate)
+            })
         })
 
       case None=>
@@ -139,6 +143,7 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
       ClosedShape
     }
 
+    logger.info("Starting up migration stream...")
     RunnableGraph.fromGraph(graph).run()
   }
 }
