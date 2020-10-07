@@ -68,7 +68,7 @@ class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSi
               Left(response.status.intValue())
             } else {
               val serverJson = Json.parse(serverBytes.toArray)
-              val newProjects = VSProjectEntity.fromList((serverJson \ "item").as[JsValue])
+              val newProjects = VSProjectEntity.fromList((serverJson \ "collection").as[JsValue])
               if(newProjects.nonEmpty) {
                 this.synchronized {
                   cachedItems = cachedItems ++ newProjects.tail
