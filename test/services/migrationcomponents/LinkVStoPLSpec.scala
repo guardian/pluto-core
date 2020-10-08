@@ -13,6 +13,7 @@ import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.Json
 import play.api.test.WithApplication
+import slick.jdbc.PostgresProfile
 import utils.BuildMyApp
 
 import scala.concurrent.duration._
@@ -140,7 +141,53 @@ class LinkVStoPLSpec extends Specification with Mockito with BuildMyApp {
     }
 
     "update an existing record if there is one pre-existing with that VS ID" in new WithApplication(buildApp) {
-      throw new RuntimeException("test not written")
+      implicit val actorSystem:ActorSystem = app.injector.instanceOf(classOf[ActorSystem])
+      implicit val mat:Materializer = app.injector.instanceOf(classOf[Materializer])
+      implicit val dbConfig:DatabaseConfigProvider = app.injector.instanceOf(classOf[DatabaseConfigProvider])
+      private implicit val db = dbConfig.get[PostgresProfile].db
+
+      implicit val ec:ExecutionContext = actorSystem.dispatcher
+
+      val mockVSUserCache = mock[VSUserCache]
+      mockVSUserCache.lookup(169) returns Some("someuser")
+
+      val sinkFac = Sink.seq[ProjectEntry]
+
+      val preExistingProject = Await.result(ProjectEntry.lookupByVidispineId("VX-3456"), 10 seconds)
+      preExistingProject must beSuccessfulTry
+      preExistingProject.get.length mustEqual 1
+
+      val sourceData = vsProjectEntityFor("test/testdata/vs-project-update.json")
+      val graph = GraphDSL.create(sinkFac) {implicit builder=> sink=>
+        import akka.stream.scaladsl.GraphDSL.Implicits._
+
+        val src = builder.add(Source.fromIterator(()=>Seq(sourceData, sourceData).iterator))
+        val toTest = builder.add(new LinkVStoPL(2, mockVSUserCache))
+
+        src ~> toTest ~> sink
+        ClosedShape
+      }
+
+      val result = Await.result(RunnableGraph.fromGraph(graph).run().map(result=>{
+        Thread.sleep(1000)
+        result
+      }), 10 seconds)
+
+      result.length mustEqual 1
+      result.head.projectTitle mustEqual "New Normal episode 3 - Work"
+      result.head.productionOffice mustEqual ProductionOffice.UK
+      result.head.status mustEqual EntryStatus.New
+      result.head.projectTypeId mustEqual 1
+      result.head.vidispineProjectId must beSome("VX-3456")
+      result.head.created mustEqual Timestamp.valueOf(LocalDateTime.of(2016,12,11,12,21,11, 21000000))
+      result.head.updated mustEqual Timestamp.valueOf(LocalDateTime.of(2020,8,11,13,10,7,496000000))
+      result.head.user mustEqual "you"
+      result.head.deletable must beNone
+      result.head.sensitive must beNone
+      result.head.deep_archive must beNone
+
+      there was no(mockVSUserCache).lookup(any)
+
     }
   }
 }

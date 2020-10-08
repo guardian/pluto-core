@@ -78,6 +78,7 @@ class LinkVStoPL (createProjectTypeId:Int, vsUserCache: VSUserCache)(implicit db
         //otherwise, create a whole new record
         val updatedFut = projectLookupFut.flatMap({
           case None=>
+            logger.debug(s"No pre-existing project for ${vsProject.getSingle("collectionId")}, creating new")
             Future.sequence(Seq(
               ProjectHelper.findWorkingGroup(vsProject),
               ProjectHelper.findCommission(vsProject)
@@ -103,6 +104,7 @@ class LinkVStoPL (createProjectTypeId:Int, vsUserCache: VSUserCache)(implicit db
               )
             })
           case Some(existingProject)=>
+            logger.debug(s"Updating existing project ${existingProject.id} (${existingProject.vidispineProjectId}")
             /*
             if we have an entry already in the database, that's from Projectlocker.
             in that case, we must apply the fields that did not exist in Projectlocker, and update the title
