@@ -73,4 +73,17 @@ class DataMigrationController @Inject()
       }
     })
   }
+
+  /**
+   * test for the search source
+   */
+  def projectsWithNofiles = IsAdminAsync { user=> request=>
+    DataMigration.testNoFilesSearch.map(count=>{
+      Ok(Json.obj("status"->"completed", "count"->count))
+    }).recover({
+      case err:Throwable=>
+        logger.error("Could not perform database scan: ", err)
+        InternalServerError(Json.obj("status"->"error","detail"->err.toString))
+    })
+  }
 }

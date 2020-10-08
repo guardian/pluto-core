@@ -14,7 +14,7 @@ import akka.util.ByteString
 import models.{PlutoCommission, PlutoCommissionRow, ProductionOffice}
 import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
-import services.migrationcomponents.{DBObjectSource, HttpHelper, LinkVStoPL, PlutoCommissionSource, VSProjectSource, VSUserCache}
+import services.migrationcomponents.{DBObjectSource, HttpHelper, LinkVStoPL, PlutoCommissionSource, ProjectNoFilesSource, VSProjectSource, VSUserCache}
 import play.api.libs.json.{JsArray, JsValue, Json}
 import slick.jdbc.PostgresProfile
 import slick.lifted.{TableQuery, Tag}
@@ -44,6 +44,20 @@ object DataMigration {
     } else {
       Some(values.toIndexedSeq)
     }
+  }
+
+  def testNoFilesSearch(implicit system:ActorSystem, mat:Materializer, dbConfigProvider:DatabaseConfigProvider) = {
+    val counterSink = Sink.fold[Int, Any](0)((counter, _)=>counter+1)
+
+    val graph = GraphDSL.create(counterSink) { implicit builder=> sink=>
+      import akka.stream.scaladsl.GraphDSL.Implicits._
+
+      val src = builder.add(new ProjectNoFilesSource(dbConfigProvider, 50))
+      src ~> sink
+      ClosedShape
+    }
+
+    RunnableGraph.fromGraph(graph).run()
   }
 }
 
