@@ -14,7 +14,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class PlutoWorkingGroup (id:Option[Int], hide:Boolean, name:String, commissioner_name:String, uuid:Option[UUID]) extends PlutoModel {
+case class PlutoWorkingGroup (id:Option[Int], hide:Boolean, name:String, commissioner_name:String, uuid:Option[String]) extends PlutoModel {
   private val logger = Logger(getClass)
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
@@ -53,17 +53,17 @@ class PlutoWorkingGroupRow(tag:Tag) extends Table[PlutoWorkingGroup](tag, "Pluto
   def hide = column[Boolean]("b_hide")
   def name = column[String]("s_name")
   def commissioner_name = column[String]("s_commissioner")
-  def uuid = column[Option[UUID]]("u_uuid")
+  def uuid = column[Option[String]]("u_uuid")
   def * = (id.?, hide, name, commissioner_name, uuid) <> (PlutoWorkingGroup.tupled, PlutoWorkingGroup.unapply)
 }
 
-object PlutoWorkingGroup extends ((Option[Int],Boolean, String, String, Option[UUID])=>PlutoWorkingGroup) {
+object PlutoWorkingGroup extends ((Option[Int],Boolean, String, String, Option[String])=>PlutoWorkingGroup) {
   def entryForId(id:Int)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoWorkingGroup]] = db.run(
     TableQuery[PlutoWorkingGroupRow].filter(_.id===id).result
   ).map(resultSeq=>resultSeq.headOption)
 
   def entryForUuid(id:UUID)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoWorkingGroup]] = db.run {
-    TableQuery[PlutoWorkingGroupRow].filter(_.uuid===id).result
+    TableQuery[PlutoWorkingGroupRow].filter(_.uuid===id.toString).result
   }.map(_.headOption)
 }
 
@@ -73,7 +73,7 @@ trait PlutoWorkingGroupSerializer extends TimestampSerialization {
     (JsPath \ "hide").write[Boolean] and
       (JsPath \ "name").write[String] and
       (JsPath \ "commissioner").write[String] and
-      (JsPath \ "uuid").writeNullable[UUID]
+      (JsPath \ "uuid").writeNullable[String]
     )(unlift(PlutoWorkingGroup.unapply))
 
   implicit val workingGroupReads:Reads[PlutoWorkingGroup] = (
@@ -81,7 +81,7 @@ trait PlutoWorkingGroupSerializer extends TimestampSerialization {
     (JsPath \ "hide").read[Boolean] and
       (JsPath \ "name").read[String] and
       (JsPath \ "commissioner").read[String] and
-      (JsPath \ "uuid").readNullable[UUID]
+      (JsPath \ "uuid").readNullable[String]
     )(PlutoWorkingGroup.apply _)
 }
 
