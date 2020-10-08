@@ -3,8 +3,8 @@ package controllers
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import auth.{BearerTokenAuth, Security}
-import javax.inject.Inject
-import models.datamigration.CommissionUpdateRequest
+import javax.inject.{Inject, Singleton}
+import models.datamigration.{CommissionUpdateRequest, ProjectsUpdateRequest}
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -17,6 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
+@Singleton
 class DataMigrationController @Inject()
   (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth, config:Configuration, override val cache:SyncCacheApi)
   (implicit dbProvider:DatabaseConfigProvider, system:ActorSystem, mat:Materializer)
@@ -46,5 +47,30 @@ class DataMigrationController @Inject()
         }
       }
     )
+  }
+
+  def updateProjects = IsAdminAsync(parse.json) { user=> request=>
+    import ProjectsUpdateRequest._
+    logger.info(s"Received projects migration request from $user")
+    request.body.validate[ProjectsUpdateRequest].fold(
+      errors=> Future(BadRequest(Json.obj("status"->"invalid_request","detail"->errors.toString()))),
+      valid=>{
+        val cacheFile = config.getOptional[String]("datamigration.vidispineUsersFile").getOrElse("filepath-not-set")
+        VSUserCache.initialize(cacheFile) match {
+          case Success(vsUserCache) =>
+            logger.info(s"Loaded in ${vsUserCache.size} cached Vidispine user records")
+            val m = new DataMigration(valid.vsBaseUri, valid.vsUser, valid.vsPasswd, valid.vsSiteId, vsUserCache)
+            m.migrateProjectsData(valid.projectTypeId).onComplete({
+              case Success(recordCount) =>
+                logger.info(s"Migration run successfully completed on $recordCount projects")
+              case Failure(err) =>
+                logger.error("Migration run failed: ", err)
+            })
+            Future(Ok(Json.obj("status" -> "ok", "detail" -> "Migration operation started, see server logs for details")))
+          case Failure(err) =>
+            logger.error(s"Could not load VS user cache from $cacheFile: ", err)
+            Future(InternalServerError(Json.obj("status" -> "error", "detail" -> "Could not load VS user cache, see server logs for details")))
+      }
+    })
   }
 }

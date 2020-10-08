@@ -14,7 +14,7 @@ import akka.util.ByteString
 import models.{PlutoCommission, PlutoCommissionRow, ProductionOffice}
 import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
-import services.migrationcomponents.{HttpHelper, PlutoCommissionSource, VSUserCache}
+import services.migrationcomponents.{HttpHelper, LinkVStoPL, PlutoCommissionSource, VSProjectSource, VSUserCache}
 import play.api.libs.json.{JsArray, JsValue, Json}
 import slick.jdbc.PostgresProfile
 import slick.lifted.{TableQuery, Tag}
@@ -53,7 +53,7 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
   private implicit val dispatcher = system.dispatcher
   private final val logger = LoggerFactory.getLogger(getClass)
 
-  private lazy val db = dbConfigProvider.get[PostgresProfile].db
+  private lazy implicit val db = dbConfigProvider.get[PostgresProfile].db
 
   def requestOriginalRecord(vsId:String) = {
     HttpHelper.requestJson(s"$sourceBasePath/API/collection/$vsId/metadata", sourceUser, sourcePasswd).map({
@@ -132,14 +132,45 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
         Future(None)
   }
 
-  def migrateCommissionsData:Future[Int] = {
-    val counterSinkFact = Sink.fold[Int, Any](0)((counter, _)=>counter+1)
+  /**
+    * returns a factory for a basic counting sink that materializes the total number of items that went through it
+    * @return the Sink[]
+    */
+  private def counterSinkFact = Sink.fold[Int, Any](0)((counter, _)=>counter+1)
 
+  /**
+    * kicks off the migration of commissions data, i.e. filling in the extra fields that are not present in the ported
+    * records from the old system
+    * @return a Future, containing the number of records processed
+    */
+  def migrateCommissionsData:Future[Int] = {
     val graph = GraphDSL.create(counterSinkFact) { implicit builder=> counterSink=>
       import akka.stream.scaladsl.GraphDSL.Implicits._
 
       val commissions =  builder.add(new PlutoCommissionSource(dbConfigProvider, 100))
       commissions.out.mapAsync(4)(updateCommission) ~> counterSink
+      ClosedShape
+    }
+
+    logger.info("Starting up migration stream...")
+    RunnableGraph.fromGraph(graph).run()
+  }
+
+  /**
+    * kicks off the migration of projects data, i.e. cross-checking from the VS system and either updating or
+    * creating records as necessary
+    * @param forceProjectType project type to apply to newly created records
+    * @return a Future, containing the number of records processed
+    */
+  def migrateProjectsData(forceProjectType:Int):Future[Int] = {
+    val graph = GraphDSL.create(counterSinkFact) { implicit builder=> counterSink=>
+      import akka.stream.scaladsl.GraphDSL.Implicits._
+
+      val vsProjects = builder.add(new VSProjectSource(sourceBasePath, sourceUser, sourcePasswd, pageSize=40))
+      val projectLinker = builder.add(new LinkVStoPL(forceProjectType, userCache))
+
+      vsProjects.out.async ~> projectLinker
+      projectLinker.out.mapAsync(4)(_.save) ~> counterSink
       ClosedShape
     }
 
