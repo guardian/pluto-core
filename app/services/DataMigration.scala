@@ -1,7 +1,9 @@
 package services
 
+import java.io.File
+import java.nio.file.Files
 import java.sql.Timestamp
-import java.time.LocalDate
+import java.time.{Instant, LocalDate}
 import java.time.format.DateTimeFormatter
 
 import akka.actor.ActorSystem
@@ -11,17 +13,19 @@ import akka.http.scaladsl.model.headers.{Accept, Authorization, BasicHttpCredent
 import akka.stream.{ClosedShape, Materializer}
 import akka.stream.scaladsl.{GraphDSL, Keep, RunnableGraph, Sink}
 import akka.util.ByteString
-import models.{PlutoCommission, PlutoCommissionRow, ProductionOffice}
+import models.{FileAssociationRow, FileEntry, PlutoCommission, PlutoCommissionRow, ProductionOffice, StorageEntry, StorageEntryHelper}
+import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
-import services.migrationcomponents.{DBObjectSource, HttpHelper, LinkVStoPL, PlutoCommissionSource, ProjectNoFilesSource, VSProjectSource, VSUserCache}
+import services.migrationcomponents.{DBObjectSource, HttpHelper, LinkVStoPL, MultipleCounter, PlutoCommissionSource, ProjectFileExistsSwitch, ProjectFileResult, ProjectNoFilesSource, VSProjectSource, VSUserCache}
 import play.api.libs.json.{JsArray, JsValue, Json}
 import slick.jdbc.PostgresProfile
 import slick.lifted.{TableQuery, Tag}
 import slick.jdbc.PostgresProfile.api._
+import slick.lifted
 
 import scala.concurrent.Future
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 object DataMigration {
   val dateFormatter = DateTimeFormatter.ISO_DATE
@@ -190,5 +194,107 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
 
     logger.info("Starting up migration stream...")
     RunnableGraph.fromGraph(graph).run()
+  }
+
+  /**
+   * copy file from A to B
+   * @param from [[ProjectFileResult]] representing the file(s) to copy
+   * @param destPath path to copy them to (string)
+   * @return the incoming [[ProjectFileResult]] if all were successful, otherwise throws a RuntimeException
+   */
+  def copyFiles(from:ProjectFileResult, destPath:String):ProjectFileResult = {
+    val copyResults = from.filePaths.map(filepath=>Try {
+      val destFile = FilenameUtils.concat(destPath,FilenameUtils.getName(filepath))
+      logger.debug(s"Copying $filepath to $destFile")
+      FileUtils.copyFile(
+        new File(filepath),
+        new File(destFile)
+      )
+    })
+
+    val failedCopies = copyResults.collect({case Failure(err)=>err})
+    if(failedCopies.nonEmpty) {
+      logger.error(s"${failedCopies.length} out of ${from.filePaths.length} copies failed: ")
+      failedCopies.foreach(err=>logger.error("Copy failed: ", err))
+      throw new RuntimeException("Could not copy all the files")
+    } else {
+      from
+    }
+  }
+
+  def getOrCreateFileEntry(forFilePath:String, onStorageId:Int):Future[FileEntry] = {
+    FileEntry.allVersionsFor(forFilePath,onStorageId).flatMap({
+      case Success(results)=>
+        results.headOption match {
+          case Some(entry)=>Future(entry)
+          case None=>
+            val path = new File(forFilePath).toPath
+            val modTime = Timestamp.from(Files.getLastModifiedTime(path).toInstant)
+            val maybeCTimeRaw = Try { Files.getAttribute(path, "unix:ctime").asInstanceOf[java.nio.file.attribute.FileTime] }.toOption
+            val maybeATimeRaw = Try { Files.getAttribute(path, "unix:atime").asInstanceOf[java.nio.file.attribute.FileTime] }.toOption
+
+            val ctime = maybeCTimeRaw.map(ctime=>Timestamp.from(ctime.toInstant)).getOrElse(Timestamp.from(Instant.now))
+            val atime = maybeATimeRaw.map(atime=>Timestamp.from(atime.toInstant)).getOrElse(Timestamp.from(Instant.now))
+
+            val ent = FileEntry(None, forFilePath, onStorageId, "migration",1, ctime, modTime, atime, hasContent=true, hasLink=true)
+            ent.save.map({
+              case Success(savedEntry)=>savedEntry
+              case Failure(exception)=>throw exception
+            })
+        }
+    })
+  }
+
+  /**
+   * run a process to ingest project files for any projects that don't have them
+   * @param projectSourcePath source path to look for legacy projects
+   * @param destinationStorageId storage id to put them onto
+   * @return a Future containing a 2-tuple - first is projects successfully copied, second is projects not found
+   */
+  def pullInProjectFiles(projectSourcePath:String, destinationStorageId:Int) = {
+    StorageEntryHelper.entryFor(destinationStorageId).flatMap({
+      case Some(storageEntry)=>
+        val multiCounterFac = new MultipleCounter[ProjectFileResult](2)
+
+        val graph = GraphDSL.create(multiCounterFac){ implicit builder=> multiCounter=>
+          import akka.stream.scaladsl.GraphDSL.Implicits._
+          import slick.jdbc.PostgresProfile.api._
+
+          val affectedProjects = builder.add(new ProjectNoFilesSource(dbConfigProvider, 20))
+          val hasProjectsSwitch = builder.add(new ProjectFileExistsSwitch(projectSourcePath))
+          val finalSink = builder.add(Sink.ignore)
+
+          affectedProjects ~> hasProjectsSwitch
+
+          //"YES" branch - projects exist
+          hasProjectsSwitch.out(0)
+            .map(entry=>copyFiles(entry, storageEntry.rootpath.get))  //also icky but it will work for the intended use
+            .mapAsync(4)(entry=>{ //once copied create or find the file entries
+              val fileEntryFutures = entry.filePaths.map(filepath=>getOrCreateFileEntry(filepath, destinationStorageId))
+              val resultFuture = Future.sequence(fileEntryFutures)
+              resultFuture.map(newFileEntries=>entry.copy(fileEntries=Some(newFileEntries)))
+            })
+            .mapAsync(4)(entry=>{ //now set up the associations
+              val actions = DBIO.sequence(
+                entry.fileEntries.get.map(fileEntry=>
+                  lifted.TableQuery[FileAssociationRow]+=(entry.projectEntry.id.get,fileEntry.id.get)
+                )
+              )
+              db.run(actions).map(_=>entry)
+            }) ~> multiCounter.in(0)
+
+          //"NO" branch - projects don't exist
+          hasProjectsSwitch.out(1) ~> multiCounter.in(1)
+
+          multiCounter.out ~> finalSink
+          ClosedShape
+        }
+
+        RunnableGraph.fromGraph(graph).run().map(results=>(results.head, results(1)))
+
+      case None=>
+        Future.failed(new RuntimeException(s"No storage found with id $destinationStorageId"))
+    })
+
   }
 }
