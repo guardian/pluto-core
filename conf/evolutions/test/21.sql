@@ -73,7 +73,7 @@ SELECT pg_catalog.setval('"ProjectTemplate_id_seq"', 4, true);
 SELECT pg_catalog.setval('"ProjectType_id_seq"', 4, true);
 SELECT pg_catalog.setval('"StorageEntry_id_seq"', 3, true);
 SELECT pg_catalog.setval('"ProjectFileAssociation_id_seq"', 3, false);
-SELECT pg_catalog.setval('"ProjectEntry_id_seq"', 5, false);
+SELECT pg_catalog.setval('"ProjectEntry_id_seq"', 6, false);
 SELECT pg_catalog.setval('"FileEntry_id_seq"', 6, true);
 
 # --!Downs
