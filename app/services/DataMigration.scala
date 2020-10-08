@@ -169,8 +169,8 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
       val vsProjects = builder.add(new VSProjectSource(sourceBasePath, sourceUser, sourcePasswd, pageSize=40))
       val projectLinker = builder.add(new LinkVStoPL(forceProjectType, userCache))
 
-      vsProjects.out.async ~> projectLinker
-      projectLinker.out.mapAsync(4)(_.save) ~> counterSink
+      vsProjects ~> projectLinker
+      projectLinker.mapAsync(4)(_.save) ~> counterSink
       ClosedShape
     }
 

@@ -29,7 +29,7 @@ class DataMigrationController @Inject()
     request.body.validate[CommissionUpdateRequest].fold(
       errors=> Future(BadRequest(Json.obj("status"->"invalid_request","detail"->errors.toString()))),
       valid=> {
-        val cacheFile = config.getOptional[String]("datamigration.vidispineUsersFile").getOrElse("filepath-not-set")
+        val cacheFile = config.get[String]("datamigration.vidispineUsersFile")
         VSUserCache.initialize(cacheFile) match {
           case Success(vsUserCache)=>
             logger.info(s"Loaded in ${vsUserCache.size} cached Vidispine user records")
@@ -55,7 +55,7 @@ class DataMigrationController @Inject()
     request.body.validate[ProjectsUpdateRequest].fold(
       errors=> Future(BadRequest(Json.obj("status"->"invalid_request","detail"->errors.toString()))),
       valid=>{
-        val cacheFile = config.getOptional[String]("datamigration.vidispineUsersFile").getOrElse("filepath-not-set")
+        val cacheFile = config.get[String]("datamigration.vidispineUsersFile")
         VSUserCache.initialize(cacheFile) match {
           case Success(vsUserCache) =>
             logger.info(s"Loaded in ${vsUserCache.size} cached Vidispine user records")

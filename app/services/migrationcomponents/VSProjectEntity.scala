@@ -10,6 +10,11 @@ import scala.util.{Success, Try}
 
 class VSProjectEntity (private val rawData:JsValue) {
   private val dateFormatter = DateTimeFormatter.ISO_DATE_TIME
+
+  def dump = {
+    rawData.toString()
+  }
+
   /**
     * returns a (possibly empty) sequence of strings for each available value of the given field
     * @param key fieldname to look for

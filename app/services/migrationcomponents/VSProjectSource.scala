@@ -2,7 +2,7 @@ package services.migrationcomponents
 
 import akka.actor.ActorSystem
 import akka.http.javadsl.model.StatusCodes
-import akka.http.scaladsl.model.{HttpEntity, HttpMethod, HttpMethods, HttpRequest, HttpResponse, MediaRange, MediaTypes}
+import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpCharset, HttpEntity, HttpMethod, HttpMethods, HttpRequest, HttpResponse, MediaRange, MediaTypes}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.{Accept, Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.server.ContentNegotiator.Alternative.MediaType
@@ -43,18 +43,20 @@ class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSi
     }
 
     def getNextPage():Future[Either[Int, Option[VSProjectEntity]]] = {
-      val uri = s"$vsBaseUri/API/collection;first=$lastIndex;number=$pageSize?content=metadata?count=false"
+      val uri = s"$vsBaseUri/API/collection;first=$lastIndex;number=$pageSize?content=metadata&count=false"
+      logger.debug(s"URI is $uri")
       val requestXml = <ItemSearchDocument xmlns="http://xml.vidispine.com/schema/vidispine">
         <field>
           <name>gnm_type</name>
           <value>project</value>
         </field>
       </ItemSearchDocument>
+      logger.debug(s"requestXml is ${requestXml.toString()}")
 
       val auth = Authorization(BasicHttpCredentials(vsUser, vsPasswd))
       val accept = Accept(MediaRange(MediaTypes.`application/json`))
-      val entityBody = HttpEntity(requestXml.toString())
-      val req = HttpRequest(HttpMethods.PUT, uri, Seq(auth, accept), entityBody)
+
+      val req = HttpRequest(HttpMethods.PUT, uri, Seq(auth, accept)).withEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharset("UTF-8")(Seq())), requestXml.toString())
       makeHttpRequest(req).flatMap(response=>{
         if(response.status==StatusCodes.BAD_GATEWAY || response.status==StatusCodes.GATEWAY_TIMEOUT) {
           response.entity.discardBytes()
@@ -68,7 +70,9 @@ class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSi
               Left(response.status.intValue())
             } else {
               val serverJson = Json.parse(serverBytes.toArray)
-              val newProjects = VSProjectEntity.fromList((serverJson \ "collection").as[JsValue])
+              logger.debug(serverJson.toString())
+
+              val newProjects = (serverJson \ "collection").asOpt[JsValue].map(VSProjectEntity.fromList).getOrElse(IndexedSeq())
               if(newProjects.nonEmpty) {
                 this.synchronized {
                   cachedItems = cachedItems ++ newProjects.tail
@@ -91,6 +95,7 @@ class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSi
         this.synchronized {
           cachedItems.headOption match {
             case Some(nextItem)=>
+              logger.debug(s"Yielding ${nextItem.dump}")
               cachedItems = cachedItems.tail
               nextItemCb.invoke(nextItem)
               return
@@ -105,6 +110,7 @@ class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSi
           case Right(None)=>
             completedCb.invoke( () )
           case Right(Some(nextItem))=>
+            logger.debug(s"Yielding ${nextItem.dump}")
             nextItemCb.invoke(nextItem)
         }).recover({
           case err:Throwable=>
