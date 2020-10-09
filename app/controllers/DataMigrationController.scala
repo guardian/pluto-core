@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import auth.{BearerTokenAuth, Security}
 import javax.inject.{Inject, Singleton}
-import models.datamigration.{CommissionUpdateRequest, ProjectsUpdateRequest}
+import models.datamigration.{CommissionUpdateRequest, ProjectRelinkRequest, ProjectsUpdateRequest}
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -85,5 +85,31 @@ class DataMigrationController @Inject()
         logger.error("Could not perform database scan: ", err)
         InternalServerError(Json.obj("status"->"error","detail"->err.toString))
     })
+  }
+
+  def relinkOldProjects = IsAdminAsync(parse.json) { user=> request=>
+    import models.datamigration.ProjectRelinkRequest._
+
+    logger.info(s"Received project relink request from $user")
+    request.body.validate[ProjectRelinkRequest].fold(
+      errors=> Future(BadRequest(Json.obj("status"->"invalid_request","detail"->errors.toString))),
+      valid=>{
+        val cacheFile = config.get[String]("datamigration.vidispineUsersFile")
+        VSUserCache.initialize(cacheFile) match {
+          case Success(userCache) =>
+            val m = new DataMigration("not-used", "not-used", "not-used", "not-used", userCache)
+            m.pullInProjectFiles(valid.sourceFilePath, valid.destinationStorageId).onComplete({
+              case Success(results) =>
+                logger.info(s"Migration run completed.  Relinked ${results._1} projects and could not find ${results._2} projects.")
+              case Failure(err) =>
+                logger.error(s"Migration run failed: ", err)
+            })
+            Future(Ok(Json.obj("status" -> "ok", "detail" -> "Migration operation started, see server logs for details")))
+          case Failure(err) =>
+            logger.error(s"Could not load VS user cache from $cacheFile: ", err)
+            Future(InternalServerError(Json.obj("status"->"error", "detail"->err.toString, "cacheFile"->cacheFile)))
+        }
+      }
+    )
   }
 }

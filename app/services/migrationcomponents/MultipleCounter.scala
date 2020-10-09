@@ -36,7 +36,9 @@ class MultipleCounter[T](inputCount:Int) extends GraphStageWithMaterializedValue
       (1 to inputCount).foreach(n=>{
         setHandler(ins(n-1), new AbstractInHandler {
           override def onPush(): Unit = {
+            val elem=grab(ins(n-1))
             counter(n-1) = counter(n-1) + 1
+            push(out, elem)
           }
 
           override def onUpstreamFinish(): Unit = {

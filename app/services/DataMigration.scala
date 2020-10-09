@@ -242,6 +242,9 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
               case Failure(exception)=>throw exception
             })
         }
+      case Failure(err)=>
+        logger.error(s"Could not get file entry for $forFilePath: ", err)
+        Future.failed(err)
     })
   }
 
@@ -251,7 +254,7 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
    * @param destinationStorageId storage id to put them onto
    * @return a Future containing a 2-tuple - first is projects successfully copied, second is projects not found
    */
-  def pullInProjectFiles(projectSourcePath:String, destinationStorageId:Int) = {
+  def pullInProjectFiles(projectSourcePath:String, destinationStorageId:Int) =
     StorageEntryHelper.entryFor(destinationStorageId).flatMap({
       case Some(storageEntry)=>
         val multiCounterFac = new MultipleCounter[ProjectFileResult](2)
@@ -296,5 +299,4 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
         Future.failed(new RuntimeException(s"No storage found with id $destinationStorageId"))
     })
 
-  }
 }
