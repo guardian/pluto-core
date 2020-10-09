@@ -1,0 +1,997 @@
+{
+  "hits": 46,
+  "collection": [
+    {
+      "metadata": {
+        "revision": "VX-380,VX-381,VX-374,VX-373,VX-378",
+        "timespan": [
+          {
+            "field": [
+              {
+                "name": "itemId",
+                "value": [
+                  {
+                    "value": "VX-75",
+                    "uuid": "69633044-3920-4aec-bbe2-0ef5f1101b95",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:33.240+0000",
+                    "change": "VX-378"
+                  }
+                ],
+                "uuid": "0ff3c1b4-7241-4c03-a171-282f7e4408b8",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:33.240+0000",
+                "change": "VX-378"
+              },
+              {
+                "name": "originalFormat",
+                "value": [
+                  {
+                    "value": "mov,mp4,m4a,3gp,3g2,mj2",
+                    "uuid": "c6e52c56-6689-4af1-9dd0-65515ec9ad3a",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:33.240+0000",
+                    "change": "VX-378"
+                  }
+                ],
+                "uuid": "8ee51c80-2625-4ac1-be8b-0df41750a11f",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:33.240+0000",
+                "change": "VX-378"
+              },
+              {
+                "name": "originalVideoCodec",
+                "value": [
+                  {
+                    "value": "h264",
+                    "uuid": "1e6eb573-fb00-4b5f-bcf3-911f960e4e73",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:33.240+0000",
+                    "change": "VX-378"
+                  }
+                ],
+                "uuid": "6f86067a-efc4-4980-8823-130084d5e75a",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:33.240+0000",
+                "change": "VX-378"
+              },
+              {
+                "name": "originalAudioCodec",
+                "value": [
+                  {
+                    "value": "aac",
+                    "uuid": "73ab039b-5999-4282-875a-144ff9c4bd81",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:33.240+0000",
+                    "change": "VX-378"
+                  }
+                ],
+                "uuid": "de0a6a02-2c41-4158-9a13-2587772fa670",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:33.240+0000",
+                "change": "VX-378"
+              },
+              {
+                "name": "durationSeconds",
+                "value": [
+                  {
+                    "value": "9.578666666666667",
+                    "uuid": "321641cb-f6d3-4cd7-b861-526d4a09ccd8",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:33.240+0000",
+                    "change": "VX-378"
+                  }
+                ],
+                "uuid": "2b346b8b-e7af-4ff0-8c32-fc6b3bab4513",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:33.240+0000",
+                "change": "VX-378"
+              },
+              {
+                "name": "durationTimeCode",
+                "value": [
+                  {
+                    "value": "459776@48000",
+                    "uuid": "e8b4218a-b955-4388-a9af-1911a1b2e87f",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:33.240+0000",
+                    "change": "VX-378"
+                  }
+                ],
+                "uuid": "f8df6497-aeb1-4a1c-ad9a-b0ae66f320ac",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:33.240+0000",
+                "change": "VX-378"
+              },
+              {
+                "name": "originalWidth",
+                "value": [
+                  {
+                    "value": "768",
+                    "uuid": "14c50415-19a2-4127-858b-68f1bba9c9c3",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:33.240+0000",
+                    "change": "VX-378"
+                  }
+                ],
+                "uuid": "469bae41-5687-4ae1-9a64-b294ce141957",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:33.240+0000",
+                "change": "VX-378"
+              },
+              {
+                "name": "originalHeight",
+                "value": [
+                  {
+                    "value": "432",
+                    "uuid": "255ed4cd-ee50-4af7-9d13-0ff3a46d5f8b",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:33.240+0000",
+                    "change": "VX-378"
+                  }
+                ],
+                "uuid": "4d278421-ef6a-4300-8ea9-3b287426ca0b",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:33.240+0000",
+                "change": "VX-378"
+              },
+              {
+                "name": "mimeType",
+                "value": [
+                  {
+                    "value": "video/quicktime",
+                    "uuid": "0791ea21-1e74-4e68-b628-9de36c129f58",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:33.240+0000",
+                    "change": "VX-378"
+                  }
+                ],
+                "uuid": "03c42797-e05d-4379-b9da-08afd4b09f82",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:33.240+0000",
+                "change": "VX-378"
+              },
+              {
+                "name": "mediaType",
+                "value": [
+                  {
+                    "value": "video",
+                    "uuid": "27aa5b28-56db-4da2-a4d1-0341503cf5f8",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:33.240+0000",
+                    "change": "VX-378"
+                  }
+                ],
+                "uuid": "cc4ea217-dab5-407e-b27f-69e0492c97ae",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:33.240+0000",
+                "change": "VX-378"
+              },
+              {
+                "name": "originalUri",
+                "value": [
+                  {
+                    "value": "file:///srv/media/hgdhfh/comdey1.mov",
+                    "uuid": "c87572c2-22e2-4a9e-a46e-75f983cec3e9",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:33.240+0000",
+                    "change": "VX-378"
+                  }
+                ],
+                "uuid": "c1b50fb3-5878-425d-adcc-f4409a3fb266",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:33.240+0000",
+                "change": "VX-378"
+              },
+              {
+                "name": "originalFilename",
+                "value": [
+                  {
+                    "value": "comdey1.mov",
+                    "uuid": "f0dc6ef7-6247-4ad9-a2ab-fc15fbf2ad55",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:33.621+0000",
+                    "change": "VX-380"
+                  }
+                ],
+                "uuid": "1e0fd1ab-bac5-47a0-b18a-67e072394681",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:33.621+0000",
+                "change": "VX-380"
+              },
+              {
+                "name": "shapeTag",
+                "value": [
+                  {
+                    "value": "original",
+                    "uuid": "9225a68b-2585-43e8-b702-300707ee5bf2",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:38.000+0000",
+                    "change": "VX-381"
+                  },
+                  {
+                    "value": "lowres",
+                    "uuid": "5e3da39f-b62d-4008-ad02-b20f45723ca0",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:38.000+0000",
+                    "change": "VX-381"
+                  }
+                ],
+                "uuid": "5b68bd7c-eaf2-48c3-9a20-b7c4be6c0625",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:38.000+0000",
+                "change": "VX-381"
+              },
+              {
+                "name": "representativeThumbnail",
+                "value": [
+                  {
+                    "value": "/API/thumbnail/VX-6/VX-75;version=1/0@10000",
+                    "uuid": "4b3ebb47-8c80-4ac1-bec8-a0c3d546620f",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:38.000+0000",
+                    "change": "VX-381"
+                  }
+                ],
+                "uuid": "347ffea7-8e8f-4fc3-90d0-e3ad5d0dcb19",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:38.000+0000",
+                "change": "VX-381"
+              },
+              {
+                "name": "representativeThumbnailNoAuth",
+                "value": [
+                  {
+                    "value": "/APInoauth/thumbnail/VX-6/VX-75;version=1/0@10000?hash=dbe2d1eb5da5cf393008937ccbbca59a",
+                    "uuid": "34e49770-5793-4fbe-ae68-4b0f9c145a4a",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:38.000+0000",
+                    "change": "VX-381"
+                  }
+                ],
+                "uuid": "9429262a-6f8c-4059-8a25-fa83a0125773",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:38.000+0000",
+                "change": "VX-381"
+              },
+              {
+                "name": "title",
+                "value": [
+                  {
+                    "value": "Full master for hgdhfh",
+                    "uuid": "39bd9f41-d4c8-401b-bbb6-704e3266bb62",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T14:06:31.245+0000",
+                    "change": "VX-373"
+                  }
+                ],
+                "uuid": "c3ae7763-6047-4e08-ac32-4f5d84518cd1",
+                "user": "testuser",
+                "timestamp": "2020-09-22T14:06:31.245+0000",
+                "change": "VX-373"
+              },
+              {
+                "name": "created",
+                "value": [
+                  {
+                    "value": "2020-09-22T14:06:31.236Z",
+                    "uuid": "aa1ed9f8-8023-468a-a29f-9f45603f938c",
+                    "user": "system",
+                    "timestamp": "2020-09-22T14:06:31.270+0000",
+                    "change": "VX-374"
+                  }
+                ],
+                "uuid": "8bc83727-2f32-4501-af4d-0c16d3f59834",
+                "user": "system",
+                "timestamp": "2020-09-22T14:06:31.270+0000",
+                "change": "VX-374"
+              },
+              {
+                "name": "__user",
+                "value": [
+                  {
+                    "value": "testuser"
+                  }
+                ]
+              },
+              {
+                "name": "user",
+                "value": [
+                  {
+                    "value": "testuser"
+                  }
+                ]
+              },
+              {
+                "name": "__metadata_last_modified",
+                "value": [
+                  {
+                    "value": "2020-09-22T14:06:38.000Z"
+                  }
+                ]
+              },
+              {
+                "name": "__placeholder_shape_size",
+                "value": [
+                  {
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "__shape_size",
+                "value": [
+                  {
+                    "value": "4"
+                  }
+                ]
+              },
+              {
+                "name": "__shape",
+                "value": [
+                  {
+                    "value": "VX-157"
+                  }
+                ]
+              },
+              {
+                "name": "__shape",
+                "value": [
+                  {
+                    "value": "VX-156"
+                  }
+                ]
+              },
+              {
+                "name": "__shape",
+                "value": [
+                  {
+                    "value": "VX-158"
+                  }
+                ]
+              },
+              {
+                "name": "__shape",
+                "value": [
+                  {
+                    "value": "VX-155"
+                  }
+                ]
+              },
+              {
+                "name": "__version_count",
+                "value": [
+                  {
+                    "value": "2"
+                  }
+                ]
+              },
+              {
+                "name": "__version",
+                "value": [
+                  {
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "name": "__version",
+                "value": [
+                  {
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "__shapetag_lowres_hash",
+                "value": [
+                  {
+                    "value": "6da5ffa0a6700f7a7846f14d0881a4ac1f2c1a77"
+                  }
+                ]
+              },
+              {
+                "name": "__shapetag_original_hash",
+                "value": [
+                  {
+                    "value": "multiple"
+                  }
+                ]
+              },
+              {
+                "name": "__shape_last_added",
+                "value": [
+                  {
+                    "value": "2020-09-22T14:06:34.291Z"
+                  }
+                ]
+              },
+              {
+                "name": "__storage_original",
+                "value": [
+                  {
+                    "value": "VX-4"
+                  }
+                ]
+              },
+              {
+                "name": "__storage_original_size",
+                "value": [
+                  {
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "__storage_lowres",
+                "value": [
+                  {
+                    "value": "VX-4"
+                  }
+                ]
+              },
+              {
+                "name": "__storage_lowres_size",
+                "value": [
+                  {
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "__storage_size",
+                "value": [
+                  {
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "__storage",
+                "value": [
+                  {
+                    "value": "VX-4"
+                  }
+                ]
+              },
+              {
+                "name": "__storagegroup_size",
+                "value": [
+                  {
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "name": "__sequence_size",
+                "value": [
+                  {
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "name": "__collection_size",
+                "value": [
+                  {
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "name": "__ancestor_collection_size",
+                "value": [
+                  {
+                    "value": "0"
+                  }
+                ]
+              }
+            ],
+            "group": [
+              {
+                "name": "Asset",
+                "field": [
+                  {
+                    "name": "gnm_category",
+                    "value": [
+                      {
+                        "value": "Deliverable",
+                        "uuid": "43c0b0ff-1e18-4312-8476-35e00b5c3821",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T14:06:31.245+0000",
+                        "change": "VX-373"
+                      }
+                    ],
+                    "uuid": "7a6da263-b28b-4e00-b5af-b7ccd45d6e26",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T14:06:31.245+0000",
+                    "change": "VX-373"
+                  },
+                  {
+                    "name": "original_filename",
+                    "value": [
+                      {
+                        "value": "/srv/media/hgdhfh/comdey1.mov",
+                        "uuid": "6ff02294-3016-4798-9b53-80252e5ed29c",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T14:06:31.245+0000",
+                        "change": "VX-373"
+                      }
+                    ],
+                    "uuid": "80c56399-0006-4f5d-a3ac-fa0cca9a3dbb",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T14:06:31.245+0000",
+                    "change": "VX-373"
+                  },
+                  {
+                    "name": "gnm_owner",
+                    "value": [
+                      {
+                        "value": "testuser",
+                        "uuid": "586b644b-70a1-4ddc-9152-2cf648a092c0",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T14:06:31.245+0000",
+                        "change": "VX-373"
+                      }
+                    ],
+                    "uuid": "c5d9996e-e8e5-4722-9bc3-5944015c6aad",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T14:06:31.245+0000",
+                    "change": "VX-373"
+                  },
+                  {
+                    "name": "gnm_containing_projects",
+                    "value": [
+                      {
+                        "value": "1",
+                        "uuid": "6abc0848-bba2-42bf-82e1-4c4edc1f0a9b",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T14:06:31.245+0000",
+                        "change": "VX-373"
+                      }
+                    ],
+                    "uuid": "feb1e983-169b-422b-b65b-c632eb797433",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T14:06:31.245+0000",
+                    "change": "VX-373"
+                  },
+                  {
+                    "name": "gnm_file_created",
+                    "value": [
+                      {
+                        "value": "2020-09-22T14:06:14.608253+00:00",
+                        "uuid": "1956f343-be84-4da9-8368-749966367248",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T14:06:31.245+0000",
+                        "change": "VX-373"
+                      }
+                    ],
+                    "uuid": "48f21764-a7e5-4af2-b184-c7216dc10366",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T14:06:31.245+0000",
+                    "change": "VX-373"
+                  }
+                ],
+                "group": [],
+                "uuid": "12517fd5-cf45-4686-b7d5-76fc01a3b9cc",
+                "user": "testuser",
+                "timestamp": "2020-09-22T14:06:31.245+0000",
+                "change": "VX-373"
+              },
+              {
+                "name": "Deliverable",
+                "field": [
+                  {
+                    "name": "gnm_deliverable_bundle",
+                    "value": [
+                      {
+                        "value": "1",
+                        "uuid": "0ee4226e-e217-40ac-944c-2196a2d69114",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T14:06:31.245+0000",
+                        "change": "VX-373"
+                      }
+                    ],
+                    "uuid": "fc83db8f-ab14-4c08-a8ff-7f2321c658d3",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T14:06:31.245+0000",
+                    "change": "VX-373"
+                  },
+                  {
+                    "name": "gnm_deliverable_id",
+                    "value": [
+                      {
+                        "value": "72",
+                        "uuid": "e57e8311-f958-457e-ae90-2918a025e96e",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T14:06:31.245+0000",
+                        "change": "VX-373"
+                      }
+                    ],
+                    "uuid": "df405bdc-5599-41b6-b4c9-fbd5253c2d4e",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T14:06:31.245+0000",
+                    "change": "VX-373"
+                  }
+                ],
+                "group": [],
+                "uuid": "df6d1498-79a5-4142-a073-213b343462c1",
+                "user": "testuser",
+                "timestamp": "2020-09-22T14:06:31.245+0000",
+                "change": "VX-373"
+              }
+            ],
+            "start": "-INF",
+            "end": "+INF"
+          }
+        ]
+      },
+      "shape": [],
+      "access": [],
+      "timespan": [
+        {
+          "start": "-INF",
+          "end": "+INF"
+        }
+      ],
+      "externalId": [],
+      "id": "VX-75",
+      "start": "-INF",
+      "end": "+INF"
+    },
+    {
+      "metadata": {
+        "revision": "VX-316,VX-318,VX-317",
+        "timespan": [
+          {
+            "field": [
+              {
+                "name": "title",
+                "value": [
+                  {
+                    "value": "Full master for hgdhfh",
+                    "uuid": "fbebbdc6-43ef-4463-b58b-44481b6487b4",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T13:32:10.379+0000",
+                    "change": "VX-316"
+                  }
+                ],
+                "uuid": "50ffb059-da52-4b8c-8ecb-a3760db84326",
+                "user": "testuser",
+                "timestamp": "2020-09-22T13:32:10.379+0000",
+                "change": "VX-316"
+              },
+              {
+                "name": "created",
+                "value": [
+                  {
+                    "value": "2020-09-22T13:32:10.362Z",
+                    "uuid": "18a5a79c-411c-490e-a245-5478f45667ef",
+                    "user": "system",
+                    "timestamp": "2020-09-22T13:32:10.408+0000",
+                    "change": "VX-317"
+                  }
+                ],
+                "uuid": "f55f7edd-269d-42b7-98b5-b7dfa9fee3cb",
+                "user": "system",
+                "timestamp": "2020-09-22T13:32:10.408+0000",
+                "change": "VX-317"
+              },
+              {
+                "name": "mediaType",
+                "value": [
+                  {
+                    "value": "none",
+                    "uuid": "89a845b3-738b-4d92-8bb9-6032b53ce9a3",
+                    "user": "system",
+                    "timestamp": "2020-09-22T13:32:10.408+0000",
+                    "change": "VX-317"
+                  }
+                ],
+                "uuid": "541feae3-ba82-4ceb-bbff-b541e8e22989",
+                "user": "system",
+                "timestamp": "2020-09-22T13:32:10.408+0000",
+                "change": "VX-317"
+              },
+              {
+                "name": "itemId",
+                "value": [
+                  {
+                    "value": "VX-68",
+                    "uuid": "99a90a25-788a-4a95-9014-904b2c221eb1",
+                    "user": "system",
+                    "timestamp": "2020-09-22T13:32:10.408+0000",
+                    "change": "VX-317"
+                  }
+                ],
+                "uuid": "a3a1b5b5-96fa-4c35-a9f9-98bb0c8cb221",
+                "user": "system",
+                "timestamp": "2020-09-22T13:32:10.408+0000",
+                "change": "VX-317"
+              },
+              {
+                "name": "shapeTag",
+                "value": [
+                  {
+                    "value": "original",
+                    "uuid": "0a5008ae-3f4b-4d36-ba62-5cf632e90554",
+                    "user": "system",
+                    "timestamp": "2020-09-22T13:32:10.416+0000",
+                    "change": "VX-318"
+                  }
+                ],
+                "uuid": "23c0862a-cd1d-4a90-a46b-de9e334b15bd",
+                "user": "system",
+                "timestamp": "2020-09-22T13:32:10.416+0000",
+                "change": "VX-318"
+              },
+              {
+                "name": "__user",
+                "value": [
+                  {
+                    "value": "testuser"
+                  }
+                ]
+              },
+              {
+                "name": "user",
+                "value": [
+                  {
+                    "value": "testuser"
+                  }
+                ]
+              },
+              {
+                "name": "__metadata_last_modified",
+                "value": [
+                  {
+                    "value": "2020-09-22T13:32:10.416Z"
+                  }
+                ]
+              },
+              {
+                "name": "__placeholder_shape_size",
+                "value": [
+                  {
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "__shape_size",
+                "value": [
+                  {
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "__shape",
+                "value": [
+                  {
+                    "value": "VX-130"
+                  }
+                ]
+              },
+              {
+                "name": "__version_count",
+                "value": [
+                  {
+                    "value": "1"
+                  }
+                ]
+              },
+              {
+                "name": "__version",
+                "value": [
+                  {
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "name": "__shape_last_added",
+                "value": [
+                  {
+                    "value": "2020-09-22T13:32:10.412Z"
+                  }
+                ]
+              },
+              {
+                "name": "__storage_size",
+                "value": [
+                  {
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "name": "__storagegroup_size",
+                "value": [
+                  {
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "name": "__sequence_size",
+                "value": [
+                  {
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "name": "__collection_size",
+                "value": [
+                  {
+                    "value": "0"
+                  }
+                ]
+              },
+              {
+                "name": "__ancestor_collection_size",
+                "value": [
+                  {
+                    "value": "0"
+                  }
+                ]
+              }
+            ],
+            "group": [
+              {
+                "name": "Asset",
+                "field": [
+                  {
+                    "name": "gnm_category",
+                    "value": [
+                      {
+                        "value": "Deliverable",
+                        "uuid": "096c419f-a3b1-4287-887e-8152989f147b",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T13:32:10.379+0000",
+                        "change": "VX-316"
+                      }
+                    ],
+                    "uuid": "2e695854-a8ba-406e-99a8-55e4459acb12",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T13:32:10.379+0000",
+                    "change": "VX-316"
+                  },
+                  {
+                    "name": "original_filename",
+                    "value": [
+                      {
+                        "value": "/srv/media/hgdhfh/comdey1.mov",
+                        "uuid": "865e9d78-9f40-42ef-bb31-0aa8c1d07cb2",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T13:32:10.379+0000",
+                        "change": "VX-316"
+                      }
+                    ],
+                    "uuid": "d78665c6-c2db-454b-adfe-beb637698dab",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T13:32:10.379+0000",
+                    "change": "VX-316"
+                  },
+                  {
+                    "name": "gnm_owner",
+                    "value": [
+                      {
+                        "value": "testuser",
+                        "uuid": "54ad3bcf-c653-4ba7-b672-924d69993b7f",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T13:32:10.379+0000",
+                        "change": "VX-316"
+                      }
+                    ],
+                    "uuid": "00c68259-5653-4236-bb16-ff701b9885d7",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T13:32:10.379+0000",
+                    "change": "VX-316"
+                  },
+                  {
+                    "name": "gnm_containing_projects",
+                    "value": [
+                      {
+                        "value": "1",
+                        "uuid": "19c862b0-63ab-40d3-ab0f-b173d0ba6d10",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T13:32:10.379+0000",
+                        "change": "VX-316"
+                      }
+                    ],
+                    "uuid": "1396bf0d-cd99-4322-adbb-655f57fa97b6",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T13:32:10.379+0000",
+                    "change": "VX-316"
+                  },
+                  {
+                    "name": "gnm_file_created",
+                    "value": [
+                      {
+                        "value": "2020-09-22T13:32:06.508535+00:00",
+                        "uuid": "5e7e98fd-9c38-4d3c-9782-0e00829eed46",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T13:32:10.379+0000",
+                        "change": "VX-316"
+                      }
+                    ],
+                    "uuid": "27257d6d-585c-47d5-aeca-379ba5f8702a",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T13:32:10.379+0000",
+                    "change": "VX-316"
+                  }
+                ],
+                "group": [],
+                "uuid": "5f3945fb-ee0b-46aa-b8d8-35d1a16e5f39",
+                "user": "testuser",
+                "timestamp": "2020-09-22T13:32:10.379+0000",
+                "change": "VX-316"
+              },
+              {
+                "name": "Deliverable",
+                "field": [
+                  {
+                    "name": "gnm_deliverable_bundle",
+                    "value": [
+                      {
+                        "value": "1",
+                        "uuid": "3cc475d8-88a4-408e-9dc7-56e4bffe9ce6",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T13:32:10.379+0000",
+                        "change": "VX-316"
+                      }
+                    ],
+                    "uuid": "dff8fae9-ebd9-4351-b642-ed114dc18a7d",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T13:32:10.379+0000",
+                    "change": "VX-316"
+                  },
+                  {
+                    "name": "gnm_deliverable_id",
+                    "value": [
+                      {
+                        "value": "64",
+                        "uuid": "6b56b163-03ab-4936-8800-4c6e491a8eba",
+                        "user": "testuser",
+                        "timestamp": "2020-09-22T13:32:10.379+0000",
+                        "change": "VX-316"
+                      }
+                    ],
+                    "uuid": "c6e388e2-1d54-4a4e-a3cf-191ba33fdc86",
+                    "user": "testuser",
+                    "timestamp": "2020-09-22T13:32:10.379+0000",
+                    "change": "VX-316"
+                  }
+                ],
+                "group": [],
+                "uuid": "2a156d70-bdea-4cb7-98da-b74f116698f7",
+                "user": "testuser",
+                "timestamp": "2020-09-22T13:32:10.379+0000",
+                "change": "VX-316"
+              }
+            ],
+            "start": "-INF",
+            "end": "+INF"
+          }
+        ]
+      },
+      "shape": [],
+      "access": [],
+      "timespan": [
+        {
+          "start": "-INF",
+          "end": "+INF"
+        }
+      ],
+      "externalId": [],
+      "id": "VX-68",
+      "start": "-INF",
+      "end": "+INF"
+    }
+  ],
+  "facet": [],
+  "suggestion": [],
+  "autocomplete": []
+}

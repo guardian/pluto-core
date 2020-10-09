@@ -1,0 +1,135 @@
+{
+  "revision": "VX-58759929,VX-58759928,VX-58759930",
+  "timespan": [
+    {
+      "field": [
+        {
+          "name": "collectionId",
+          "value": [
+            {
+              "value": "VX-55418",
+              "uuid": "75b831f7-5d82-43a4-97ce-a179ae5dc523",
+              "user": "system",
+              "timestamp": "2020-09-23T11:29:10.300+0000",
+              "change": "VX-58759928"
+            }
+          ],
+          "uuid": "2d449dc5-7394-4f45-ab83-fe9696817929",
+          "user": "system",
+          "timestamp": "2020-09-23T11:29:10.300+0000",
+          "change": "VX-58759928"
+        },
+        {
+          "name": "created",
+          "value": [
+            {
+              "value": "2020-09-23T11:29:10.241Z",
+              "uuid": "b6e24b17-7b57-4d65-8ae2-a15cbb85eb38",
+              "user": "system",
+              "timestamp": "2020-09-23T11:29:10.300+0000",
+              "change": "VX-58759928"
+            }
+          ],
+          "uuid": "a9ea751a-d906-4fd6-ba06-0444965e2144",
+          "user": "system",
+          "timestamp": "2020-09-23T11:29:10.300+0000",
+          "change": "VX-58759928"
+        },
+        {
+          "name": "gnm_commission_owner",
+          "value": [
+            {
+              "value": "2",
+              "uuid": "02091284-2aa8-4fb2-9cdc-caa08794279d",
+              "user": "joe_bloggs",
+              "timestamp": "2020-09-23T11:29:12.948+0000",
+              "change": "VX-58759929"
+            },
+            {
+              "value": "6",
+              "uuid": "02091284-2aa8-4fb2-9cdc-caa08794279d",
+              "user": "joe_bloggs",
+              "timestamp": "2020-09-23T11:29:12.948+0000",
+              "change": "VX-58759929"
+            },
+            {
+              "value": "not-valid-entry",
+              "uuid": "02091284-2aa8-4fb2-9cdc-caa08794279d",
+              "user": "joe_bloggs",
+              "timestamp": "2020-09-23T11:29:12.948+0000",
+              "change": "VX-58759929"
+            }
+          ],
+          "uuid": "f6b98e4d-93c9-4c6b-9cd4-bbc1476dc46b",
+          "user": "joe_bloggs",
+          "timestamp": "2020-09-23T11:29:12.948+0000",
+          "change": "VX-58759929"
+        },
+        {
+          "name": "gnm_commission_client",
+          "value": [
+            {
+              "value": "Guardian Editorial",
+              "uuid": "300649d9-ee45-47de-a636-867feaa33c42",
+              "user": "joe_bloggs",
+              "timestamp": "2020-09-23T11:29:12.948+0000",
+              "change": "VX-58759929"
+            }
+          ],
+          "uuid": "9d3278e3-90c3-499c-b709-ed12127183ac",
+          "user": "joe_bloggs",
+          "timestamp": "2020-09-23T11:29:12.948+0000",
+          "change": "VX-58759929"
+        },
+        {
+          "name": "gnm_commission_subscribers",
+          "value": [
+            {
+              "value": "2",
+              "uuid": "bf01d078-0f40-42e6-957e-0e5285ad08c3",
+              "user": "joe_bloggs",
+              "timestamp": "2020-09-23T11:29:12.948+0000",
+              "change": "VX-58759929"
+            }
+          ],
+          "uuid": "718634bd-99ff-45df-99d2-4f6e9365a38f",
+          "user": "joe_bloggs",
+          "timestamp": "2020-09-23T11:29:12.948+0000",
+          "change": "VX-58759929"
+        },
+        {
+          "name": "gnm_commission_status",
+          "value": [
+            {
+              "value": "New",
+              "uuid": "8457df57-4631-4f44-866f-b89d01221f6e",
+              "user": "joe_bloggs",
+              "timestamp": "2020-09-23T11:29:12.948+0000",
+              "change": "VX-58759929"
+            }
+          ],
+          "uuid": "3505da89-05ed-4853-99db-a97f9e907dbd",
+          "user": "joe_bloggs",
+          "timestamp": "2020-09-23T11:29:12.948+0000",
+          "change": "VX-58759929"
+        },
+        {
+          "name": "gnm_commission_scheduledcompletion",
+          "value": [
+            {
+              "value": "2020-03-04",
+              "uuid": "8457df57-4631-4f44-866f-b89d01221f6e",
+              "user": "joe_bloggs",
+              "timestamp": "2020-09-23T11:29:12.948+0000",
+              "change": "VX-58759929"
+            }
+          ],
+          "uuid": "3505da89-05ed-4853-99db-a97f9e907dbd",
+          "user": "joe_bloggs",
+          "timestamp": "2020-09-23T11:29:12.948+0000",
+          "change": "VX-58759929"
+        }
+      ]
+    }
+  ]
+}

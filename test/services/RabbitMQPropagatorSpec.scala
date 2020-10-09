@@ -13,7 +13,7 @@ import play.api.libs.json.Json.JsValueWrapper
 class RabbitMQPropagatorSpec extends Specification with PlutoWorkingGroupSerializer{
   "ChangeEvent.json" should {
     "json encode the given data model" in {
-      val testdata = PlutoWorkingGroup(None,false,"Workworkwork","me")
+      val testdata = PlutoWorkingGroup(None,false,"Workworkwork","me", None)
       val content:Seq[JsValueWrapper] = Seq(testdata)
       val change = RabbitMqPropagator.ChangeEvent(content, Some("workinggroup"), CreateOperation(), UUID.randomUUID())
 
@@ -24,7 +24,7 @@ class RabbitMQPropagatorSpec extends Specification with PlutoWorkingGroupSeriali
 
   "ChangeEvent" should {
     "be encodable via jackson-databind" in {
-      val testdata = PlutoWorkingGroup(None,false,"Workworkwork","me")
+      val testdata = PlutoWorkingGroup(None,false,"Workworkwork","me", None)
       val content:Seq[JsValueWrapper] = Seq(testdata)
       val change = RabbitMqPropagator.ChangeEvent(content, Some("workinggroup"), CreateOperation(), UUID.randomUUID())
 

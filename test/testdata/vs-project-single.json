@@ -1,0 +1,555 @@
+{
+    "id": "KP-55166",
+    "name": "New Normal episode 3 - Work",
+    "metadata": {
+        "revision": "KP-58594050,KP-58594048,KP-58594047,KP-58594078",
+        "timespan": [
+            {
+                "field": [
+                    {
+                        "name": "gnm_project_projectlocker_id",
+                        "value": [
+                            {
+                                "value": "7104",
+                                "uuid": "8f2d5414-687f-44ee-9c16-d1443389d735",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:10:07.496+0000",
+                                "change": "KP-58594050"
+                            }
+                        ],
+                        "uuid": "8054cc16-0d6d-4740-8d2d-df639444dcfc",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:10:07.496+0000",
+                        "change": "KP-58594050"
+                    },
+                    {
+                        "name": "gnm_commission_title",
+                        "referenced": {
+                            "id": "KP-55003",
+                            "uuid": "c685bace-ede7-4851-8143-d49ff5b86780",
+                            "type": "collection"
+                        },
+                        "value": [
+                            {
+                                "value": "New Normal Iman",
+                                "uuid": "d39e2071-9301-4cad-81af-5fbade5068eb",
+                                "user": "user1",
+                                "timestamp": "2020-05-27T09:24:28.361+0000",
+                                "change": "KP-58200368"
+                            }
+                        ],
+                        "uuid": "b7bdd2b9-bde6-4178-ac1d-eed47a3e32a5",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_commission_workinggroup",
+                        "referenced": {
+                            "id": "KP-55003",
+                            "uuid": "4de06b96-89d6-44ae-a455-dd40ac10fb9f",
+                            "type": "collection"
+                        },
+                        "value": [
+                            {
+                                "value": "1b97c363-fba0-4771-9cb5-9bd65aaed306",
+                                "uuid": "abebebc5-2f10-4f17-81a4-e7c0b5d29448",
+                                "user": "user1",
+                                "timestamp": "2020-05-27T09:24:28.361+0000",
+                                "change": "KP-58200368"
+                            }
+                        ],
+                        "uuid": "c73f41c5-5a08-4817-b82b-0b3374160c96",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_production_office",
+                        "value": [
+                            {
+                                "value": "UK",
+                                "uuid": "7d8c7d32-a1b4-4b35-a601-ae3740be0323",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "a1695c64-7d16-4380-903e-b1b725d618f0",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_byline",
+                        "value": [
+                            {
+                                "value": "",
+                                "uuid": "0235e1ce-aa58-4f3f-9412-3462331317f4",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "ac3d80e9-02c7-4b85-b353-681bdd565c0d",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_status",
+                        "value": [
+                            {
+                                "value": "New",
+                                "uuid": "964f6c18-f278-4180-abc3-52b4d9124ff8",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "f9310be2-3f7c-4e1a-a6a5-66500b8f4113",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_type",
+                        "value": [
+                            {
+                                "value": "Project",
+                                "uuid": "2a082363-e479-4f23-b06a-50da1439cd4f",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "4342ad32-4666-42aa-af94-4072b045a726",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_linktext",
+                        "value": [
+                            {
+                                "value": "New Normal Iman",
+                                "uuid": "a17a43e1-7d94-4bcd-9b8f-0055dd24271d",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "f7022c53-f55c-4105-97fa-3bb9d4be1f91",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_licensor",
+                        "value": [
+                            {
+                                "value": "Guardian News And Media",
+                                "uuid": "0acfbc57-d354-4a70-b26c-85ef516d612d",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "9a3ec79a-049d-4c59-97d6-25f55ee1d5ed",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_subtype",
+                        "value": [
+                            {
+                                "value": "",
+                                "uuid": "5a386416-4bd5-4286-9d78-3b11aa74fd0b",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "346eea20-768a-415a-b4f1-863189742c42",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_trail",
+                        "value": [
+                            {
+                                "value": "New Normal Iman",
+                                "uuid": "457ef38f-28c1-4880-adce-db2284b86b2f",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "687e539f-5bec-4614-b695-0440a2f077c9",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_storage_rule_deep_archive",
+                        "value": [
+                            {
+                                "value": "storage_rule_deep_archive",
+                                "uuid": "3ef44739-50b7-40f8-812d-5ed1b0980733",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "4f9c97c5-5a68-4374-8d9d-fd2a4e200b70",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_publish",
+                        "value": [
+                            {
+                                "value": "",
+                                "uuid": "cf2647b8-17da-48f1-9ba8-4b299d0873b3",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "b382f842-f927-4398-9132-6ac93ea15638",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "title",
+                        "value": [
+                            {
+                                "value": "New Normal episode 3 - Work",
+                                "uuid": "3276aca8-52ae-437d-bf82-0f7d5354f3f5",
+                                "user": "system",
+                                "timestamp": "2020-08-11T12:09:54.655+0000",
+                                "change": "KP-58594047"
+                            }
+                        ],
+                        "uuid": "eedadffb-4eb1-4e66-a2b4-3efde8104947",
+                        "user": "system",
+                        "timestamp": "2020-08-11T12:09:54.655+0000",
+                        "change": "KP-58594047"
+                    },
+                    {
+                        "name": "collectionId",
+                        "value": [
+                            {
+                                "value": "KP-55166",
+                                "uuid": "bc1150ae-7a0d-4e18-8c9c-19dc2fd800b3",
+                                "user": "system",
+                                "timestamp": "2020-08-11T12:09:54.655+0000",
+                                "change": "KP-58594047"
+                            }
+                        ],
+                        "uuid": "140441b7-bdab-4b14-806b-8ce31c559000",
+                        "user": "system",
+                        "timestamp": "2020-08-11T12:09:54.655+0000",
+                        "change": "KP-58594047"
+                    },
+                    {
+                        "name": "created",
+                        "value": [
+                            {
+                                "value": "2020-08-11T12:09:54.546Z",
+                                "uuid": "8bee19dd-3d7b-46ca-a4a5-9db35aa80c2d",
+                                "user": "system",
+                                "timestamp": "2020-08-11T12:09:54.655+0000",
+                                "change": "KP-58594047"
+                            }
+                        ],
+                        "uuid": "fc8290d6-b836-4fb4-84a8-830fd16fb8c8",
+                        "user": "system",
+                        "timestamp": "2020-08-11T12:09:54.655+0000",
+                        "change": "KP-58594047"
+                    },
+                    {
+                        "name": "user",
+                        "value": [
+                            {
+                                "value": "user1",
+                                "uuid": "ac04eaf2-7d9a-4199-8f5b-4b5891722aaa",
+                                "user": "system",
+                                "timestamp": "2020-08-11T12:09:54.655+0000",
+                                "change": "KP-58594047"
+                            }
+                        ],
+                        "uuid": "2dff6d22-fff2-4171-bbff-a8f9a6fe69f8",
+                        "user": "system",
+                        "timestamp": "2020-08-11T12:09:54.655+0000",
+                        "change": "KP-58594047"
+                    },
+                    {
+                        "name": "gnm_project_premiere_uuid",
+                        "value": [
+                            {
+                                "value": "ddd0bf89-2450-4cc6-8612-6727437b9e11",
+                                "uuid": "78c02955-2ac2-49a0-967a-23bbff7767ee",
+                                "user": "svc_cds",
+                                "timestamp": "2020-08-11T12:10:06.370+0000",
+                                "change": "KP-58594078"
+                            }
+                        ],
+                        "uuid": "edc6a90a-cc58-42cb-aa1b-52c7ee40cb6f",
+                        "user": "svc_cds",
+                        "timestamp": "2020-08-11T12:10:06.370+0000",
+                        "change": "KP-58594078"
+                    },
+                    {
+                        "name": "gnm_project_headline",
+                        "value": [
+                            {
+                                "value": "New Normal episode 3 - Work",
+                                "uuid": "f502fb7d-cb05-4325-98a1-7bbf10ada05d",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "e8b00e69-bf99-4565-ada0-e7d57df38e06",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_type",
+                        "value": [
+                            {
+                                "value": "330b4d84-ef24-41e2-b093-0d15829afa64",
+                                "uuid": "226abe7c-00cf-4cb8-afa9-2647c2d6e727",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "8eb37048-4950-4b0a-a6e4-45cfb31246fc",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_subscribing_groups",
+                        "value": [
+                            {
+                                "value": "66",
+                                "uuid": "1a8cddd8-f805-4a7f-b22d-8a8477836c95",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            },
+                            {
+                                "value": "51",
+                                "uuid": "63389e02-959b-4a02-9a4e-525dd9f73c34",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            },
+                            {
+                                "value": "156",
+                                "uuid": "900edf00-18ba-4519-b281-b143547c43cb",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            },
+                            {
+                                "value": "157",
+                                "uuid": "eb390ced-d0c4-47ad-a1d2-39dede22fc2f",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            },
+                            {
+                                "value": "154",
+                                "uuid": "5b45f663-2247-46ff-b390-ba46141ac5db",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            },
+                            {
+                                "value": "155",
+                                "uuid": "bc18bacd-e9eb-4536-8cd8-7f34bc3bb681",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            },
+                            {
+                                "value": "153",
+                                "uuid": "a81fffe8-bdb4-409d-ab0b-b826da2400af",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "88a62bae-3587-4afe-8394-8d657b0195ac",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_username",
+                        "value": [
+                            {
+                                "value": "169",
+                                "uuid": "13835bc7-5562-4c59-b12f-311a7640f7fd",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "ef3f0c6c-4583-4758-b594-301781d4f924",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_subscribers",
+                        "value": [
+                            {
+                                "value": "427",
+                                "uuid": "aa143bc8-2438-46c3-a547-1d2fccf0b676",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            },
+                            {
+                                "value": "169",
+                                "uuid": "8e9f28ca-1950-4a63-a9af-11cef53e1eac",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "7187dc29-9a3a-46e4-8be2-713d191f141f",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_tags",
+                        "value": [
+                            {
+                                "value": "",
+                                "uuid": "7a750e7c-14e2-4377-bf9c-9bf964fe39c8",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "9977c227-2066-4cfa-92e1-3ad9e8d90854",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_standfirst",
+                        "value": [
+                            {
+                                "value": "",
+                                "uuid": "42fa78ba-ff0f-4a26-b5f4-8eb4a1ce2f52",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "38b9cbfd-9b17-4f94-8b29-4babc3d2262a",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "gnm_project_remove",
+                        "value": [
+                            {
+                                "value": "",
+                                "uuid": "ed456276-2e45-4f28-bf0e-9e8a14ac15b8",
+                                "user": "user1",
+                                "timestamp": "2020-08-11T12:09:55.794+0000",
+                                "change": "KP-58594048"
+                            }
+                        ],
+                        "uuid": "ad711fe8-eaf8-490b-ab2e-b4d671e00a49",
+                        "user": "user1",
+                        "timestamp": "2020-08-11T12:09:55.794+0000",
+                        "change": "KP-58594048"
+                    },
+                    {
+                        "name": "__metadata_last_modified",
+                        "value": [
+                            {
+                                "value": "2020-08-11T13:10:07.496+01:00"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "__parent_collection_size",
+                        "value": [
+                            {
+                                "value": "1"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "__parent_collection",
+                        "value": [
+                            {
+                                "value": "KP-55003"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "__child_collection_size",
+                        "value": [
+                            {
+                                "value": "0"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "__items_size",
+                        "value": [
+                            {
+                                "value": "159"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "__ancestor_collection_size",
+                        "value": [
+                            {
+                                "value": "1"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "__ancestor_collection",
+                        "value": [
+                            {
+                                "value": "KP-55003"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "__folder_mapped",
+                        "value": [
+                            {
+                                "value": "false"
+                            }
+                        ]
+                    }
+                ],
+                "group": [],
+                "start": "-INF",
+                "end": "+INF"
+            }
+        ]
+    }
+}

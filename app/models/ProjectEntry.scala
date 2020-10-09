@@ -238,5 +238,4 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
   def forCommission(commissionId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run(
     TableQuery[ProjectEntryRow].filter(_.commission===commissionId).result
   )
-
 }
