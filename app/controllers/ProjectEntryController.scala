@@ -240,6 +240,27 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
   override def validateFilterParams(request: Request[JsValue]): JsResult[ProjectEntryFilterTerms] = request.body.validate[ProjectEntryFilterTerms]
 
+  private val vsidValidator = "^\\w{2}-\\d+$".r
+
+  def getByVsid(vsid:String) = IsAuthenticatedAsync { uid=> request=>
+    if(vsidValidator.matches(vsid)) {
+      dbConfig.db.run {
+        TableQuery[ProjectEntryRow].filter(_.vidispineProjectId===vsid).sortBy(_.created.desc).result
+      }.map(_.headOption match {
+        case Some(projectRecord)=>
+          Ok(Json.obj("status"->"ok","result"->projectRecord))
+        case None=>
+          NotFound(Json.obj("status"->"notfound","detail"->"No project with that VSID"))
+      }).recover({
+        case err:Throwable=>
+          logger.error(s"Could not look up VSID $vsid: ", err)
+          InternalServerError(Json.obj("status"->"error","detail"->"Database error looking up record, see server logs"))
+      })
+    } else {
+      Future(BadRequest(Json.obj("status"->"bad_request","detail"->"Malformed vidispine ID")))
+    }
+  }
+
   def createFromFullRequest(rq:ProjectRequestFull) = {
     implicit val timeout:akka.util.Timeout = 60.seconds
 
