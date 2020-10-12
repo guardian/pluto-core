@@ -16,7 +16,7 @@ import {
   FormControlLabel,
   Grid,
 } from "@material-ui/core";
-import { getProject, updateProject } from "./helpers";
+import { getProject, getProjectByVsid, updateProject } from "./helpers";
 import { validProjectStatuses } from "../utils/constants";
 import SystemNotification, {
   SystemNotificationKind,
@@ -118,14 +118,18 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
     if (props.match.params.itemid !== "new") {
       const loadProject = async (): Promise<void> => {
+        if (!props.match.params.itemid) throw "No project ID to load";
         const id = Number(props.match.params.itemid);
-        const project = await getProject(id);
 
+        const project = isNaN(id)
+          ? await getProjectByVsid(props.match.params.itemid)
+          : await getProject(id);
         if (isMounted) {
-          setProject({ ...project, id });
+          setProject(project);
         }
         await getProjectTypeData(project.projectTypeId);
       };
+
       loadProject();
     }
 

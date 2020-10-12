@@ -59,6 +59,14 @@ export const getProject = async (id: number): Promise<Project> => {
   }
 };
 
+export const getProjectByVsid = async (vsid: string): Promise<Project> => {
+  const response = await Axios.get<PlutoApiResponse<Project>>(
+    `${API_PROJECTS}/vsid/${vsid}`
+  );
+  //if status!=200 we raise
+  return response.data.result;
+};
+
 export const updateProject = async (project: Project): Promise<void> => {
   try {
     const { status } = await Axios.put<PlutoApiResponse<void>>(
