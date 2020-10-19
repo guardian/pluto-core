@@ -39,7 +39,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
     override def selectall(startAt: Int, limit: Int): Future[Try[(Int, Seq[PlutoCommission])]] = {
       val results: Future[(Int, Seq[PlutoCommission])] = db.run(
         TableQuery[PlutoCommissionRow].length.result.zip(
-          TableQuery[PlutoCommissionRow].drop(startAt).take(limit).sortBy(_.created.desc).result
+          TableQuery[PlutoCommissionRow].sortBy(_.created.desc).drop(startAt).take(limit).result
         )
       )
 
@@ -64,7 +64,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
 
       db.run(
         basequery.length.result.zip(
-          basequery.drop(startAt).take(limit).sortBy(_.created.desc).result
+          basequery.sortBy(_.created.desc).drop(startAt).take(limit).result
         )
       ).map(Success(_)).recover(Failure(_))
     }
