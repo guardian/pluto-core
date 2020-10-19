@@ -143,6 +143,10 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
               logger.info(s"Migration of $vsid complete")
               Some(itemToUpdate)
             })
+        }).recover({
+          case err:RuntimeException=>
+            logger.error(s"Collection $collId failed")
+            None
         })
 
       case None=>
