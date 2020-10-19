@@ -208,11 +208,11 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
    */
   def copyFiles(from:ProjectFileResult, destPath:String):ProjectFileResult = {
     val copyResults = from.filePaths.map(filepath=>Try {
-      val destPath = FilenameUtils.concat(destPath,FilenameUtils.getName(filepath))
-      logger.debug(s"Copying $filepath to $destPath")
-      val destFile = new File(destPath)
+      val destFullPath = FilenameUtils.concat(destPath,FilenameUtils.getName(filepath))
+      logger.debug(s"Copying $filepath to $destFullPath")
+      val destFile = new File(destFullPath)
       if(destFile.exists()) {
-        logger.warn(s"Destination file $destPath already existed! Not over-writing")
+        logger.warn(s"Destination file $destFullPath already existed! Not over-writing")
       } else {
         FileUtils.copyFile(
           new File(filepath),
