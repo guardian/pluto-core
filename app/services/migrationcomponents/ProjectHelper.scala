@@ -3,18 +3,26 @@ package services.migrationcomponents
 import java.util.UUID
 
 import models.{PlutoCommission, PlutoWorkingGroup}
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object ProjectHelper {
-  def findWorkingGroup(vsProject: VSProjectEntity)(implicit db: slick.jdbc.PostgresProfile#Backend#Database) =
+  private val logger = LoggerFactory.getLogger(getClass)
+  def findWorkingGroup(vsProject: VSProjectEntity)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoWorkingGroup]] =
     vsProject.getSingle("gnm_commission_workinggroup") match {
       case Some(workingGroupUuid) =>
-        Future.fromTry(Try {
+        Try {
           UUID.fromString(workingGroupUuid)
-        }).flatMap(PlutoWorkingGroup.entryForUuid)
+        } match {
+          case Failure(err)=>
+            logger.warn(s"Invalid UUID on ${vsProject.title}: ${err.toString}")
+            Future(None)
+          case Success(uuid)=>
+            PlutoWorkingGroup.entryForUuid(uuid)
+        }
       case None =>
         Future(None)
     }
