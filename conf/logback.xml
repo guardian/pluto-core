@@ -41,7 +41,7 @@
     <logger name="controllers.StoragesController" level="INFO"/>
     <logger name="drivers.MatrixStoreDriver" level="INFO"/>
     <logger name="controllers.StorageControllerSpec" level="WARN"/>
-    <logger name="auth.Security" level="WARN"/>
+    <logger name="auth" level="DEBUG"/>
     <logger name="controllers.Application" level="WARN"/>
     <logger name="controllers.System" level="INFO"/>
     <logger name="auth.LDAP" level="INFO"/>
