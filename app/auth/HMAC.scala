@@ -11,6 +11,7 @@ import scala.jdk.CollectionConverters._
 
 object HMAC {
   val logger: Logger = Logger(this.getClass)
+  private val checksumXtractor = "^([\\w\\d\\-]+)=(.*)$".r
 
   /**
     * generate the HMAC digest of a string, given a shared secret to encrypt it with
@@ -26,6 +27,19 @@ object HMAC {
     Base64.getEncoder.encodeToString(hashString) //new String(hashString.map(_.toChar))
   }
 
+  def extract_checksum(digestHeader:String) = {
+    val matches = checksumXtractor.findAllIn(digestHeader)
+    if(matches.nonEmpty) {
+      if(matches.group(1)!="SHA-384") {
+        logger.error(s"Only SHA-384 digest is accepted, got ${matches.group(1)}")
+        None
+      } else {
+        Some(matches.group(2))
+      }
+    } else {
+      None
+    }
+  }
   /**
     * Take the relevant request headers and calculate what the digest should be
     * @param request Play request, must contain the headers Date, Content-Length, X-Sha384-Checksum
@@ -33,11 +47,13 @@ object HMAC {
     * @return Option containing the hmac digest, or None if any headers were missing
     */
   def calculateHmac(request: RequestHeader, sharedSecret: String):Option[String] = try {
-    val string_to_sign = s"${request.headers.get("Date").get}\n${request.headers.get("Content-Length").getOrElse("0")}\n${request.headers.get("X-Sha384-Checksum").get}\n${request.method}\n${request.uri}"
-    logger.debug(s"Incoming request, string to sign: $string_to_sign")
-    val hmac = generateHMAC(sharedSecret, string_to_sign)
-    logger.debug(s"HMAC generated: $hmac")
-    Some(hmac)
+    request.headers.get("Digest").map(extract_checksum).map(checksum=> {
+      val string_to_sign = s"${request.uri}\n${request.headers.get("Date").get}\n${request.headers.get("Content-Type").getOrElse("")}\n$checksum\n${request.method}\n"
+      logger.debug(s"Incoming request, string to sign: $string_to_sign")
+      val hmac = generateHMAC(sharedSecret, string_to_sign)
+      logger.debug(s"HMAC generated: $hmac")
+      hmac
+    })
   } catch {
       case e:java.util.NoSuchElementException=>
         logger.debug(e.toString)

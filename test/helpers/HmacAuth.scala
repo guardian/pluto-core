@@ -21,13 +21,13 @@ class HmacAuth extends Specification {
   "HMAC.calculateHmac" should {
     "generate a valid HMAC given the correct request headers" in {
       val headers = Headers(("Date", "Tue, 15 Nov 1994 12:45:26 GMT"),
-        ("X-Sha384-Checksum", "d1dc31c2a7828faf4477fa29faae132cc9663812fcd7ec6659f38da591216b113a668062ed73bdfd2f361b0d3979f1fe"),
+        ("Digest", "SHA-384 d1dc31c2a7828faf4477fa29faae132cc9663812fcd7ec6659f38da591216b113a668062ed73bdfd2f361b0d3979f1fe"),
         ("Content-Length", "123456")
       )
       val req = FakeRequest("GET","/path/to/endpoint").withHeaders(headers)
       val result = HMAC.calculateHmac(req,"thisIsMySharedSecret")
 
-      result must beSome("GD5qXnVJqV+bsXn2YAJC+wCz72zvH6qS6xh1SSUpPnshShijxkFLc/8QZbHDf83E")
+      result must beSome("vNgdQzo52FFLzSSeROQPGKinq+Kqf25qAR/B4viCV6o00EzPzhRgkB7e+GKHZ9lY")
     }
 
     "return None if any headers are missing" in {
