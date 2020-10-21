@@ -71,6 +71,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   const [filterTerms, setFilterTerms] = useState<ProjectFilterTerms>({
     match: "W_CONTAINS",
   });
+  const [firstLoad, setFirstLoad] = useState<boolean>(true);
 
   // Material-UI
   const classes = useStyles();
@@ -80,16 +81,47 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
     pageSize: number,
     updatedFilterTerms?: ProjectFilterTerms
   ) => {
-    const projects = await getProjectsOnPage({
-      page,
-      pageSize,
-      filterTerms: updatedFilterTerms ?? filterTerms,
-    });
+    if (firstLoad) {
+      const fetchWhoIsLoggedInAndSetProjects = async () => {
+        try {
+          const user = await isLoggedIn();
+          setUser(user);
+          if (user && new URLSearchParams(search).has("mine")) {
+            const projects = await getProjectsOnPage({
+              page,
+              pageSize,
+              filterTerms: { user: user.uid, match: "W_EXACT" },
+            });
 
-    setProjects(projects);
+            setProjects(projects);
+          } else {
+            const projects = await getProjectsOnPage({
+              page,
+              pageSize,
+              filterTerms: filterTerms,
+            });
+
+            setProjects(projects);
+          }
+        } catch (error) {
+          console.error("Could not get user:", error);
+        }
+      };
+
+      fetchWhoIsLoggedInAndSetProjects();
+    } else {
+      const projects = await getProjectsOnPage({
+        page,
+        pageSize,
+        filterTerms: updatedFilterTerms ?? filterTerms,
+      });
+
+      setProjects(projects);
+    }
   };
 
   useEffect(() => {
+    setFirstLoad(false);
     const fetchWhoIsLoggedIn = async () => {
       try {
         const user = await isLoggedIn();
