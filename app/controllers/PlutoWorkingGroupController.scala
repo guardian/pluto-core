@@ -11,6 +11,7 @@ import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 import akka.pattern.ask
 import auth.BearerTokenAuth
+import play.api.Configuration
 import services.{CreateOperation, UpdateOperation}
 
 import scala.concurrent.Future
@@ -20,8 +21,11 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 
 @Singleton
-class PlutoWorkingGroupController @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
-                                             dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi,
+class PlutoWorkingGroupController @Inject() (override val controllerComponents:ControllerComponents,
+                                             override val bearerTokenAuth:BearerTokenAuth,
+                                             dbConfigProvider:DatabaseConfigProvider,
+                                             cacheImpl:SyncCacheApi,
+                                             override implicit val config:Configuration,
                                              @Named("rabbitmq-propagator") val rabbitMqPropagator:ActorRef)
   extends GenericDatabaseObjectController[PlutoWorkingGroup] with PlutoWorkingGroupSerializer {
 

@@ -1,11 +1,11 @@
 package auth
 
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.mvc.RequestHeader
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import java.security._
-import java.util.Base64
+
 import org.apache.commons.codec.binary.Hex
 
 import scala.jdk.CollectionConverters._
@@ -48,9 +48,10 @@ object HMAC {
     * @param sharedSecret passphrase to encrypt with
     * @return Option containing the hmac digest, or None if any headers were missing
     */
-  def calculateHmac(request: RequestHeader, sharedSecret: String):Option[String] = try {
+  def calculateHmac(request: RequestHeader, sharedSecret: String)(implicit config:Configuration):Option[String] = try {
     request.headers.get("Digest").flatMap(extract_checksum).map(checksum=>{
-      val string_to_sign = s"${request.uri}\n${request.headers.get("Date").get}\n${request.headers.get("Content-Type").getOrElse("")}\n$checksum\n${request.method}"
+      val full_uri = config.getOptional[String]("deployment-root").getOrElse("") + request.uri
+      val string_to_sign = s"$full_uri\n${request.headers.get("Date").get}\n${request.headers.get("Content-Type").getOrElse("")}\n$checksum\n${request.method}"
       logger.debug(s"Incoming request, string to sign: $string_to_sign")
       val hmac = generateHMAC(sharedSecret, string_to_sign)
       logger.debug(s"HMAC generated: $hmac")

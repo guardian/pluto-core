@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 @Singleton
 class StoragesController @Inject()
     (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
-     configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
+     override implicit val config: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
     (implicit mat:Materializer, system:ActorSystem)
     extends GenericDatabaseObjectController[StorageEntry] with StorageSerializer with StorageTypeSerializer {
 

@@ -73,7 +73,7 @@ trait Security extends BaseController {
   val bearerTokenAuth:BearerTokenAuth //this needs to be injected from the user
 
   val logger: Logger = Logger(this.getClass)
-
+  implicit val config:Configuration
   /**
     * look up an ldap user in the session.
     * @param request HTTP request object

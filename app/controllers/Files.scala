@@ -23,7 +23,9 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 
-class Files @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth, configuration: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi, storageHelper:StorageHelper)
+class Files @Inject() (override val controllerComponents:ControllerComponents,
+                       override val bearerTokenAuth:BearerTokenAuth,
+                       override implicit val config: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi, storageHelper:StorageHelper)
                       (implicit mat:Materializer)
   extends GenericDatabaseObjectControllerWithFilter[FileEntry,FileEntryFilterTerms]
     with FileEntrySerializer with FileEntryFilterTermsSerializer

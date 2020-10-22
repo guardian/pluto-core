@@ -4,6 +4,7 @@ import auth.HMAC
 import org.junit.runner.RunWith
 import org.specs2.mutable._
 import org.specs2.runner.JUnitRunner
+import play.api.Configuration
 import play.api.mvc.Headers
 import play.api.test.FakeRequest
 
@@ -20,6 +21,7 @@ class HmacAuth extends Specification {
 
   "HMAC.calculateHmac" should {
     "generate a valid HMAC given the correct request headers" in {
+      implicit val config:Configuration = Configuration.empty
       val headers = Headers(("Date", "Tue, 15 Nov 1994 12:45:26 GMT"),
         ("Digest", "SHA-384=d1dc31c2a7828faf4477fa29faae132cc9663812fcd7ec6659f38da591216b113a668062ed73bdfd2f361b0d3979f1fe"),
         ("Content-Length", "123456")
@@ -31,6 +33,7 @@ class HmacAuth extends Specification {
     }
 
     "return None if any headers are missing" in {
+      implicit val config:Configuration = Configuration.empty
       val headers = Headers(("Date", "Tue, 15 Nov 1994 12:45:26 GMT"),
         ("Content-Length", "123456")
       )
@@ -41,6 +44,7 @@ class HmacAuth extends Specification {
     }
 
     "return None if no headers are present" in {
+      implicit val config:Configuration = Configuration.empty
       val req = FakeRequest("GET","/path/to/endpoint")
       val result = HMAC.calculateHmac(req,"thisIsMySharedSecret")
 

@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class DefaultsController @Inject() (cc:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
-                                    configuration: Configuration,
+                                    override implicit val config: Configuration,
                                     dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
   extends AbstractController(cc) with Security with DefaultsSerializer {
   override val logger = Logger(getClass)

@@ -21,7 +21,7 @@ import scala.concurrent.Future
   * Created by localhome on 17/01/2017.
   */
 class ProjectTypeController @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
-                                       config: Configuration, dbConfigProvider: DatabaseConfigProvider,
+                                       override implicit val config: Configuration, dbConfigProvider: DatabaseConfigProvider,
                                        cacheImpl:SyncCacheApi)
   extends GenericDatabaseObjectController[ProjectType] with ProjectTypeSerializer{
   val dbConfig = dbConfigProvider.get[PostgresProfile]
