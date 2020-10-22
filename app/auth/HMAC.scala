@@ -51,6 +51,12 @@ object HMAC {
   def calculateHmac(request: RequestHeader, sharedSecret: String)(implicit config:Configuration):Option[String] = try {
     request.headers.get("Digest").flatMap(extract_checksum).map(checksum=>{
       val full_uri = config.getOptional[String]("deployment-root").getOrElse("") + request.uri
+      logger.debug(s"full_uri: $full_uri")
+      logger.debug(s"date: ${request.headers.get("Date")}")
+      logger.debug(s"content-type: ${request.headers.get("Content-Type")}")
+      logger.debug(s"checksum: $checksum")
+      logger.debug(s"method: ${request.method}")
+
       val string_to_sign = s"$full_uri\n${request.headers.get("Date").get}\n${request.headers.get("Content-Type").getOrElse("")}\n$checksum\n${request.method}"
       logger.debug(s"Incoming request, string to sign: $string_to_sign")
       val hmac = generateHMAC(sharedSecret, string_to_sign)
