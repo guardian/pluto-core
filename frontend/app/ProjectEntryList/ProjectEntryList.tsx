@@ -66,8 +66,9 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // React state
   const [user, setUser] = useState<PlutoUser | null>(null);
   const [pageSize, setPageSize] = useState<number>(25);
-
+  const [page, setPage] = useState<number>(1);
   const [projects, setProjects] = useState<Project[]>([]);
+
   const [filterTerms, setFilterTerms] = useState<ProjectFilterTerms>({
     match: "W_CONTAINS",
   });
@@ -75,19 +76,27 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // Material-UI
   const classes = useStyles();
 
-  const fetchProjectsOnPage = async (
-    page: number,
-    pageSize: number,
-    updatedFilterTerms?: ProjectFilterTerms
-  ) => {
+  const fetchProjectsOnPage = async () => {
+    const mineOnly = new URLSearchParams(search).has("mine");
+    if (mineOnly && !user) {
+      console.log(
+        "Requested 'my' projects but no user set, waiting until it has been"
+      );
+      return;
+    }
+
     const projects = await getProjectsOnPage({
       page,
       pageSize,
-      filterTerms: updatedFilterTerms ?? filterTerms,
+      filterTerms: filterTerms,
     });
 
     setProjects(projects);
   };
+
+  useEffect(() => {
+    fetchProjectsOnPage();
+  }, [filterTerms, page, pageSize]);
 
   useEffect(() => {
     const fetchWhoIsLoggedIn = async () => {
@@ -117,7 +126,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
     ) {
       newFilterTerms.commissionId = commissionIdAsNumber;
     }
-
+    console.log("filter terms set: ", newFilterTerms);
     setFilterTerms(newFilterTerms);
   }, [commissionId, user?.uid]);
 
@@ -126,7 +135,13 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
       <ProjectEntryFilterComponent
         filterTerms={filterTerms}
         filterDidUpdate={(newFilters: ProjectFilterTerms) => {
-          fetchProjectsOnPage(0, pageSize, newFilters);
+          console.log(
+            "ProjectEntryFilterComponent filterDidUpdate ",
+            newFilters
+          );
+          if (newFilters.user === "Everyone") {
+            newFilters.user = undefined;
+          }
           setFilterTerms(newFilters);
         }}
       />
@@ -144,8 +159,9 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
           className={classes.table}
           pageSizeOptions={[25, 50, 100]}
           updateRequired={(page, pageSize) => {
+            console.log("ProjectsTable updateRequired");
             setPageSize(pageSize);
-            return fetchProjectsOnPage(page, pageSize, filterTerms);
+            setPage(page);
           }}
           projects={projects}
         />
