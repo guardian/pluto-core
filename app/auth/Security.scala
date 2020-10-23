@@ -73,7 +73,7 @@ trait Security extends BaseController {
   val bearerTokenAuth:BearerTokenAuth //this needs to be injected from the user
 
   val logger: Logger = Logger(this.getClass)
-
+  implicit val config:Configuration
   /**
     * look up an ldap user in the session.
     * @param request HTTP request object
@@ -93,9 +93,6 @@ trait Security extends BaseController {
     * @param auth Authorization token as passed from the client
     */
   private def hmacUsername(header: RequestHeader, auth: String):Either[LoginResult, LoginResultOK[String]] = {
-    val authparts = auth.split(":")
-
-    logger.debug(s"authparts: ${authparts.mkString(":")}")
     logger.debug(s"headers: ${header.headers.toSimpleMap.toString}")
     if(Conf.sharedSecret.isEmpty){
       logger.error("Unable to process server->server request, shared_secret is not set in application.conf")
@@ -104,7 +101,7 @@ trait Security extends BaseController {
       HMAC
         .calculateHmac(header, Conf.sharedSecret)
         .map(calculatedSig => {
-          if (calculatedSig == authparts(1)) Right(LoginResultOK(authparts(0))) else Left(LoginResultInvalid(authparts(0)))
+          if ("HMAC "+calculatedSig == auth) Right(LoginResultOK("hmac")) else Left(LoginResultInvalid("hmac"))
         })
         .getOrElse(Left(LoginResultInvalid("")))
     }
@@ -130,17 +127,19 @@ trait Security extends BaseController {
   }
 
   //if this returns something, then we are logged in
-  private def username(request:RequestHeader):Either[LoginResult, LoginResultOK[String]] = Seq("X-Hmac-Authorization","Authorization").map(request.headers.get) match {
-    case Seq(Some(auth),_)=>
-      logger.debug("got Auth header, doing hmac auth")
-      val updatedRequest = request.addAttr(AuthTypeKey, AuthType.AuthHmac)
-      hmacUsername(updatedRequest,auth)
-    case Seq(None, Some(bearer))=>
-      logger.debug("got Authorization header, doing bearer auth")
-      bearerTokenAuth(request).map(result=>{
-        LoginResultOK(usernameFromClaim(result.content))
-      })
-    case Seq(None,None)=>
+  private def username(request:RequestHeader):Either[LoginResult, LoginResultOK[String]] = request.headers.get("Authorization") match {
+    case Some(auth)=>
+      if(auth.contains("HMAC")) {
+        logger.debug("got HMAC Authorization header, doing hmac auth")
+        val updatedRequest = request.addAttr(AuthTypeKey, AuthType.AuthHmac)
+        hmacUsername(updatedRequest, auth)
+      } else {
+        logger.debug("got Authorization header, doing bearer auth")
+        bearerTokenAuth(request).map(result => {
+          LoginResultOK(usernameFromClaim(result.content))
+        })
+      }
+    case None=>
       logger.debug("no Auth header, doing session auth")
       ldapUsername(request)
   }

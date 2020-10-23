@@ -27,7 +27,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                                           override val bearerTokenAuth:BearerTokenAuth,
                                           dbConfigProvider:DatabaseConfigProvider,
                                           cacheImpl:SyncCacheApi,
-                                          config:Configuration,
+                                          override implicit val config:Configuration,
                                          @Named("commission-status-propagator") commissionStatusPropagator:ActorRef,
                                          @Named("rabbitmq-propagator") rabbitMqPropagator:ActorRef)
   extends GenericDatabaseObjectControllerWithFilter[PlutoCommission,PlutoCommissionFilterTerms]

@@ -33,7 +33,7 @@ import scala.language.postfixOps
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
                                        @Named("validate-project-actor") validateProjectActor:ActorRef,
-                                        config: Configuration,
+                                        override implicit val config: Configuration,
                                         dbConfigProvider: DatabaseConfigProvider,
                                         cacheImpl:SyncCacheApi,
                                         @Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef,

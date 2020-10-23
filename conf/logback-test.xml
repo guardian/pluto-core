@@ -29,6 +29,7 @@
     <logger name="models.PlutoWorkingGroup" level="WARN"/>
     <logger name="models.PlutoCommission" level="WARN"/>
     <logger name="services.ClockSingleton" level="INFO"/>
+    <logger name="auth" level="DEBUG"/>
     <logger name="controllers.Files" level="WARN" />
     <logger name="controllers.StoragesController" level="INFO"/>
     <logger name="drivers.MatrixStoreDriver" level="INFO"/>

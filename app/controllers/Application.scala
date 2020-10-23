@@ -20,7 +20,12 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class Application @Inject() (val cc:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth, p:PlayBodyParsers, config:Configuration, cacheImpl:SyncCacheApi, dbHelper:DatabaseHelper)
+class Application @Inject() (val cc:ControllerComponents,
+                             override val bearerTokenAuth:BearerTokenAuth,
+                             p:PlayBodyParsers,
+                             override implicit val config:Configuration,
+                             cacheImpl:SyncCacheApi,
+                             dbHelper:DatabaseHelper)
   extends AbstractController(cc) with Security with LoginRequestSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl

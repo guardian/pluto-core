@@ -25,7 +25,7 @@ import scala.io.Source
 @Singleton
 class PostrunActionController  @Inject() (override val controllerComponents:ControllerComponents,
                                           override val bearerTokenAuth:BearerTokenAuth,
-                                          config: Configuration, dbConfigProvider: DatabaseConfigProvider,
+                                          override implicit val config: Configuration, dbConfigProvider: DatabaseConfigProvider,
                                           cacheImpl:SyncCacheApi,
                                           @Named("postrun-action-scanner") postrunActionScanner:ActorRef)
   extends GenericDatabaseObjectController[PostrunAction] with PostrunActionSerializer with PostrunDependencySerializer with Security {
@@ -89,7 +89,6 @@ class PostrunActionController  @Inject() (override val controllerComponents:Cont
   }}
 
   def getSource(itemId:Int) = IsAdminAsync {uid=>{request=>
-    implicit val configImplicit=config
     selectid(itemId) map {
       case Failure(error)=>
         logger.error("Could not load postrun source",error)

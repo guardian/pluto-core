@@ -19,7 +19,7 @@ import scala.util.{Failure, Success}
 
 @Singleton
 class DataMigrationController @Inject()
-  (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth, config:Configuration, override val cache:SyncCacheApi)
+  (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth, override implicit val config:Configuration, override val cache:SyncCacheApi)
   (implicit dbProvider:DatabaseConfigProvider, system:ActorSystem, mat:Materializer)
   extends AbstractController(controllerComponents) with Security {
 

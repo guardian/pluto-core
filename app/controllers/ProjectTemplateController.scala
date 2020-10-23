@@ -18,8 +18,10 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ProjectTemplateController @Inject() (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
-                                           config: Configuration, dbConfigProvider: DatabaseConfigProvider,
+class ProjectTemplateController @Inject() (override val controllerComponents:ControllerComponents,
+                                           override val bearerTokenAuth:BearerTokenAuth,
+                                           override implicit val config: Configuration,
+                                           dbConfigProvider: DatabaseConfigProvider,
                                            cacheImpl:SyncCacheApi)
                                           (implicit mat:Materializer)
   extends GenericDatabaseObjectController[ProjectTemplate] with ProjectTemplateSerializer with StorageSerializer{

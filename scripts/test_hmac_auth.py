@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import requests
 import hashlib
@@ -6,8 +6,11 @@ import copy
 import hmac
 from email.utils import formatdate
 import base64
+import argparse
+from urllib.parse import urlparse
+import sys
 
-def sign_request(original_headers, method, path, content_body, shared_secret):
+def sign_request(original_headers:dict, method:str, path:str, content_type:str, content_body:str, shared_secret:str) -> dict:
     """
     returns a dictionary including a suitable authorization header
     :param original_headers: original content headers
@@ -17,30 +20,48 @@ def sign_request(original_headers, method, path, content_body, shared_secret):
     new_headers = copy.deepcopy(original_headers)
 
     content_hasher = hashlib.sha384()
-    content_hasher.update(content_body)
+    content_hasher.update(content_body.encode("UTF-8"))
 
     nowdate = formatdate(usegmt=True)
-    new_headers['X-Sha384-Checksum'] = base64.b64encode(content_hasher.digest())
+    checksumstring = content_hasher.hexdigest()
+    new_headers['Digest'] = "SHA-384=" + checksumstring
     new_headers['Content-Length'] = str(len(content_body))
+    new_headers['Content-Type'] = content_type
     new_headers['Date'] = nowdate
 
-    string_to_sign = """{date}\n{contentlength}\n{checksum}\n{method}\n{path}""".format(
-        date=nowdate,contentlength=new_headers['Content-Length'],checksum=new_headers['X-Sha384-Checksum'],
+    string_to_sign = """{path}\n{date}\n{content_type}\n{checksum}\n{method}""".format(
+        date=nowdate,content_type=content_type,checksum=checksumstring,
         method=method,path=path
     )
 
-    print "debug: string to sign: {0}".format(string_to_sign)
+    print("debug: string to sign: {0}".format(string_to_sign))
 
-    hmaccer = hmac.new(shared_secret, string_to_sign, hashlib.sha384)
-    result = base64.b64encode(hmaccer.digest())
-    print "debug: final digest is {0}".format(result)
-    new_headers['X-Hmac-Authorization'] = "testscript:{0}".format(result)
+    hmaccer = hmac.new(shared_secret.encode("UTF-8"), string_to_sign.encode("UTF-8"), hashlib.sha384)
+    result = hmaccer.hexdigest()
+    print("debug: final digest is {0}".format(result))
+    new_headers['Authorization'] = "HMAC {0}".format(result)
     return new_headers
 
 #START MAIN
-shared_secret = "rubbish"
+parser = argparse.ArgumentParser(description="HMAC signing test program")
+parser.add_argument("--url", type=str, dest="url", help="URL to contact")
+parser.add_argument("--method", type=str, dest="method", help="HTTP method")
+parser.add_argument("--secret", type=str, dest="secret", help="shared key")
+args = parser.parse_args()
 
-signed_headers = sign_request({}, "GET", "/api/storage", "", shared_secret)
+if not args.url:
+    print("You must specify --url on the commandline")
+    sys.exit(1)
+if not args.method:
+    print("You must specify --method on the commandline")
+    sys.exit(1)
+if not args.secret:
+    print("You must specify --secret on the commandline")
+    sys.exit(1)
 
-result = requests.get("http://localhost:9000/api/storage", headers=signed_headers)
-print "Server returned {0}: {1}".format(result.status_code, result.content)
+target_uri = urlparse(args.url)
+
+signed_headers = sign_request({}, args.method, target_uri.path, "application/octet-stream", "", args.secret)
+print("debug: signed_headers {0}".format(signed_headers))
+result = requests.get(args.url, headers=signed_headers)
+print("Server returned {0}: {1}".format(result.status_code, result.content))

@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class AssetFolderController @Inject() (override val controllerComponents:ControllerComponents,
                                        override val bearerTokenAuth:BearerTokenAuth,
-                                       configuration: Configuration,
+                                       override implicit val config: Configuration,
                                        dbConfigProvider: DatabaseConfigProvider,
                                        override val cache:SyncCacheApi) extends AbstractController(controllerComponents) with Security with ProjectMetadataSerializer {
   override val logger = Logger(getClass)
