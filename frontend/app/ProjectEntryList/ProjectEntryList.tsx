@@ -24,6 +24,7 @@ import ProjectEntryFilterComponent from "../filter/ProjectEntryFilterComponent.j
 import { isLoggedIn } from "../utils/api";
 import { getProjectsOnPage, updateProjectOpenedStatus } from "./helpers";
 import ProjectsTable from "./ProjectsTable";
+import { Helmet } from "react-helmet";
 
 const useStyles = makeStyles({
   table: {
@@ -132,6 +133,9 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
 
   return (
     <>
+      <Helmet>
+        <title>All Projects</title>
+      </Helmet>
       <ProjectEntryFilterComponent
         filterTerms={filterTerms}
         filterDidUpdate={(newFilters: ProjectFilterTerms) => {

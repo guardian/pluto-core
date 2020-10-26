@@ -15,6 +15,7 @@ import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { getCommissionsOnPage, getWorkingGroupNameMap } from "./helpers";
 import { sortListByOrder, SortDirection } from "../utils/lists";
+import { Helmet } from "react-helmet";
 
 const tableHeaderTitles: HeaderTitle<Commission>[] = [
   { label: "Title", key: "title" },
@@ -119,6 +120,9 @@ const CommissionsList: React.FC = () => {
 
   return (
     <>
+      <Helmet>
+        <title>All Commissions</title>
+      </Helmet>
       <Button
         className={classes.createButton}
         variant="outlined"

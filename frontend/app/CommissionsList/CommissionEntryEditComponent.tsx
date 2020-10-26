@@ -35,6 +35,7 @@ import WorkingGroupSelector from "../common/WorkingGroupSelector";
 import StatusSelector from "../common/StatusSelector";
 import ChipInput from "material-ui-chip-input";
 import ProjectsTable from "../ProjectEntryList/ProjectsTable";
+import { Helmet } from "react-helmet";
 declare var deploymentRootPath: string;
 
 const useStyles = makeStyles({
@@ -343,6 +344,11 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
 
   return (
     <>
+      {commissionData ? (
+        <Helmet>
+          <title>[{commissionData.title}] Details</title>
+        </Helmet>
+      ) : null}
       <Breadcrumb
         commissionId={commissionId}
         plutoCoreBaseUri={

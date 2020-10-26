@@ -95,6 +95,7 @@
     "react": "^16.12.0",
     "react-codemirror": "^1.0.0",
     "react-dom": "^16.12.0",
+    "react-helmet": "^6.1.0",
     "react-multistep": "^3.6.16",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",

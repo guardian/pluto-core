@@ -3,6 +3,7 @@ import axios from "axios";
 import SortableTable from "react-sortable-table";
 import { Link } from "react-router-dom";
 import moment from "moment";
+import { Helmet } from "react-helmet";
 
 class GeneralListComponent extends React.Component {
   static ITEM_LIMIT = 50;
@@ -250,26 +251,31 @@ class GeneralListComponent extends React.Component {
 
   render() {
     return (
-      <div>
-        <span className="list-title">
-          <h2 className="list-title">{this.props.title}</h2>
-        </span>
-        {this.getFilterComponent()}
-        {this.itemLimitWarning()}
+      <>
+        <Helmet>
+          <title>Core Admin</title>
+        </Helmet>
+        <div>
+          <span className="list-title">
+            <h2 className="list-title">{this.props.title}</h2>
+          </span>
+          {this.getFilterComponent()}
+          {this.itemLimitWarning()}
 
-        <span className="banner-control">
-          <button id="newElementButton" onClick={this.newElementCallback}>
-            New
-          </button>
-        </span>
-        <SortableTable
-          data={this.state.data}
-          columns={this.columns}
-          style={this.style}
-          iconStyle={this.iconStyle}
-          tableProps={{ className: "dashboardpanel" }}
-        />
-      </div>
+          <span className="banner-control">
+            <button id="newElementButton" onClick={this.newElementCallback}>
+              New
+            </button>
+          </span>
+          <SortableTable
+            data={this.state.data}
+            columns={this.columns}
+            style={this.style}
+            iconStyle={this.iconStyle}
+            tableProps={{ className: "dashboardpanel" }}
+          />
+        </div>
+      </>
     );
   }
 }
