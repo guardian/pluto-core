@@ -79,6 +79,7 @@
     "@material-ui/icons": "^4.9.1",
     "@material-ui/pickers": "^3.2.10",
     "@types/jsonwebtoken": "^8.5.0",
+    "@types/react-helmet": "^6.1.0",
     "axios": "^0.19.1",
     "css-loader": "^1.0.0",
     "date-fns": "^2.16.1",
