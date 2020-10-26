@@ -26,6 +26,7 @@ import { isLoggedIn } from "../utils/api";
 import SystemNotification, {
   SystemNotificationKind,
 } from "../SystemNotification";
+import { Helmet } from "react-helmet";
 
 const tableHeaderTitles: HeaderTitle<WorkingGroup>[] = [
   { label: "Name", key: "name" },
@@ -147,6 +148,9 @@ const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
 
   return (
     <>
+      <Helmet>
+        <title>All Working Groups</title>
+      </Helmet>
       <Button
         className={classes.createNewWorkingGroup}
         variant="outlined"

@@ -7,6 +7,7 @@ import WorkingGroupEntryView from "./EntryViews/WorkingGroupEntryView.jsx";
 import CommissionEntryView from "./EntryViews/CommissionEntryView.jsx";
 import { Link } from "react-router-dom";
 import ErrorViewComponent from "./common/ErrorViewComponent.jsx";
+import { Helmet } from "react-helmet";
 
 class ProjectValidationView extends React.Component {
   constructor(props) {
@@ -235,6 +236,9 @@ class ProjectValidationView extends React.Component {
   render() {
     return (
       <div>
+        <Helmet>
+          <title>Core Admin</title>
+        </Helmet>
         <span className="list-title">
           <h2 className="list-title">Validate Projects</h2>
         </span>

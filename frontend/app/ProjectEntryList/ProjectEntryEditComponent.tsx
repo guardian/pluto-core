@@ -29,6 +29,7 @@ import moment from "moment";
 import axios from "axios";
 import ProductionOfficeSelector from "../common/ProductionOfficeSelector";
 import StatusSelector from "../common/StatusSelector";
+import { Helmet } from "react-helmet";
 
 const useStyles = makeStyles({
   root: {
@@ -179,6 +180,11 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
   return (
     <>
+      {project ? (
+        <Helmet>
+          <title>[{project.title}] Details</title>
+        </Helmet>
+      ) : null}
       <div style={{ marginBottom: "0.8em" }}>
         <Breadcrumb
           projectId={project.id}

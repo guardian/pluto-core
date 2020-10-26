@@ -3,6 +3,7 @@ import axios from "axios";
 import StorageSelector from "./Selectors/StorageSelector.jsx";
 import ErrorViewComponent from "./multistep/common/ErrorViewComponent.jsx";
 import TemplateSelector from "./Selectors/TemplateSelector.jsx";
+import { Helmet } from "react-helmet";
 
 class ServerDefaults extends React.Component {
   constructor(props) {
@@ -112,6 +113,9 @@ class ServerDefaults extends React.Component {
 
     return (
       <div className="mainbody">
+        <Helmet>
+          <title>Core Admin</title>
+        </Helmet>
         <h3>Server defaults</h3>
         {this.state.error && <ErrorViewComponent error={this.state.error} />}
         <table>
