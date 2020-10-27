@@ -22,7 +22,7 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: Op
                             originalCommissionerName:Option[String], scheduledCompletion:Timestamp, owner:String,
                             notes:Option[String],
                             @JsonScalaEnumeration(classOf[ProductionOfficeMapper.EnumStatusType]) productionOffice:ProductionOffice.Value,
-                            originalTitle:Option[String]) extends PlutoModel {
+                            originalTitle:Option[String], googleFolder:Option[String]) extends PlutoModel {
   private def logger = Logger(getClass)
 
   var projectCount: Option[Int] = None
@@ -111,8 +111,9 @@ class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoComm
   def notes = column[Option[String]]("s_notes")
   def productionOffice = column[ProductionOffice.Value]("s_production_office")
   def originalTitle = column[Option[String]]("s_original_title")
+  def googleFolder = column[Option[String]]("google_folder")
   
-  def * = (id.?, collectionId, siteId, created, updated, title, status, description, workingGroup, originalCommissionerName, scheduledCompletion, owner, notes, productionOffice, originalTitle) <> (PlutoCommission.tupled, PlutoCommission.unapply)
+  def * = (id.?, collectionId, siteId, created, updated, title, status, description, workingGroup, originalCommissionerName, scheduledCompletion, owner, notes, productionOffice, originalTitle, googleFolder) <> (PlutoCommission.tupled, PlutoCommission.unapply)
 }
 
 trait PlutoCommissionSerializer extends TimestampSerialization {
@@ -142,7 +143,8 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
       (JsPath \ "owner").write[String] and
       (JsPath \ "notes").writeNullable[String] and
       (JsPath \ "productionOffice").write[ProductionOffice.Value] and
-      (JsPath \ "originalTitle").writeNullable[String]
+      (JsPath \ "originalTitle").writeNullable[String] and
+      (JsPath \ "googleFolder").writeNullable[String]
   )(unlift(PlutoCommission.unapply))
 
   implicit val plutoCommissionReads:Reads[PlutoCommission] = (
@@ -160,11 +162,12 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
       (JsPath \ "owner").read[String] and
       (JsPath \ "notes").readNullable[String] and
       (JsPath \ "productionOffice").read[ProductionOffice.Value] and
-      (JsPath \ "originalTitle").readNullable[String]
+      (JsPath \ "originalTitle").readNullable[String] and
+      (JsPath \ "googleFolder").readNullable[String]
     )(PlutoCommission.apply _)
 }
 
-object PlutoCommission extends ((Option[Int],Option[Int],Option[String],Timestamp,Timestamp,String,EntryStatus.Value,Option[String],Int,Option[String],Timestamp,String,Option[String],ProductionOffice.Value, Option[String])=>PlutoCommission)  {
+object PlutoCommission extends ((Option[Int],Option[Int],Option[String],Timestamp,Timestamp,String,EntryStatus.Value,Option[String],Int,Option[String],Timestamp,String,Option[String],ProductionOffice.Value, Option[String], Option[String])=>PlutoCommission)  {
   def entryForVsid(vsid:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoCommission]] = {
     val idparts = vsid.split("-")
     if(idparts.length!=2) return Future(None)
