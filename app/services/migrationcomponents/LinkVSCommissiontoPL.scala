@@ -14,6 +14,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Success, Try}
 
+/**
+  * Flow stage that takes in a VSCommissionEntity from Vidispine and outputs a PlutoCommission object, which is either
+  * a pre-existing one with a matching vidispine ID or a newly created one.
+  * A newly created record is NOT yet saved to the database, and has a "None" record ID as a result.
+  * @param commissioners
+  * @param defaultWorkingGroup
+  * @param dbConfig
+  */
 class LinkVSCommissiontoPL (commissioners:VSGlobalMetadataGroup, defaultWorkingGroup:Int) (implicit dbConfig:DatabaseConfigProvider) extends GraphStage[FlowShape[VSCommissionEntity, PlutoCommission]] {
   private final val in:Inlet[VSCommissionEntity] = Inlet.create("LinkVSCommissiontoPL.in")
   private final val out:Outlet[PlutoCommission] = Outlet.create("LinkVSCommissiontoPL.out")
@@ -29,7 +37,7 @@ class LinkVSCommissiontoPL (commissioners:VSGlobalMetadataGroup, defaultWorkingG
     private val completedCb = createAsyncCallback[PlutoCommission](comm=>push(out, comm))
     private val errorCb = createAsyncCallback[Throwable](err=>failStage(err))
 
-    def createNewCommission(elem:VSCommissionEntity, vsId:String):Future[PlutoCommission] = { //guard for exceptons when manipulating data
+    def createNewCommission(elem:VSCommissionEntity, vsId:String):Future[PlutoCommission] = {
       logger.info(s"Commission does not exist for $vsId")
       val maybeWgFut = elem.workingGroupId match {
         case Some(wgId)=>PlutoWorkingGroup.entryForUuid(wgId)
@@ -57,6 +65,8 @@ class LinkVSCommissiontoPL (commissioners:VSGlobalMetadataGroup, defaultWorkingG
                 productionOffice = elem.productionOffice.getOrElse(ProductionOffice.UK),
                 originalTitle = None
               )
+            case _=>
+              throw new RuntimeException(s"Invalid vidispine ID $vsId")
           }
         })
     }
@@ -70,12 +80,22 @@ class LinkVSCommissiontoPL (commissioners:VSGlobalMetadataGroup, defaultWorkingG
             logger.warn(s"Got a collection with no id! Title: ${elem.title}")
             pull(in)
           case Some(vsId)=>
-            PlutoCommission.entryForVsid(vsId).map({
+            PlutoCommission.entryForVsid(vsId).flatMap({
               case Some(existingCommission)=>
                 logger.info(s"Commission already exists for $vsId (${elem.title}")
-                Success(completedCb.invoke(existingCommission))
+                Future(existingCommission)
               case None=>
-
+                logger.info(s"No commission exists for $vsId (${elem.title}")
+                createNewCommission(elem, vsId).map(newCommission=>{
+                  logger.info(s"created new commission record: $newCommission")
+                  newCommission
+                })
+            })
+            .map(completedCb.invoke)
+            .recover({
+              case err:Throwable=>
+                logger.error(s"Could not determine PlutoCommission for ${elem.collectionId}: ", err)
+                errorCb.invoke(err)
             })
         }
       }

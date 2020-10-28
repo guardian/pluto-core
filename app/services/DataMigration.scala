@@ -17,7 +17,7 @@ import models.{FileAssociationRow, FileEntry, PlutoCommission, PlutoCommissionRo
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
-import services.migrationcomponents.{DBObjectSource, HttpHelper, LinkVStoPL, MultipleCounter, PlutoCommissionSource, ProjectFileExistsSwitch, ProjectFileResult, ProjectNoFilesSource, VSProjectSource, VSUserCache}
+import services.migrationcomponents.{DBObjectSource, HttpHelper, LinkVSCommissiontoPL, LinkVStoPL, MultipleCounter, PlutoCommissionSource, ProjectFileExistsSwitch, ProjectFileResult, ProjectNoFilesSource, VSCommissionSource, VSGlobalMetadata, VSProjectSource, VSUserCache}
 import play.api.libs.json.{JsArray, JsValue, Json}
 import slick.jdbc.PostgresProfile
 import slick.lifted.{TableQuery, Tag}
@@ -178,6 +178,31 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
     RunnableGraph.fromGraph(graph).run()
   }
 
+  /**
+    * pulls all of the commissions from the old Vidispine instance and ensures that they are in existence here.
+    * @param defaultWorkingGroup working group ID to use if the given working group can't be found
+    * @return a Future containing the number of items processed
+    */
+  def locateMissingCommissions(defaultWorkingGroup:Int) = {
+    val commissionersLookupFut = new VSGlobalMetadata().loadGroups(Seq("Commissioner"), sourceBasePath, sourceUser, sourcePasswd)
+
+    commissionersLookupFut.flatMap(globalGroups=>{
+      val commissioners = globalGroups.head
+
+      val graph = GraphDSL.create(counterSinkFact) { implicit builder=> counterSink=>
+        import akka.stream.scaladsl.GraphDSL.Implicits._
+
+        val vsComms = builder.add(new VSCommissionSource(sourceBasePath, sourceUser, sourcePasswd))
+        val linker = builder.add(new LinkVSCommissiontoPL(commissioners, defaultWorkingGroup))
+
+        //TODO: intentionally, we are not saving the records to database yet. all records with null IDs need to be saved.
+        vsComms ~> linker ~> counterSink
+        ClosedShape
+      }
+
+      RunnableGraph.fromGraph(graph).run()
+    })
+  }
   /**
     * kicks off the migration of projects data, i.e. cross-checking from the VS system and either updating or
     * creating records as necessary
