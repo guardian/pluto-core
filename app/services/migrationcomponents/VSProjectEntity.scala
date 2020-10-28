@@ -8,61 +8,12 @@ import play.api.libs.json._
 
 import scala.util.{Success, Try}
 
-class VSProjectEntity (private val rawData:JsValue) extends Dumpable {
-  private val dateFormatter = DateTimeFormatter.ISO_DATE_TIME
-
-  def dump = {
-    rawData.toString()
-  }
-
-  /**
-    * returns a (possibly empty) sequence of strings for each available value of the given field
-    * @param key fieldname to look for
-    * @return
-    */
-  def getMeta(key:String) = {
-    for {
-      timespan <- (rawData \ "metadata" \ "timespan").as[JsArray].value
-      fieldBlock <- (timespan \ "field").as[JsArray].value
-      valueBlock <- (fieldBlock \ "value").as[JsArray].value if (fieldBlock \ "name").as[String] == key
-    } yield (valueBlock \ "value").as[String]
-  }
-
-  /**
-    * returns an option with None if no fields match or a sequence of values if they do
-    * @param key fieldname to look for
-    * @return
-    */
-  def getMetaOptional(key:String) = {
-    val s = getMeta(key)
-    if(s.isEmpty) {
-      None
-    } else {
-      Some(s)
-    }
-  }
-
-  def getSingle(key:String) = getMetaOptional(key).flatMap(_.headOption)
-
+class VSProjectEntity (override protected val rawData:JsValue) extends VSPlutoEntity {
   def title = {
     Seq(
       getSingle("gnm_project_headline"),
       getSingle("title")
     ).collectFirst({ case Some(value)=>value })
-  }
-
-  def created = {
-    getSingle("created")
-      .map(stringVal=>ZonedDateTime.parse(stringVal, dateFormatter))
-      .map(_.toLocalDateTime)
-      .map(Timestamp.valueOf)
-  }
-
-  def updated = {
-    getSingle("__metadata_last_modified")
-      .map(stringVal=>ZonedDateTime.parse(stringVal, dateFormatter))
-      .map(_.toLocalDateTime)
-      .map(Timestamp.valueOf)
   }
 
   def owner_id_list = {
@@ -82,5 +33,5 @@ class VSProjectEntity (private val rawData:JsValue) extends Dumpable {
 object VSProjectEntity {
   def apply(rawData:JsValue) = new VSProjectEntity(rawData)
 
-  def fromList(listEntries:JsValue):scala.collection.IndexedSeq[VSProjectEntity] = listEntries.as[JsArray].value.map(apply)
+  def fromList(listEntries:JsValue):IndexedSeq[VSProjectEntity] = listEntries.as[JsArray].value.map(apply).toIndexedSeq
 }
