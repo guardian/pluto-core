@@ -60,8 +60,11 @@ if not args.secret:
     sys.exit(1)
 
 target_uri = urlparse(args.url)
+signing_path = target_uri.path
+if target_uri.query != "":
+    signing_path += "?" + target_uri.query
 
-signed_headers = sign_request({}, args.method, target_uri.path, "application/octet-stream", "", args.secret)
+signed_headers = sign_request({}, args.method, signing_path, "application/octet-stream", "", args.secret)
 print("debug: signed_headers {0}".format(signed_headers))
-result = requests.get(args.url, headers=signed_headers)
+result = requests.get(args.url, headers=signed_headers, verify=False)
 print("Server returned {0}: {1}".format(result.status_code, result.content))
