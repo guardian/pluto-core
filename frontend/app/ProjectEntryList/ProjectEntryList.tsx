@@ -20,7 +20,7 @@ import {
   useLocation,
   useParams,
 } from "react-router-dom";
-import ProjectEntryFilterComponent from "../filter/ProjectEntryFilterComponent.jsx";
+import ProjectFilterComponent from "../filter/ProjectFilterComponent.jsx";
 import { isLoggedIn } from "../utils/api";
 import { getProjectsOnPage, updateProjectOpenedStatus } from "./helpers";
 import ProjectsTable from "./ProjectsTable";
@@ -136,13 +136,10 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
       <Helmet>
         <title>All Projects</title>
       </Helmet>
-      <ProjectEntryFilterComponent
+      <ProjectFilterComponent
         filterTerms={filterTerms}
         filterDidUpdate={(newFilters: ProjectFilterTerms) => {
-          console.log(
-            "ProjectEntryFilterComponent filterDidUpdate ",
-            newFilters
-          );
+          console.log("ProjectFilterComponent filterDidUpdate ", newFilters);
           if (newFilters.user === "Everyone") {
             newFilters.user = undefined;
           }
