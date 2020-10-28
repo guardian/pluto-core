@@ -8,7 +8,7 @@ import play.api.libs.json._
 
 import scala.util.{Success, Try}
 
-class VSProjectEntity (private val rawData:JsValue) {
+class VSProjectEntity (private val rawData:JsValue) extends Dumpable {
   private val dateFormatter = DateTimeFormatter.ISO_DATE_TIME
 
   def dump = {
