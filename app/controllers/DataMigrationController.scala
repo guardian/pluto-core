@@ -60,7 +60,7 @@ class DataMigrationController @Inject()
           case Success(vsUserCache)=>
             logger.info(s"Loaded in ${vsUserCache.size} cached Vidispine user records")
             val migrator = new DataMigration(valid.vsBaseUri, valid.vsUser, valid.vsPasswd, valid.vsSiteId, vsUserCache)
-            migrator.migrateCommissionsData.onComplete({
+            migrator.locateMissingCommissions(valid.defaultWorkingGroup.get).onComplete({
               case Success(recordCount)=>
                 logger.info(s"Migration run successfully completed on $recordCount commissions")
               case Failure(err)=>

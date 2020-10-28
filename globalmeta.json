@@ -1,0 +1,52 @@
+{
+  "revision": "some-revisions",
+  "timespan": [
+    {
+      "field": [],
+      "group": [
+        {
+          "name": "Working group",
+          "field": [
+            {
+              "name": "gnm_subgroup_displayname",
+              "value": [
+                {
+                  "value": "some working group"
+                }
+              ]
+            }
+          ],
+          "uuid": "1C54C927-EE4F-4B79-8050-2DA23FD051F6"
+        },
+        {
+          "name": "Commissioner",
+          "field": [
+            {
+              "name": "gnm_subgroup_displayname",
+              "value": [
+                {
+                  "value": "some commissioner"
+                }
+              ]
+            }
+          ],
+          "uuid": "5F293E13-97EE-49D7-98C5-2383947B04F4"
+        },
+        {
+          "name": "Contributor",
+          "field": [
+            {
+              "name": "gnm_contributor_id",
+              "value": [
+                {
+                  "value": "xxxyyyzzzz"
+                }
+              ]
+            }
+          ],
+          "uuid": "65DB1460-7FD8-409A-AB6B-8DF0A5C8A68E"
+        }
+      ]
+    }
+  ]
+}

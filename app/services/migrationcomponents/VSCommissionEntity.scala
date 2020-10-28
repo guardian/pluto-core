@@ -16,7 +16,13 @@ case class VSCommissionEntity(override protected val rawData:JsValue) extends VS
 
   def childCollections = getMeta("__child_collection")
 
-  def status = getSingle("gnm_commission_status").map(EntryStatus.withName)
+  def status = getSingle("gnm_commission_status").map(entry=>{
+    if(entry=="In production") {
+      "In Production"
+    } else {
+      entry
+    }
+  }).map(EntryStatus.withName)
 
   def description = getMetaOptional("gnm_commission_description").map(_.mkString("\n"))
 
@@ -24,7 +30,15 @@ case class VSCommissionEntity(override protected val rawData:JsValue) extends VS
 
   def workingGroupId = getSingle("gnm_commission_workinggroup").flatMap(stringVal=>Try {UUID.fromString(stringVal) }.toOption)
 
-  def notes = getMetaOptional("gnm_commission_notes").map(_.mkString("\n"))
+  def notes = getMetaOptional("gnm_commission_notes")
+    .map(_.mkString("\n"))
+    .flatMap(value=>{
+      if(value=="") {
+        None
+      } else {
+        Some(value)
+      }
+    })
 
   def ownerId = getMetaOptional("gnm_commission_owner").map(_.mkString("|"))
 

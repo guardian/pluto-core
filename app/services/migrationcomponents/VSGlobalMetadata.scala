@@ -44,7 +44,7 @@ class VSGlobalMetadata(implicit actorSystem: ActorSystem, mat:Materializer, ec:E
     val auth = Authorization(BasicHttpCredentials(vsUser, vsPasswd))
     val accept = Accept(MediaRange(MediaTypes.`application/json`))
 
-    val req = HttpRequest(HttpMethods.PUT, uri, Seq(auth, accept))
+    val req = HttpRequest(HttpMethods.GET, uri, Seq(auth, accept))
 
     makeHttpRequest(req).flatMap(response=>{
       if(response.status==StatusCodes.BAD_GATEWAY || response.status==StatusCodes.GATEWAY_TIMEOUT) {
