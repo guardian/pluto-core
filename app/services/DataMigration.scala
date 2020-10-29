@@ -17,7 +17,7 @@ import models.{FileAssociationRow, FileEntry, PlutoCommission, PlutoCommissionRo
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
-import services.migrationcomponents.{DBObjectSource, HttpHelper, LinkVSCommissiontoPL, LinkVStoPL, MultipleCounter, PlutoCommissionSource, ProjectFileExistsSwitch, ProjectFileResult, ProjectNoFilesSource, VSCommissionSource, VSGlobalMetadata, VSProjectSource, VSUserCache}
+import services.migrationcomponents.{DBObjectSource, HttpHelper, LinkVSCommissiontoPL, LinkVStoPL, MultipleCounter, PlutoCommissionSource, ProjectEntryNullCommissionSource, ProjectFileExistsSwitch, ProjectFileResult, ProjectNoFilesSource, VSCommissionSource, VSGlobalMetadata, VSProjectEntity, VSProjectSource, VSUserCache}
 import play.api.libs.json.{JsArray, JsValue, Json}
 import slick.jdbc.PostgresProfile
 import slick.lifted.{TableQuery, Tag}
@@ -340,4 +340,55 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
         Future.failed(new RuntimeException(s"No storage found with id $destinationStorageId"))
     })
 
+  /**
+    * scan for projects with null commission values and try to fix them
+    */
+  def fixNullCommissions = {
+    val graph = GraphDSL.create(counterSinkFact) { implicit builder=> sink=>
+      import akka.stream.scaladsl.GraphDSL.Implicits._
+
+      val nullCommissionProjects = builder.add(new ProjectEntryNullCommissionSource(dbConfigProvider, 10))
+
+      nullCommissionProjects.out.mapAsync(4)(projectEntry=>{
+        projectEntry.vidispineProjectId match {
+          case Some(vsid) =>
+            VSProjectEntity.directlyQuery(vsid, sourceBasePath, sourceUser, sourceUser).flatMap(vsProjectEntity=>{
+              val potentialCommissionsFut = Future.sequence(vsProjectEntity.parent_collection_list.map(collectionVsId=>{
+                PlutoCommission.entryForVsid(collectionVsId)
+              }))
+
+              potentialCommissionsFut
+                .map(_.collect({case Some(comm)=>comm}))
+                .map(validCommissions=>{
+                  if(validCommissions.length>1) {
+                    logger.warn(s"Project $vsid ${projectEntry.projectTitle} has multiple potential commissions: ${validCommissions.map(comm=>s"${comm.siteId}-${comm.collectionId} ${comm.title}").mkString(",")}")
+                  }
+                  validCommissions.headOption
+                })
+                .map({
+                  case Some(foundCommission)=>
+                    logger.info(s"Linking project ${projectEntry.id} ${projectEntry.projectTitle} to ${foundCommission.id} ${foundCommission.title}")
+                    projectEntry.copy(commissionId = foundCommission.id)
+                  case None=>
+                    logger.info(s"No commission found for $vsid ${projectEntry.projectTitle}")
+                    projectEntry
+                })
+            })
+          case None=>
+            logger.info(s"Project ${projectEntry.id} does not have a valid vidispine id")
+            Future(projectEntry)
+        }
+      }) ~> sink
+/*        .mapAsync(4)(projectEntry=>projectEntry.commissionId match {
+        case Some(_)=>
+          logger.info(s"Saving updated project ${projectEntry.id} ${projectEntry.projectTitle}")
+          projectEntry.saveCommission
+        case None=>
+          Future(projectEntry)
+      }) ~> sink*/
+
+      ClosedShape
+    }
+    RunnableGraph.fromGraph(graph).run()
+  }
 }

@@ -65,6 +65,14 @@ extends PlutoModel{
     }
   }
 
+  /**
+    * updates the commission field only
+    * @param db
+    */
+  def saveCommission(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run {
+    TableQuery[ProjectEntryRow].filter(_.id===this.id).map(_.commission).update(this.commissionId)
+  }
+
   def save(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = id match {
     case None=>
       val insertQuery = TableQuery[ProjectEntryRow] returning TableQuery[ProjectEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
