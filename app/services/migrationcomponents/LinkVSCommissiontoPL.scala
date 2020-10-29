@@ -22,7 +22,7 @@ import scala.util.{Success, Try}
   * @param defaultWorkingGroup
   * @param dbConfig
   */
-class LinkVSCommissiontoPL (commissioners:VSGlobalMetadataGroup, defaultWorkingGroup:Int) (implicit dbConfig:DatabaseConfigProvider) extends GraphStage[FlowShape[VSCommissionEntity, PlutoCommission]] {
+class LinkVSCommissiontoPL (commissioners:VSGlobalMetadataGroup, vsUserCache: VSUserCache, defaultWorkingGroup:Int) (implicit dbConfig:DatabaseConfigProvider) extends GraphStage[FlowShape[VSCommissionEntity, PlutoCommission]] {
   private final val in:Inlet[VSCommissionEntity] = Inlet.create("LinkVSCommissiontoPL.in")
   private final val out:Outlet[PlutoCommission] = Outlet.create("LinkVSCommissiontoPL.out")
   private final val vsExtractor = "^(\\w{2})-(\\d+)$".r
@@ -60,7 +60,13 @@ class LinkVSCommissiontoPL (commissioners:VSGlobalMetadataGroup, defaultWorkingG
                 workingGroup = maybeWg.flatMap(_.id).getOrElse(defaultWorkingGroup),
                 originalCommissionerName = maybeCommissioner.flatMap(_.entries.get("gnm_subgroup_displayname")),
                 scheduledCompletion = elem.scheduledCompletion.getOrElse(Timestamp.from(Instant.now())),
-                owner = elem.ownerId.getOrElse("unknown"),
+                owner = elem.ownerId
+                  .map(_.map(uidString=>Try {
+                    vsUserCache.lookup(uidString.toInt)
+                  }.toOption.flatten))
+                  .map(_.collect({case Some(ownerName)=>ownerName}))
+                  .map(_.mkString(","))
+                  .getOrElse("unknown"),
                 notes = elem.notes,
                 productionOffice = elem.productionOffice.getOrElse(ProductionOffice.UK),
                 originalTitle = None

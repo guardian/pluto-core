@@ -43,7 +43,7 @@ case class VSCommissionEntity(override protected val rawData:JsValue) extends VS
       }
     })
 
-  def ownerId = getMetaOptional("gnm_commission_owner").map(_.mkString("|"))
+  def ownerId = getMetaOptional("gnm_commission_owner")
 
   def productionOffice = getSingle("gnm_commission_production_office").map(ProductionOffice.withName)
 
