@@ -17,11 +17,14 @@ case class VSCommissionEntity(override protected val rawData:JsValue) extends VS
   def childCollections = getMeta("__child_collection")
 
   def status = getSingle("gnm_commission_status").map(entry=>{
-    if(entry=="In production") {
+    if(entry=="In production") {  //sometimes we have non-compliant values in VS that need to be dealt with
       "In Production"
+    } else if(entry=="Complete") {
+      "Completed"
     } else {
       entry
     }
+
   }).map(EntryStatus.withName)
 
   def description = getMetaOptional("gnm_commission_description").map(_.mkString("\n"))
