@@ -195,9 +195,15 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
         val vsComms = builder.add(new VSCommissionSource(sourceBasePath, sourceUser, sourcePasswd))
         val linker = builder.add(new LinkVSCommissiontoPL(commissioners, defaultWorkingGroup))
 
-        //TODO: intentionally, we are not saving the records to database yet. all records with null IDs need to be saved.
-        vsComms ~> linker ~> counterSink
-        ClosedShape
+        vsComms ~> linker
+        linker.out.mapAsync(4)(commission=>commission.id match {
+          case Some(_)=>
+            Future(commission)
+          case None=>
+            logger.info(s"Saving new record ${commission.collectionId} (${commission.title})")
+            commission.save
+        }) ~> counterSink
+            ClosedShape
       }
 
       RunnableGraph.fromGraph(graph).run()
