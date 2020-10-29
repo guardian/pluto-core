@@ -3,8 +3,7 @@ import PropTypes from "prop-types";
 import Omit from "lodash.omit";
 import { validateVsid } from "../validators/VsidValidator.jsx";
 import FilterTypeSelection from "./FilterTypeSelection.jsx";
-import Grid from "@material-ui/core/Grid";
-import Paper from "@material-ui/core/Paper";
+import { Grid, Select, MenuItem } from "@material-ui/core";
 import axios from "axios";
 
 class ProjectFilterComponent extends React.Component {
@@ -35,6 +34,7 @@ class ProjectFilterComponent extends React.Component {
         key: "group",
         label: "Working Group",
         valuesStateKey: "workingGroups",
+        intValues: "workingGroupsIds",
       },
     ];
 
@@ -73,7 +73,7 @@ class ProjectFilterComponent extends React.Component {
 
   entryUpdated(event, filterKey) {
     const spec = this.filterSpec.filter((entry) => entry.key === filterKey);
-    const newValue = event.target.value.trim();
+    const newValue = event.target.value;
 
     if (spec[0].validator) {
       const wasError = spec[0].validator(newValue);
@@ -112,20 +112,53 @@ class ProjectFilterComponent extends React.Component {
       filterEntry.valuesStateKey &&
       this.state.hasOwnProperty(filterEntry.valuesStateKey)
     ) {
-      return (
-        <select
-          disabled={disabled}
-          id={filterEntry.key}
-          onChange={(event) => this.entryUpdated(event, filterEntry.key)}
-          value={this.props.filterTerms[filterEntry.key]}
-        >
-          {this.state[filterEntry.valuesStateKey].map((value) => (
-            <option key={value} name={value}>
-              {value}
+      if (
+        filterEntry.intValues &&
+        this.state.hasOwnProperty(filterEntry.intValues)
+      ) {
+        var groupsObject = [];
+
+        for (
+          var i = 0;
+          i < this.state[filterEntry.valuesStateKey].length;
+          i++
+        ) {
+          groupsObject.push(
+            <option
+              key={this.state[filterEntry.intValues][i]}
+              name={this.state[filterEntry.intValues][i]}
+              value={this.state[filterEntry.intValues][i]}
+            >
+              {this.state[filterEntry.valuesStateKey][i]}
             </option>
-          ))}
-        </select>
-      );
+          );
+        }
+        return (
+          <select
+            disabled={disabled}
+            id={filterEntry.key}
+            onChange={(event) => this.entryUpdated(event, filterEntry.key)}
+            value={this.props.filterTerms[filterEntry.key]}
+          >
+            {groupsObject}
+          </select>
+        );
+      } else {
+        return (
+          <select
+            disabled={disabled}
+            id={filterEntry.key}
+            onChange={(event) => this.entryUpdated(event, filterEntry.key)}
+            value={this.props.filterTerms[filterEntry.key]}
+          >
+            {this.state[filterEntry.valuesStateKey].map((value) => (
+              <option key={value} name={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        );
+      }
     } else {
       return (
         <input
@@ -156,12 +189,18 @@ class ProjectFilterComponent extends React.Component {
       axios
         .get("/api/pluto/workinggroup")
         .then((result) => {
-          const workingGroupNames = [];
-          for (var i = 0; i < result.data.result; i++) {
+          var workingGroupNames = [];
+          var workingGroupIds = [];
+          console.log(result.data.result);
+          for (var i = 0; i < result.data.result.length; i++) {
+            console.log(result.data.result[i].name);
             workingGroupNames.push(result.data.result[i].name);
+            workingGroupIds.push(result.data.result[i].id);
           }
+          console.log(workingGroupNames);
           this.setState({
             workingGroups: ["All"].concat(workingGroupNames.sort()),
+            workingGroupsIds: ["All"].concat(workingGroupIds),
           });
         })
         .catch((error) => {
@@ -175,7 +214,7 @@ class ProjectFilterComponent extends React.Component {
     return (
       <>
         <Grid container alignContent="space-around" justify="center">
-          <i className="fa fa-search-plus" style={{ marginRight: "0.5em" }} />
+          <i className="fa fa-search" style={{ marginRight: "0.5em" }} />
           {this.filterSpec.map((filterEntry) => (
             <Grid item key={filterEntry.key}>
               <label className="filter-entry-label" htmlFor={filterEntry.key}>
