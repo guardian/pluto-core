@@ -65,7 +65,7 @@ object VSProjectEntity {
     */
   def directlyQuery(vsid:String, vsBaseUri:String, vsUser:String, vsPasswd:String)(implicit actorSystem:ActorSystem, mat:Materializer) = {
     implicit val ec:ExecutionContext = actorSystem.dispatcher
-    val uri = s"$vsBaseUri/API/collection/$vsid/metadata"
+    val uri = s"$vsBaseUri/API/collection/$vsid?content=metadata"
     val auth = Authorization(BasicHttpCredentials(vsUser, vsPasswd))
     val accept = Accept(MediaRange(MediaTypes.`application/json`))
 
