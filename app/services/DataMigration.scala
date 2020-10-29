@@ -378,14 +378,13 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
             logger.info(s"Project ${projectEntry.id} does not have a valid vidispine id")
             Future(projectEntry)
         }
-      }) ~> sink
-/*        .mapAsync(4)(projectEntry=>projectEntry.commissionId match {
+      }).mapAsync(4)(projectEntry=>projectEntry.commissionId match {
         case Some(_)=>
           logger.info(s"Saving updated project ${projectEntry.id} ${projectEntry.projectTitle}")
           projectEntry.saveCommission
         case None=>
           Future(projectEntry)
-      }) ~> sink*/
+      }) ~> sink
 
       ClosedShape
     }
