@@ -352,7 +352,7 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
       nullCommissionProjects.out.mapAsync(4)(projectEntry=>{
         projectEntry.vidispineProjectId match {
           case Some(vsid) =>
-            VSProjectEntity.directlyQuery(vsid, sourceBasePath, sourceUser, sourceUser).flatMap(vsProjectEntity=>{
+            VSProjectEntity.directlyQuery(vsid, sourceBasePath, sourceUser, sourcePasswd).flatMap(vsProjectEntity=>{
               val potentialCommissionsFut = Future.sequence(vsProjectEntity.parent_collection_list.map(collectionVsId=>{
                 PlutoCommission.entryForVsid(collectionVsId)
               }))
