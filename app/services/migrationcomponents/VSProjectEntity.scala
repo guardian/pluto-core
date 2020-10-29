@@ -39,7 +39,7 @@ class VSProjectEntity (override protected val rawData:JsValue) extends VSPlutoEn
 
   def isDeepArchive = boolFromAnyString("gnm_storage_rule_deep_archive")
 
-  def parent_collection_list = getMeta("__collection")
+  def parent_collection_list = getMeta("__parent_collection")
 }
 
 object VSProjectEntity {
