@@ -49,6 +49,58 @@ class DataMigrationController @Inject()
     )
   }
 
+  def checkVidispineCommissions = IsAdminAsync(parse.json) { user=> request=>
+    import CommissionUpdateRequest._
+    logger.info(s"Received commission migration request from $user")
+    request.body.validate[CommissionUpdateRequest].fold(
+      errors=> Future(BadRequest(Json.obj("status"->"invalid_request","detail"->errors.toString))),
+      valid=>{
+        val cacheFile = config.get[String]("datamigration.vidispineUsersFile")
+        VSUserCache.initialize(cacheFile) match {
+          case Success(vsUserCache)=>
+            logger.info(s"Loaded in ${vsUserCache.size} cached Vidispine user records")
+            val migrator = new DataMigration(valid.vsBaseUri, valid.vsUser, valid.vsPasswd, valid.vsSiteId, vsUserCache)
+            migrator.locateMissingCommissions(valid.defaultWorkingGroup.get).onComplete({
+              case Success(recordCount)=>
+                logger.info(s"Migration run successfully completed on $recordCount commissions")
+              case Failure(err)=>
+                logger.error(s"Migration run failed: ", err)
+            })
+            Future(Ok(Json.obj("status"->"ok","detail"->"Commission import run started, see server logs for details")))
+          case Failure(err)=>
+            logger.error(s"Could not load user cache from $cacheFile: ", err)
+            Future(InternalServerError(Json.obj("status"->"error", "detail"->"Could not load user cache", "cacheFile"->cacheFile)))
+        }
+      }
+    )
+  }
+
+  def fixNullCommissionProjects = IsAdminAsync(parse.json) { user=> request=>
+    import CommissionUpdateRequest._
+    logger.info(s"Fix null commissions request from $user")
+    request.body.validate[CommissionUpdateRequest].fold(
+      errors=> Future(BadRequest(Json.obj("status"->"invalid_request","detail"->errors.toString))),
+      valid=>{
+        val cacheFile = config.get[String]("datamigration.vidispineUsersFile")
+        VSUserCache.initialize(cacheFile) match {
+          case Success(vsUserCache)=>
+            logger.info(s"Loaded in ${vsUserCache.size} cached Vidispine user records")
+            val migrator = new DataMigration(valid.vsBaseUri, valid.vsUser, valid.vsPasswd, valid.vsSiteId, vsUserCache)
+            migrator.fixNullCommissions.onComplete({
+              case Success(recordCount)=>
+                logger.info(s"Fix null commissions run successfully completed on $recordCount commissions")
+              case Failure(err)=>
+                logger.error(s"Migration run failed: ", err)
+            })
+            Future(Ok(Json.obj("status"->"ok","detail"->"Commission import run started, see server logs for details")))
+          case Failure(err)=>
+            logger.error(s"Could not load user cache from $cacheFile: ", err)
+            Future(InternalServerError(Json.obj("status"->"error", "detail"->"Could not load user cache", "cacheFile"->cacheFile)))
+        }
+      }
+    )
+  }
+
   def updateProjects = IsAdminAsync(parse.json) { user=> request=>
     import ProjectsUpdateRequest._
     logger.info(s"Received projects migration request from $user")

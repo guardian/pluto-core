@@ -15,12 +15,49 @@ import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSize:Int=10)(implicit actorSystem: ActorSystem, mat:Materializer) extends GraphStage[SourceShape[VSProjectEntity]] {
+/**
+  * this is an Akka streams source that will yield out metadata for all project collections from the given VS instance
+  * @param vsBaseUri vidispine base URI
+  * @param vsUser username
+  * @param vsPasswd password
+  * @param pageSize grab this many projects at once
+  * @param actorSystem implicily provided ActorSystem
+  * @param mat implicitly provided Materializer
+  */
+class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSize:Int=10)
+                      (implicit actorSystem: ActorSystem, mat:Materializer)
+  extends VSContainerSource[VSProjectEntity](vsBaseUri, vsUser, vsPasswd, pageSize, "project") {
+
+  override def listConverter(entry:JsValue):IndexedSeq[VSProjectEntity] = VSProjectEntity.fromList(entry)
+}
+
+class VSCommissionSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSize:Int=10)
+                         (implicit actorSystem: ActorSystem, mat:Materializer)
+extends VSContainerSource[VSCommissionEntity](vsBaseUri, vsUser, vsPasswd, pageSize, "commission") {
+  override def listConverter(entry:JsValue):IndexedSeq[VSCommissionEntity] = VSCommissionEntity.fromList(entry)
+}
+
+/**
+  * generic source that conducts a collection search for the given gnm_type and converts it back into domain objects
+  * which are yielded onto the stream.  Contains the actual code for VSProjectSource and VSCommissionSource
+  * @param vsBaseUri vidispine base URI
+  * @param vsUser username
+  * @param vsPasswd password
+  * @param pageSize grab this many projects at once
+  * @param gnmType gnm_type value to search for (string)
+  * @param actorSystem implicily provided ActorSystem
+  * @param mat implicitly provided Materialize
+  * @tparam T type of the object to yield
+  */
+abstract class VSContainerSource[T<:VSPlutoEntity] (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSize:Int=10, gnmType:String)
+                           (implicit actorSystem: ActorSystem, mat:Materializer) extends GraphStage[SourceShape[T]] {
   private final val logger = LoggerFactory.getLogger(getClass)
-  private final val out:Outlet[VSProjectEntity] = Outlet.create("VSProjectSource.out")
+  private final val out:Outlet[T] = Outlet.create("VSProjectSource.out")
   private implicit val ec:ExecutionContext = actorSystem.dispatcher
 
-  override def shape: SourceShape[VSProjectEntity] = SourceShape.of(out)
+  override def shape: SourceShape[T] = SourceShape.of(out)
+
+  def listConverter(entry:JsValue):IndexedSeq[T]
 
   /**
     * isolate the Http request so we can mock it in testing
@@ -30,7 +67,7 @@ class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSi
   def makeHttpRequest(req:HttpRequest) = Http().singleRequest(req)
 
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) {
-    private var cachedItems:Seq[VSProjectEntity] = Seq()
+    private var cachedItems:Seq[T] = Seq()
     private var lastIndex=1
 
     /**
@@ -42,13 +79,13 @@ class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSi
       response.entity.dataBytes.toMat(Sink.reduce[ByteString]((acc, elem)=>acc.concat(elem)))(Keep.right).run()
     }
 
-    def getNextPage():Future[Either[Int, Option[VSProjectEntity]]] = {
+    def getNextPage():Future[Either[Int, Option[T]]] = {
       val uri = s"$vsBaseUri/API/collection;first=$lastIndex;number=$pageSize?content=metadata&count=false"
       logger.debug(s"URI is $uri")
       val requestXml = <ItemSearchDocument xmlns="http://xml.vidispine.com/schema/vidispine">
         <field>
           <name>gnm_type</name>
-          <value>project</value>
+          <value>{ gnmType }</value>
         </field>
       </ItemSearchDocument>
       logger.debug(s"requestXml is ${requestXml.toString()}")
@@ -56,7 +93,8 @@ class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSi
       val auth = Authorization(BasicHttpCredentials(vsUser, vsPasswd))
       val accept = Accept(MediaRange(MediaTypes.`application/json`))
 
-      val req = HttpRequest(HttpMethods.PUT, uri, Seq(auth, accept)).withEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharset("UTF-8")(Seq())), requestXml.toString())
+      val req = HttpRequest(HttpMethods.PUT, uri, Seq(auth, accept))
+        .withEntity(ContentType.WithCharset(MediaTypes.`application/xml`, HttpCharset("UTF-8")(Seq())), requestXml.toString())
       makeHttpRequest(req).flatMap(response=>{
         if(response.status==StatusCodes.BAD_GATEWAY || response.status==StatusCodes.GATEWAY_TIMEOUT) {
           response.entity.discardBytes()
@@ -72,7 +110,7 @@ class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSi
               val serverJson = Json.parse(serverBytes.toArray)
               logger.debug(serverJson.toString())
 
-              val newProjects = (serverJson \ "collection").asOpt[JsValue].map(VSProjectEntity.fromList).getOrElse(IndexedSeq())
+              val newProjects = (serverJson \ "collection").asOpt[JsValue].map(listConverter).getOrElse(IndexedSeq())
               if(newProjects.nonEmpty) {
                 this.synchronized {
                   cachedItems = cachedItems ++ newProjects.tail
@@ -86,7 +124,7 @@ class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSi
       })
     }
 
-    val nextItemCb = createAsyncCallback[VSProjectEntity](item=>push(out, item))
+    val nextItemCb = createAsyncCallback[T](item=>push(out, item))
     val completedCb = createAsyncCallback[Unit](_=>complete(out))
     val errCb = createAsyncCallback[Throwable](err=>failStage(err))
 
@@ -95,7 +133,6 @@ class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSi
         this.synchronized {
           cachedItems.headOption match {
             case Some(nextItem)=>
-              logger.debug(s"Yielding ${nextItem.dump}")
               cachedItems = cachedItems.tail
               nextItemCb.invoke(nextItem)
               return
@@ -110,7 +147,6 @@ class VSProjectSource (vsBaseUri:String, vsUser:String, vsPasswd: String, pageSi
           case Right(None)=>
             completedCb.invoke( () )
           case Right(Some(nextItem))=>
-            logger.debug(s"Yielding ${nextItem.dump}")
             nextItemCb.invoke(nextItem)
         }).recover({
           case err:Throwable=>

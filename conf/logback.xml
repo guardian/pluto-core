@@ -62,6 +62,9 @@
     <logger name="services.ValidateProject" level="DEBUG"/>
     <logger name="streamcomponents.ProjectSearchSource" level="DEBUG"/>
     <logger name="helpers.AllowCORSFilter" level="WARN"/>
+    <logger name="services.DataMigration" level="DEBUG"/>
+    <logger name="services.migrationcomponents" level="DEBUG"/>
+
     <logger name="services.CommissionStatusPropagator" level="DEBUG"/>
     <root level="INFO">
         <appender-ref ref="STDOUT" />
