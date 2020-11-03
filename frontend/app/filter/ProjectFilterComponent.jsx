@@ -165,17 +165,17 @@ class ProjectFilterComponent extends React.Component {
       axios
         .get("/api/pluto/workinggroup?length=999999")
         .then((result) => {
+          const sortedGroups = result.data.result.sort((a, b) =>
+            a.name.localeCompare(b.name)
+          );
           var workingGroupNames = [];
           var workingGroupIds = [];
-          console.log(result.data.result);
-          for (var i = 0; i < result.data.result.length; i++) {
-            console.log(result.data.result[i].name);
-            workingGroupNames.push(result.data.result[i].name);
-            workingGroupIds.push(result.data.result[i].id);
+          for (var i = 0; i < sortedGroups.length; i++) {
+            workingGroupNames.push(sortedGroups[i].name);
+            workingGroupIds.push(sortedGroups[i].id);
           }
-          console.log(workingGroupNames);
           this.setState({
-            workingGroups: ["All"].concat(workingGroupNames.sort()),
+            workingGroups: ["All"].concat(workingGroupNames),
             workingGroupsIds: ["All"].concat(workingGroupIds),
           });
         })
