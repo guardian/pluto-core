@@ -26,15 +26,20 @@ class ProjectTypeMultistep extends React.Component {
     };
   }
 
-  componentDidMount() {
+  componentWillMount() {
     if (
       this.props.match &&
       this.props.match.params &&
       this.props.match.params.itemid &&
       this.props.match.params.itemid !== "new"
     ) {
-      this.setState({ currentEntry: this.props.match.params.itemid }, () =>
-        this.loadPostrunActions()
+      this.setState(
+        {
+          currentEntry: this.props.match.params.itemid
+            ? parseInt(this.props.match.params.itemid)
+            : undefined,
+        },
+        () => this.loadPostrunActions()
       );
     } else {
       this.loadPostrunActions();
