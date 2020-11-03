@@ -115,12 +115,6 @@ class ProjectFilterComponent extends React.Component {
           </Select>
         );
       } else {
-        console.log(
-          "filterEntry.key: " +
-            filterEntry.key +
-            " this.props.filterTerms[filterEntry.key]: " +
-            this.props.filterTerms[filterEntry.key]
-        );
         return (
           <Select
             id={filterEntry.key}
@@ -169,7 +163,7 @@ class ProjectFilterComponent extends React.Component {
     });
     this.setState({ workingGroups: [] }, () => {
       axios
-        .get("/api/pluto/workinggroup")
+        .get("/api/pluto/workinggroup?length=999999")
         .then((result) => {
           var workingGroupNames = [];
           var workingGroupIds = [];

@@ -23,7 +23,8 @@ case class PlutoCommissionFilterTerms(title:Option[String],
                                       status:Option[EntryStatus.Value],
                                       siteId:Option[String],
                                       collectionId:Option[Int],
-                                      workingGroupId:Option[Int],
+                                      user:Option[String],
+                                      group:Option[String],
                                       description:Option[String],
                                       wildcard:FilterTypeWildcard.Value)
 extends GeneralFilterEntryTerms[PlutoCommissionRow, PlutoCommission] {
@@ -44,7 +45,8 @@ extends GeneralFilterEntryTerms[PlutoCommissionRow, PlutoCommission] {
     if(siteId.isDefined) action = action.filter(_.siteId ===siteId.get)
     if(status.isDefined) action = action.filter(_.status === status.get)
     if(collectionId.isDefined) action = action.filter(_.collectionId===collectionId.get)
-    if(workingGroupId.isDefined) action = action.filter(_.workingGroup===workingGroupId.get)
+    if(user.isDefined && user.get!="Everyone") action = action.filter(_.owner like makeWildcard(user.get))
+    if(group.isDefined && group.get!="All") action = action.filter(_.workingGroup===group.get.toInt)
     if(description.isDefined) action = action.filter(_.description like makeWildcard(description.get))
     action
   }
@@ -59,7 +61,8 @@ trait PlutoCommissionFilterTermsSerializer {
       (JsPath \ "status").readNullable[EntryStatus.Value] and
       (JsPath \ "siteId").readNullable[String] and
       (JsPath \ "collectionId").readNullable[Int] and
-      (JsPath \ "workingGroupId").readNullable[Int] and
+      (JsPath \ "user").readNullable[String] and
+      (JsPath \ "group").readNullable[String] and
       (JsPath \ "description").readNullable[String] and
       (JsPath \ "match").read[FilterTypeWildcard.Value]
   )(PlutoCommissionFilterTerms.apply _)

@@ -48,7 +48,7 @@ export const getWorkingGroupNameMap = async (
 interface GetCommissionsOnPageParams {
   page?: number;
   pageSize?: number;
-  filterTerms?: string[];
+  filterTerms?: FilterTerms;
 }
 
 /**

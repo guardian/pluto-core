@@ -10,12 +10,15 @@ import {
   TableRow,
   makeStyles,
   TableSortLabel,
+  Grid,
 } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { getCommissionsOnPage, getWorkingGroupNameMap } from "./helpers";
 import { sortListByOrder, SortDirection } from "../utils/lists";
 import { Helmet } from "react-helmet";
+import ProjectFilterComponent from "../filter/ProjectFilterComponent.jsx";
+import { isLoggedIn } from "../utils/api";
 
 const tableHeaderTitles: HeaderTitle<Commission>[] = [
   { label: "Title", key: "title" },
@@ -35,7 +38,6 @@ const useStyles = makeStyles({
   },
   createButton: {
     display: "flex",
-    marginLeft: "auto",
     marginBottom: "0.625rem",
   },
   visuallyHidden: {
@@ -49,7 +51,14 @@ const useStyles = makeStyles({
     top: 20,
     width: 1,
   },
+  buttonGrid: {
+    marginLeft: "auto",
+  },
 });
+
+interface ProjectFilterTerms extends FilterTerms {
+  commissionId?: number;
+}
 
 const pageSizeOptions = [25, 50, 100];
 
@@ -66,12 +75,17 @@ const CommissionsList: React.FC = () => {
   const [orderBy, setOrderBy] = useState<keyof Commission>("created");
 
   const history = useHistory();
+  const [filterTerms, setFilterTerms] = useState<ProjectFilterTerms>({
+    match: "W_CONTAINS",
+  });
+  const [user, setUser] = useState<PlutoUser | null>(null);
 
   useEffect(() => {
     const updateCommissions = async () => {
       const commissions = await getCommissionsOnPage({
         page,
         pageSize,
+        filterTerms: filterTerms,
       });
       const workingGroups = await getWorkingGroupNameMap(commissions);
       setCommissions(commissions);
@@ -79,7 +93,7 @@ const CommissionsList: React.FC = () => {
     };
 
     updateCommissions();
-  }, [page, pageSize]);
+  }, [filterTerms, page, pageSize]);
 
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
@@ -118,20 +132,55 @@ const CommissionsList: React.FC = () => {
     setOrderBy(property);
   };
 
+  useEffect(() => {
+    const fetchWhoIsLoggedIn = async () => {
+      try {
+        const user = await isLoggedIn();
+        setUser(user);
+      } catch (error) {
+        console.error("Could not login user:", error);
+      }
+    };
+
+    fetchWhoIsLoggedIn();
+  }, []);
+
   return (
     <>
       <Helmet>
         <title>All Commissions</title>
       </Helmet>
-      <Button
-        className={classes.createButton}
-        variant="outlined"
-        onClick={() => {
-          history.push("/commission/new");
-        }}
-      >
-        New
-      </Button>
+      <Grid container>
+        <Grid item>
+          <ProjectFilterComponent
+            filterTerms={filterTerms}
+            filterDidUpdate={(newFilters: ProjectFilterTerms) => {
+              console.log(
+                "ProjectFilterComponent filterDidUpdate ",
+                newFilters
+              );
+              if (newFilters.user === "Everyone") {
+                newFilters.user = undefined;
+              }
+              if (newFilters.user === "Mine" && user) {
+                newFilters.user = user.uid;
+              }
+              setFilterTerms(newFilters);
+            }}
+          />
+        </Grid>
+        <Grid item className={classes.buttonGrid}>
+          <Button
+            className={classes.createButton}
+            variant="outlined"
+            onClick={() => {
+              history.push("/commission/new");
+            }}
+          >
+            New
+          </Button>
+        </Grid>
+      </Grid>
       <Paper elevation={3}>
         <TableContainer>
           <Table className={classes.table}>
