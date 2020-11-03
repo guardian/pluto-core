@@ -1,8 +1,5 @@
 import React from "react";
 import PropTypes from "prop-types";
-import Omit from "lodash.omit";
-import { validateVsid } from "../validators/VsidValidator.jsx";
-import FilterTypeSelection from "./FilterTypeSelection.jsx";
 import { Grid, Select, MenuItem } from "@material-ui/core";
 import axios from "axios";
 
@@ -21,8 +18,6 @@ class ProjectFilterComponent extends React.Component {
       {
         key: "title",
         label: "",
-        //this is a called for every update. if it returns anything other than NULL it's considered an
-        //error and displayed alongside the control
         validator: (input) => null,
       },
       {
@@ -43,8 +38,6 @@ class ProjectFilterComponent extends React.Component {
       showFilters: false,
       matchType: "W_CONTAINS",
     };
-
-    this.switchHidden = this.switchHidden.bind(this);
   }
 
   updateFilters(filterKey, value, cb) {
@@ -61,16 +54,6 @@ class ProjectFilterComponent extends React.Component {
     );
   }
 
-  addFieldError(filterKey, errorDesc, cb) {
-    let newFilters = {};
-    newFilters[filterKey] = errorDesc;
-    this.setState({ fieldErrors: newFilters }, cb);
-  }
-
-  removeFieldError(filterKey, cb) {
-    this.setState({ fieldErrors: Omit(this.state.fieldErrors, filterKey) }, cb);
-  }
-
   entryUpdated(event, filterKey) {
     const spec = this.filterSpec.filter((entry) => entry.key === filterKey);
     const newValue = event.target.value;
@@ -78,9 +61,8 @@ class ProjectFilterComponent extends React.Component {
     if (spec[0].validator) {
       const wasError = spec[0].validator(newValue);
       if (wasError) {
-        this.addFieldError(filterKey, wasError);
+        console.error("Error setting filter key.", filterKey, wasError);
       } else {
-        this.removeFieldError(filterKey);
         this.updateFilters(
           filterKey,
           spec[0].converter ? spec[0].converter(newValue) : newValue
@@ -89,20 +71,6 @@ class ProjectFilterComponent extends React.Component {
     } else {
       this.updateFilters(filterKey, newValue);
     }
-  }
-
-  switchHidden() {
-    this.setState({ showFilters: !this.state.showFilters });
-  }
-
-  showFilterError(fieldName) {
-    return (
-      <span>
-        {this.state.fieldErrors[fieldName]
-          ? this.state.fieldErrors[fieldName]
-          : ""}
-      </span>
-    );
   }
 
   controlFor(filterEntry) {
@@ -116,10 +84,10 @@ class ProjectFilterComponent extends React.Component {
         filterEntry.intValues &&
         this.state.hasOwnProperty(filterEntry.intValues)
       ) {
-        var groupsObject = [];
+        let groupsObject = [];
 
         for (
-          var i = 0;
+          let i = 0;
           i < this.state[filterEntry.valuesStateKey].length;
           i++
         ) {
