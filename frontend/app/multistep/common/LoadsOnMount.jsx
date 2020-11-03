@@ -9,8 +9,9 @@ class MultistepComponentLoadsOnMount extends CommonMultistepComponent {
     this.endpoint = "/api/unknown";
   }
 
-  componentDidMount() {
+  componentWillMount() {
     if (this.props.currentEntry) {
+      console.log(`Loading existing data for ${this.props.currentEntry}`);
       this.setState({ loading: true }, () => {
         axios
           .get(this.endpoint + "/" + this.props.currentEntry)
@@ -19,8 +20,13 @@ class MultistepComponentLoadsOnMount extends CommonMultistepComponent {
               this.receivedExistingObject(response.data)
             )
           )
-          .catch((error) => this.setState({ loading: false, error: error }));
+          .catch((error) => {
+            console.error("Could not load existing data: ", error);
+            this.setState({ loading: false, error: error });
+          });
       });
+    } else {
+      console.log("No current entry to load");
     }
   }
 
