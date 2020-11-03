@@ -12,6 +12,7 @@ import {
   TableRow,
   TableSortLabel,
   Typography,
+  Grid,
 } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
 import {
@@ -35,7 +36,6 @@ const useStyles = makeStyles({
   },
   createButton: {
     display: "flex",
-    marginLeft: "auto",
     marginBottom: "0.625rem",
   },
   openProjectButton: {
@@ -51,6 +51,9 @@ const useStyles = makeStyles({
     position: "absolute",
     top: 20,
     width: 1,
+  },
+  buttonGrid: {
+    marginLeft: "auto",
   },
 });
 
@@ -136,25 +139,37 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
       <Helmet>
         <title>All Projects</title>
       </Helmet>
-      <ProjectFilterComponent
-        filterTerms={filterTerms}
-        filterDidUpdate={(newFilters: ProjectFilterTerms) => {
-          console.log("ProjectFilterComponent filterDidUpdate ", newFilters);
-          if (newFilters.user === "Everyone") {
-            newFilters.user = undefined;
-          }
-          setFilterTerms(newFilters);
-        }}
-      />
-      <Button
-        className={classes.createButton}
-        variant="outlined"
-        onClick={() => {
-          history.push("/project/new");
-        }}
-      >
-        New
-      </Button>
+      <Grid container>
+        <Grid item>
+          <ProjectFilterComponent
+            filterTerms={filterTerms}
+            filterDidUpdate={(newFilters: ProjectFilterTerms) => {
+              console.log(
+                "ProjectFilterComponent filterDidUpdate ",
+                newFilters
+              );
+              if (newFilters.user === "Everyone") {
+                newFilters.user = undefined;
+              }
+              if (newFilters.user === "Mine" && user) {
+                newFilters.user = user.uid;
+              }
+              setFilterTerms(newFilters);
+            }}
+          />
+        </Grid>
+        <Grid item className={classes.buttonGrid}>
+          <Button
+            className={classes.createButton}
+            variant="outlined"
+            onClick={() => {
+              history.push("/project/new");
+            }}
+          >
+            New
+          </Button>
+        </Grid>
+      </Grid>
       <Paper elevation={3}>
         <ProjectsTable
           className={classes.table}

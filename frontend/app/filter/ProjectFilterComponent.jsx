@@ -124,39 +124,51 @@ class ProjectFilterComponent extends React.Component {
           i++
         ) {
           groupsObject.push(
-            <option
+            <MenuItem
               key={this.state[filterEntry.intValues][i]}
               name={this.state[filterEntry.intValues][i]}
-              value={this.state[filterEntry.intValues][i]}
+              value={this.state[filterEntry.intValues][i].toString()}
             >
               {this.state[filterEntry.valuesStateKey][i]}
-            </option>
+            </MenuItem>
           );
         }
         return (
-          <select
-            disabled={disabled}
+          <Select
             id={filterEntry.key}
             onChange={(event) => this.entryUpdated(event, filterEntry.key)}
-            value={this.props.filterTerms[filterEntry.key]}
+            value={
+              this.props.filterTerms[filterEntry.key]
+                ? this.props.filterTerms[filterEntry.key]
+                : "All"
+            }
           >
             {groupsObject}
-          </select>
+          </Select>
         );
       } else {
+        console.log(
+          "filterEntry.key: " +
+            filterEntry.key +
+            " this.props.filterTerms[filterEntry.key]: " +
+            this.props.filterTerms[filterEntry.key]
+        );
         return (
-          <select
-            disabled={disabled}
+          <Select
             id={filterEntry.key}
             onChange={(event) => this.entryUpdated(event, filterEntry.key)}
-            value={this.props.filterTerms[filterEntry.key]}
+            value={
+              this.props.filterTerms[filterEntry.key]
+                ? this.props.filterTerms[filterEntry.key]
+                : "Everyone"
+            }
           >
             {this.state[filterEntry.valuesStateKey].map((value) => (
-              <option key={value} name={value}>
+              <MenuItem key={value} value={value}>
                 {value}
-              </option>
+              </MenuItem>
             ))}
-          </select>
+          </Select>
         );
       }
     } else {
@@ -177,7 +189,9 @@ class ProjectFilterComponent extends React.Component {
         .get("/api/project/distinctowners")
         .then((result) =>
           this.setState({
-            distinctOwners: ["Everyone"].concat(result.data.result.sort()),
+            distinctOwners: ["Everyone", "Mine"].concat(
+              result.data.result.sort()
+            ),
           })
         )
         .catch((error) => {
@@ -213,14 +227,24 @@ class ProjectFilterComponent extends React.Component {
   render() {
     return (
       <>
-        <Grid container alignContent="space-around" justify="center">
-          <i className="fa fa-search" style={{ marginRight: "0.5em" }} />
+        <Grid
+          container
+          alignContent="center"
+          justify="left"
+          alignItems="center"
+        >
           {this.filterSpec.map((filterEntry) => (
             <Grid item key={filterEntry.key}>
-              <label className="filter-entry-label" htmlFor={filterEntry.key}>
+              <label
+                className="project-filter-entry-label"
+                htmlFor={filterEntry.key}
+              >
+                {filterEntry.key == "title" ? (
+                  <i className="fa fa-search" />
+                ) : null}
                 {filterEntry.label}
               </label>
-              <div className="filter-entry-input">
+              <div className="project-filter-entry-input">
                 {this.controlFor(filterEntry)}
                 <br style={{ marginTop: "5px" }} />
               </div>

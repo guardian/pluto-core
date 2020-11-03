@@ -540,3 +540,15 @@ table tbody th {
     display: none;
   }
 }
+
+.project-filter-entry-label {
+  display: inline-block;
+  vertical-align: top;
+  margin-right: 0.5em;
+  margin-top: 0.1em;
+}
+
+.project-filter-entry-input {
+  display: inline-block;
+  margin-right: 1.2em;
+}
