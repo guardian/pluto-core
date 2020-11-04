@@ -4,6 +4,7 @@ import StorageSelector from "./Selectors/StorageSelector.jsx";
 import ErrorViewComponent from "./multistep/common/ErrorViewComponent.jsx";
 import TemplateSelector from "./Selectors/TemplateSelector.jsx";
 import { Helmet } from "react-helmet";
+import PostrunSelector from "./Selectors/PostrunSelector";
 
 class ServerDefaults extends React.Component {
   constructor(props) {
@@ -20,6 +21,7 @@ class ServerDefaults extends React.Component {
 
     this.keys = {
       storage: "project_storage_id",
+      assetFolder: "asset_folder_action",
     };
 
     this.updateDefaultSetting = this.updateDefaultSetting.bind(this);
@@ -60,27 +62,6 @@ class ServerDefaults extends React.Component {
         headers: { "Content-Type": "text/plain" },
       })
       .then(window.setTimeout(() => this.refreshData(), 250));
-  }
-
-  updateProjectTemplateSetting(newValue, plutoProjectTypeEntryId) {
-    if (newValue === "-1") {
-      axios
-        .delete(
-          "/api/plutoprojecttypeid/" +
-            plutoProjectTypeEntryId +
-            "/default-template"
-        )
-        .then(window.setTimeout(() => this.refreshData(), 450));
-    } else {
-      axios
-        .put(
-          "/api/plutoprojecttypeid/" +
-            plutoProjectTypeEntryId +
-            "/default-template/" +
-            newValue
-        )
-        .then(window.setTimeout(() => this.refreshData(), 450));
-    }
   }
 
   /* return the current default storage, or first in the list, or zero if neither is present */
@@ -133,26 +114,23 @@ class ServerDefaults extends React.Component {
                 />
               </td>
             </tr>
-            {plutoProjectTypeList.map((projectTypeEntry) => (
-              <tr>
-                <td>
-                  Project template to use for Pluto '{projectTypeEntry.name}':
-                </td>
-                <td>
-                  <TemplateSelector
-                    allowNull={true}
-                    selectedTemplate={projectTypeEntry["defaultProjectType"]}
-                    selectionUpdated={(value) =>
-                      this.updateProjectTemplateSetting(
-                        value,
-                        projectTypeEntry.id
-                      )
-                    }
-                    templatesList={this.state.templatesList}
-                  />
-                </td>
-              </tr>
-            ))}
+            <tr>
+              <td>Postrun action to run for "re-create asset folder" action</td>
+              <td>
+                <PostrunSelector
+                  onChange={(newValue) =>
+                    this.updateDefaultSetting(newValue, this.keys.assetFolder)
+                  }
+                  value={
+                    this.state.currentValues.hasOwnProperty(
+                      this.keys.assetFolder
+                    )
+                      ? this.state.currentValues[this.keys.assetFolder]
+                      : undefined
+                  }
+                />
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
