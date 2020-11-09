@@ -103,6 +103,14 @@ trait Security extends BaseController {
         .map(calculatedSig => {
           if ("HMAC "+calculatedSig == auth) Right(LoginResultOK("hmac")) else Left(LoginResultInvalid("hmac"))
         })
+        .map({
+          case loginOk @ Right(_)=>loginOk
+          case Left(_)=>
+            HMAC.calculateHmac(header, Conf.sharedSecret, false)
+            .map(calculatedSig=>{
+              if("HMAC "+calculatedSig==auth) Right(LoginResultOK("hmac")) else Left(LoginResultInvalid("hmac"))
+            }).getOrElse(Left(LoginResultInvalid("")))
+        })
         .getOrElse(Left(LoginResultInvalid("")))
     }
   }
