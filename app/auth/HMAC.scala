@@ -48,9 +48,12 @@ object HMAC {
     * @param sharedSecret passphrase to encrypt with
     * @return Option containing the hmac digest, or None if any headers were missing
     */
-  def calculateHmac(request: RequestHeader, sharedSecret: String)(implicit config:Configuration):Option[String] = try {
+  def calculateHmac(request: RequestHeader, sharedSecret: String, prependDeploymentPath:Boolean=true)(implicit config:Configuration):Option[String] = try {
     request.headers.get("Digest").flatMap(extract_checksum).map(checksum=>{
-      val full_uri = config.getOptional[String]("deployment-root").getOrElse("") + request.uri
+      val full_uri = prependDeploymentPath match {
+        case true=>config.getOptional[String]("deployment-root").getOrElse("") + request.uri
+        case false=>request.uri
+      }
       logger.debug(s"full_uri: $full_uri")
       logger.debug(s"date: ${request.headers.get("Date")}")
       logger.debug(s"content-type: ${request.headers.get("Content-Type")}")
