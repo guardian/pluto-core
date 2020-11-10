@@ -69,7 +69,8 @@ class LinkVSCommissiontoPL (commissioners:VSGlobalMetadataGroup, vsUserCache: VS
                   .getOrElse("unknown"),
                 notes = elem.notes,
                 productionOffice = elem.productionOffice.getOrElse(ProductionOffice.UK),
-                originalTitle = None
+                originalTitle = None,
+                googleFolder = None
               )
             case _=>
               throw new RuntimeException(s"Invalid vidispine ID $vsId")

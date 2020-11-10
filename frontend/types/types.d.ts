@@ -25,6 +25,7 @@ interface CommissionFullRecord {
   notes?: string;
   productionOffice: string;
   originalTitle: string;
+  googleFolder: string;
 }
 /*
     (JsPath \ "id").writeNullable[Int] and

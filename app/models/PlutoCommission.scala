@@ -111,7 +111,7 @@ class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoComm
   def notes = column[Option[String]]("s_notes")
   def productionOffice = column[ProductionOffice.Value]("s_production_office")
   def originalTitle = column[Option[String]]("s_original_title")
-  def googleFolder = column[Option[String]]("google_folder")
+  def googleFolder = column[Option[String]]("s_google_folder")
   
   def * = (id.?, collectionId, siteId, created, updated, title, status, description, workingGroup, originalCommissionerName, scheduledCompletion, owner, notes, productionOffice, originalTitle, googleFolder) <> (PlutoCommission.tupled, PlutoCommission.unapply)
 }
