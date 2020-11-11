@@ -62,7 +62,7 @@ class DataMigrationSpec extends Specification with Mockito with BuildMyApp {
       implicit val db = dbConfigProvider.get[PostgresProfile].db
 
       val testComm = PlutoCommission(None,None,None,Timestamp.from(Instant.now()), Timestamp.from(Instant.now()), "test to update",
-      EntryStatus.New,None,2, None, Timestamp.from(Instant.now()), "",None,ProductionOffice.UK,None)
+      EntryStatus.New,None,2, None, Timestamp.from(Instant.now()), "",None,ProductionOffice.UK,None, None)
 
       val savedEntry = Await.result(testComm.save, 5 seconds)
       savedEntry must beSuccessfulTry

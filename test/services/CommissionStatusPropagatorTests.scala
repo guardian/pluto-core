@@ -67,6 +67,7 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
         "TestUser",
         None,
         ProductionOffice.UK,
+        None,
         None
       )
     )

@@ -13,6 +13,7 @@ import {
   Select,
   TextField,
   Typography,
+  Tooltip,
 } from "@material-ui/core";
 import {
   KeyboardDatePicker,
@@ -36,6 +37,7 @@ import StatusSelector from "../common/StatusSelector";
 import ChipInput from "material-ui-chip-input";
 import ProjectsTable from "../ProjectEntryList/ProjectsTable";
 import { Helmet } from "react-helmet";
+import HelpIcon from "@material-ui/icons/Help";
 declare var deploymentRootPath: string;
 
 const useStyles = makeStyles({
@@ -82,6 +84,13 @@ const useStyles = makeStyles({
     "& Button": {
       marginLeft: "1rem",
     },
+  },
+  warningIcon: {
+    marginLeft: "10px",
+  },
+  noGoogleText: {
+    float: "left",
+    marginTop: "2px",
   },
 });
 
@@ -199,6 +208,30 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
             multiline={true}
             onChange={(evt) => fieldChanged(evt, "notes")}
           />
+          <div>
+            View Documents
+            <br />
+            {props.commission.googleFolder ? (
+              <Tooltip title="Open commission folder in Google Drive" arrow>
+                <a href={props.commission.googleFolder} target="_blank">
+                  <img
+                    className="smallicon"
+                    src="/pluto-core/assets/images/google-drive-folder-icon.png"
+                  />
+                </a>
+              </Tooltip>
+            ) : (
+              <div>
+                <div className={classes.noGoogleText}>None</div>
+                <Tooltip
+                  title="We have not implemented the functionality to create Google Drive folders due to some limitations and technical issues. If you would like the functionality please request it from multimediatech@theguardian.com"
+                  arrow
+                >
+                  <HelpIcon className={classes.warningIcon} />
+                </Tooltip>
+              </div>
+            )}
+          </div>
           <div className={classes.formButtons}>
             {props.isSaving ? (
               <CircularProgress style={{ width: "18px", height: "18px" }} />
