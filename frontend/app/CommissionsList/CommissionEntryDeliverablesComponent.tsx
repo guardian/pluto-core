@@ -27,7 +27,7 @@ interface CommissionEntryDeliverablesComponentProps {
   commission: CommissionFullRecord;
 }
 
-const ActionIcons: React.FC<{ id: string }> = (props) => (
+const ActionIcons: React.FC<{ id: number }> = (props) => (
   <span className="icons">
     <IconButton href={`/deliverables/project/${props.id}`}>
       <EditIcon />
@@ -42,8 +42,7 @@ const CommissionEntryDeliverablesComponent: React.FC<CommissionEntryDeliverables
 
   const [loading, setLoading] = useState<boolean>(true);
   const { id } = props.commission;
-  const [bundles, setBundles] = useState<Bundle[]>([]);
-  const [lastError, setLastError] = useState<object | null>(null);
+  const [bundles, setBundles] = useState<DeliverableBundle[]>([]);
 
   const fetchBundles = async () => {
     await setLoading(true);
@@ -52,13 +51,9 @@ const CommissionEntryDeliverablesComponent: React.FC<CommissionEntryDeliverables
       const server_response = await axios.get(
         `/deliverables/api/bundle/commission/${id}`
       );
-      return Promise.all([
-        setBundles(server_response.data),
-        setLoading(false),
-        setLastError(null),
-      ]);
+      return Promise.all([setBundles(server_response.data), setLoading(false)]);
     } catch (error) {
-      return Promise.all([setLastError(error), setLoading(false)]);
+      return Promise.all([setLoading(false)]);
     }
   };
 
@@ -95,7 +90,7 @@ const CommissionEntryDeliverablesComponent: React.FC<CommissionEntryDeliverables
                   {moment(entry.created).format("DD/MM/YYYY HH:mm A")}
                 </TableCell>
                 <TableCell>
-                  <ActionIcons id={entry.pluto_core_project_id.toString()} />
+                  <ActionIcons id={entry.pluto_core_project_id} />
                 </TableCell>
               </TableRow>
             ))}

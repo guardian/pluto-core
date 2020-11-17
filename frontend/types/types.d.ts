@@ -147,7 +147,7 @@ interface DeliverablesCount {
   unimported_asset_count: number;
 }
 
-interface Bundle {
+interface DeliverableBundle {
   project_id: string;
   pluto_core_project_id: number;
   commission_id: number;
