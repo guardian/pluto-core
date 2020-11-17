@@ -146,3 +146,13 @@ interface DeliverablesCount {
   total_asset_count: number;
   unimported_asset_count: number;
 }
+
+interface DeliverableBundle {
+  project_id: string;
+  pluto_core_project_id: number;
+  commission_id: number;
+  name: string;
+  created: string;
+  local_open_uri: string;
+  local_path: string;
+}

@@ -38,6 +38,7 @@ import ChipInput from "material-ui-chip-input";
 import ProjectsTable from "../ProjectEntryList/ProjectsTable";
 import { Helmet } from "react-helmet";
 import HelpIcon from "@material-ui/icons/Help";
+import CommissionEntryDeliverablesComponent from "./CommissionEntryDeliverablesComponent";
 declare var deploymentRootPath: string;
 
 const useStyles = makeStyles({
@@ -484,6 +485,14 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
             }}
             projects={projectList}
           />
+        ) : null}
+      </Paper>
+      <Typography variant="h4" style={{ marginTop: "20px" }}>
+        Deliverables
+      </Typography>
+      <Paper elevation={3}>
+        {commissionData ? (
+          <CommissionEntryDeliverablesComponent commission={commissionData} />
         ) : null}
       </Paper>
     </>
