@@ -60,6 +60,27 @@ class ProjectCreateMultistep extends React.Component {
     );
   }
 
+  requestDefaultProjectTemplate(defaultValue) {
+    return new Promise((resolve) =>
+      axios
+        .get("/api/default/project_template_id")
+        .then((response) => {
+          const defaultTemplate = parseInt(response.data.result.value);
+          console.log("Got default template with id. of ", defaultTemplate);
+          resolve(defaultTemplate);
+        })
+        .catch((error) => {
+          if (error.response && error.response.status === 404) {
+            console.log("No default project template id. has been set");
+            resolve(defaultValue);
+          } else {
+            console.error(error);
+            this.setState({ lastError: error });
+          }
+        })
+    );
+  }
+
   componentDidMount() {
     this.mounted = true;
 
@@ -78,15 +99,21 @@ class ProjectCreateMultistep extends React.Component {
             if (!this.mounted) {
               return;
             }
-
-            this.setState({
-              projectTemplates: templates.data.result,
-              selectedProjectTemplate: firstTemplate,
-              storages: storages.data.result,
-              selectedStorage: projectStorage,
-              wgList: workingGroups.data.result,
-              selectedWorkingGroup: firstWorkingGroup,
-            });
+            this.requestDefaultProjectTemplate(firstTemplate).then(
+              (projectTemplate) => {
+                if (!this.mounted) {
+                  return;
+                }
+                this.setState({
+                  projectTemplates: templates.data.result,
+                  selectedProjectTemplate: projectTemplate,
+                  storages: storages.data.result,
+                  selectedStorage: projectStorage,
+                  wgList: workingGroups.data.result,
+                  selectedWorkingGroup: firstWorkingGroup,
+                });
+              }
+            );
           }
         );
       })
