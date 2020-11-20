@@ -172,7 +172,8 @@ const CommissionsList: React.FC = () => {
         <Grid item className={classes.buttonGrid}>
           <Button
             className={classes.createButton}
-            variant="outlined"
+            variant="contained"
+            color="primary"
             onClick={() => {
               history.push("/commission/new");
             }}

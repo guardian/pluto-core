@@ -161,7 +161,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
         <Grid item className={classes.buttonGrid}>
           <Button
             className={classes.createButton}
-            variant="outlined"
+            variant="contained"
+            color="primary"
             onClick={() => {
               history.push("/project/new");
             }}
