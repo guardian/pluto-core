@@ -6,6 +6,8 @@ import {
   Button,
   Typography,
   makeStyles,
+  Checkbox,
+  FormControlLabel,
 } from "@material-ui/core";
 import {
   createWorkingGroup,
@@ -32,6 +34,9 @@ const useStyles = makeStyles({
       marginBottom: "1rem",
       width: "100%",
     },
+  },
+  hide_control: {
+    marginBottom: "20px",
   },
 });
 
@@ -85,6 +90,10 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
     event: React.ChangeEvent<HTMLInputElement>
   ): void => {
     setCommissioner(event.target.value);
+  };
+
+  const onHideChanged = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    setHide(event.target.checked);
   };
 
   const onWorkingGroupSubmit = async (
@@ -144,6 +153,11 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
               value={commissioner}
               onChange={onCommissionerChanged}
             ></TextField>
+            <FormControlLabel
+              className={classes.hide_control}
+              control={<Checkbox checked={hide} onChange={onHideChanged} />}
+              label="Hide"
+            />
             <Button type="submit" variant="outlined">
               {editing ? "Save" : "Create"}
             </Button>
