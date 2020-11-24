@@ -13,16 +13,19 @@ class ServerDefaults extends React.Component {
       currentValues: {},
       storageList: [],
       templatesList: [],
-      plutoProjectTypes: [],
       loading: false,
       error: null,
     };
 
     this.keys = {
       storage: "project_storage_id",
+      projectTemplate: "project_template_id",
     };
 
     this.updateDefaultSetting = this.updateDefaultSetting.bind(this);
+    this.updateDefaultProjectTemplateSetting = this.updateDefaultProjectTemplateSetting.bind(
+      this
+    );
   }
 
   componentDidMount() {
@@ -35,9 +38,8 @@ class ServerDefaults extends React.Component {
         axios.get("/api/default"),
         axios.get("/api/storage"),
         axios.get("/api/template"),
-        axios.get("/api/plutoprojecttypeid"),
       ])
-        .then(([defaults, storage, template, projectTypeId]) => {
+        .then(([defaults, storage, template]) => {
           this.setState({
             loading: false,
             error: null,
@@ -47,7 +49,6 @@ class ServerDefaults extends React.Component {
               acc[entry.name] = entry.value;
               return acc;
             }, {}),
-            plutoProjectTypes: projectTypeId.data.result,
           });
         })
         .catch((error) => this.setState({ loading: false, error: error }));
@@ -62,25 +63,12 @@ class ServerDefaults extends React.Component {
       .then(window.setTimeout(() => this.refreshData(), 250));
   }
 
-  updateProjectTemplateSetting(newValue, plutoProjectTypeEntryId) {
-    if (newValue === "-1") {
-      axios
-        .delete(
-          "/api/plutoprojecttypeid/" +
-            plutoProjectTypeEntryId +
-            "/default-template"
-        )
-        .then(window.setTimeout(() => this.refreshData(), 450));
-    } else {
-      axios
-        .put(
-          "/api/plutoprojecttypeid/" +
-            plutoProjectTypeEntryId +
-            "/default-template/" +
-            newValue
-        )
-        .then(window.setTimeout(() => this.refreshData(), 450));
-    }
+  updateDefaultProjectTemplateSetting(newTemplateId, keyname) {
+    return axios
+      .put("/api/default/" + keyname, newTemplateId, {
+        headers: { "Content-Type": "text/plain" },
+      })
+      .then(window.setTimeout(() => this.refreshData(), 250));
   }
 
   /* return the current default storage, or first in the list, or zero if neither is present */
@@ -95,22 +83,17 @@ class ServerDefaults extends React.Component {
   }
 
   /* return the current default template, or first in the list, or zero if neither is present */
-  templatePref(keyName) {
-    const { currentValues, templatesList } = this.state;
-
-    return currentValues[keyName] ?? templatesList[0]?.id ?? 0;
+  templatePref() {
+    if (this.state.currentValues.hasOwnProperty(this.keys.projectTemplate)) {
+      return this.state.currentValues[this.keys.projectTemplate];
+    } else {
+      if (this.state.templatesList.length > 0)
+        return this.state.templatesList[0].id;
+      else return 0;
+    }
   }
 
   render() {
-    const plutoProjectTypeList = Object.assign(
-      [],
-      this.state.plutoProjectTypes
-    ).sort((a, b) => {
-      if (a.name < b.name) return -1;
-      if (a.name > b.name) return 1;
-      return 0;
-    });
-
     return (
       <div className="mainbody">
         <Helmet>
@@ -133,26 +116,21 @@ class ServerDefaults extends React.Component {
                 />
               </td>
             </tr>
-            {plutoProjectTypeList.map((projectTypeEntry) => (
-              <tr>
-                <td>
-                  Project template to use for Pluto '{projectTypeEntry.name}':
-                </td>
-                <td>
-                  <TemplateSelector
-                    allowNull={true}
-                    selectedTemplate={projectTypeEntry["defaultProjectType"]}
-                    selectionUpdated={(value) =>
-                      this.updateProjectTemplateSetting(
-                        value,
-                        projectTypeEntry.id
-                      )
-                    }
-                    templatesList={this.state.templatesList}
-                  />
-                </td>
-              </tr>
-            ))}
+            <tr>
+              <td>Default project template</td>
+              <td>
+                <TemplateSelector
+                  selectedTemplate={this.templatePref()}
+                  selectionUpdated={(value) =>
+                    this.updateDefaultProjectTemplateSetting(
+                      value,
+                      this.keys.projectTemplate
+                    )
+                  }
+                  templatesList={this.state.templatesList}
+                />
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
