@@ -64,12 +64,11 @@ class ServerDefaults extends React.Component {
   }
 
   updateDefaultProjectTemplateSetting(newTemplateId, keyname) {
-    axios
+    return axios
       .put("/api/default/" + keyname, newTemplateId, {
         headers: { "Content-Type": "text/plain" },
       })
       .then(window.setTimeout(() => this.refreshData(), 250));
-    return;
   }
 
   /* return the current default storage, or first in the list, or zero if neither is present */
