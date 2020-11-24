@@ -61,7 +61,7 @@ class ProjectCreateMultistep extends React.Component {
   }
 
   requestDefaultProjectTemplate(defaultValue) {
-    return new Promise((resolve) =>
+    return new Promise((resolve, reject) =>
       axios
         .get("/api/default/project_template_id")
         .then((response) => {
@@ -76,6 +76,7 @@ class ProjectCreateMultistep extends React.Component {
           } else {
             console.error(error);
             this.setState({ lastError: error });
+            reject(error);
           }
         })
     );
