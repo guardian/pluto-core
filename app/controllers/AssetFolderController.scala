@@ -2,7 +2,7 @@ package controllers
 
 import auth.{BearerTokenAuth, Security}
 import javax.inject.Inject
-import models.{ProjectMetadata, ProjectMetadataRow, ProjectMetadataSerializer}
+import models.{ProjectEntry, ProjectMetadata, ProjectMetadataRow, ProjectMetadataSerializer}
 import play.api.{Configuration, Logger}
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -97,5 +97,9 @@ class AssetFolderController @Inject() (override val controllerComponents:Control
         logger.error(s"Could not look up asset folder for project id $projectId: ", err)
         InternalServerError(Json.obj("status"->"error","detail"->err.getMessage))
     })
+  }
+
+  def rerunAssetFolder(projectId:Int) = IsAuthenticatedAsync { uid=> request=>
+    ProjectEntry.entryForId(projectId)
   }
 }

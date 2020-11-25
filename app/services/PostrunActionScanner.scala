@@ -3,19 +3,24 @@ package services
 import java.io.File
 import java.sql.Timestamp
 
-import akka.actor.{Actor, ActorSystem}
+import akka.actor.{Actor, ActorSystem, Props}
 import com.google.inject.{Inject, Singleton}
 import play.api.{Configuration, Logger}
 import helpers.{DirectoryScanner, JythonRunner, PrecompileException}
 import models.PostrunAction
 import java.time.{Instant, ZonedDateTime}
 
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import org.reflections.Reflections
 import org.reflections.scanners.{ResourcesScanner, SubTypesScanner}
 import org.reflections.util.{ClasspathHelper, ConfigurationBuilder, FilterBuilder}
 import org.slf4j.MDC
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.Injector
 import postrun.PojoPostrun
+import services.actors.ProjectCreationActor
+import services.actors.ProjectCreationActor.logger
+import services.actors.creation.GenericCreationActor.NewProjectRequest
 import slick.jdbc.PostgresProfile
 
 import scala.jdk.CollectionConverters._
@@ -27,6 +32,27 @@ object PostrunActionScanner {
   trait PASMsg
 
   case object Rescan extends PASMsg
+
+  val extractEntityId:ShardRegion.ExtractEntityId = {
+    case msg @ Rescan => (msg.hashCode().toString, msg)
+  }
+
+  val maxNumberOfShards = 100
+
+  val extractShardId:ShardRegion.ExtractShardId = {
+    case msg @ Rescan =>(msg.hashCode() % maxNumberOfShards).toString
+  }
+
+  def startupSharding(system:ActorSystem, injector:Injector) = {
+    logger.info("Setting up sharding for PostrunActionScanner")
+    ClusterSharding(system).start(
+      typeName = "postrun-action-scanner",
+      entityProps = Props(injector.instanceOf(classOf[PostrunActionScanner])),
+      settings = ClusterShardingSettings(system),
+      extractEntityId = extractEntityId,
+      extractShardId = extractShardId
+    )
+  }
 }
 
 @Singleton

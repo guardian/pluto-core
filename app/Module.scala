@@ -39,11 +39,8 @@ class Module extends AbstractModule with AkkaGuiceSupport {
   @Singleton
   @Named("postrun-action-scanner")
   def postrunActionScannerFactory(system: ActorSystem, injector: Injector): ActorRef = {
-    system.actorOf(ClusterSingletonManager.props(
-      singletonProps = Props(injector.instanceOf(classOf[PostrunActionScanner])),
-      terminationMessage = PoisonPill,
-      settings = ClusterSingletonManagerSettings(system)
-    ))
+    logger.info("postrunActionScanner building...")
+    PostrunActionScanner.startupSharding(system, injector)
   }
 
   @Provides

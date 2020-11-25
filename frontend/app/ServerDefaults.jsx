@@ -2,7 +2,6 @@ import React from "react";
 import axios from "axios";
 import StorageSelector from "./Selectors/StorageSelector.jsx";
 import ErrorViewComponent from "./multistep/common/ErrorViewComponent.jsx";
-import TemplateSelector from "./Selectors/TemplateSelector.jsx";
 import { Helmet } from "react-helmet";
 import PostrunSelector from "./Selectors/PostrunSelector";
 
@@ -102,7 +101,9 @@ class ServerDefaults extends React.Component {
         <table>
           <tbody>
             <tr>
-              <td>Default storage for created projects</td>
+              <td style={{ verticalAlign: "middle" }}>
+                Default storage for created projects
+              </td>
               <td>
                 <StorageSelector
                   enabled={true}
@@ -115,7 +116,9 @@ class ServerDefaults extends React.Component {
               </td>
             </tr>
             <tr>
-              <td>Postrun action to run for "re-create asset folder" action</td>
+              <td style={{ verticalAlign: "middle" }}>
+                Postrun action to run for "re-create asset folder" action
+              </td>
               <td>
                 <PostrunSelector
                   onChange={(newValue) =>
