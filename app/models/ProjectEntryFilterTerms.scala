@@ -22,6 +22,7 @@ extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
     * @return slick query with the relevant filter terms added
     */
   override def addFilterTerms(f: =>Query[ProjectEntryRow, ProjectEntry, Seq]):Query[ProjectEntryRow, ProjectEntry, Seq] = {
+    import EntryStatusMapper._
     var action = f
     if(filename.isDefined){
       /* see http://slick.lightbend.com/doc/3.0.0/queries.html#joining-and-zipping */
@@ -35,7 +36,7 @@ extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
     if(vidispineProjectId.isDefined) action = action.filter(_.vidispineProjectId like makeWildcard(vidispineProjectId.get))
     if(user.isDefined && user.get!="Everyone") action = action.filter(_.user like makeWildcard(user.get))
     if(group.isDefined && group.get!="All") action = action.filter(_.workingGroup===group.get.toInt)
-    if(showKilled.contains(false)) action = action.filter(_.status!=EntryStatus.Killed)
+    if(showKilled.contains("false")) action = action.filter(_.status=!=EntryStatus.Killed)
     if(commissionId.isDefined ) action = action.filter(_.commission===commissionId.get)
     action
   }
