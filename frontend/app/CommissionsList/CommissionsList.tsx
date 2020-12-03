@@ -167,6 +167,7 @@ const CommissionsList: React.FC = () => {
               }
               setFilterTerms(newFilters);
             }}
+            isProject={false}
           />
         </Grid>
         <Grid item className={classes.buttonGrid}>

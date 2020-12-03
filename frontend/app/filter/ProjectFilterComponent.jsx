@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { Grid, Select, MenuItem } from "@material-ui/core";
+import { Grid, Select, MenuItem, Checkbox } from "@material-ui/core";
 import axios from "axios";
 
 class ProjectFilterComponent extends React.Component {
@@ -9,6 +9,7 @@ class ProjectFilterComponent extends React.Component {
     //key-value object of the terms.
     isAdmin: PropTypes.bool,
     filterTerms: PropTypes.object.isRequired,
+    isProject: PropTypes.bool,
   };
 
   constructor(props) {
@@ -30,6 +31,10 @@ class ProjectFilterComponent extends React.Component {
         label: "Working Group",
         valuesStateKey: "workingGroups",
         intValues: "workingGroupsIds",
+      },
+      {
+        key: "showKilled",
+        label: "Show Killed",
       },
     ];
 
@@ -58,7 +63,9 @@ class ProjectFilterComponent extends React.Component {
     const spec = this.filterSpec.filter((entry) => entry.key === filterKey);
     const newValue = event.target.value;
 
-    if (spec[0].validator) {
+    if (filterKey == "showKilled") {
+      this.updateFilters(filterKey, event.target.checked);
+    } else if (spec[0].validator) {
       const wasError = spec[0].validator(newValue);
       if (wasError) {
         console.error("Error setting filter key.", filterKey, wasError);
@@ -133,6 +140,17 @@ class ProjectFilterComponent extends React.Component {
           </Select>
         );
       }
+    } else if (filterEntry.key == "showKilled") {
+      if (this.props.isProject) {
+        return (
+          <Checkbox
+            id={filterEntry.key}
+            onChange={(event) => this.entryUpdated(event, filterEntry.key)}
+          />
+        );
+      } else {
+        return null;
+      }
     } else {
       return (
         <input
@@ -198,13 +216,20 @@ class ProjectFilterComponent extends React.Component {
           {this.filterSpec.map((filterEntry) => (
             <Grid item key={filterEntry.key}>
               <label
-                className="project-filter-entry-label"
+                className={
+                  filterEntry.key == "showKilled"
+                    ? "project-filter-entry-label-showkilled"
+                    : "project-filter-entry-label"
+                }
                 htmlFor={filterEntry.key}
               >
                 {filterEntry.key == "title" ? (
                   <i className="fa fa-search" />
                 ) : null}
-                {filterEntry.label}
+                {filterEntry.key == "showKilled" &&
+                this.props.isProject == false
+                  ? null
+                  : filterEntry.label}
               </label>
               <div className="project-filter-entry-input">
                 {this.controlFor(filterEntry)}

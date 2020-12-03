@@ -11,7 +11,7 @@ case class ProjectEntryFilterTerms(title:Option[String],
                                    user:Option[String],
                                    group:Option[String],
                                    commissionId:Option[Int],
-                                   showKilled:Option[String],
+                                   showKilled:Option[Boolean],
                                    wildcard:FilterTypeWildcard.Value)
 extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
 
@@ -36,7 +36,7 @@ extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
     if(vidispineProjectId.isDefined) action = action.filter(_.vidispineProjectId like makeWildcard(vidispineProjectId.get))
     if(user.isDefined && user.get!="Everyone") action = action.filter(_.user like makeWildcard(user.get))
     if(group.isDefined && group.get!="All") action = action.filter(_.workingGroup===group.get.toInt)
-    if(showKilled.contains("false")) action = action.filter(_.status=!=EntryStatus.Killed)
+    if(showKilled.contains(false)) action = action.filter(_.status=!=EntryStatus.Killed)
     if(commissionId.isDefined ) action = action.filter(_.commission===commissionId.get)
     action
   }
@@ -52,7 +52,7 @@ trait ProjectEntryFilterTermsSerializer {
       (JsPath \ "user").readNullable[String] and
       (JsPath \ "group").readNullable[String] and
       (JsPath \ "commissionId").readNullable[Int] and
-      (JsPath \ "showKilled").readNullable[String] and
+      (JsPath \ "showKilled").readNullable[Boolean] and
       (JsPath \ "match").read[FilterTypeWildcard.Value]
   )(ProjectEntryFilterTerms.apply _)
 }
