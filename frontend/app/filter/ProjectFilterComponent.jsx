@@ -9,7 +9,6 @@ class ProjectFilterComponent extends React.Component {
     //key-value object of the terms.
     isAdmin: PropTypes.bool,
     filterTerms: PropTypes.object.isRequired,
-    isProject: PropTypes.bool,
   };
 
   constructor(props) {
@@ -34,7 +33,7 @@ class ProjectFilterComponent extends React.Component {
       },
       {
         key: "showKilled",
-        label: "Show Killed",
+        label: "Show Deleted",
       },
     ];
 
@@ -141,16 +140,13 @@ class ProjectFilterComponent extends React.Component {
         );
       }
     } else if (filterEntry.key == "showKilled") {
-      if (this.props.isProject) {
-        return (
-          <Checkbox
-            id={filterEntry.key}
-            onChange={(event) => this.entryUpdated(event, filterEntry.key)}
-          />
-        );
-      } else {
-        return null;
-      }
+      return (
+        <Checkbox
+          id={filterEntry.key}
+          onChange={(event) => this.entryUpdated(event, filterEntry.key)}
+          color={"primary"}
+        />
+      );
     } else {
       return (
         <input
@@ -226,10 +222,8 @@ class ProjectFilterComponent extends React.Component {
                 {filterEntry.key == "title" ? (
                   <i className="fa fa-search" />
                 ) : null}
-                {filterEntry.key == "showKilled" &&
-                this.props.isProject == false
-                  ? null
-                  : filterEntry.label}
+
+                {filterEntry.label}
               </label>
               <div className="project-filter-entry-input">
                 {this.controlFor(filterEntry)}

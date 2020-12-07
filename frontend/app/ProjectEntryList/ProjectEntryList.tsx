@@ -157,7 +157,6 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
               }
               setFilterTerms(newFilters);
             }}
-            isProject={true}
           />
         </Grid>
         <Grid item className={classes.buttonGrid}>
