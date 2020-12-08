@@ -99,6 +99,7 @@ POST    /api/login                         @controllers.Application.authenticate
 OPTIONS /api/login                         @controllers.Application.authenticateOptions
 POST    /api/logout                        @controllers.Application.logout
 GET     /api/isLoggedIn                    @controllers.Application.isLoggedIn
+OPTIONS /api/isLoggedIn                     @controllers.Application.isLoggedIn
 GET     /api/isAdmin                       @controllers.Application.checkIsAdmin
 
 GET     /api/system/plutoconfig            @controllers.System.plutoconfig
