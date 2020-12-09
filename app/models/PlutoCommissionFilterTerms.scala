@@ -27,6 +27,7 @@ case class PlutoCommissionFilterTerms(title:Option[String],
                                       group:Option[String],
                                       workingGroupId:Option[Int],
                                       description:Option[String],
+                                      showKilled:Option[Boolean],
                                       wildcard:FilterTypeWildcard.Value)
 extends GeneralFilterEntryTerms[PlutoCommissionRow, PlutoCommission] {
 
@@ -49,6 +50,7 @@ extends GeneralFilterEntryTerms[PlutoCommissionRow, PlutoCommission] {
     if(workingGroupId.isDefined) action = action.filter(_.workingGroup===workingGroupId.get)
     if(user.isDefined && user.get!="Everyone") action = action.filter(_.owner like makeWildcard(user.get))
     if(group.isDefined && group.get!="All") action = action.filter(_.workingGroup===group.get.toInt)
+    if(showKilled.contains(false)) action = action.filter(_.status=!=EntryStatus.Killed)
     if(description.isDefined) action = action.filter(_.description like makeWildcard(description.get))
     action
   }
@@ -67,6 +69,7 @@ trait PlutoCommissionFilterTermsSerializer {
       (JsPath \ "group").readNullable[String] and
       (JsPath \ "workingGroupId").readNullable[Int] and
       (JsPath \ "description").readNullable[String] and
+      (JsPath \ "showKilled").readNullable[Boolean] and
       (JsPath \ "match").read[FilterTypeWildcard.Value]
   )(PlutoCommissionFilterTerms.apply _)
 }

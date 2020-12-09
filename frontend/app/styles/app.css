@@ -552,3 +552,10 @@ table tbody th {
   display: inline-block;
   margin-right: 1.2em;
 }
+
+.project-filter-entry-label-showkilled {
+  display: inline-block;
+  vertical-align: top;
+  margin-right: 0.5em;
+  margin-top: 0.57em;
+}

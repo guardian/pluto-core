@@ -75,6 +75,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
 
   const [filterTerms, setFilterTerms] = useState<ProjectFilterTerms>({
     match: "W_CONTAINS",
+    showKilled: false,
   });
 
   // Material-UI
@@ -118,8 +119,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   useEffect(() => {
     const newFilterTerms: ProjectFilterTerms =
       user && new URLSearchParams(search).has("mine")
-        ? { user: user.uid, match: "W_EXACT" }
-        : { match: "W_CONTAINS" };
+        ? { user: user.uid, match: "W_EXACT", showKilled: false }
+        : { match: "W_CONTAINS", showKilled: false };
 
     const commissionIdAsNumber = Number(commissionId);
 

@@ -77,6 +77,7 @@ const CommissionsList: React.FC = () => {
   const history = useHistory();
   const [filterTerms, setFilterTerms] = useState<ProjectFilterTerms>({
     match: "W_CONTAINS",
+    showKilled: false,
   });
   const [user, setUser] = useState<PlutoUser | null>(null);
 
