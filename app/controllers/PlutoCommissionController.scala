@@ -36,7 +36,46 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
     implicit val db = dbConfigProvider.get[PostgresProfile].db
     implicit val cache:SyncCacheApi = cacheImpl
 
-    override def selectall(startAt: Int, limit: Int): Future[Try[(Int, Seq[PlutoCommission])]] = {
+    object SortDirection extends Enumeration {
+      val desc, asc = Value
+    }
+
+    def withRequiredSort(query: =>Query[PlutoCommissionRow, PlutoCommission, Seq], sort:String, sortDirection:SortDirection.Value):Query[PlutoCommissionRow, PlutoCommission, Seq] = {
+      import EntryStatusMapper._
+      (sort, sortDirection) match {
+        case ("created", SortDirection.desc) => query.sortBy(_.created.desc)
+        case ("created", SortDirection.asc) => query.sortBy(_.created.asc)
+        case ("title", SortDirection.desc) => query.sortBy(_.title.desc)
+        case ("title", SortDirection.asc) => query.sortBy(_.title.asc)
+        case ("workingGroup", SortDirection.desc) => query.sortBy(_.workingGroup.desc)
+        case ("workingGroup", SortDirection.asc) => query.sortBy(_.workingGroup.asc)
+        case ("status", SortDirection.desc) => query.sortBy(_.status.desc)
+        case ("status", SortDirection.asc) => query.sortBy(_.status.asc)
+        case ("owner", SortDirection.desc) => query.sortBy(_.owner.desc)
+        case ("owner", SortDirection.asc) => query.sortBy(_.owner.asc)
+      }
+    }
+
+    def listFilteredAndSorted(startAt:Int, limit:Int, sort: String, sortDirection: String) = IsAuthenticatedAsync(parse.json) {uid=>{request=>
+      this.validateFilterParams(request).fold(
+        errors => {
+          logger.error(s"errors parsing content: $errors")
+          Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
+        },
+        filterTerms => {
+          this.selectFilteredAndSorted(startAt, limit, filterTerms, sort, SortDirection.withName(sortDirection)).map({
+            case Success((count,result))=>Ok(Json.obj("status" -> "ok","count"->count,"result"->this.jstranslate(result)))
+            case Failure(error)=>
+              logger.error(error.toString)
+              InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+          }
+          )
+        }
+      )
+    }}
+
+    def selectall(startAt: Int, limit: Int): Future[Try[(Int, Seq[PlutoCommission])]] = {
+
       val results: Future[(Int, Seq[PlutoCommission])] = db.run(
         TableQuery[PlutoCommissionRow].length.result.zip(
           TableQuery[PlutoCommissionRow].sortBy(_.created.desc).drop(startAt).take(limit).result
@@ -77,6 +116,27 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         })
       }}.recover(Failure(_))
     }
+
+  def selectFilteredAndSorted(startAt: Int, limit: Int, terms: PlutoCommissionFilterTerms, sort: String, sortDirection: SortDirection.Value): Future[Try[(Int, Seq[PlutoCommission])]] = {
+    val basequery = terms.addFilterTerms {
+      TableQuery[PlutoCommissionRow]
+    }
+
+    val results: Future[(Int, Seq[PlutoCommission])] = db.run(
+      basequery.length.result.zip(
+        withRequiredSort(basequery, sort, sortDirection).drop(startAt).take(limit).result
+      )
+    )
+
+    results.flatMap { result => {
+      val count=result._1
+      val commissions=result._2
+      calculateProjectCount(commissions).map(counts => {
+        commissions.foreach(commission => commission.projectCount = commission.id.flatMap(counts.get).orElse(Some(0)))
+        Success((count,commissions))
+      })
+    }}.recover(Failure(_))
+  }
 
     def calculateProjectCount(entries: Seq[PlutoCommission]): Future[ListMap[Int, Int]] = {
       val commissionIds = entries.flatMap(entry => entry.id)
