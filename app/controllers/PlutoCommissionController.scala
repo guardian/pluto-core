@@ -47,12 +47,14 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         case ("created", SortDirection.asc) => query.sortBy(_.created.asc)
         case ("title", SortDirection.desc) => query.sortBy(_.title.desc)
         case ("title", SortDirection.asc) => query.sortBy(_.title.asc)
-        case ("workingGroup", SortDirection.desc) => query.sortBy(_.workingGroup.desc)
-        case ("workingGroup", SortDirection.asc) => query.sortBy(_.workingGroup.asc)
+        case ("workingGroupId", SortDirection.desc) => query.sortBy(_.workingGroup.desc)
+        case ("workingGroupId", SortDirection.asc) => query.sortBy(_.workingGroup.asc)
         case ("status", SortDirection.desc) => query.sortBy(_.status.desc)
         case ("status", SortDirection.asc) => query.sortBy(_.status.asc)
         case ("owner", SortDirection.desc) => query.sortBy(_.owner.desc)
         case ("owner", SortDirection.asc) => query.sortBy(_.owner.asc)
+        case ("projectCount", SortDirection.desc) => query.sortBy(_.created.desc)
+        case ("projectCount", SortDirection.asc) => query.sortBy(_.created.asc)
       }
     }
 
