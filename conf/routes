@@ -87,7 +87,7 @@ GET     /api/pluto/commission/:id          @controllers.PlutoCommissionControlle
 
 POST    /api/pluto/commission              @controllers.PlutoCommissionController.createByAnyone
 GET     /api/pluto/commission              @controllers.PlutoCommissionController.list(startAt:Int ?=0, length:Int ?=100)
-PUT     /api/pluto/commission/list         @controllers.PlutoCommissionController.listFiltered(startAt:Int ?=0, length:Int ?=100)
+PUT     /api/pluto/commission/list         @controllers.PlutoCommissionController.listFilteredAndSorted(startAt:Int ?=0, length:Int ?=100, sort:String ?="created", sortDirection:String ?="desc")
 OPTIONS /api/pluto/commission/list          @controllers.PlutoCommissionController.listOptions
 PUT     /api/pluto/commission/:id           @controllers.PlutoCommissionController.updateByAnyone(id:Int)
 PUT     /api/pluto/commission/:id/status   @controllers.PlutoCommissionController.updateStatus(id:Int)

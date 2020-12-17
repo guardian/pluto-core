@@ -49,6 +49,8 @@ interface GetCommissionsOnPageParams {
   page?: number;
   pageSize?: number;
   filterTerms?: FilterTerms;
+  order?: string;
+  orderBy?: string | number | symbol;
 }
 
 /**
@@ -60,6 +62,8 @@ export const getCommissionsOnPage = async ({
   page = 0,
   pageSize = 25,
   filterTerms,
+  order,
+  orderBy,
 }: GetCommissionsOnPageParams): Promise<Commission[]> => {
   const itemOffset = page * pageSize;
   const {
@@ -68,7 +72,9 @@ export const getCommissionsOnPage = async ({
   } = await (filterTerms
     ? // TODO: filter terms formatting?
       Axios.put(
-        `${API_COMMISSION_FILTER}?startAt=${itemOffset}&length=${pageSize}`,
+        `${API_COMMISSION_FILTER}?startAt=${itemOffset}&length=${pageSize}&sort=${String(
+          orderBy
+        )}&sortDirection=${order}`,
         filterTerms
       )
     : Axios.get(`${API_COMMISSION}?startAt=${itemOffset}&length=${pageSize}`));

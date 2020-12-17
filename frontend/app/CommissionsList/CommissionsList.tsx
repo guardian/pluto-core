@@ -15,7 +15,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { getCommissionsOnPage, getWorkingGroupNameMap } from "./helpers";
-import { sortListByOrder, SortDirection } from "../utils/lists";
+import { SortDirection } from "../utils/lists";
 import { Helmet } from "react-helmet";
 import ProjectFilterComponent from "../filter/ProjectFilterComponent.jsx";
 import { isLoggedIn } from "../utils/api";
@@ -87,6 +87,8 @@ const CommissionsList: React.FC = () => {
         page,
         pageSize,
         filterTerms: filterTerms,
+        order,
+        orderBy,
       });
       const workingGroups = await getWorkingGroupNameMap(commissions);
       setCommissions(commissions);
@@ -94,7 +96,7 @@ const CommissionsList: React.FC = () => {
     };
 
     updateCommissions();
-  }, [filterTerms, page, pageSize]);
+  }, [filterTerms, page, pageSize, order, orderBy]);
 
   const handleChangePage = (
     _event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
@@ -216,7 +218,7 @@ const CommissionsList: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortListByOrder(commissions, orderBy, order).map(
+              {commissions.map(
                 ({
                   id,
                   title,
