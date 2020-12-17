@@ -15,7 +15,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { getCommissionsOnPage, getWorkingGroupNameMap } from "./helpers";
-import { SortDirection, unorderedList } from "../utils/lists";
+import { SortDirection } from "../utils/lists";
 import { Helmet } from "react-helmet";
 import ProjectFilterComponent from "../filter/ProjectFilterComponent.jsx";
 import { isLoggedIn } from "../utils/api";
@@ -218,7 +218,7 @@ const CommissionsList: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {unorderedList(commissions).map(
+              {commissions.map(
                 ({
                   id,
                   title,

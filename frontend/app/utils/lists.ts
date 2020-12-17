@@ -11,6 +11,3 @@ export const sortListByOrder = <T extends Record<keyof T, any>>(
     // Default to "asc" if bad value.
     return order === "desc" ? -sortResult : sortResult;
   });
-
-export const unorderedList = <T extends Record<keyof T, any>>(list: T[]) =>
-  list;
