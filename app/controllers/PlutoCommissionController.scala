@@ -55,8 +55,13 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
         case ("owner", SortDirection.asc) => query.sortBy(_.owner.asc)
         case ("projectCount", SortDirection.desc) => query.sortBy(_.created.desc)
         case ("projectCount", SortDirection.asc) => query.sortBy(_.created.asc)
+        case _ =>
+          logger.warn(s"Sort field $sort was not recognised, ignoring")
+          query
       }
     }
+
+    private def getSortDirection(directionString:String):Option[SortDirection.Value] = Try { SortDirection.withName(directionString) }.toOption
 
     def listFilteredAndSorted(startAt:Int, limit:Int, sort: String, sortDirection: String) = IsAuthenticatedAsync(parse.json) {uid=>{request=>
       this.validateFilterParams(request).fold(
@@ -65,7 +70,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
           Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
         },
         filterTerms => {
-          this.selectFilteredAndSorted(startAt, limit, filterTerms, sort, SortDirection.withName(sortDirection)).map({
+          this.selectFilteredAndSorted(startAt, limit, filterTerms, sort, getSortDirection(sortDirection).getOrElse(SortDirection.desc)).map({
             case Success((count,result))=>Ok(Json.obj("status" -> "ok","count"->count,"result"->this.jstranslate(result)))
             case Failure(error)=>
               logger.error(error.toString)
