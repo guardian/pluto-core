@@ -8,27 +8,33 @@ import (
 	"log"
 )
 
-func openConnection(host *string, user *string, passwd *string) (*sql.DB, error) {
-	connStr := fmt.Sprintf("host=%s user=%s password=%s", *host, *user, *passwd)
+func openConnection(host *string, user *string, passwd *string, dbName *string, noSSL *bool) (*sql.DB, error) {
+	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s", *host, *user, *passwd, *dbName)
+	if *noSSL {
+		connStr += " sslmode=disable"
+	}
 	return sql.Open("postgres", connStr)
 }
 
 func main() {
-	sourceHostPtr := flag.String("source-host", "localhost", "postgres db to read from")
+	noSSL := flag.Bool("nossl", false, "don't use SSL when connecting")
+	sourceHostPtr := flag.String("source-host", "localhost", "hostname (or unix socket) running source database")
 	sourceUserPtr := flag.String("source-user", "postgres", "user to access host db as")
 	sourcePasswdPtr := flag.String("source-passwd", "", "password for source database")
-	destHostPtr := flag.String("dest-host", "localhost", "postgres db to write to")
+	sourceDbNamePtr := flag.String("source-db", "pluto", "name of the source database")
+	destHostPtr := flag.String("dest-host", "localhost", "hostname (or unix socket) running db to write to")
 	destUserPtr := flag.String("dest-user", "postgres", "user to access write db as")
 	destPasswdPtr := flag.String("dest-passwd", "", "password for destination database")
+	destDbNamePtr := flag.String("dest-db", "projectlocker", "name of the destination database")
 	vidispineSiteId := flag.String("vs-site", "VX", "vidispine site identifier")
 	flag.Parse()
 
-	sourceDb, sourceErr := openConnection(sourceHostPtr, sourceUserPtr, sourcePasswdPtr)
+	sourceDb, sourceErr := openConnection(sourceHostPtr, sourceUserPtr, sourcePasswdPtr, sourceDbNamePtr, noSSL)
 	if sourceErr != nil {
 		log.Fatalf("Could not connect to source database %s as %s: %s ", *sourceHostPtr, *sourceUserPtr, sourceErr)
 	}
 
-	destDb, destErr := openConnection(destHostPtr, destUserPtr, destPasswdPtr)
+	destDb, destErr := openConnection(destHostPtr, destUserPtr, destPasswdPtr, destDbNamePtr, noSSL)
 	if destErr != nil {
 		log.Fatalf("Could not connect to source database %s as %s: %s ", *destHostPtr, *destUserPtr, destErr)
 	}
