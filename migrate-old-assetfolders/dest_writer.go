@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -27,14 +28,14 @@ func WriteDest(destDB *sql.DB, records chan NewPlutoAssetRecord) (chan interface
 				return
 			}
 
-			logQuery(updateStmt, nextRecord.CoreProjectId, nextRecord.AssetFolderPath)
-			//_, dbErr := destDB.Exec(updateStmt, nextRecord.CoreProjectId, nextRecord.AssetFolderPath)
-			//if dbErr != nil {
-			//	log.Print("ERROR WriteDest could not write to database: ", dbErr)
-			//	errChan <- dbErr
-			//  doneChan <- true
-			//	return
-			//}
+			//logQuery(updateStmt, nextRecord.CoreProjectId, nextRecord.AssetFolderPath)
+			_, dbErr := destDB.Exec(updateStmt, nextRecord.CoreProjectId, nextRecord.AssetFolderPath)
+			if dbErr != nil {
+				log.Print("ERROR WriteDest could not write to database: ", dbErr)
+				errChan <- dbErr
+			 doneChan <- true
+				return
+			}
 		}
 	}()
 
@@ -42,16 +43,20 @@ func WriteDest(destDB *sql.DB, records chan NewPlutoAssetRecord) (chan interface
 }
 
 func FindPlutoProjectId(destDb *sql.DB, vidispineId string) (int64, error) {
-	rows, err := destDb.Query(`SELECT id FROM "ProjectEntry" WHERE vidispineId=$1`, vidispineId)
+	rows, err := destDb.Query(`SELECT id FROM "ProjectEntry" WHERE s_vidispine_id=$1`, vidispineId)
 	if err != nil {
 		return 0, err
 	}
 	defer rows.Close()
 
 	var projectId int64
-	readErr := rows.Scan(&projectId)
-	if readErr != nil {
-		return 0, readErr
+	if rows.Next() {
+		readErr := rows.Scan(&projectId)
+		if readErr != nil {
+			return 0, readErr
+		}
+		return projectId, nil
+	} else {
+		return 0, errors.New("no project found for id")
 	}
-	return projectId, nil
 }

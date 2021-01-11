@@ -39,11 +39,14 @@ func main() {
 		log.Fatalf("Could not connect to source database %s as %s: %s ", *destHostPtr, *destUserPtr, destErr)
 	}
 
+	log.Print("TRACE main starting up source reader")
 	incomingRecordsChnl, incomingErrChnl := ReadSource(sourceDb, 20)
 
+	log.Print("TRACE main starting up dest writer")
 	outgoingRecordsChnl := make(chan NewPlutoAssetRecord, 20)
 	outgoingDoneChnl, outgoingErrChnl := WriteDest(destDb, outgoingRecordsChnl)
 
+	log.Print("TRACE main starting processing loop")
 	func() {
 		for {
 			select {
@@ -54,10 +57,12 @@ func main() {
 					return
 				}
 				vsid := fmt.Sprintf("%s-%d", *vidispineSiteId, newRecord.VSProjectId)
+				log.Printf("DEBUG got %s, looking up", vsid)
 				projectId, lookupErr := FindPlutoProjectId(destDb, vsid)
 				if lookupErr != nil {
 					log.Printf("ERROR Could not look up %s in pluto-core: %s", vsid, lookupErr)
 				} else {
+					log.Printf("DEBUG got %d for %s", projectId, vsid)
 					newRec := NewPlutoAssetRecord{
 						CoreProjectId:   projectId,
 						AssetFolderPath: newRecord.AssetFolderPath,

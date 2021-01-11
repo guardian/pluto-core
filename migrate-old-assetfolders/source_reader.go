@@ -27,7 +27,10 @@ func ReadSource(sourceDb *sql.DB, bufferSize int) (chan OldPlutoAssetRecord, cha
 				errorChannel <- err
 				return
 			}
+			recordsChannel <- record
 		}
+		log.Print("INFO ReadSource read all records")
+		recordsChannel <- OldPlutoAssetRecord{}
 	}()
 
 	return recordsChannel, errorChannel
