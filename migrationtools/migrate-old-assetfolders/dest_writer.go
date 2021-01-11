@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/lib/pq"
 	"log"
 	"strings"
 )
@@ -19,7 +20,7 @@ func WriteDest(destDB *sql.DB, records chan NewPlutoAssetRecord) (chan interface
 	errChan := make(chan error, 1)
 
 	go func() {
-		updateStmt := `INSERT INTO "ProjectMetadata" (k_project_entry, s_key, s_value) VALUES ($1, "created_asset_folder", $2)`
+		updateStmt := `INSERT INTO "ProjectMetadata" (k_project_entry, s_key, s_value) VALUES ($1, 'created_asset_folder', $2)`
 		for {
 			nextRecord := <-records
 			if nextRecord.CoreProjectId == 0 {
@@ -31,6 +32,17 @@ func WriteDest(destDB *sql.DB, records chan NewPlutoAssetRecord) (chan interface
 			//logQuery(updateStmt, nextRecord.CoreProjectId, nextRecord.AssetFolderPath)
 			_, dbErr := destDB.Exec(updateStmt, nextRecord.CoreProjectId, nextRecord.AssetFolderPath)
 			if dbErr != nil {
+				if pqerr, isPqErr := dbErr.(*pq.Error); isPqErr {
+					if pqerr.Code == "23505" { //unique constraint violation
+						log.Printf("Record already existed for asset folder on project %d", nextRecord.CoreProjectId)
+						continue
+					} else {
+						log.Printf("A database error occurred with code %s: %s", pqerr.Code, pqerr)
+						errChan <- pqerr
+						doneChan <- true
+						return
+					}
+				}
 				log.Print("ERROR WriteDest could not write to database: ", dbErr)
 				errChan <- dbErr
 				doneChan <- true

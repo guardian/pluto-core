@@ -3,6 +3,7 @@ package vidispine
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -48,10 +49,16 @@ initialise a new VidispineCommunicator object
 func NewVidispineCommunicator(vsBaseURI *url.URL, vsUser string, vsPasswd string, v4Compatible bool) VidispineCommunicator {
 	copiedBaseUri := *vsBaseURI
 	return &VidispineCommunicatorImp{
-		VSBaseUri:    &copiedBaseUri,
-		VSUser:       vsUser,
-		VSPasswd:     vsPasswd,
-		httpClient:   http.DefaultClient,
+		VSBaseUri: &copiedBaseUri,
+		VSUser:    vsUser,
+		VSPasswd:  vsPasswd,
+		httpClient: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			},
+		},
 		v4Compatible: v4Compatible,
 	}
 }
