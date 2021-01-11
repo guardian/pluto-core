@@ -33,7 +33,7 @@ func WriteDest(destDB *sql.DB, records chan NewPlutoAssetRecord) (chan interface
 			if dbErr != nil {
 				log.Print("ERROR WriteDest could not write to database: ", dbErr)
 				errChan <- dbErr
-			 doneChan <- true
+				doneChan <- true
 				return
 			}
 		}

@@ -1,0 +1,845 @@
+{
+  "shape": [
+    {
+      "id": "KP-4301210",
+      "essenceVersion": 0,
+      "tag": [
+        "lowaudio"
+      ],
+      "mimeType": [
+        "audio/mpeg"
+      ],
+      "containerComponent": {
+        "duration": {
+          "samples": 160728000,
+          "timeBase": {
+            "numerator": 1,
+            "denominator": 1000000
+          }
+        },
+        "format": "mp3",
+        "startTimestamp": {
+          "samples": 0,
+          "timeBase": {
+            "numerator": 1,
+            "denominator": 14112000
+          }
+        },
+        "mediaInfo": {
+          "property": [
+            {
+              "key": "Audio codecs",
+              "value": "MPEG-1 Audio layer 3"
+            },
+            {
+              "key": "Audio_Format_List",
+              "value": "MPEG Audio"
+            },
+            {
+              "key": "Audio_Format_WithHint_List",
+              "value": "MPEG Audio"
+            },
+            {
+              "key": "Codec",
+              "value": "MPEG Audio"
+            },
+            {
+              "key": "Codec/Extensions usually used",
+              "value": "m1a mpa1 mp1 m2a mpa2 mp2 mp3"
+            },
+            {
+              "key": "Commercial name",
+              "value": "MPEG Audio"
+            },
+            {
+              "key": "Complete name",
+              "value": "https://vidispine.gnm.int/APInoauth/proxy/a5dc48e9-3396-4f89-a693-29a23b0f9301?growing=false&multiput=true&vxa=false&ext=.mp3"
+            },
+            {
+              "key": "Count",
+              "value": "326"
+            },
+            {
+              "key": "Count of audio streams",
+              "value": "1"
+            },
+            {
+              "key": "Count of stream of this kind",
+              "value": "1"
+            },
+            {
+              "key": "Duration",
+              "value": "160728"
+            },
+            {
+              "key": "File extension",
+              "value": "mp3"
+            },
+            {
+              "key": "File name",
+              "value": "a5dc48e9-3396-4f89-a693-29a23b0f9301?growing=false&multiput=true&vxa=false&ext="
+            },
+            {
+              "key": "File size",
+              "value": "2572120"
+            },
+            {
+              "key": "Folder name",
+              "value": "https://vidispine.gnm.int/APInoauth/proxy"
+            },
+            {
+              "key": "Format",
+              "value": "MPEG Audio"
+            },
+            {
+              "key": "Format/Extensions usually used",
+              "value": "m1a mpa1 mp1 m2a mpa2 mp2 mp3"
+            },
+            {
+              "key": "Internet media type",
+              "value": "audio/mpeg"
+            },
+            {
+              "key": "Kind of stream",
+              "value": "General"
+            },
+            {
+              "key": "Overall bit rate",
+              "value": "128000"
+            },
+            {
+              "key": "Overall bit rate mode",
+              "value": "CBR"
+            },
+            {
+              "key": "Proportion of this stream",
+              "value": "0.00003"
+            },
+            {
+              "key": "Stream identifier",
+              "value": "0"
+            },
+            {
+              "key": "Stream size",
+              "value": "88"
+            },
+            {
+              "key": "Writing library",
+              "value": "Lavf54.128.100"
+            },
+            {
+              "key": "transcoder_version",
+              "value": "4.12.5-gf0c297f-18959"
+            }
+          ]
+        },
+        "file": [
+          {
+            "id": "KP-54054121",
+            "path": "Multimedia_Audio/Chips_with_Everything_2019/danielle_stephens_CwE_-_Week_51_-_Memorialising_online/Music & Atmos/ES_This Is the Place STEMS DRUMS - Hysics_lowaudio.mp3",
+            "uri": [
+              "omms://ghcvhncvnvbcnvcncvbncvnn/nbmbnvmbnvnbvm/mnb,bnmnbmbvmvbnm/Multimedia_Audio/Chips_with_Everything_2019/danielle_stephens_CwE_-_Week_51_-_Memorialising_online/Music%20&%20Atmos/ES_This%20Is%20the%20Place%20STEMS%20DRUMS%20-%20Hysics_lowaudio.mp3"
+            ],
+            "state": "CLOSED",
+            "size": 2572120,
+            "hash": "f25188efc1b42534097b283510d0ee221754d621",
+            "timestamp": "2020-10-10T12:20:00.065+0000",
+            "refreshFlag": 1,
+            "storage": "KP-76",
+            "metadata": {
+              "field": [
+                {
+                  "key": "MXFS_PARENTOID",
+                  "value": ""
+                },
+                {
+                  "key": "MXFS_CREATION_TIME",
+                  "value": "1575640916081"
+                },
+                {
+                  "key": "MXFS_CREATIONDAY",
+                  "value": "6"
+                },
+                {
+                  "key": "MXFS_CATEGORY",
+                  "value": "3"
+                },
+                {
+                  "key": "MXFS_ACCESS_TIME",
+                  "value": "1576131466054"
+                },
+                {
+                  "key": "MXFS_ARCHDAY",
+                  "value": "6"
+                },
+                {
+                  "key": "MXFS_INTRASH",
+                  "value": "false"
+                },
+                {
+                  "key": "uuid",
+                  "value": "5b933b4e-f056-11e9-8e87-90601928f297-4667"
+                },
+                {
+                  "key": "MXFS_ARCHYEAR",
+                  "value": "2019"
+                },
+                {
+                  "key": "path",
+                  "value": "."
+                },
+                {
+                  "key": "MXFS_ARCHIVE_TIME",
+                  "value": "1575640916081"
+                },
+                {
+                  "key": "MXFS_MODIFICATION_TIME",
+                  "value": "1575640983500"
+                },
+                {
+                  "key": "MXFS_ARCHMONTH",
+                  "value": "12"
+                },
+                {
+                  "key": "MXFS_CREATIONYEAR",
+                  "value": "2019"
+                },
+                {
+                  "key": "MXFS_CREATIONMONTH",
+                  "value": "12"
+                },
+                {
+                  "key": "MXFS_FILENAME",
+                  "value": "Multimedia_Audio/Chips_with_Everything_2019/danielle_stephens_CwE_-_Week_51_-_Memorialising_online/Music & Atmos/ES_This Is the Place STEMS DRUMS - Hysics_lowaudio.mp3"
+                }
+              ]
+            }
+          }
+        ],
+        "id": "KP-10413089",
+        "metadata": [
+          {
+            "key": "XMP_METADATA",
+            "value": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><?xpacket begin=\"﻿\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?><x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"XMP Core 5.1.2\">\n   <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n      <rdf:Description rdf:about=\"\"/>\n   </rdf:RDF>\n</x:xmpmeta><?xpacket end=\"w\"?>"
+          },
+          {
+            "key": "componentOriginalFilename",
+            "value": "Multimedia_Audio/Chips_with_Everything_2019/danielle_stephens_CwE_-_Week_51_-_Memorialising_online/Music & Atmos/ES_This Is the Place STEMS DRUMS - Hysics_lowaudio.mp3"
+          },
+          {
+            "key": "transcoder_version",
+            "value": "4.12.5-gf0c297f-18959"
+          },
+          {
+            "key": "encoder",
+            "value": "Lavf54.128.100"
+          }
+        ]
+      },
+      "audioComponent": [
+        {
+          "channelCount": 2,
+          "channelLayout": 3,
+          "sampleFormat": "AV_SAMPLE_FMT_S16",
+          "frameSize": 1152,
+          "mediaInfo": {
+            "property": [
+              {
+                "key": "Bit rate",
+                "value": "128000"
+              },
+              {
+                "key": "Bit rate mode",
+                "value": "CBR"
+              },
+              {
+                "key": "Channel(s)",
+                "value": "2"
+              },
+              {
+                "key": "Codec",
+                "value": "MPA1L3"
+              },
+              {
+                "key": "Codec profile",
+                "value": "Joint stereo"
+              },
+              {
+                "key": "Commercial name",
+                "value": "MPEG Audio"
+              },
+              {
+                "key": "Compression mode",
+                "value": "Lossy"
+              },
+              {
+                "key": "Count",
+                "value": "275"
+              },
+              {
+                "key": "Count of stream of this kind",
+                "value": "1"
+              },
+              {
+                "key": "Duration",
+                "value": "160728"
+              },
+              {
+                "key": "Format",
+                "value": "MPEG Audio"
+              },
+              {
+                "key": "Format profile",
+                "value": "Layer 3"
+              },
+              {
+                "key": "Format settings",
+                "value": "Joint stereo / MS Stereo"
+              },
+              {
+                "key": "Format version",
+                "value": "Version 1"
+              },
+              {
+                "key": "Frame count",
+                "value": "6697"
+              },
+              {
+                "key": "Internet media type",
+                "value": "audio/mpeg"
+              },
+              {
+                "key": "Kind of stream",
+                "value": "Audio"
+              },
+              {
+                "key": "Mode",
+                "value": "Joint stereo"
+              },
+              {
+                "key": "Mode extension",
+                "value": "MS Stereo"
+              },
+              {
+                "key": "Proportion of this stream",
+                "value": "0.99982"
+              },
+              {
+                "key": "Samples count",
+                "value": "7714944"
+              },
+              {
+                "key": "Sampling rate",
+                "value": "48000"
+              },
+              {
+                "key": "Stream identifier",
+                "value": "0"
+              },
+              {
+                "key": "Stream size",
+                "value": "2571648"
+              }
+            ],
+            "Bit_rate_mode": "CBR"
+          },
+          "file": [
+            {
+              "id": "KP-54054121",
+              "path": "Multimedia_Audio/Chips_with_Everything_2019/danielle_stephens_CwE_-_Week_51_-_Memorialising_online/Music & Atmos/ES_This Is the Place STEMS DRUMS - Hysics_lowaudio.mp3",
+              "uri": [
+                "omms://gfdgdsgfdsgdfgs/jhgfjhgjgf/iuyiugkjhkhjk/Multimedia_Audio/Chips_with_Everything_2019/danielle_stephens_CwE_-_Week_51_-_Memorialising_online/Music%20&%20Atmos/ES_This%20Is%20the%20Place%20STEMS%20DRUMS%20-%20Hysics_lowaudio.mp3"
+              ],
+              "state": "CLOSED",
+              "size": 2572120,
+              "hash": "f25188efc1b42534097b283510d0ee221754d621",
+              "timestamp": "2020-10-10T12:20:00.065+0000",
+              "refreshFlag": 1,
+              "storage": "KP-76",
+              "metadata": {
+                "field": [
+                  {
+                    "key": "MXFS_PARENTOID",
+                    "value": ""
+                  },
+                  {
+                    "key": "MXFS_CREATION_TIME",
+                    "value": "1575640916081"
+                  },
+                  {
+                    "key": "MXFS_CREATIONDAY",
+                    "value": "6"
+                  },
+                  {
+                    "key": "MXFS_CATEGORY",
+                    "value": "3"
+                  },
+                  {
+                    "key": "MXFS_ACCESS_TIME",
+                    "value": "1576131466054"
+                  },
+                  {
+                    "key": "MXFS_ARCHDAY",
+                    "value": "6"
+                  },
+                  {
+                    "key": "MXFS_INTRASH",
+                    "value": "false"
+                  },
+                  {
+                    "key": "uuid",
+                    "value": "5b933b4e-f056-11e9-8e87-90601928f297-4667"
+                  },
+                  {
+                    "key": "MXFS_ARCHYEAR",
+                    "value": "2019"
+                  },
+                  {
+                    "key": "path",
+                    "value": "."
+                  },
+                  {
+                    "key": "MXFS_ARCHIVE_TIME",
+                    "value": "1575640916081"
+                  },
+                  {
+                    "key": "MXFS_MODIFICATION_TIME",
+                    "value": "1575640983500"
+                  },
+                  {
+                    "key": "MXFS_ARCHMONTH",
+                    "value": "12"
+                  },
+                  {
+                    "key": "MXFS_CREATIONYEAR",
+                    "value": "2019"
+                  },
+                  {
+                    "key": "MXFS_CREATIONMONTH",
+                    "value": "12"
+                  },
+                  {
+                    "key": "MXFS_FILENAME",
+                    "value": "Multimedia_Audio/Chips_with_Everything_2019/danielle_stephens_CwE_-_Week_51_-_Memorialising_online/Music & Atmos/ES_This Is the Place STEMS DRUMS - Hysics_lowaudio.mp3"
+                  }
+                ]
+              }
+            }
+          ],
+          "id": "KP-10413090",
+          "metadata": [
+            {
+              "key": "componentOriginalFilename",
+              "value": "Multimedia_Audio/Chips_with_Everything_2019/danielle_stephens_CwE_-_Week_51_-_Memorialising_online/Music & Atmos/ES_This Is the Place STEMS DRUMS - Hysics_lowaudio.mp3"
+            }
+          ],
+          "codec": "mp3",
+          "timeBase": {
+            "numerator": 1,
+            "denominator": 48000
+          },
+          "itemTrack": "A1",
+          "essenceStreamId": 0,
+          "bitrate": 128000,
+          "numberOfPackets": 6697,
+          "duration": {
+            "samples": 2268193536,
+            "timeBase": {
+              "numerator": 1,
+              "denominator": 14112000
+            }
+          },
+          "startTimestamp": {
+            "samples": 0,
+            "timeBase": {
+              "numerator": 1,
+              "denominator": 14112000
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "KP-4301209",
+      "essenceVersion": 0,
+      "tag": [
+        "original"
+      ],
+      "mimeType": [
+        "audio/mpeg"
+      ],
+      "containerComponent": {
+        "duration": {
+          "samples": 160728000,
+          "timeBase": {
+            "numerator": 1,
+            "denominator": 1000000
+          }
+        },
+        "format": "mp3",
+        "startTimestamp": {
+          "samples": 0,
+          "timeBase": {
+            "numerator": 1,
+            "denominator": 14112000
+          }
+        },
+        "mediaInfo": {
+          "property": [
+            {
+              "key": "Audio codecs",
+              "value": "MPEG-1 Audio layer 3"
+            },
+            {
+              "key": "Audio_Format_List",
+              "value": "MPEG Audio"
+            },
+            {
+              "key": "Audio_Format_WithHint_List",
+              "value": "MPEG Audio"
+            },
+            {
+              "key": "BPM",
+              "value": "115"
+            },
+            {
+              "key": "Codec",
+              "value": "MPEG Audio"
+            },
+            {
+              "key": "Codec/Extensions usually used",
+              "value": "m1a mpa1 mp1 m2a mpa2 mp2 mp3"
+            },
+            {
+              "key": "Commercial name",
+              "value": "MPEG Audio"
+            },
+            {
+              "key": "Complete name",
+              "value": "https://vidispine.gnm.int/APInoauth/proxy/228e2053-972a-43be-afea-121daed7ee78?growing=false&multiput=true&vxa=false&ext=.mp3"
+            },
+            {
+              "key": "Composer",
+              "value": "Hysics"
+            },
+            {
+              "key": "Count",
+              "value": "325"
+            },
+            {
+              "key": "Count of audio streams",
+              "value": "1"
+            },
+            {
+              "key": "Count of stream of this kind",
+              "value": "1"
+            },
+            {
+              "key": "Duration",
+              "value": "160728"
+            },
+            {
+              "key": "File extension",
+              "value": "mp3"
+            },
+            {
+              "key": "File name",
+              "value": "228e2053-972a-43be-afea-121daed7ee78?growing=false&multiput=true&vxa=false&ext="
+            },
+            {
+              "key": "File size",
+              "value": "6437729"
+            },
+            {
+              "key": "Folder name",
+              "value": "https://vidispine.gnm.int/APInoauth/proxy"
+            },
+            {
+              "key": "Format",
+              "value": "MPEG Audio"
+            },
+            {
+              "key": "Format/Extensions usually used",
+              "value": "m1a mpa1 mp1 m2a mpa2 mp2 mp3"
+            },
+            {
+              "key": "Genre",
+              "value": "Electro, Suspense"
+            },
+            {
+              "key": "Grouping",
+              "value": "Mysterious, Suspense"
+            },
+            {
+              "key": "Internet media type",
+              "value": "audio/mpeg"
+            },
+            {
+              "key": "Kind of stream",
+              "value": "General"
+            },
+            {
+              "key": "Overall bit rate",
+              "value": "320000"
+            },
+            {
+              "key": "Overall bit rate mode",
+              "value": "CBR"
+            },
+            {
+              "key": "Performer",
+              "value": "Hysics"
+            },
+            {
+              "key": "Proportion of this stream",
+              "value": "0.00119"
+            },
+            {
+              "key": "Recorded date",
+              "value": "2013"
+            },
+            {
+              "key": "Stream identifier",
+              "value": "0"
+            },
+            {
+              "key": "Stream size",
+              "value": "7649"
+            },
+            {
+              "key": "Title",
+              "value": "This Is the Place STEMS DRUMS"
+            },
+            {
+              "key": "Title, more info",
+              "value": "High"
+            },
+            {
+              "key": "Track name",
+              "value": "This Is the Place STEMS DRUMS"
+            },
+            {
+              "key": "Track_More",
+              "value": "High"
+            },
+            {
+              "key": "Writing library",
+              "value": "LAME3.99r"
+            }
+          ]
+        },
+        "file": [
+          {
+            "id": "KP-54054111",
+            "path": "Multimedia_Audio/Chips_with_Everything_2019/danielle_stephens_CwE_-_Week_51_-_Memorialising_online/Music & Atmos/ES_This Is the Place STEMS DRUMS - Hysics.mp3",
+            "state": "LOST",
+            "size": -1,
+            "timestamp": "2020-04-30T23:18:46.640+0000",
+            "refreshFlag": 1,
+            "storage": "KP-8",
+            "metadata": {}
+          }
+        ],
+        "id": "KP-10413062",
+        "metadata": [
+          {
+            "key": "date",
+            "value": "2013"
+          },
+          {
+            "key": "TIT3",
+            "value": "High"
+          },
+          {
+            "key": "TIT1",
+            "value": "Mysterious, Suspense"
+          },
+          {
+            "key": "artist",
+            "value": "Hysics"
+          },
+          {
+            "key": "XMP_METADATA",
+            "value": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><?xpacket begin=\"﻿\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?><x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"XMP Core 5.1.2\">\n   <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n      <rdf:Description xmlns:xmpDM=\"http://ns.adobe.com/xmp/1.0/DynamicMedia/\" rdf:about=\"\">\n         <xmpDM:artist>Hysics</xmpDM:artist>\n         <xmpDM:genre>Electro, Suspense</xmpDM:genre>\n         <xmpDM:composer>Hysics</xmpDM:composer>\n      </rdf:Description>\n      <rdf:Description xmlns:dc=\"http://purl.org/dc/elements/1.1/\" rdf:about=\"\">\n         <dc:title>\n            <rdf:Alt>\n               <rdf:li xml:lang=\"x-default\">This Is the Place STEMS DRUMS</rdf:li>\n            </rdf:Alt>\n         </dc:title>\n      </rdf:Description>\n      <rdf:Description xmlns:xmp=\"http://ns.adobe.com/xap/1.0/\" rdf:about=\"\">\n         <xmp:CreateDate>2013</xmp:CreateDate>\n      </rdf:Description>\n   </rdf:RDF>\n</x:xmpmeta><?xpacket end=\"w\"?>"
+          },
+          {
+            "key": "composer",
+            "value": "Hysics"
+          },
+          {
+            "key": "componentOriginalFilename",
+            "value": "Multimedia_Audio/Chips_with_Everything_2019/danielle_stephens_CwE_-_Week_51_-_Memorialising_online/Music & Atmos/ES_This Is the Place STEMS DRUMS - Hysics.mp3"
+          },
+          {
+            "key": "genre",
+            "value": "Electro, Suspense"
+          },
+          {
+            "key": "TBPM",
+            "value": "115"
+          },
+          {
+            "key": "title",
+            "value": "This Is the Place STEMS DRUMS"
+          }
+        ]
+      },
+      "audioComponent": [
+        {
+          "channelCount": 2,
+          "channelLayout": 3,
+          "sampleFormat": "AV_SAMPLE_FMT_S16",
+          "frameSize": 1152,
+          "mediaInfo": {
+            "property": [
+              {
+                "key": "Bit rate",
+                "value": "320000"
+              },
+              {
+                "key": "Bit rate mode",
+                "value": "CBR"
+              },
+              {
+                "key": "Channel(s)",
+                "value": "2"
+              },
+              {
+                "key": "Codec",
+                "value": "MPA1L3"
+              },
+              {
+                "key": "Codec profile",
+                "value": "Joint stereo"
+              },
+              {
+                "key": "Commercial name",
+                "value": "MPEG Audio"
+              },
+              {
+                "key": "Compression mode",
+                "value": "Lossy"
+              },
+              {
+                "key": "Count",
+                "value": "275"
+              },
+              {
+                "key": "Count of stream of this kind",
+                "value": "1"
+              },
+              {
+                "key": "Duration",
+                "value": "160728"
+              },
+              {
+                "key": "Encoding settings",
+                "value": "-m j -V 4 -q 3 -lowpass 20.5"
+              },
+              {
+                "key": "Format",
+                "value": "MPEG Audio"
+              },
+              {
+                "key": "Format profile",
+                "value": "Layer 3"
+              },
+              {
+                "key": "Format settings",
+                "value": "Joint stereo"
+              },
+              {
+                "key": "Format version",
+                "value": "Version 1"
+              },
+              {
+                "key": "Frame count",
+                "value": "6697"
+              },
+              {
+                "key": "Internet media type",
+                "value": "audio/mpeg"
+              },
+              {
+                "key": "Kind of stream",
+                "value": "Audio"
+              },
+              {
+                "key": "Mode",
+                "value": "Joint stereo"
+              },
+              {
+                "key": "Proportion of this stream",
+                "value": "0.99866"
+              },
+              {
+                "key": "Samples count",
+                "value": "7714944"
+              },
+              {
+                "key": "Sampling rate",
+                "value": "48000"
+              },
+              {
+                "key": "Stream identifier",
+                "value": "0"
+              },
+              {
+                "key": "Stream size",
+                "value": "6429120"
+              },
+              {
+                "key": "Writing library",
+                "value": "LAME3.99r"
+              }
+            ],
+            "Bit_rate_mode": "CBR"
+          },
+          "file": [
+            {
+              "id": "KP-54054111",
+              "path": "Multimedia_Audio/Chips_with_Everything_2019/danielle_stephens_CwE_-_Week_51_-_Memorialising_online/Music & Atmos/ES_This Is the Place STEMS DRUMS - Hysics.mp3",
+              "state": "LOST",
+              "size": -1,
+              "timestamp": "2020-04-30T23:18:46.640+0000",
+              "refreshFlag": 1,
+              "storage": "KP-8",
+              "metadata": {}
+            }
+          ],
+          "id": "KP-10413063",
+          "metadata": [
+            {
+              "key": "componentOriginalFilename",
+              "value": "Multimedia_Audio/Chips_with_Everything_2019/danielle_stephens_CwE_-_Week_51_-_Memorialising_online/Music & Atmos/ES_This Is the Place STEMS DRUMS - Hysics.mp3"
+            }
+          ],
+          "codec": "mp3",
+          "timeBase": {
+            "numerator": 1,
+            "denominator": 48000
+          },
+          "itemTrack": "A1",
+          "essenceStreamId": 0,
+          "bitrate": 320000,
+          "numberOfPackets": 6697,
+          "duration": {
+            "samples": 2268193536,
+            "timeBase": {
+              "numerator": 1,
+              "denominator": 14112000
+            }
+          },
+          "startTimestamp": {
+            "samples": 0,
+            "timeBase": {
+              "numerator": 1,
+              "denominator": 14112000
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "id": "KP-3610200"
+}
