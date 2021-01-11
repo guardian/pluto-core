@@ -1,8 +1,11 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
+	"fmt"
 	"github.com/fredex42/fix-media-flags/vidispine"
+	_ "github.com/lib/pq"
 	"log"
 	"net/url"
 )
@@ -32,11 +35,24 @@ func CheckForMatches(ts *vidispine.VSMetaTimespan, fieldName string, expectedVal
 	}
 }
 
+func openConnection(host *string, user *string, passwd *string, dbName *string, noSSL *bool) (*sql.DB, error) {
+	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s", *host, *user, *passwd, *dbName)
+	if *noSSL {
+		connStr += " sslmode=disable"
+	}
+	return sql.Open("postgres", connStr)
+}
+
 func main() {
 	vsBaseUriPtr := flag.String("vs-base", "http://localhost:8080", "Vidispine base uri")
 	vsUserPtr := flag.String("vs-user", "admin", "Vidispine username")
 	vsPasswdPtr := flag.String("vs-pass", "", "Vidispine password")
 	resultPageSize := flag.Int("page-size", 100, "number of records to get at once")
+	destHostPtr := flag.String("dest-host", "localhost", "hostname (or unix socket) running db to write to")
+	destUserPtr := flag.String("dest-user", "postgres", "user to access write db as")
+	destPasswdPtr := flag.String("dest-passwd", "", "password for destination database")
+	destDbNamePtr := flag.String("dest-db", "projectlocker", "name of the destination database")
+	noSSL := flag.Bool("db-nossl", false, "don't use SSL when connecting to database")
 	flag.Parse()
 
 	vsUri, uriErr := url.Parse(*vsBaseUriPtr)
@@ -55,14 +71,21 @@ func main() {
 	//	"gnm_storage_rule_sensitive",
 	//}
 
-	resultsChan, errChan := vsComm.PerformCollectionSearchAsync(doc, *resultPageSize, []string{})
+	destDb, dbErr := openConnection(destHostPtr, destUserPtr, destPasswdPtr, destDbNamePtr, noSSL)
+	if dbErr != nil {
+		log.Fatal("Could not connect to destination database: ", dbErr)
+	}
 
+	resultsChan, errChan := vsComm.PerformCollectionSearchAsync(doc, *resultPageSize, []string{})
+	writeChan := make(chan ProjectRecord, 10)
+	doneChan, destErrChan := WriteDest(destDb, writeChan)
 	func() {
 		for {
 			select {
 			case record := <-resultsChan:
 				if record == nil {
 					log.Print("Received nil record, terminating")
+					writeChan <- ProjectRecord{}
 					return
 				}
 				var project ProjectRecord
@@ -89,12 +112,19 @@ func main() {
 					}
 				}
 				log.Printf("DEBUG ProjectRecord is %v", project)
+				writeChan <- project
 			case err := <-errChan:
 				log.Printf("ERROR from VS search: %s", err)
+				writeChan <- ProjectRecord{}
+				return
+			case err := <-destErrChan:
+				log.Printf("ERROR from db writer: %s", err)
 				return
 			}
 		}
 	}()
 
+	log.Print("Waiting for writer to complete...")
+	<-doneChan
 	log.Print("All done")
 }
