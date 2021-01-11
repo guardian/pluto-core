@@ -250,8 +250,11 @@ class App extends React.Component {
               <Route path="/type/" component={ProjectTypeList} />
               <Route
                 path="/project/new"
-                render={() => (
-                  <ProjectCreateMultistep isAdmin={this.state.isAdmin} />
+                render={(props) => (
+                  <ProjectCreateMultistep
+                    isAdmin={this.state.isAdmin}
+                    {...props}
+                  />
                 )}
               />
               <Route
