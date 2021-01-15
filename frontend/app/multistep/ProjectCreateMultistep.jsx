@@ -243,7 +243,10 @@ class ProjectCreateMultistep extends React.Component {
           />
         ),
       },
-      {
+    ];
+
+    if (this.props.isAdmin) {
+      steps.push({
         name: "Destination storage",
         component: (
           <DestinationStorageComponent
@@ -252,28 +255,29 @@ class ProjectCreateMultistep extends React.Component {
             selectionUpdated={this.storageSelectionUpdated}
           />
         ),
-      },
-      {
-        name: "Summary",
-        component: (
-          <ProjectCompletionComponent
-            projectTemplates={this.state.projectTemplates}
-            selectedProjectTemplate={Number(this.state.selectedProjectTemplate)}
-            storages={this.state.storages}
-            selectedStorage={this.state.selectedStorage}
-            projectName={this.state.projectName}
-            projectFilename={this.state.projectFilename}
-            selectedWorkingGroupId={this.state.selectedWorkingGroup}
-            selectedCommissionId={this.state.selectedCommissionId}
-            wgList={this.state.wgList}
-            deletable={this.state.deletable}
-            deep_archive={this.state.deep_archive}
-            sensitive={this.state.sensitive}
-            productionOffice={this.state.productionOffice}
-          />
-        ),
-      },
-    ];
+      });
+    }
+
+    steps.push({
+      name: "Summary",
+      component: (
+        <ProjectCompletionComponent
+          projectTemplates={this.state.projectTemplates}
+          selectedProjectTemplate={Number(this.state.selectedProjectTemplate)}
+          storages={this.state.storages}
+          selectedStorage={this.state.selectedStorage}
+          projectName={this.state.projectName}
+          projectFilename={this.state.projectFilename}
+          selectedWorkingGroupId={this.state.selectedWorkingGroup}
+          selectedCommissionId={this.state.selectedCommissionId}
+          wgList={this.state.wgList}
+          deletable={this.state.deletable}
+          deep_archive={this.state.deep_archive}
+          sensitive={this.state.sensitive}
+          productionOffice={this.state.productionOffice}
+        />
+      ),
+    });
 
     return <Multistep showNavigation={true} steps={steps} />;
   }

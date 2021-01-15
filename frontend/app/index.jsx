@@ -82,6 +82,10 @@ axios.interceptors.request.use(function (config) {
   return config;
 });
 
+function parseBool(str) {
+  return /^true$/i.test(str);
+}
+
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -149,13 +153,13 @@ class App extends React.Component {
 
   async onLoginValid(valid, loginData) {
     // Fetch the oauth config
-    let data;
+    let oAuthConfig;
     try {
       const response = await fetch("/meta/oauth/config.json");
 
       if (response.status === 200) {
-        data = await response.json();
-        this.setState({ plutoConfig: data });
+        oAuthConfig = await response.json();
+        this.setState({ plutoConfig: oAuthConfig });
       }
     } catch (error) {
       console.error(error);
@@ -168,7 +172,9 @@ class App extends React.Component {
         currentUsername: loginData
           ? loginData.preferred_username ?? loginData.username
           : "",
-        isAdmin: loginData ?? loginData[data.adminClaimName],
+        isAdmin: loginData
+          ? parseBool(loginData[oAuthConfig.adminClaimName])
+          : false,
       });
     }
 
@@ -242,7 +248,15 @@ class App extends React.Component {
               />
               <Route path="/type/:itemid" component={ProjectTypeMultistep} />
               <Route path="/type/" component={ProjectTypeList} />
-              <Route path="/project/new" component={ProjectCreateMultistep} />
+              <Route
+                path="/project/new"
+                render={(props) => (
+                  <ProjectCreateMultistep
+                    isAdmin={this.state.isAdmin}
+                    {...props}
+                  />
+                )}
+              />
               <Route
                 path="/project/:itemid/delete"
                 component={ProjectDeleteComponent}
