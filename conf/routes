@@ -77,6 +77,7 @@ PUT     /api/default/:key               @controllers.DefaultsController.putForKe
 DELETE  /api/default/:key               @controllers.DefaultsController.deleteForKey(key:String)
 
 GET     /api/pluto/workinggroup            @controllers.PlutoWorkingGroupController.list(startAt:Int ?=0,length:Int ?=100)
+OPTIONS /api/pluto/workinggroup             @controllers.Application.corsOptions
 PUT     /api/pluto/workinggroup/:id        @controllers.PlutoWorkingGroupController.update(id:Int)
 GET     /api/pluto/workinggroup/:id        @controllers.PlutoWorkingGroupController.getitem(id:Int)
 POST    /api/pluto/workinggroup            @controllers.PlutoWorkingGroupController.create
