@@ -108,13 +108,13 @@ class Application @Inject() (val cc:ControllerComponents,
     * see https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request
     * @return
     */
-  def authenticateOptions = Action { request=>
+  def corsOptions = Action { request=>
     checkCorsOrigins(request) match {
       case Right(allowedOrigin) =>
         val returnHeaders = Map(
-          "Access-Control-Allow-Methods" -> "POST, OPTIONS",
+          "Access-Control-Allow-Methods" -> "POST, PUT, OPTIONS",
           "Access-Control-Allow-Origin" -> allowedOrigin,
-          "Access-Control-Allow-Headers" -> "content-type",
+          "Access-Control-Allow-Headers" -> "content-type, authorization",
         )
         Result(
           ResponseHeader(204, returnHeaders),

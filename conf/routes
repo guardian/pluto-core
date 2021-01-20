@@ -37,6 +37,7 @@ DELETE  /api/template/:id                  @controllers.ProjectTemplateControlle
 GET     /api/project                        @controllers.ProjectEntryController.list(startAt:Int ?=0,length:Int ?=100)
 GET     /api/project/list                   @controllers.ProjectEntryController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/project/list                   @controllers.ProjectEntryController.listFiltered(startAt:Int ?=0,length:Int ?=100)
+OPTIONS /api/project/list                   @controllers.Application.corsOptions
 GET     /api/project/distinctowners         @controllers.ProjectEntryController.distinctOwners
 
 PUT     /api/project                        @controllers.ProjectEntryController.create
@@ -76,6 +77,7 @@ PUT     /api/default/:key               @controllers.DefaultsController.putForKe
 DELETE  /api/default/:key               @controllers.DefaultsController.deleteForKey(key:String)
 
 GET     /api/pluto/workinggroup            @controllers.PlutoWorkingGroupController.list(startAt:Int ?=0,length:Int ?=100)
+OPTIONS /api/pluto/workinggroup             @controllers.Application.corsOptions
 PUT     /api/pluto/workinggroup/:id        @controllers.PlutoWorkingGroupController.update(id:Int)
 GET     /api/pluto/workinggroup/:id        @controllers.PlutoWorkingGroupController.getitem(id:Int)
 POST    /api/pluto/workinggroup            @controllers.PlutoWorkingGroupController.create
@@ -88,7 +90,7 @@ GET     /api/pluto/commission/:id          @controllers.PlutoCommissionControlle
 POST    /api/pluto/commission              @controllers.PlutoCommissionController.createByAnyone
 GET     /api/pluto/commission              @controllers.PlutoCommissionController.list(startAt:Int ?=0, length:Int ?=100)
 PUT     /api/pluto/commission/list         @controllers.PlutoCommissionController.listFilteredAndSorted(startAt:Int ?=0, length:Int ?=100, sort:String ?="created", sortDirection:String ?="desc")
-OPTIONS /api/pluto/commission/list          @controllers.PlutoCommissionController.listOptions
+OPTIONS /api/pluto/commission/list         @controllers.Application.corsOptions
 PUT     /api/pluto/commission/:id           @controllers.PlutoCommissionController.updateByAnyone(id:Int)
 PUT     /api/pluto/commission/:id/status   @controllers.PlutoCommissionController.updateStatus(id:Int)
 
@@ -96,9 +98,10 @@ GET     /api/assetfolder/lookup            @controllers.AssetFolderController.as
 GET     /api/project/:projectId/assetfolder @controllers.AssetFolderController.assetFolderForProject(projectId:Int)
 
 POST    /api/login                         @controllers.Application.authenticate
-OPTIONS /api/login                         @controllers.Application.authenticateOptions
+OPTIONS /api/login                         @controllers.Application.corsOptions
 POST    /api/logout                        @controllers.Application.logout
 GET     /api/isLoggedIn                    @controllers.Application.isLoggedIn
+OPTIONS /api/isLoggedIn                     @controllers.Application.corsOptions
 GET     /api/isAdmin                       @controllers.Application.checkIsAdmin
 
 GET     /api/system/plutoconfig            @controllers.System.plutoconfig
