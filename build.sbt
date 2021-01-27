@@ -80,20 +80,13 @@ libraryDependencies ++= Seq(
 // https://mvnrepository.com/artifact/org.python/jython
 libraryDependencies += "org.python" % "jython" % "2.7.2"
 
-//val jacksonVersion = "2.10.5.1"
-val jacksonVersion = "2.11.4" //careful, we were using 2.10.x before
-// upgrade jackson-databind to remove Deserialization of Untrusted Data vuln
-libraryDependencies ++= Seq(
-  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
-  "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % jacksonVersion
-)
 
 // upgrade guava
 // https://mvnrepository.com/artifact/com.google.guava/guava
 libraryDependencies += "com.google.guava" % "guava" % "30.1-jre"
 
 val akkaManagementVersion = "1.0.8"
-val akkaVersion = "2.6.6"
+val akkaVersion = "2.6.11"
 //messaging persistence and clustering
 libraryDependencies ++= Seq(
   "com.lightbend.akka.management" %% "akka-management" % akkaManagementVersion,
