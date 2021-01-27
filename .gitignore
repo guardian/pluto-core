@@ -22,3 +22,5 @@ bundle.js
 *$py.class
 /postrun/references/
 /scripts/envfile-for-ldap.env
+junit-tests
+journal/

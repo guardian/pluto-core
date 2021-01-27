@@ -74,7 +74,7 @@ backend:
     SBT_JUNIT_OUTPUT: ./junit-tests
   script:
     - if [ -d ".sbt" ]; then rm -rf ${HOME}/.sbt; mv .sbt ${HOME}; fi
-    - if [ -d "junit-tests" ]; then mkdir junit-tests; fi
+    - if [ ! -d "junit-tests" ]; then mkdir junit-tests; fi
     - sbt test:compile
     - sbt test
     - mv ${HOME}/.sbt .sbt || true
