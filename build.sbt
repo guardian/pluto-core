@@ -58,14 +58,14 @@ unmanagedResourceDirectories in Test +=  (baseDirectory ( _ /"target/web/public/
 resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 
 libraryDependencies ++= Seq(
-  "org.postgresql" % "postgresql" % "42.2.5",
+  "org.postgresql" % "postgresql" % "42.2.13.jre6",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-slick
   "com.typesafe.play" %% "play-slick" % "4.0.2",
   "com.typesafe.play" %% "play-slick-evolutions" % "4.0.2",
   "commons-io" % "commons-io" % "2.6",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-json-joda
   "com.typesafe.play" %% "play-json-joda" % "2.7.4",
-  "commons-codec" % "commons-codec" % "1.12",
+  "commons-codec" % "commons-codec" % "1.13",
 )
 // https://mvnrepository.com/artifact/com.typesafe.slick/slick
 libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
@@ -73,19 +73,24 @@ libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
 
 //authentication
 libraryDependencies ++= Seq(
-  "com.unboundid" % "unboundid-ldapsdk" % "4.0.5",
+  "com.unboundid" % "unboundid-ldapsdk" % "5.0.0",
   "com.nimbusds" % "nimbus-jose-jwt" % "8.17",
 )
 
 // https://mvnrepository.com/artifact/org.python/jython
 libraryDependencies += "org.python" % "jython" % "2.7.2"
 
+//val jacksonVersion = "2.10.5.1"
+val jacksonVersion = "2.11.4" //careful, we were using 2.10.x before
 // upgrade jackson-databind to remove Deserialization of Untrusted Data vuln
-libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.4"
+libraryDependencies ++= Seq(
+  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
+  "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor" % jacksonVersion
+)
 
-// upgrade guava to remove Deserialization of Untruseted Data vuln
+// upgrade guava
 // https://mvnrepository.com/artifact/com.google.guava/guava
-libraryDependencies += "com.google.guava" % "guava" % "25.1-jre"
+libraryDependencies += "com.google.guava" % "guava" % "30.1-jre"
 
 val akkaManagementVersion = "1.0.8"
 val akkaVersion = "2.6.6"
