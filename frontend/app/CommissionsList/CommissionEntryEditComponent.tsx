@@ -174,15 +174,11 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
         </Grid>
         {/*right-hand column*/}
         <Grid item xs={6}>
-          <ChipInput
+          <ChipsWithWarning
+            classes={classes}
             label="Owner"
-            value={props.commission.owner == "" ? [] : [props.commission.owner]}
-            onAdd={(newText: string) =>
-              props.onChange({ ...props.commission, owner: newText })
-            }
-            onDelete={(deleted: string) =>
-              props.onChange({ ...props.commission, owner: "" })
-            }
+            onChange={props.onChange}
+            commission={commission}
           />
           <TextField
             id="created"
