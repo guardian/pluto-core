@@ -22,5 +22,6 @@ bundle.js
 *$py.class
 /postrun/references/
 /scripts/envfile-for-ldap.env
+/_Deparsed_XSubs.pm
 junit-tests
 journal/

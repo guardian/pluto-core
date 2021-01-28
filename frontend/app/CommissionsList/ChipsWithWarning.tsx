@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from "react";
+import ChipInput from "material-ui-chip-input";
+import { Typography } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core/styles";
 
 interface ChipsWithWarningProps {
   label?: string;
@@ -7,8 +10,16 @@ interface ChipsWithWarningProps {
   classes?: Record<string, string>;
 }
 
+const useStyles = makeStyles((theme) => ({
+  warningText: {
+    color: theme.palette.warning.dark,
+  },
+}));
+
 const ChipsWithWarning: React.FC<ChipsWithWarningProps> = (props) => {
   const [dirty, setDirty] = useState(false);
+
+  const classes = useStyles();
 
   return (
     <>
@@ -26,8 +37,8 @@ const ChipsWithWarning: React.FC<ChipsWithWarningProps> = (props) => {
         onUpdateInput={() => setDirty(true)}
       />
       {dirty ? (
-        <Typography variant="caption">
-          You must press ENTER to save a new value
+        <Typography variant="caption" className={classes.warningText}>
+          You must press ENTER otherwise your value here won't be saved
         </Typography>
       ) : null}
     </>
