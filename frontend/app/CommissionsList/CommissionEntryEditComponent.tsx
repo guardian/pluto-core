@@ -34,11 +34,11 @@ import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView";
 import ProductionOfficeSelector from "../common/ProductionOfficeSelector";
 import WorkingGroupSelector from "../common/WorkingGroupSelector";
 import StatusSelector from "../common/StatusSelector";
-import ChipInput from "material-ui-chip-input";
 import ProjectsTable from "../ProjectEntryList/ProjectsTable";
 import { Helmet } from "react-helmet";
 import HelpIcon from "@material-ui/icons/Help";
 import CommissionEntryDeliverablesComponent from "./CommissionEntryDeliverablesComponent";
+import ChipsWithWarning from "./ChipsWithWarning";
 declare var deploymentRootPath: string;
 
 const useStyles = makeStyles({
@@ -174,15 +174,11 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
         </Grid>
         {/*right-hand column*/}
         <Grid item xs={6}>
-          <ChipInput
+          <ChipsWithWarning
+            classes={classes}
             label="Owner"
-            value={props.commission.owner == "" ? [] : [props.commission.owner]}
-            onAdd={(newText: string) =>
-              props.onChange({ ...props.commission, owner: newText })
-            }
-            onDelete={(deleted: string) =>
-              props.onChange({ ...props.commission, owner: "" })
-            }
+            onChange={props.onChange}
+            commission={props.commission}
           />
           <TextField
             id="created"
