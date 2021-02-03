@@ -8,6 +8,7 @@ interface ChipsWithWarningProps {
   onChange: (newValue: CommissionFullRecord) => void;
   commission: CommissionFullRecord;
   classes?: Record<string, string>;
+  warningText?: string;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -38,7 +39,8 @@ const ChipsWithWarning: React.FC<ChipsWithWarningProps> = (props) => {
       />
       {dirty ? (
         <Typography variant="caption" className={classes.warningText}>
-          You must press ENTER otherwise your value here won't be saved
+          {props.warningText ??
+            "You must press ENTER after typing a name here, otherwise your new value won't be saved"}
         </Typography>
       ) : null}
     </>
