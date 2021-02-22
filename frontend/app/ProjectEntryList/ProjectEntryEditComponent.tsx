@@ -15,6 +15,10 @@ import {
   Checkbox,
   FormControlLabel,
   Grid,
+  Dialog,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@material-ui/core";
 import { getProject, getProjectByVsid, updateProject } from "./helpers";
 import { validProjectStatuses } from "../utils/constants";
@@ -97,6 +101,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [projectType, setProjectType] = useState<ProjectType | undefined>(
     undefined
   );
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -122,13 +127,17 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         if (!props.match.params.itemid) throw "No project ID to load";
         const id = Number(props.match.params.itemid);
 
-        const project = isNaN(id)
-          ? await getProjectByVsid(props.match.params.itemid)
-          : await getProject(id);
-        if (isMounted) {
-          setProject(project);
+        try {
+          const project = isNaN(id)
+            ? await getProjectByVsid(props.match.params.itemid)
+            : await getProject(id);
+          if (isMounted) {
+            setProject(project);
+          }
+          await getProjectTypeData(project.projectTypeId);
+        } catch (error) {
+          setOpenDialog(true);
         }
-        await getProjectTypeData(project.projectTypeId);
       };
 
       loadProject();
@@ -176,6 +185,11 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         );
       }
     }
+  };
+
+  const closeDialog = () => {
+    setOpenDialog(false);
+    props.history.goBack();
   };
 
   return (
@@ -256,6 +270,21 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       {project === EMPTY_PROJECT ? null : (
         <ProjectEntryDeliverablesComponent project={project} />
       )}
+      <Dialog
+        open={openDialog}
+        onClose={closeDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            The requested project does not exist.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
