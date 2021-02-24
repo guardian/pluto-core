@@ -8,6 +8,10 @@ import {
   makeStyles,
   Checkbox,
   FormControlLabel,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
 } from "@material-ui/core";
 import {
   createWorkingGroup,
@@ -54,6 +58,7 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
   const [name, setName] = useState<string>("");
   const [commissioner, setCommissioner] = useState<string>("");
   const [editing, setEditing] = useState<boolean>(false);
+  const [errorDialog, setErrorDialog] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -65,13 +70,18 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
         setEditing(true);
 
         const id = Number(itemid);
-        const workingGroup = await getWorkingGroup(id);
-
-        if (isMounted) {
-          setId(workingGroup.id);
-          setName(workingGroup.name);
-          setCommissioner(workingGroup.commissioner);
-          setHide(workingGroup.hide);
+        try {
+          const workingGroup = await getWorkingGroup(id);
+          if (isMounted) {
+            setId(workingGroup.id);
+            setName(workingGroup.name);
+            setCommissioner(workingGroup.commissioner);
+            setHide(workingGroup.hide);
+          }
+        } catch (error) {
+          if (error.message == "Request failed with status code 404") {
+            setErrorDialog(true);
+          }
         }
       };
       setWorkingGroup(props.match.params.itemid);
@@ -134,6 +144,11 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
     }
   };
 
+  const closeDialog = () => {
+    setErrorDialog(false);
+    props.history.goBack();
+  };
+
   return (
     <>
       <Paper className={classes.root}>
@@ -164,6 +179,21 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
           </form>
         </>
       </Paper>
+      <Dialog
+        open={errorDialog}
+        onClose={closeDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            The requested working group does not exist.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

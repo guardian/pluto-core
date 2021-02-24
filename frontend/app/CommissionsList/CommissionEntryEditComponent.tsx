@@ -14,6 +14,10 @@ import {
   TextField,
   Typography,
   Tooltip,
+  Dialog,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@material-ui/core";
 import {
   KeyboardDatePicker,
@@ -270,6 +274,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
 
   const classes = useStyles();
   const history = useHistory();
+  const [errorDialog, setErrorDialog] = useState<boolean>(false);
 
   let commissionId: number;
   try {
@@ -345,6 +350,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
             switch (err.response.status) {
               case 404:
                 setLastError("This commission does not exist");
+                setErrorDialog(true);
                 break;
               case 500:
                 setLastError(`Server error: ${err.response.body}`);
@@ -371,6 +377,11 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
    * if the commission data changes, then load in the contents
    */
   useEffect(() => {}, [commissionData]);
+
+  const closeDialog = () => {
+    setErrorDialog(false);
+    props.history.goBack();
+  };
 
   return (
     <>
@@ -491,6 +502,21 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
           <CommissionEntryDeliverablesComponent commission={commissionData} />
         ) : null}
       </Paper>
+      <Dialog
+        open={errorDialog}
+        onClose={closeDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            The requested commission does not exist.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
