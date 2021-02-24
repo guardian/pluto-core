@@ -101,7 +101,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [projectType, setProjectType] = useState<ProjectType | undefined>(
     undefined
   );
-  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [errorDialog, setErrorDialog] = useState<boolean>(false);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -136,7 +136,9 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           }
           await getProjectTypeData(project.projectTypeId);
         } catch (error) {
-          setOpenDialog(true);
+          if (error.message == "Request failed with status code 404") {
+            setErrorDialog(true);
+          }
         }
       };
 
@@ -188,7 +190,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   };
 
   const closeDialog = () => {
-    setOpenDialog(false);
+    setErrorDialog(false);
     props.history.goBack();
   };
 
@@ -271,7 +273,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         <ProjectEntryDeliverablesComponent project={project} />
       )}
       <Dialog
-        open={openDialog}
+        open={errorDialog}
         onClose={closeDialog}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"

@@ -274,7 +274,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
 
   const classes = useStyles();
   const history = useHistory();
-  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [errorDialog, setErrorDialog] = useState<boolean>(false);
 
   let commissionId: number;
   try {
@@ -350,7 +350,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
             switch (err.response.status) {
               case 404:
                 setLastError("This commission does not exist");
-                setOpenDialog(true);
+                setErrorDialog(true);
                 break;
               case 500:
                 setLastError(`Server error: ${err.response.body}`);
@@ -379,7 +379,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   useEffect(() => {}, [commissionData]);
 
   const closeDialog = () => {
-    setOpenDialog(false);
+    setErrorDialog(false);
     props.history.goBack();
   };
 
@@ -503,7 +503,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
         ) : null}
       </Paper>
       <Dialog
-        open={openDialog}
+        open={errorDialog}
         onClose={closeDialog}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"

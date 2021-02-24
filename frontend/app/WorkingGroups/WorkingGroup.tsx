@@ -58,7 +58,7 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
   const [name, setName] = useState<string>("");
   const [commissioner, setCommissioner] = useState<string>("");
   const [editing, setEditing] = useState<boolean>(false);
-  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [errorDialog, setErrorDialog] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -79,7 +79,9 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
             setHide(workingGroup.hide);
           }
         } catch (error) {
-          setOpenDialog(true);
+          if (error.message == "Request failed with status code 404") {
+            setErrorDialog(true);
+          }
         }
       };
       setWorkingGroup(props.match.params.itemid);
@@ -143,7 +145,7 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
   };
 
   const closeDialog = () => {
-    setOpenDialog(false);
+    setErrorDialog(false);
     props.history.goBack();
   };
 
@@ -178,7 +180,7 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
         </>
       </Paper>
       <Dialog
-        open={openDialog}
+        open={errorDialog}
         onClose={closeDialog}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
