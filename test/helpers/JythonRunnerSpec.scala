@@ -52,7 +52,7 @@ class JythonRunnerSpec extends Specification {
       result.get.stdErrContents mustEqual ""
     }
 
-    "pass over extended unicode chars" in {
+    "strip out extended unicode chars" in {
       val cache = PostrunDataCache(Map("key_one"->"value_one","key_two"->"value’two"))
       val runner = new JythonRunner
       implicit val timeout:Duration = 5.seconds
