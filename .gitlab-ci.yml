@@ -31,7 +31,7 @@ frontend:
     - merge_requests
 
 postruns:
-  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200615_1
+  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20210302_1
   stage: build
   script:
     - mkdir -p jython_junit
@@ -57,7 +57,7 @@ postruns:
     - merge_requests
 
 backend:
-  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200615_1
+  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20210302_1
   stage: build
   services:
     - postgres:9.6
@@ -99,7 +99,7 @@ backend:
   
 
 deploy:
-  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20200615_1
+  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20210302_1
   stage: deploy
   services:
     - docker:19.03.11-dind
