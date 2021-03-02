@@ -1,6 +1,7 @@
 package helpers
 
 import org.junit.runner._
+import org.python.core.PyString
 import org.specs2.mutable._
 import org.specs2.runner._
 
@@ -51,6 +52,20 @@ class JythonRunnerSpec extends Specification {
       result.get.stdErrContents mustEqual ""
     }
 
+    "pass over extended unicode chars" in {
+      val cache = PostrunDataCache(Map("key_one"->"value_one","key_two"->"value’two"))
+      val runner = new JythonRunner
+      implicit val timeout:Duration = 5.seconds
+      val args = Map("project_id"->"AA-1234","something_else"->"rabbit rabbit")
+      val result = runner.runScript("postrun/test_scripts/args_test_4.py", args, cache)
+      result must beSuccessfulTry
+      result.get.raisedError must beNone
+      result.get.stdOutContents mustEqual
+        """I was provided with {'something_else': 'rabbit rabbit', 'project_id': 'AA-1234', 'dataCache': {'key_two': 'valuetwo', 'key_one': 'value_one'}}
+          |""".stripMargin
+      result.get.stdErrContents mustEqual ""
+    }
+
     "receive a returned dictionary" in {
       val cache = PostrunDataCache(Map("key_one"->"value_one","key_two"->"value_two"))
       val runner = new JythonRunner
@@ -65,7 +80,6 @@ class JythonRunnerSpec extends Specification {
       result.get.stdErrContents mustEqual ""
       result.get.newDataCache.get("answer") must beSome("Hello world!")
       result.get.newDataCache.get("invalidkey") must beNone
-
     }
   }
 }

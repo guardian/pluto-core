@@ -128,7 +128,9 @@ class JythonRunner {
 
     //the cast is annoying but it should always work, since PyString is a subclass of PyObject. No idea why
     // func.__call__ seems to not like this though.
-    val pythonifiedArgs = args.map(kvTuple=>new PyString(kvTuple._2).asInstanceOf[PyObject]).toArray
+    val pythonifiedArgs = args.map(kvTuple=>
+      new PyString(kvTuple._2.filter(Character.UnicodeBlock.of(_) == Character.UnicodeBlock.BASIC_LATIN)).asInstanceOf[PyObject]
+    ).toArray
     val pythonifiedNames = args.keys.toArray
     val updatedPythonifiedArgs = pythonifiedArgs ++ Array(dataCache.asPython.asInstanceOf[PyObject])
     val updatedPythonifiedNames = pythonifiedNames ++ Array("dataCache")
