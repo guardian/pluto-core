@@ -24,7 +24,7 @@ lazy val `pluto-core` = (project in file("."))
       dockerRepository := Some("guardianmultimedia"),
       packageName in Docker := "guardianmultimedia/pluto-core",
       packageName := "pluto-core",
-      dockerBaseImage := "docker.io/openjdk:11-jre-slim-buster",
+      dockerBaseImage := "docker.io/openjdk:11.0.10-jre",
       dockerPermissionStrategy := DockerPermissionStrategy.CopyChown,
       dockerAlias := docker.DockerAlias(None,Some("guardianmultimedia"),"pluto-core",Some(sys.props.getOrElse("build.number","DEV"))),
       scalacOptions ++= Seq("-deprecation", "-feature"),
@@ -74,7 +74,7 @@ libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
 //authentication
 libraryDependencies ++= Seq(
   "com.unboundid" % "unboundid-ldapsdk" % "5.0.0",
-  "com.nimbusds" % "nimbus-jose-jwt" % "8.17",
+  "com.nimbusds" % "nimbus-jose-jwt" % "8.21",
 )
 
 // https://mvnrepository.com/artifact/org.python/jython
