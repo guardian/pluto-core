@@ -24,6 +24,7 @@ class CommissionCompletionComponent extends React.Component {
       inProgress: false,
       createTime: moment().format("YYYY-MM-DD[T]HH:mm:ss.SSSZ"),
       completed: false,
+      newCommissionId: null,
     };
     this.confirmClicked = this.confirmClicked.bind(this);
     this.requestContent = this.requestContent.bind(this);
@@ -51,8 +52,12 @@ class CommissionCompletionComponent extends React.Component {
         url: "/api/prexit/commission",
         data: this.requestContent(),
       })
-      .then(() => {
-        this.setState({ inProgress: false, completed: true });
+      .then((response) => {
+        this.setState({
+          inProgress: false,
+          completed: true,
+          newCommissionId: response.data.id,
+        });
       })
       .catch((err) => {
         console.error(err);
@@ -72,7 +77,8 @@ class CommissionCompletionComponent extends React.Component {
   }
 
   render() {
-    if (this.state.completed) return <Redirect to="/commission/" />;
+    if (this.state.completed)
+      return <Redirect to={"/commission/" + this.state.newCommissionId} />;
     return (
       <div>
         <h3>Create new commission</h3>
