@@ -27,7 +27,9 @@ class PostrunExecutor @Inject() (dbConfigProvider:DatabaseConfigProvider, config
                                projectType: ProjectType, cache: PostrunDataCache,
                                workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])
                               (implicit db: slick.jdbc.PostgresProfile#Backend#Database, config:Configuration, timeout: Duration):Try[JythonOutput] =
-    Await.result(action.run(projectFileName,entry,projectType,cache, workingGroupMaybe, commissionMaybe), timeout)
+    Try {
+      Await.result(action.run(projectFileName,entry,projectType,cache, workingGroupMaybe, commissionMaybe), timeout)
+    }.flatten
 
   /**
     * Recursively iterates a list of postrun actions, running each

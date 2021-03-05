@@ -4,7 +4,6 @@ import org.python.core._
 import play.api.Logger
 
 import scala.jdk.CollectionConverters._
-import scala.collection.immutable.HashMap
 
 class PostrunDataCache(entries:PyDictionary) {
   private val logger = Logger(getClass)
@@ -70,10 +69,23 @@ object PostrunDataCache {
     new PostrunDataCache(new PyDictionary())
   }
 
+  /**
+    * filter out non-ascii chars because PyString complains about them.  You _can_ pass them over as a ByteArray but
+    * that would require a ton of changes on the Python side; since I am now of the opinion that the Python stuff is
+    * more trouble than it's worth it'll probably get removed sooner rather than later.
+    * https://stackoverflow.com/questions/51566281/how-to-convert-string-in-utf-8-to-ascii-ignoring-errors-and-removing-non-ascii-c
+    * @param from string to remove the characters from
+    * @return string consisting of only the ASCII characters from the input string
+    */
+  private def removeNonAscii(from:String):String =
+    from
+      .filter(Character.UnicodeBlock.of(_) == Character.UnicodeBlock.BASIC_LATIN)
+
+
   def apply(entries: Map[String,String]): PostrunDataCache = {
     val pythonifiedEntries = entries.map(kvTuple=>(
       new PyString(kvTuple._1).asInstanceOf[PyObject],
-      new PyString(kvTuple._2).asInstanceOf[PyObject])
+      new PyString(removeNonAscii(kvTuple._2)).asInstanceOf[PyObject])
     )
 
     new PostrunDataCache(new PyDictionary(pythonifiedEntries.asJava))
