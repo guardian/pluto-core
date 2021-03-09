@@ -1,6 +1,5 @@
 import React from "react";
 import axios from "axios";
-import SortableTable from "react-sortable-table";
 import { Link } from "react-router-dom";
 import moment from "moment";
 import { Helmet } from "react-helmet";
