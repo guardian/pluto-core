@@ -4,6 +4,21 @@ import SortableTable from "react-sortable-table";
 import { Link } from "react-router-dom";
 import moment from "moment";
 import { Helmet } from "react-helmet";
+import {
+  makeStyles,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  Box,
+  IconButton,
+  Button,
+} from "@material-ui/core";
 
 class GeneralListComponent extends React.Component {
   static ITEM_LIMIT = 50;
@@ -55,6 +70,9 @@ class GeneralListComponent extends React.Component {
       this.dependenciesDidLoad();
       this.reload();
     });
+    console.log("columns: " + this.columns);
+    console.log("column 1: " + this.columns[0]);
+    console.log("column 2: " + this.columns[1]);
   }
 
   /**
@@ -267,6 +285,26 @@ class GeneralListComponent extends React.Component {
               New
             </button>
           </span>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  {this.columns.map((object, index) => (
+                    <TableCell key={index}>{object["header"]}</TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {this.state.data.map((row, index) => (
+                  <TableRow>
+                    {Object.keys(row).map((key, i) => (
+                      <TableCell key={i}>{row[key]}</TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
           <SortableTable
             data={this.state.data}
             columns={this.columns}
