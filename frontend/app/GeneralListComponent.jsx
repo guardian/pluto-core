@@ -21,26 +21,6 @@ import {
 } from "@material-ui/core";
 import PropTypes from "prop-types";
 
-function createData(name, calories, fat, carbs, protein) {
-  return { name, calories, fat, carbs, protein };
-}
-
-const rows = [
-  createData("Cupcake", 305, 3.7, 67, 4.3),
-  createData("Donut", 452, 25.0, 51, 4.9),
-  createData("Eclair", 262, 16.0, 24, 6.0),
-  createData("Frozen yoghurt", 159, 6.0, 24, 4.0),
-  createData("Gingerbread", 356, 16.0, 49, 3.9),
-  createData("Honeycomb", 408, 3.2, 87, 6.5),
-  createData("Ice cream sandwich", 237, 9.0, 37, 4.3),
-  createData("Jelly Bean", 375, 0.0, 94, 0.0),
-  createData("KitKat", 518, 26.0, 65, 7.0),
-  createData("Lollipop", 392, 0.2, 98, 0.0),
-  createData("Marshmallow", 318, 0, 81, 2.0),
-  createData("Nougat", 360, 19.0, 9, 37.0),
-  createData("Oreo", 437, 18.0, 63, 4.0),
-];
-
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
     return -1;
@@ -66,19 +46,6 @@ function stableSort(array, comparator) {
   });
   return stabilizedThis.map((el) => el[0]);
 }
-
-const headCells = [
-  {
-    id: "name",
-    numeric: false,
-    disablePadding: true,
-    label: "Dessert (100g serving)",
-  },
-  { id: "calories", numeric: true, disablePadding: false, label: "Calories" },
-  { id: "fat", numeric: true, disablePadding: false, label: "Fat (g)" },
-  { id: "carbs", numeric: true, disablePadding: false, label: "Carbs (g)" },
-  { id: "protein", numeric: true, disablePadding: false, label: "Protein (g)" },
-];
 
 function EnhancedTableHead(props) {
   const { classes, order, orderBy, onRequestSort, columnData } = props;
@@ -179,9 +146,6 @@ export function EnhancedTable(props) {
     setDense(event.target.checked);
   };
 
-  const emptyRows =
-    rowsPerPage - Math.min(rowsPerPage, tableData.length - page * rowsPerPage);
-
   return (
     <div className={classes.root}>
       <Paper className={classes.paper}>
@@ -197,7 +161,7 @@ export function EnhancedTable(props) {
               order={order}
               orderBy={orderBy}
               onRequestSort={handleRequestSort}
-              rowCount={rows.length}
+              rowCount={tableData.length}
               columnData={columnData}
             />
             <TableBody>
@@ -208,11 +172,6 @@ export function EnhancedTable(props) {
                     <ListTableRow key={index} data={row} columns={columnData} />
                   );
                 })}
-              {emptyRows > 0 && (
-                <TableRow style={{ height: (dense ? 33 : 53) * emptyRows }}>
-                  <TableCell colSpan={6} />
-                </TableRow>
-              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -526,31 +485,11 @@ class GeneralListComponent extends React.Component {
               New
             </button>
           </span>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  {this.columns.map((object, index) => (
-                    <TableCell key={index}>{object["header"]}</TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {this.state.data.map((row, index) => (
-                  <ListTableRow key={index} data={row} columns={this.columns} />
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <SortableTable
-            data={this.state.data}
-            columns={this.columns}
-            style={this.style}
-            iconStyle={this.iconStyle}
-            tableProps={{ className: "dashboardpanel" }}
+          <EnhancedTable
+            columnData={this.columns}
+            tableData={this.state.data}
           />
         </div>
-        <EnhancedTable columnData={this.columns} tableData={this.state.data} />
       </>
     );
   }
