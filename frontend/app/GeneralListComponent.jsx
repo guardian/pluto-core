@@ -20,6 +20,33 @@ import {
   Button,
 } from "@material-ui/core";
 
+class ListTableRow extends React.Component {
+  render() {
+    const tableRowData = this.props.columns.map(
+      function (item, index) {
+        let value = this.props.data[item.key];
+        if (item.render) {
+          value = item.render(value);
+        }
+        if (item.renderWithData) {
+          value = item.renderWithData(this.props.data);
+        }
+        return (
+          <TableCell
+            key={index}
+            style={item.dataStyle}
+            {...(item.dataProps || {})}
+          >
+            {value}
+          </TableCell>
+        );
+      }.bind(this)
+    );
+
+    return <TableRow>{tableRowData}</TableRow>;
+  }
+}
+
 class GeneralListComponent extends React.Component {
   static ITEM_LIMIT = 50;
 
@@ -296,11 +323,7 @@ class GeneralListComponent extends React.Component {
               </TableHead>
               <TableBody>
                 {this.state.data.map((row, index) => (
-                  <TableRow>
-                    {Object.keys(row).map((key, i) => (
-                      <TableCell key={i}>{row[key]}</TableCell>
-                    ))}
-                  </TableRow>
+                  <ListTableRow key={index} data={row} columns={this.columns} />
                 ))}
               </TableBody>
             </Table>
