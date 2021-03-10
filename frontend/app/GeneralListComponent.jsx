@@ -55,9 +55,6 @@ class GeneralListComponent extends React.Component {
       this.dependenciesDidLoad();
       this.reload();
     });
-    console.log("columns: " + this.columns);
-    console.log("column 1: " + this.columns[0]);
-    console.log("column 2: " + this.columns[1]);
   }
 
   /**
