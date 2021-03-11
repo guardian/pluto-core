@@ -26,7 +26,7 @@ class FileEntryList extends GeneralListComponent {
       GeneralListComponent.dateTimeColumn("Access time", "atime"),
       {
         header: "",
-        key: "id",
+        key: "links",
         render: (id) => (
           <Link to={"/file/" + id + "/delete"}>
             <img
