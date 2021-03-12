@@ -1,6 +1,5 @@
 import React from "react";
 import axios from "axios";
-import SortableTable from "react-sortable-table";
 import GeneralListComponent from "./GeneralListComponent.jsx";
 import ProjectTypeView from "./EntryViews/ProjectTypeView.jsx";
 import WorkingGroupEntryView from "./EntryViews/WorkingGroupEntryView.jsx";
@@ -8,6 +7,7 @@ import CommissionEntryView from "./EntryViews/CommissionEntryView.jsx";
 import { Link } from "react-router-dom";
 import ErrorViewComponent from "./common/ErrorViewComponent.jsx";
 import { Helmet } from "react-helmet";
+import EnhancedTable from "./MaterialUITable";
 
 class ProjectValidationView extends React.Component {
   constructor(props) {
@@ -254,18 +254,12 @@ class ProjectValidationView extends React.Component {
         </span>
 
         {this.showResult()}
-
-        <SortableTable
-          data={this.state.problemProjects}
-          columns={this.columns}
-          style={
-            this.state.problemProjects.length > 0
-              ? this.style
-              : { display: "none" }
-          }
-          iconStyle={this.iconStyle}
-          tableProps={{ className: "dashboardpanel" }}
-        />
+        {this.state.problemProjects.length > 0 ? (
+          <EnhancedTable
+            columnData={this.columns}
+            tableData={this.state.problemProjects}
+          />
+        ) : null}
       </div>
     );
   }

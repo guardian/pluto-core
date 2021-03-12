@@ -26,10 +26,13 @@ class FileEntryList extends GeneralListComponent {
       GeneralListComponent.dateTimeColumn("Access time", "atime"),
       {
         header: "",
-        key: "id",
+        key: "links",
         render: (id) => (
           <Link to={"/file/" + id + "/delete"}>
-            <img className="smallicon" src="/assets/images/delete.png" />
+            <img
+              className="smallicon"
+              src="/pluto-core/assets/images/delete.png"
+            />
           </Link>
         ),
       },

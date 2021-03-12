@@ -1,5 +1,4 @@
 import React from "react";
-import SortableTable from "react-sortable-table";
 import GeneralListComponent from "./GeneralListComponent.jsx";
 import StatusIndicator from "./EntryViews/StatusIndicator.jsx";
 
