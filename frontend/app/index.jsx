@@ -32,9 +32,6 @@ import PostrunMultistep from "./multistep/PostrunMultistep.jsx";
 import PostrunDeleteComponent from "./delete/PostrunDeleteComponent.jsx";
 
 import ServerDefaults from "./ServerDefaults.jsx";
-
-import NotLoggedIn from "./NotLoggedIn.jsx";
-
 import axios from "axios";
 
 import { config, library } from "@fortawesome/fontawesome-svg-core";
@@ -204,15 +201,6 @@ class App extends React.Component {
   }
 
   render() {
-    if (
-      !this.state.loading &&
-      !this.state.isLoggedIn &&
-      window.location.pathname !== "/"
-    ) {
-      console.log("not logged in, redirecting to route");
-      return <NotLoggedIn tokenExpired={this.state.tokenExpired} timeOut={5} />;
-    }
-
     return (
       <ThemeProvider theme={theme}>
         <div className="app">
