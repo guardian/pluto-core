@@ -53,6 +53,11 @@ var config = {
     ],
   },
   devtool: "source-map",
+  plugins: [
+    new webpack.ProvidePlugin({
+      process: "process/browser",
+    }),
+  ],
 };
 
 module.exports = config;
