@@ -4,6 +4,9 @@ import { Link } from "react-router-dom";
 import moment from "moment";
 import { Helmet } from "react-helmet";
 import EnhancedTable from "./MaterialUITable";
+import DeleteIcon from "@material-ui/icons/Delete";
+import EditIcon from "@material-ui/icons/Edit";
+import { IconButton } from "@material-ui/core";
 
 class GeneralListComponent extends React.Component {
   static ITEM_LIMIT = 50;
@@ -141,21 +144,20 @@ class GeneralListComponent extends React.Component {
       render: (id) => (
         <span
           className="icons"
-          style={{ display: this.state.isAdmin ? "inherit" : "none" }}
+          style={{
+            minWidth: "100px",
+            display: this.state.isAdmin ? "inherit" : "none",
+          }}
         >
           <Link to={"/" + componentName + "/" + id}>
-            <img
-              className="smallicon"
-              src={deploymentRoot + "assets/images/edit.png"}
-              alt="Edit"
-            />
+            <IconButton>
+              <EditIcon />
+            </IconButton>
           </Link>
           <Link to={"/" + componentName + "/" + id + "/delete"}>
-            <img
-              className="smallicon"
-              src={deploymentRoot + "assets/images/delete.png"}
-              alt="Delete"
-            />
+            <IconButton>
+              <DeleteIcon />
+            </IconButton>
           </Link>
         </span>
       ),

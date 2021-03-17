@@ -2,6 +2,8 @@ import React from "react";
 import GeneralListComponent from "./GeneralListComponent.jsx";
 import FileEntryFilterComponent from "./filter/FileEntryFilterComponent.jsx";
 import { Link } from "react-router-dom";
+import DeleteIcon from "@material-ui/icons/Delete";
+import { IconButton } from "@material-ui/core";
 
 class FileEntryList extends GeneralListComponent {
   constructor(props) {
@@ -29,10 +31,9 @@ class FileEntryList extends GeneralListComponent {
         key: "links",
         render: (id) => (
           <Link to={"/file/" + id + "/delete"}>
-            <img
-              className="smallicon"
-              src="/pluto-core/assets/images/delete.png"
-            />
+            <IconButton>
+              <DeleteIcon />
+            </IconButton>
           </Link>
         ),
       },
