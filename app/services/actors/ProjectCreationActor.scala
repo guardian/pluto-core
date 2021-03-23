@@ -29,16 +29,6 @@ object ProjectCreationActor {
     case NewProjectRequest(rq, createTime, _)=>(createTime.map(_.toString).getOrElse(rq.filename).hashCode() % maxNumberOfShards).toString
   }
 
-  def startupSharding(system:ActorSystem, injector:Injector) = {
-    logger.info("Setting up sharding for ProjectCreationActor")
-    ClusterSharding(system).start(
-      typeName = "project-creation-actor",
-      entityProps = Props(injector.instanceOf(classOf[ProjectCreationActor])),
-      settings = ClusterShardingSettings(system),
-      extractEntityId = extractEntityId,
-      extractShardId = extractShardId
-    )
-  }
 }
 
 class ProjectCreationActor @Inject() (app:Application)(implicit system:ActorSystem,injector: Injector) extends GenericCreationActor {
@@ -52,21 +42,14 @@ class ProjectCreationActor @Inject() (app:Application)(implicit system:ActorSyst
     * This property defines the step chain to create a project, in terms of actors required.
     * It's overridden in the tests, to create an artificial chain with TestProbes.
     */
-//  val creationActorChain:Seq[ActorRef] = Seq(
-//    system.actorOf(Props(app.injector.instanceOf(classOf[CreateFileEntry]))),
-//    system.actorOf(Props(app.injector.instanceOf(classOf[CopySourceFile]))),
-//    system.actorOf(Props(app.injector.instanceOf(classOf[CreateProjectEntry]))),
-//    system.actorOf(Props(app.injector.instanceOf(classOf[RetrievePostruns]))),
-//    system.actorOf(Props(app.injector.instanceOf(classOf[PostrunExecutor]))),
-//  )
-
   val creationActorChain:Seq[ActorRef] = Seq(
-    GenericCreationActor.startupSharding("create-file-entry", Props(app.injector.instanceOf(classOf[CreateFileEntry]))),
-    GenericCreationActor.startupSharding("copy-source-file",Props(app.injector.instanceOf(classOf[CopySourceFile]))),
-    GenericCreationActor.startupSharding("create-proejct-entry",Props(app.injector.instanceOf(classOf[CreateProjectEntry]))),
-    GenericCreationActor.startupSharding("retrieve-postruns",Props(app.injector.instanceOf(classOf[RetrievePostruns]))),
-    GenericCreationActor.startupSharding("postrun-executor",Props(app.injector.instanceOf(classOf[PostrunExecutor])))
+    system.actorOf(Props(app.injector.instanceOf(classOf[CreateFileEntry]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[CopySourceFile]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[CreateProjectEntry]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[RetrievePostruns]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[PostrunExecutor]))),
   )
+
   /**
     * Runs the next actor in the given sequence recursively by sending it [[NewProjectRequest]].
     * If it fails, then [[NewProjectRollback]] is sent to it and the recursion ends; as the recursion unwinds all of the

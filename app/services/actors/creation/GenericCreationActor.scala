@@ -65,16 +65,6 @@ object GenericCreationActor {
     case NewProjectRollback(rq,_) => ((rq.filename + "-r").hashCode%100).toString
   }
 
-  def startupSharding(typeName:String, props:Props)(implicit system:ActorSystem, injector:Injector): ActorRef = {
-    logger.info("Setting up sharding for generic creation actor")
-    ClusterSharding(system).start(
-      typeName = typeName,
-      entityProps = props,
-      settings = ClusterShardingSettings(system),
-      extractEntityId = extractEntityId,
-      extractShardId = extractShardId
-    )
-  }
 }
 
 trait GenericCreationActor extends PersistentActor {
