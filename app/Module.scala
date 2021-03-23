@@ -21,6 +21,7 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     bindActor[PostrunActionScanner]("postrun-action-scanner")
     bindActor[CommissionStatusPropagator]("commission-status-propagator")
     bindActor[RabbitMqPropagator]("rabbitmq-propagator")
+    bind(classOf[PeriodicScanReceiver]).asEagerSingleton()
   }
 
 }
