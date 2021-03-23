@@ -4,8 +4,7 @@ import java.sql.Timestamp
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
-import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
+import akka.actor.{ActorRef, Props}
 import akka.persistence._
 import models.{FileEntry, PostrunAction, ProjectEntry, ProjectRequestFull}
 import org.slf4j.LoggerFactory
@@ -53,17 +52,6 @@ object GenericCreationActor {
 
   case class CreateEventHandled(eventId: UUID)  extends JacksonSerializable
 
-  val extractEntityId:ShardRegion.ExtractEntityId = {
-    case msg@ NewProjectRequest(rq,_,_)=>(rq.filename + "-f", msg)
-    case msg@ NewProjectRollback(rq,_)=>(rq.filename + "-r", msg)
-  }
-
-  val maxShards = 100
-
-  val extractShardId:ShardRegion.ExtractShardId = {
-    case NewProjectRequest(rq,_,_) => ((rq.filename + "-f").hashCode%100).toString
-    case NewProjectRollback(rq,_) => ((rq.filename + "-r").hashCode%100).toString
-  }
 
 }
 

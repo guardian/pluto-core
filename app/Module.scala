@@ -1,11 +1,7 @@
-import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props}
-import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings}
 import com.google.inject.{AbstractModule, Provides}
 import com.newmotion.akka.rabbitmq.ConnectionActor
 import helpers.JythonRunner
-import javax.inject.{Named, Singleton}
 import play.api.Logger
-import play.api.inject.Injector
 import play.api.libs.concurrent.AkkaGuiceSupport
 import services.actors.ProjectCreationActor
 import services._

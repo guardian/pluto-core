@@ -2,7 +2,6 @@ package services.actors
 
 import javax.inject.Inject
 import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.pattern.ask
 import models.ProjectRequestFull
 import org.slf4j.{LoggerFactory, MDC}
@@ -16,20 +15,6 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
-
-object ProjectCreationActor {
-  val logger = LoggerFactory.getLogger(getClass)
-  val extractEntityId:ShardRegion.ExtractEntityId = {
-    case msg @ NewProjectRequest(rq, createTime, _)=>(createTime.map(_.toString).getOrElse(rq.filename), msg)
-  }
-
-  val maxNumberOfShards = 100
-
-  val extractShardId:ShardRegion.ExtractShardId = {
-    case NewProjectRequest(rq, createTime, _)=>(createTime.map(_.toString).getOrElse(rq.filename).hashCode() % maxNumberOfShards).toString
-  }
-
-}
 
 class ProjectCreationActor @Inject() (app:Application)(implicit system:ActorSystem,injector: Injector) extends GenericCreationActor {
   override val persistenceId = "project-creation-actor-" + self.path.name

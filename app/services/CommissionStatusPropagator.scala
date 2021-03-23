@@ -3,7 +3,6 @@ package services
 import java.util.UUID
 
 import akka.actor.{ActorSystem, Props}
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
@@ -11,15 +10,10 @@ import com.google.inject.Inject
 import models.{EntryStatus, ProjectEntry, ProjectEntryRow}
 import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.inject.Injector
 import play.api.{Configuration, Logger}
-import services.actors.ProjectCreationActor
-import services.actors.creation.GenericCreationActor.NewProjectRequest
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
-
-import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -42,30 +36,6 @@ object CommissionStatusPropagator {
 
   case class EventHandled(uuid: UUID) extends CommissionStatusEvent
 
-  val extractEntityId:ShardRegion.ExtractEntityId = {
-    case msg @ CommissionStatusUpdate(_,_,uuid)=>(uuid.toString, msg)
-    case msg @ EventHandled(uuid)=>(uuid.toString, msg)
-    case msg @ RetryFromState(uuid)=>(uuid.toString, msg)
-  }
-
-  val maxNumberOfShards = 100
-
-  val extractShardId:ShardRegion.ExtractShardId = {
-    case CommissionStatusUpdate(_,_,uuid)=>(uuid.hashCode() % maxNumberOfShards).toString
-    case EventHandled(uuid)=>(uuid.hashCode() % maxNumberOfShards).toString
-    case RetryFromState(uuid)=>(uuid.hashCode() % maxNumberOfShards).toString
-  }
-
-  def startupSharding(system:ActorSystem, injector:Injector) = {
-    logger.info("Setting up sharding for CommissionStatusPropagatgor")
-    ClusterSharding(system).start(
-      typeName = "commission-status-propagator",
-      entityProps = Props(injector.instanceOf(classOf[CommissionStatusPropagator])),
-      settings = ClusterShardingSettings(system),
-      extractEntityId = extractEntityId,
-      extractShardId = extractShardId
-    )
-  }
 }
 
 /**
