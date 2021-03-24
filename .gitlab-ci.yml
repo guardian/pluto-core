@@ -118,6 +118,8 @@ deploy:
     - tar xzf postrunlibs.tgz
     - docker login -u "${DOCKER_USER}" -p "${DOCKER_PAT}"
     - JAVA_OPTS="-Dbuild.number=${CI_PIPELINE_IID} -Ddocker.username=guardianmultimedia" sbt docker:publish
+    - cd periodic_trigger && docker build . -t guardianmultimedia/pluto-core-periodictrigger:${CI_PIPELINE_IID}
+    - docker push guardianmultimedia/pluto-core-periodictrigger:${CI_PIPELINE_IID}
   cache:
     key: ${CI_COMMIT_REF_SLUG}-sbt
     policy: pull
