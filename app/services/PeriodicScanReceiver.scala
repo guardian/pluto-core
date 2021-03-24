@@ -25,6 +25,8 @@ class PeriodicScanReceiver @Inject() (config:Configuration,
   private val logger = LoggerFactory.getLogger(getClass)
   private val factory = new ConnectionFactory()
   logger.debug("got rmq connection factory")
+  factory.setUri(config.get[String]("rabbitmq.uri"))
+  val exchangeName = config.getOptional[String]("rabbitmq.exchange").getOrElse("pluto-core")
 
   //get a connection actor
   private val connection = system.actorOf(ConnectionActor.props(factory), "scan-receiver-connection")
@@ -73,15 +75,15 @@ class PeriodicScanReceiver @Inject() (config:Configuration,
           case ServiceEventAction.PerformAction=>
             routingKey match {
               case "pluto.core.service.storagescan"=>
-                logger.info("Triggering storage scan in response to incoming message")
+                logger.info("Triggering storage check in response to incoming message")
                 storageScanner ! StorageScanner.Rescan
                 true
               case "pluto.core.service.commissionstatuspropagator"=>
-                logger.info("Triggering commission status propagator regular retry in response to incoming message")
+                logger.info("Triggering commission status propagator check for retries in response to incoming message")
                 commissionStatusPropagator ! CommissionStatusPropagator.RetryFromState(UUID.randomUUID())
                 true
               case "pluto.core.service.postrunaction"=>
-                logger.info("Triggering postrun action scanner in response to incoming message")
+                logger.info("Triggering postrun action check in response to incoming message")
                 postrunActionScanner ! PostrunActionScanner.Rescan
                 true
               case _=>
@@ -97,7 +99,7 @@ class PeriodicScanReceiver @Inject() (config:Configuration,
 
   def setupSubscriber(channel:Channel,  self:ActorRef) = {
     logger.debug(s"setting up rmq subscriber")
-    val exchangeName = config.getOptional[String]("rabbitmq.own-exchange").getOrElse("pluto-core")
+
     logger.debug(s"exchange name is $exchangeName")
 
     val queue = channel
