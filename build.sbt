@@ -14,6 +14,8 @@ javaOptions in Universal ++= Seq(
 
 scalacOptions ++= Seq("-deprecation", "-feature")
 
+val circeVersion = "0.12.3"
+
 lazy val `pluto-core` = (project in file("."))
   .enablePlugins(PlayScala)
   .enablePlugins(AshScriptPlugin) //needed for alpine-based images
@@ -80,6 +82,12 @@ libraryDependencies ++= Seq(
 // https://mvnrepository.com/artifact/org.python/jython
 libraryDependencies += "org.python" % "jython" % "2.7.2"
 
+//nice json parsing
+libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core",
+  "io.circe" %% "circe-generic",
+  "io.circe" %% "circe-parser"
+).map(_ % circeVersion)
 
 // upgrade guava
 // https://mvnrepository.com/artifact/com.google.guava/guava
