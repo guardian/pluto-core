@@ -27,8 +27,12 @@ def postrun(**kwargs):
         raise RuntimeError("Projectfile {0} does not exist".format(kwargs['projectFile']))
 
     try:
+        updated_perms = stat.S_IRUSR|stat.S_IWUSR|stat.S_IRGRP|stat.S_IWGRP|stat.S_IROTH
+        if kwargs['projectFile'].endswith(".cpr"):
+            updated_perms = updated_perms|stat.S_IWOTH
+
         chown(kwargs['projectFile'], statinfo.st_uid, int(settings.PROJECT_GROUP))
-        chmod(kwargs['projectFile'], stat.S_IRUSR|stat.S_IWUSR|stat.S_IRGRP|stat.S_IWGRP|stat.S_IROTH)
+        chmod(kwargs['projectFile'], updated_perms)
     except Exception as e:
         stderr.write(str(e))
         raise
