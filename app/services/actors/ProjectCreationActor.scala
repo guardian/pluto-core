@@ -2,7 +2,6 @@ package services.actors
 
 import javax.inject.Inject
 import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.pattern.ask
 import models.ProjectRequestFull
 import org.slf4j.{LoggerFactory, MDC}
@@ -17,30 +16,6 @@ import scala.concurrent.duration._
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 
-object ProjectCreationActor {
-  val logger = LoggerFactory.getLogger(getClass)
-  val extractEntityId:ShardRegion.ExtractEntityId = {
-    case msg @ NewProjectRequest(rq, createTime, _)=>(createTime.map(_.toString).getOrElse(rq.filename), msg)
-  }
-
-  val maxNumberOfShards = 100
-
-  val extractShardId:ShardRegion.ExtractShardId = {
-    case NewProjectRequest(rq, createTime, _)=>(createTime.map(_.toString).getOrElse(rq.filename).hashCode() % maxNumberOfShards).toString
-  }
-
-  def startupSharding(system:ActorSystem, injector:Injector) = {
-    logger.info("Setting up sharding for ProjectCreationActor")
-    ClusterSharding(system).start(
-      typeName = "project-creation-actor",
-      entityProps = Props(injector.instanceOf(classOf[ProjectCreationActor])),
-      settings = ClusterShardingSettings(system),
-      extractEntityId = extractEntityId,
-      extractShardId = extractShardId
-    )
-  }
-}
-
 class ProjectCreationActor @Inject() (app:Application)(implicit system:ActorSystem,injector: Injector) extends GenericCreationActor {
   override val persistenceId = "project-creation-actor-" + self.path.name
   override protected val logger=Logger(getClass)
@@ -52,21 +27,14 @@ class ProjectCreationActor @Inject() (app:Application)(implicit system:ActorSyst
     * This property defines the step chain to create a project, in terms of actors required.
     * It's overridden in the tests, to create an artificial chain with TestProbes.
     */
-//  val creationActorChain:Seq[ActorRef] = Seq(
-//    system.actorOf(Props(app.injector.instanceOf(classOf[CreateFileEntry]))),
-//    system.actorOf(Props(app.injector.instanceOf(classOf[CopySourceFile]))),
-//    system.actorOf(Props(app.injector.instanceOf(classOf[CreateProjectEntry]))),
-//    system.actorOf(Props(app.injector.instanceOf(classOf[RetrievePostruns]))),
-//    system.actorOf(Props(app.injector.instanceOf(classOf[PostrunExecutor]))),
-//  )
-
   val creationActorChain:Seq[ActorRef] = Seq(
-    GenericCreationActor.startupSharding("create-file-entry", Props(app.injector.instanceOf(classOf[CreateFileEntry]))),
-    GenericCreationActor.startupSharding("copy-source-file",Props(app.injector.instanceOf(classOf[CopySourceFile]))),
-    GenericCreationActor.startupSharding("create-proejct-entry",Props(app.injector.instanceOf(classOf[CreateProjectEntry]))),
-    GenericCreationActor.startupSharding("retrieve-postruns",Props(app.injector.instanceOf(classOf[RetrievePostruns]))),
-    GenericCreationActor.startupSharding("postrun-executor",Props(app.injector.instanceOf(classOf[PostrunExecutor])))
+    system.actorOf(Props(app.injector.instanceOf(classOf[CreateFileEntry]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[CopySourceFile]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[CreateProjectEntry]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[RetrievePostruns]))),
+    system.actorOf(Props(app.injector.instanceOf(classOf[PostrunExecutor]))),
   )
+
   /**
     * Runs the next actor in the given sequence recursively by sending it [[NewProjectRequest]].
     * If it fails, then [[NewProjectRollback]] is sent to it and the recursion ends; as the recursion unwinds all of the
@@ -107,7 +75,7 @@ class ProjectCreationActor @Inject() (app:Application)(implicit system:ActorSyst
     })
   }
 
-  override def receiveCommand: Receive = {
+  override def receive: Receive = {
     case rq:NewProjectRequest=>
       logger.info(s"got request: $rq")
       logger.info(s"i am ${context.self}")
@@ -131,6 +99,6 @@ class ProjectCreationActor @Inject() (app:Application)(implicit system:ActorSyst
       })
     case msg:Any=>
       logger.info(s"got other message: ${msg}")
-      super.receiveCommand
+      super.receive
   }
 }

@@ -40,7 +40,7 @@ class CreateProjectEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) ext
       Failure(new RuntimeException(s"Rollback request failed to validate"))
   }
 
-  override def receiveCommand: Receive = {
+  override def receive: Receive = {
     /**
       * create a [[ProjectEntry]] record for the given creation request
       */

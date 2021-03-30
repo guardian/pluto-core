@@ -29,8 +29,6 @@
     <logger name="org.reflections" level="OFF"/>
     <logger name="helpers.ProjectCreateHelperImpl" level="WARN"/>
     <logger name="helpers.PostrunSorter" level="WARN"/>
-    <logger name="helpers.InitCluster" level="WARN"/>
-    <logger name="services.actors.ClusterListener" level="WARN"/>
     <logger name="controllers.MessageTest" level="WARN"/>
     <logger name="models.ProjectRequestPluto" level="WARN"/>
     <logger name="drivers.PathStorage" level="WARN"/>
@@ -53,7 +51,7 @@
     <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
     <logger name="models.ProjectMetadata" level="WARN"/>
     <logger name="postrun.UpdateAdobeUuidSpec" level="WARN"/>
-    <logger name="services.StorageScanner" level="INFO"/>
+    <logger name="services.StorageScanner" level="DEBUG"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
     <logger name="MockProjectCreationActor" level="DEBUG"/>
     <logger name="services.actors.ProjectCreationActor" level="INFO"/>
@@ -62,8 +60,9 @@
     <logger name="services.ValidateProject" level="DEBUG"/>
     <logger name="streamcomponents.ProjectSearchSource" level="DEBUG"/>
     <logger name="helpers.AllowCORSFilter" level="WARN"/>
-    <logger name="services.DataMigration" level="DEBUG"/>
-    <logger name="services.migrationcomponents" level="DEBUG"/>
+    <logger name="services.DataMigration" level="INFO"/>
+    <logger name="services.migrationcomponents" level="INFO"/>
+    <logger name="services.PeriodicScanReceiver" level="DEBUG"/>
 
     <logger name="services.CommissionStatusPropagator" level="DEBUG"/>
     <root level="INFO">

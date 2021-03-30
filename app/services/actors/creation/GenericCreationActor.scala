@@ -3,9 +3,7 @@ package services.actors.creation
 import java.sql.Timestamp
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
-
-import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
+import akka.actor.{Actor, ActorRef, Props}
 import akka.persistence._
 import models.{FileEntry, PostrunAction, ProjectEntry, ProjectRequestFull}
 import org.slf4j.LoggerFactory
@@ -53,31 +51,12 @@ object GenericCreationActor {
 
   case class CreateEventHandled(eventId: UUID)  extends JacksonSerializable
 
-  val extractEntityId:ShardRegion.ExtractEntityId = {
-    case msg@ NewProjectRequest(rq,_,_)=>(rq.filename + "-f", msg)
-    case msg@ NewProjectRollback(rq,_)=>(rq.filename + "-r", msg)
-  }
 
-  val maxShards = 100
-
-  val extractShardId:ShardRegion.ExtractShardId = {
-    case NewProjectRequest(rq,_,_) => ((rq.filename + "-f").hashCode%100).toString
-    case NewProjectRollback(rq,_) => ((rq.filename + "-r").hashCode%100).toString
-  }
-
-  def startupSharding(typeName:String, props:Props)(implicit system:ActorSystem, injector:Injector): ActorRef = {
-    logger.info("Setting up sharding for generic creation actor")
-    ClusterSharding(system).start(
-      typeName = typeName,
-      entityProps = props,
-      settings = ClusterShardingSettings(system),
-      extractEntityId = extractEntityId,
-      extractShardId = extractShardId
-    )
-  }
 }
 
-trait GenericCreationActor extends PersistentActor {
+trait GenericCreationActor extends Actor {
+  val persistenceId:String  //for compatibility
+
   protected val logger=Logger(getClass)
 
   var state = CreationStepState()
@@ -91,17 +70,17 @@ trait GenericCreationActor extends PersistentActor {
     * add an event to the journal, and snapshot if required
     * @param event event to add
     */
-  def updateState(event:CreationEvent): Unit = {
-    state = state.updated(event)
-    if(lastSequenceNr % snapshotInterval ==0 && lastSequenceNr!=0)
-      saveSnapshot(state)
-  }
+//  def updateState(event:CreationEvent): Unit = {
+//    state = state.updated(event)
+//    if(lastSequenceNr % snapshotInterval ==0 && lastSequenceNr!=0)
+//      saveSnapshot(state)
+//  }
 
   def doPersistedAsync(msg:CreationMessage)(block: (CreationMessage,ActorRef)=>Future[Any]): Unit = {
     val newUuid = UUID.randomUUID()
-    persist(NewCreationEvent(msg,newUuid)){event=>
-      updateState(event)
-      logger.debug(s"persisted generic request event with uuid $newUuid to journal, now performing")
+//    persist(NewCreationEvent(msg,newUuid)){event=>
+//      updateState(event)
+//      logger.debug(s"persisted generic request event with uuid $newUuid to journal, now performing")
       val originalSender = sender()
       block(msg,originalSender).andThen({
         case Success(result)=>
@@ -110,13 +89,13 @@ trait GenericCreationActor extends PersistentActor {
         case Failure(err)=> //should probably seperate errors into Recoverable and Nonrecoverable subclasses
           logger.error("Creation step failed", err)
       })
-    }
+    //}
   }
 
   def doPersistedSync(msg:CreationMessage)(block: (CreationMessage,ActorRef)=>Try[Any]) = {
     val newUuid = UUID.randomUUID()
-    persist(NewCreationEvent(msg,newUuid)){event=>
-      updateState(event)
+//    persist(NewCreationEvent(msg,newUuid)){event=>
+//      updateState(event)
       logger.debug("persisted generic request event to journal, now performing")
       val originalSender = sender()
       block(msg,originalSender) match {
@@ -125,35 +104,40 @@ trait GenericCreationActor extends PersistentActor {
         case Failure(err)=> //should probably seperate errors into Recoverable and Nonrecoverable subclasses
           logger.error("Creation step failed", err)
       }
-    }
+    //}
   }
 
-  override def receiveRecover:Receive = {
-    case evt:CreationEvent =>
-      logger.debug(s"receiveRecover got message event: $evt")
-      updateState(evt)
-    case handledEvt:CreateEventHandled =>
-      logger.debug(s"receiveRecover got message handled: ${handledEvt.eventId}")
-      state = state.removed(handledEvt.eventId)
-    case RecoveryCompleted=>
-      logger.info(s"Completed journal recovery")
-    case SnapshotOffer(_, snapshot: CreationStepState)=>
-      logger.debug("receiveRecover got snapshot offer")
-      state=snapshot
+  override def receive: Receive = {
+    case msg:Any=>
+      logger.error(s"Received unknown message: ${msg.getClass.getCanonicalName} ${msg}")
   }
 
-  override def receiveCommand: Receive = {
-    case SaveSnapshotSuccess(metadata)=>
-      logger.debug(s"Successfully saved snapshot: $metadata")
-      logger.debug(s"Now removing messages to sequence no ${metadata.sequenceNr} from journal")
-      deleteMessages(metadata.sequenceNr)
-    case SaveSnapshotFailure(metadata,error)=>
-      logger.error(s"Could not save snapshot ${metadata.sequenceNr} for ${metadata.persistenceId}: ",error)
-//    case msgAsObject:CreationMessage=>
-//      persist(NewCreationEvent(msgAsObject, UUID.randomUUID())) { event=>
-//        updateState(event)
-//        logger.debug("persisted creation event to journal, now sending")
-//        self ! event
-//      }
-  }
+//  override def receiveRecover:Receive = {
+//    case evt:CreationEvent =>
+//      logger.debug(s"receiveRecover got message event: $evt")
+//      updateState(evt)
+//    case handledEvt:CreateEventHandled =>
+//      logger.debug(s"receiveRecover got message handled: ${handledEvt.eventId}")
+//      state = state.removed(handledEvt.eventId)
+//    case RecoveryCompleted=>
+//      logger.info(s"Completed journal recovery")
+//    case SnapshotOffer(_, snapshot: CreationStepState)=>
+//      logger.debug("receiveRecover got snapshot offer")
+//      state=snapshot
+//  }
+
+//  override def receiveCommand: Receive = {
+//    case SaveSnapshotSuccess(metadata)=>
+//      logger.debug(s"Successfully saved snapshot: $metadata")
+//      logger.debug(s"Now removing messages to sequence no ${metadata.sequenceNr} from journal")
+//      deleteMessages(metadata.sequenceNr)
+//    case SaveSnapshotFailure(metadata,error)=>
+//      logger.error(s"Could not save snapshot ${metadata.sequenceNr} for ${metadata.persistenceId}: ",error)
+////    case msgAsObject:CreationMessage=>
+////      persist(NewCreationEvent(msgAsObject, UUID.randomUUID())) { event=>
+////        updateState(event)
+////        logger.debug("persisted creation event to journal, now sending")
+////        self ! event
+////      }
+//  }
 }

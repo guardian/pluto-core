@@ -36,7 +36,7 @@ class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider, storag
   import GenericCreationActor._
   private implicit val db=dbConfigProvider.get[JdbcProfile].db
 
-  override def receiveCommand: Receive = {
+  override def receive: Receive = {
     case copyRequest:NewProjectRequest=>
       doPersistedAsync(copyRequest) { (msg,originalSender)=>
         val rq = copyRequest.rq
@@ -89,6 +89,6 @@ class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider, storag
         }
       }
     case _=>
-      super.receiveCommand
+      super.receive
   }
 }

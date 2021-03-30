@@ -4,7 +4,6 @@ import java.lang.annotation.Annotation
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import com.fasterxml.jackson.annotation.{JsonSubTypes, JsonTypeInfo}
 import com.google.inject.Inject
 import com.rabbitmq.client.AMQP.Exchange
@@ -31,27 +30,6 @@ object RabbitMqPropagator {
   case class ChangeEvent(json: String, itemType: Option[String], operation: ChangeOperation, uuid:UUID)
     extends RabbitMqEvent with JacksonSerializable
 
-
-  val extractEntityId:ShardRegion.ExtractEntityId = {
-    case msg @ ChangeEvent(_,_,_,uuid)=>(uuid.toString, msg)
-  }
-
-  val maxNumberOfShards = 100
-
-  val extractShardId:ShardRegion.ExtractShardId = {
-    case ChangeEvent(_,_,_,uuid)=>(uuid.hashCode() % 100).toString
-  }
-
-  def startupSharding(system:ActorSystem, injector:Injector) = {
-    logger.info("Setting up sharding for RabbitMQPropagator")
-    ClusterSharding(system).start(
-      typeName = "rabbitmq-propagator",
-      entityProps = Props(injector.instanceOf(classOf[RabbitMqPropagator])),
-      settings = ClusterShardingSettings(system),
-      extractEntityId = extractEntityId,
-      extractShardId = extractShardId
-    )
-  }
 }
 
 /**
