@@ -75,7 +75,7 @@ class ProjectCreationActor @Inject() (app:Application)(implicit system:ActorSyst
     })
   }
 
-  override def receiveCommand: Receive = {
+  override def receive: Receive = {
     case rq:NewProjectRequest=>
       logger.info(s"got request: $rq")
       logger.info(s"i am ${context.self}")
@@ -99,6 +99,6 @@ class ProjectCreationActor @Inject() (app:Application)(implicit system:ActorSyst
       })
     case msg:Any=>
       logger.info(s"got other message: ${msg}")
-      super.receiveCommand
+      super.receive
   }
 }

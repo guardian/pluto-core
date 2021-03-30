@@ -1,9 +1,8 @@
 package services
 
 import java.util.UUID
-
-import akka.actor.{ActorSystem, Props}
-import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
+import akka.actor.{Actor, ActorSystem, Props}
+//import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
 import com.google.inject.Inject
@@ -14,6 +13,7 @@ import play.api.{Configuration, Logger}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
+
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -49,11 +49,11 @@ object CommissionStatusPropagator {
  * @param configuration
  * @param dbConfigProvider
  */
-class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfigProvider:DatabaseConfigProvider) extends PersistentActor {
+class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfigProvider:DatabaseConfigProvider) extends Actor {
   import CommissionStatusPropagator._
   import models.EntryStatusMapper._
 
-  override def persistenceId = "commission-status-propagator-" + self.path.name
+  //override def persistenceId = "commission-status-propagator-" + self.path.name
 
   private final var state:CommissionStatusPropagatorState = CommissionStatusPropagatorState(Map())
   private final var restoreCompleted = false
@@ -67,10 +67,10 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
    * @param event event to add
    */
   def updateState(event:CommissionStatusEvent): Unit = {
-    logger.debug(s"Marked event ${event.uuid} as pending")
-    state = state.updated(event)
-    if(lastSequenceNr % snapshotInterval ==0 && lastSequenceNr!=0)
-      saveSnapshot(state)
+//    logger.debug(s"Marked event ${event.uuid} as pending")
+//    state = state.updated(event)
+//    if(lastSequenceNr % snapshotInterval ==0 && lastSequenceNr!=0)
+//      saveSnapshot(state)
   }
 
   /**
@@ -78,31 +78,31 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
    * @param evtAsObject event object
    */
   def confirmHandled(evtAsObject:  CommissionStatusEvent):Unit = {
-    persist(EventHandled(evtAsObject.uuid)){ handledEventMarker=>
-      logger.debug(s"marked event ${evtAsObject.uuid} as handled")
-      state = state.removed(evtAsObject)
-    }
+//    persist(EventHandled(evtAsObject.uuid)){ handledEventMarker=>
+//      logger.debug(s"marked event ${evtAsObject.uuid} as handled")
+//      state = state.removed(evtAsObject)
+//    }
   }
+//
+//  override def receiveRecover: Receive = {
+//    case evt:CommissionStatusEvent=>
+//      updateState(evt)
+//    case handledEvt:EventHandled =>
+//      logger.debug(s"receiveRecover got message handled: ${handledEvt.uuid}")
+//      state = state.removed(handledEvt.uuid)
+//    case RecoveryCompleted=>
+//      logger.info(s"Completed journal recovery, kicking off pending items")
+//      restoreCompleted=true
+//      state.foreach { stateEntry =>
+//        logger.debug(s"${stateEntry._1.toString}: ${stateEntry._2.toString}")
+//        self ! stateEntry._2
+//      }
+//    case SnapshotOffer(_, snapshot: CommissionStatusPropagatorState)=>
+//      logger.debug("receiveRecover got snapshot offer")
+//      state=snapshot
+//  }
 
-  override def receiveRecover: Receive = {
-    case evt:CommissionStatusEvent=>
-      updateState(evt)
-    case handledEvt:EventHandled =>
-      logger.debug(s"receiveRecover got message handled: ${handledEvt.uuid}")
-      state = state.removed(handledEvt.uuid)
-    case RecoveryCompleted=>
-      logger.info(s"Completed journal recovery, kicking off pending items")
-      restoreCompleted=true
-      state.foreach { stateEntry =>
-        logger.debug(s"${stateEntry._1.toString}: ${stateEntry._2.toString}")
-        self ! stateEntry._2
-      }
-    case SnapshotOffer(_, snapshot: CommissionStatusPropagatorState)=>
-      logger.debug("receiveRecover got snapshot offer")
-      state=snapshot
-  }
-
-  override def receiveCommand: Receive = {
+  override def receive: Receive = {
     /**
       * re-run any messages stuck in the actor's state. This is sent at 5 minute intervals by ClockSingleton and
       * is there to ensure that events get retried (e.g. one instance loses network connectivity before postgres update is sent,
@@ -119,7 +119,7 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
     case evt@CommissionStatusUpdate(commissionId, newStatus, uuid)=>
       val originalSender = sender()
 
-      persist(evt) { _=>
+//      persist(evt) { _=>
         logger.info(s"${uuid}: Received notification that commission $commissionId changed to $newStatus")
         val maybeRequiredUpdate = newStatus match {
           case EntryStatus.Completed | EntryStatus.Killed=>
@@ -157,5 +157,5 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
             confirmHandled(evt)
         }
       }
-  }
+  //}
 }

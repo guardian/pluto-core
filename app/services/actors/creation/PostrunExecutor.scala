@@ -120,7 +120,7 @@ class PostrunExecutor @Inject() (dbConfigProvider:DatabaseConfigProvider, config
         Future(Right(s"Successfully ran $successfulActions postrun actions for project $writtenPath"))
   }
 
-  override def receiveCommand: Receive = {
+  override def receive: Receive = {
     case createRequest:NewProjectRequest=>
       //FIXME: should validate createRequest here, before entering persistence block
       doPersistedAsync(createRequest) { (msg, originalSender) =>
@@ -192,6 +192,6 @@ class PostrunExecutor @Inject() (dbConfigProvider:DatabaseConfigProvider, config
       logger.debug("No rollback necessary for this step")
       sender() ! StepSucceded(rollbackRequest.data)
     case _=>
-      super.receiveCommand
+      super.receive
   }
 }

@@ -22,7 +22,7 @@ class RetrievePostruns @Inject() (dbConfigProvider:DatabaseConfigProvider) exten
   import GenericCreationActor._
   private implicit val db=dbConfigProvider.get[JdbcProfile].db
 
-  override def receiveCommand: Receive = {
+  override def receive: Receive = {
     case createRequest:NewProjectRequest=>
       doPersistedAsync(createRequest) { (msg, originalSender)=>
         Future.sequence(Seq(
@@ -47,6 +47,6 @@ class RetrievePostruns @Inject() (dbConfigProvider:DatabaseConfigProvider) exten
       logger.debug("No rollback necessary for this actor")
       sender() ! StepSucceded(updatedData = rollbackRequest.data.copy(postrunSequence = None))
     case _=>
-      super.receiveCommand
+      super.receive
   }
 }

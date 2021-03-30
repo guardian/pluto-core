@@ -96,7 +96,7 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
         })
     })
 
-  override def receiveCommand: Receive = {
+  override def receive: Receive = {
     case entryRequest:NewProjectRequest=>
       val originalSender = sender()
       val recordTimestamp = Timestamp.valueOf(entryRequest.createTime.getOrElse(LocalDateTime.now()))
@@ -131,6 +131,6 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
           originalSender ! StepFailed(projectCreateData.copy(destFileEntry = None), error)
       })
     case _=>
-      super.receiveCommand
+      super.receive
   }
 }
