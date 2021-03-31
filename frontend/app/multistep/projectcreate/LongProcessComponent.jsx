@@ -1,5 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
+import { CircularProgress } from "@material-ui/core";
 
 class LongProcessComponent extends React.Component {
   static propTypes = {
@@ -61,11 +62,8 @@ class LongProcessComponent extends React.Component {
   render() {
     return (
       <div style={{ display: this.props.inProgress ? "inline" : "none" }}>
-        <img
-          src="/assets/images/uploading.svg"
-          style={{ height: "20px", verticalAlign: "middle" }}
-        />
-        <span style={{ marginLeft: "1em" }}>
+        <CircularProgress style={{ height: "20px", width: "20px" }} />
+        <span style={{ marginLeft: "0.5em" }}>
           {this.props.operationName} in progress. This may take{" "}
           {this.props.expectedDuration} seconds or more, please wait...
           <br />
