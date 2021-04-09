@@ -11,16 +11,12 @@ import {
   TableBody,
   TableCell,
 } from "@material-ui/core";
-import {
-  getProjectDeliverables,
-  createProjectDeliverable,
-  getProjectDeliverableSummary,
-} from "../utils/api";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 import WarningIcon from "@material-ui/icons/Warning";
 import SystemNotification, {
   SystemNotificationKind,
 } from "../SystemNotification";
+import { authenticatedFetch } from "./auth";
 
 const useStyles = makeStyles({
   projectDeliverable: {
@@ -58,6 +54,8 @@ const useStyles = makeStyles({
   },
 });
 
+declare var vaultdoorURL: string;
+
 const tableHeaderTitles: string[] = ["Filename", "Size", "Status"];
 
 interface ProjectEntryVaultComponentProps {
@@ -76,30 +74,39 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   const [loading, setLoading] = useState<boolean>(true);
   const [failed, setFailed] = useState<string>("");
   const { project } = props;
+  const [knownVaults, setKnownVaults] = useState<Array<VaultDescription>>([]);
+
+  const refresh = async () => {
+    const response = await authenticatedFetch(`${vaultdoorURL}api/vault`, {});
+    switch (response.status) {
+      case 200:
+        const content = (await response.json()) as Array<VaultDescription>;
+        if (Array.isArray(content)) {
+          const reversed = content.reverse();
+          //this.setState({loading: false, lastError: null, knownVaults: reversed});
+          setLoading(false);
+          //setLastError(undefined);
+          setKnownVaults(reversed);
+        } else {
+          console.error(
+            "Expected server response to be an array, got ",
+            content
+          );
+          //setLastError("Could not understand server response");
+          setLoading(false);
+        }
+        break;
+      default:
+        const errorContent = await response.text();
+        console.error(errorContent);
+        setLoading(false);
+        //setLastError(`Server error ${response.status}`);
+        break;
+    }
+  };
 
   useEffect(() => {
-    const loadProjectDeliverables = async () => {
-      try {
-        const deliverableCount = await getProjectDeliverableSummary(project.id);
-
-        setDeliverableCount(deliverableCount);
-      } catch (error) {
-        if (error) {
-          let message = "Failed to fetch Deliverables!";
-          if (error?.response?.status === 503) {
-            message = `${message} - Reason: Pluto-Deliverables application is offline for some reason`;
-          }
-
-          setFailed(message);
-          console.error(message, error);
-        }
-      }
-
-      setLoading(false);
-    };
-
-    setLoading(true);
-    loadProjectDeliverables();
+    refresh();
   }, []);
 
   if (loading) {
@@ -112,7 +119,16 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
 
   return (
     <Paper className={classes.projectDeliverable}>
-      <Typography variant="h4">Vaultdoor</Typography>
+      <Typography variant="h4">Vaultdoor {vaultdoorURL}</Typography>
+      <Table>
+        <TableBody>
+          {knownVaults.map((entry, idx) => (
+            <TableRow key={idx}>
+              <TableCell>{entry.name}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </Paper>
   );
 };
