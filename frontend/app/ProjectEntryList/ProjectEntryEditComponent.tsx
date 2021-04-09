@@ -34,6 +34,7 @@ import axios from "axios";
 import ProductionOfficeSelector from "../common/ProductionOfficeSelector";
 import StatusSelector from "../common/StatusSelector";
 import { Helmet } from "react-helmet";
+import ProjectEntryVaultComponent from "./ProjectEntryVaultComponent";
 
 const useStyles = makeStyles({
   root: {
@@ -271,6 +272,9 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       </Paper>
       {project === EMPTY_PROJECT ? null : (
         <ProjectEntryDeliverablesComponent project={project} />
+      )}
+      {project === EMPTY_PROJECT ? null : (
+        <ProjectEntryVaultComponent project={project} />
       )}
       <Dialog
         open={errorDialog}
