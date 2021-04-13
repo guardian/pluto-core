@@ -109,6 +109,25 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
     refresh();
   }, []);
 
+  const fetchVaultData = async (vaultId: string) => {
+    const response = await authenticatedFetch(
+      `${vaultdoorURL}/api/vault/${vaultId}/projectSummary/${project}`,
+      {}
+    );
+    switch (response.status) {
+      case 200:
+        const bodyText = await response.text();
+        const content = JSON.parse(bodyText);
+        return `<TableCell>${content.total.count}</TableCell><TableCell>${content.total.size}</TableCell>`;
+        break;
+      default:
+        const errorContent = await response.text();
+        console.error(errorContent);
+        return `<TableCell>0</TableCell><TableCell>0</TableCell>`;
+        break;
+    }
+  };
+
   if (loading) {
     return (
       <div className={classes.loading}>
@@ -125,6 +144,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
           {knownVaults.map((entry, idx) => (
             <TableRow key={idx}>
               <TableCell>{entry.name}</TableCell>
+              {fetchVaultData(entry.vaultId)}
             </TableRow>
           ))}
         </TableBody>
