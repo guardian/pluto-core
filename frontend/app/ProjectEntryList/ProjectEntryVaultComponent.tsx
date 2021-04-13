@@ -111,7 +111,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
 
   const fetchVaultData = async (vaultId: string) => {
     const response = await authenticatedFetch(
-      `${vaultdoorURL}api/vault/${vaultId}/projectSummary/${project}`,
+      `${vaultdoorURL}api/vault/${vaultId}/projectSummary/${project.id}`,
       {}
     );
     switch (response.status) {
