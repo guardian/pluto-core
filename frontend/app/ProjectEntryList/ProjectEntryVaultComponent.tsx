@@ -118,12 +118,12 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
       case 200:
         const bodyText = await response.text();
         const content = JSON.parse(bodyText);
-        return `<TableCell>${content.total.count}</TableCell><TableCell>${content.total.size}</TableCell>`;
+        return content.total.count;
         break;
       default:
         const errorContent = await response.text();
         console.error(errorContent);
-        return `<TableCell>0</TableCell><TableCell>0</TableCell>`;
+        return 0;
         break;
     }
   };
@@ -144,7 +144,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
           {knownVaults.map((entry, idx) => (
             <TableRow key={idx}>
               <TableCell>{entry.name}</TableCell>
-              {fetchVaultData(entry.vaultId)}
+              <TableCell>{fetchVaultData(entry.vaultId)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
