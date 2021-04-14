@@ -112,7 +112,6 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   const fetchVaultData = (vaultId: string) => {
     let totalCount = 0;
     let totalSize = 0;
-    let vaultDataLoaded = false;
 
     const fetchVaultDataNow = async (vaultId: string) => {
       const response = await authenticatedFetch(
@@ -125,19 +124,16 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
           const content = JSON.parse(bodyText);
           totalCount = content.total.count;
           totalSize = content.total.size;
-          vaultDataLoaded = true;
+          console.log("Count: " + totalCount);
+          console.log("Size: " + totalSize);
         default:
           const errorContent = await response.text();
           console.error(errorContent);
-          vaultDataLoaded = true;
       }
     };
 
     fetchVaultDataNow(vaultId);
 
-    while (vaultDataLoaded == false) {
-      //Loop until we load the data
-    }
     return [totalCount, totalSize];
   };
 
