@@ -109,23 +109,32 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
     refresh();
   }, []);
 
-  const fetchVaultData = async (vaultId: string) => {
-    const response = await authenticatedFetch(
-      `${vaultdoorURL}api/vault/${vaultId}/projectSummary/${project.id}`,
-      {}
-    );
-    switch (response.status) {
-      case 200:
-        const bodyText = await response.text();
-        const content = JSON.parse(bodyText);
-        return [content.total.count, content.total.size];
-        break;
-      default:
-        const errorContent = await response.text();
-        console.error(errorContent);
-        return [0, 0];
-        break;
-    }
+  const fetchVaultData = (vaultId: string) => {
+    let totalCount = "0";
+    let totalSize = "0";
+
+    const fetchVaultDataNow = async (vaultId: string) => {
+      const response = await authenticatedFetch(
+        `${vaultdoorURL}api/vault/${vaultId}/projectSummary/${project.id}`,
+        {}
+      );
+      switch (response.status) {
+        case 200:
+          const bodyText = await response.text();
+          const content = JSON.parse(bodyText);
+          totalCount = content.total.count;
+          totalSize = content.total.size;
+          break;
+        default:
+          const errorContent = await response.text();
+          console.error(errorContent);
+          break;
+      }
+    };
+
+    fetchVaultDataNow(vaultId);
+
+    return [totalCount, totalSize];
   };
 
   if (loading) {
@@ -142,11 +151,14 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
       <Table>
         <TableBody>
           {knownVaults.map(function (entry, idx) {
-            console.log(fetchVaultData(entry.vaultId));
+            //console.log(fetchVaultData(entry.vaultId));
+            const [vaultCount, vaultSize] = fetchVaultData(entry.vaultId);
 
             return (
               <TableRow key={idx}>
                 <TableCell>{entry.name}</TableCell>
+                <TableCell>{vaultCount}</TableCell>
+                <TableCell>{vaultSize}</TableCell>
               </TableRow>
             );
           })}
