@@ -188,31 +188,9 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
             let totalCount = 0;
             let totalSize = 0;
             fetchVaultDataTest(entry.vaultId).then(function (res) {
-              console.log(res);
-              if (idx == 0) {
-                setVaultCount0(res.total.count);
-                setVaultSize0(res.total.size);
-              }
-              if (idx == 1) {
-                setVaultCount1(res.total.count);
-                setVaultSize1(res.total.size);
-              }
-              if (idx == 2) {
-                setVaultCount2(res.total.count);
-                setVaultSize2(res.total.size);
-              }
-              if (idx == 3) {
-                setVaultCount3(res.total.count);
-                setVaultSize3(res.total.size);
-              }
-              if (idx == 4) {
-                setVaultCount4(res.total.count);
-                setVaultSize4(res.total.size);
-              }
-              if (idx == 5) {
-                setVaultCount5(res.total.count);
-                setVaultSize5(res.total.size);
-              }
+              //console.log(res);
+              eval("setVaultCount" + idx)(res.total.count);
+              eval("setVaultSize" + idx)(res.total.size);
             });
             //const [vaultCount, vaultSize] = fetchVaultData(entry.vaultId);
 
