@@ -75,6 +75,18 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   const [failed, setFailed] = useState<string>("");
   const { project } = props;
   const [knownVaults, setKnownVaults] = useState<Array<VaultDescription>>([]);
+  const [vaultCount0, setVaultCount0] = useState<number>(0);
+  const [vaultCount1, setVaultCount1] = useState<number>(0);
+  const [vaultCount2, setVaultCount2] = useState<number>(0);
+  const [vaultCount3, setVaultCount3] = useState<number>(0);
+  const [vaultCount4, setVaultCount4] = useState<number>(0);
+  const [vaultCount5, setVaultCount5] = useState<number>(0);
+  const [vaultSize0, setVaultSize0] = useState<number>(0);
+  const [vaultSize1, setVaultSize1] = useState<number>(0);
+  const [vaultSize2, setVaultSize2] = useState<number>(0);
+  const [vaultSize3, setVaultSize3] = useState<number>(0);
+  const [vaultSize4, setVaultSize4] = useState<number>(0);
+  const [vaultSize5, setVaultSize5] = useState<number>(0);
 
   const refresh = async () => {
     const response = await authenticatedFetch(`${vaultdoorURL}api/vault`, {});
@@ -177,16 +189,38 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
             let totalSize = 0;
             fetchVaultDataTest(entry.vaultId).then(function (res) {
               console.log(res);
-              totalCount = res.total.count;
-              totalSize = res.total.size;
+              if (idx == 0) {
+                setVaultCount0(res.total.count);
+                setVaultSize0(res.total.size);
+              }
+              if (idx == 1) {
+                setVaultCount1(res.total.count);
+                setVaultSize1(res.total.size);
+              }
+              if (idx == 2) {
+                setVaultCount2(res.total.count);
+                setVaultSize2(res.total.size);
+              }
+              if (idx == 3) {
+                setVaultCount3(res.total.count);
+                setVaultSize3(res.total.size);
+              }
+              if (idx == 4) {
+                setVaultCount4(res.total.count);
+                setVaultSize4(res.total.size);
+              }
+              if (idx == 5) {
+                setVaultCount5(res.total.count);
+                setVaultSize5(res.total.size);
+              }
             });
             //const [vaultCount, vaultSize] = fetchVaultData(entry.vaultId);
 
             return (
               <TableRow key={idx}>
                 <TableCell>{entry.name}</TableCell>
-                <TableCell>{totalCount}</TableCell>
-                <TableCell>{totalSize}</TableCell>
+                <TableCell>{["vaultCount" + idx]}</TableCell>
+                <TableCell>{["vaultSize" + idx]}</TableCell>
               </TableRow>
             );
           })}
