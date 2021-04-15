@@ -219,8 +219,8 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
             return (
               <TableRow key={idx}>
                 <TableCell>{entry.name}</TableCell>
-                <TableCell>{["vaultCount" + idx]}</TableCell>
-                <TableCell>{["vaultSize" + idx]}</TableCell>
+                <TableCell>{eval("vaultCount" + idx)}</TableCell>
+                <TableCell>{eval("vaultSize" + idx)}</TableCell>
               </TableRow>
             );
           })}
