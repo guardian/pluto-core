@@ -75,8 +75,6 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   const [failed, setFailed] = useState<string>("");
   const { project } = props;
   const [knownVaults, setKnownVaults] = useState<Array<VaultDescription>>([]);
-  const [vaultCount, setVaultCount] = useState<number>(0);
-  const [vaultSize, setVaultSize] = useState<number>(0);
 
   const refresh = async () => {
     const response = await authenticatedFetch(`${vaultdoorURL}api/vault`, {});
@@ -114,6 +112,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   const fetchVaultData = (vaultId: string) => {
     let totalCount = 0;
     let totalSize = 0;
+    let promiseFinished = false;
 
     const fetchVaultDataNow = async (vaultId: string) => {
       const response = await authenticatedFetch(
@@ -126,8 +125,6 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
           const content = JSON.parse(bodyText);
           totalCount = content.total.count;
           totalSize = content.total.size;
-          setVaultCount(content.total.count);
-          setVaultSize(content.total.size);
           console.log("Count: " + totalCount);
           console.log("Size: " + totalSize);
           break;
@@ -138,7 +135,20 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
       }
     };
 
-    fetchVaultDataNow(vaultId);
+    fetchVaultDataNow(vaultId).then(
+      () => {
+        promiseFinished = true;
+      },
+      (reason) => {
+        promiseFinished = true;
+      }
+    );
+
+    while (promiseFinished == false) {
+      // Loop while waiting for promise
+    }
+
+    return [totalCount, totalSize];
   };
 
   if (loading) {
@@ -156,7 +166,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
         <TableBody>
           {knownVaults.map(function (entry, idx) {
             //console.log(fetchVaultData(entry.vaultId));
-            fetchVaultData(entry.vaultId);
+            const [vaultCount, vaultSize] = fetchVaultData(entry.vaultId);
 
             return (
               <TableRow key={idx}>
