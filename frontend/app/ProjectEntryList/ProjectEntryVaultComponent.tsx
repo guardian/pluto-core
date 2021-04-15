@@ -112,7 +112,6 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   const fetchVaultData = (vaultId: string) => {
     let totalCount = 0;
     let totalSize = 0;
-    let promiseFinished = false;
 
     const fetchVaultDataNow = async (vaultId: string) => {
       const response = await authenticatedFetch(
@@ -135,20 +134,28 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
       }
     };
 
-    fetchVaultDataNow(vaultId).then(
-      () => {
-        promiseFinished = true;
-      },
-      (reason) => {
-        promiseFinished = true;
-      }
+    fetchVaultDataNow(vaultId);
+
+    //return [totalCount, totalSize];
+  };
+
+  const fetchVaultDataTest = async (vaultId: string) => {
+    const response = await authenticatedFetch(
+      `${vaultdoorURL}api/vault/${vaultId}/projectSummary/${project.id}`,
+      {}
     );
-
-    while (promiseFinished == false) {
-      // Loop while waiting for promise
+    switch (response.status) {
+      case 200:
+        const bodyText = await response.text();
+        const content = JSON.parse(bodyText);
+        return content;
+        break;
+      default:
+        const errorContent = await response.text();
+        console.error(errorContent);
+        return;
+        break;
     }
-
-    return [totalCount, totalSize];
   };
 
   if (loading) {
@@ -166,13 +173,19 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
         <TableBody>
           {knownVaults.map(function (entry, idx) {
             //console.log(fetchVaultData(entry.vaultId));
-            const [vaultCount, vaultSize] = fetchVaultData(entry.vaultId);
+            let totalCount = 0;
+            let totalSize = 0;
+            fetchVaultDataTest(entry.vaultId).then(function (res) {
+              totalCount = res.val.total.count;
+              totalSize = res.val.total.size;
+            });
+            //const [vaultCount, vaultSize] = fetchVaultData(entry.vaultId);
 
             return (
               <TableRow key={idx}>
                 <TableCell>{entry.name}</TableCell>
-                <TableCell>{vaultCount}</TableCell>
-                <TableCell>{vaultSize}</TableCell>
+                <TableCell>{totalCount}</TableCell>
+                <TableCell>{totalSize}</TableCell>
               </TableRow>
             );
           })}
