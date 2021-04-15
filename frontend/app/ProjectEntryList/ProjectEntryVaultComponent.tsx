@@ -167,7 +167,16 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
             });
 
             return (
-              <TableRow key={idx}>
+              <TableRow
+                hover={true}
+                onClick={() => {
+                  window.open(
+                    `${vaultdoorURL}byproject?project=${project.id}`,
+                    "_blank"
+                  );
+                }}
+                key={idx}
+              >
                 <TableCell>{entry.name}</TableCell>
                 <TableCell>{eval("vaultCount" + idx)}</TableCell>
                 <TableCell>{eval("vaultSize" + idx)}</TableCell>
