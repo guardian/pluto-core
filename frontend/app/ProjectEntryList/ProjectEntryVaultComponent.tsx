@@ -176,8 +176,9 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
             let totalCount = 0;
             let totalSize = 0;
             fetchVaultDataTest(entry.vaultId).then(function (res) {
-              totalCount = res.val.total.count;
-              totalSize = res.val.total.size;
+              console.log(res);
+              //totalCount = res.val.total.count;
+              //totalSize = res.val.total.size;
             });
             //const [vaultCount, vaultSize] = fetchVaultData(entry.vaultId);
 
