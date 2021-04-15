@@ -126,15 +126,17 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
           totalSize = content.total.size;
           console.log("Count: " + totalCount);
           console.log("Size: " + totalSize);
+          break;
         default:
           const errorContent = await response.text();
           console.error(errorContent);
+          break;
       }
     };
 
-    fetchVaultDataNow(vaultId);
-
-    return [totalCount, totalSize];
+    fetchVaultDataNow(vaultId).then(() => {
+      return [totalCount, totalSize];
+    });
   };
 
   if (loading) {
