@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Paper,
-  Button,
   Typography,
   makeStyles,
   TableContainer,
@@ -11,11 +10,6 @@ import {
   TableBody,
   TableCell,
 } from "@material-ui/core";
-import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
-import WarningIcon from "@material-ui/icons/Warning";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../SystemNotification";
 import { authenticatedFetch } from "./auth";
 
 const useStyles = makeStyles({
@@ -24,27 +18,6 @@ const useStyles = makeStyles({
     flexDirection: "column",
     padding: "1rem",
     marginTop: "1rem",
-
-    "& .MuiTypography-subtitle1": {
-      marginTop: "6px",
-      marginBottom: "6px",
-    },
-    "& .error": {
-      backgroundColor: "rgb(211 47 47)",
-      padding: "10px",
-      color: "#FFF",
-      "& .content": {
-        display: "flex",
-        alignItems: "center",
-
-        "& .message": {
-          marginLeft: "6px",
-        },
-      },
-    },
-    "& .button-container": {
-      marginTop: "1rem",
-    },
   },
   loading: {
     display: "flex",
@@ -92,7 +65,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   const [vaultSize10, setVaultSize10] = useState<number>(0);
   const [vaultSize11, setVaultSize11] = useState<number>(0);
 
-  const refresh = async () => {
+  const fetchVaults = async () => {
     const response = await authenticatedFetch(`${vaultdoorURL}api/vault`, {});
     switch (response.status) {
       case 200:
@@ -118,7 +91,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   };
 
   useEffect(() => {
-    refresh();
+    fetchVaults();
   }, []);
 
   const fetchVaultData = async (vaultId: string) => {
@@ -175,40 +148,44 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   return (
     <Paper className={classes.projectVaultData}>
       <Typography variant="h4">Archived Data</Typography>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Vault</TableCell>
-            <TableCell>File Count</TableCell>
-            <TableCell>Data Size</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {knownVaults.map(function (entry, idx) {
-            fetchVaultData(entry.vaultId).then(function (res) {
-              eval("setVaultCount" + idx)(res.total.count);
-              eval("setVaultSize" + idx)(res.total.size);
-            });
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Vault</TableCell>
+              <TableCell>File Count</TableCell>
+              <TableCell>Data Size</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {knownVaults.map(function (entry, idx) {
+              fetchVaultData(entry.vaultId).then(function (res) {
+                eval("setVaultCount" + idx)(res.total.count);
+                eval("setVaultSize" + idx)(res.total.size);
+              });
 
-            return (
-              <TableRow
-                hover={true}
-                onClick={() => {
-                  window.open(
-                    `${vaultdoorURL}byproject?project=${project.id}`,
-                    "_blank"
-                  );
-                }}
-                key={idx}
-              >
-                <TableCell>{entry.name}</TableCell>
-                <TableCell>{eval("vaultCount" + idx)}</TableCell>
-                <TableCell>{humanFileSize(eval("vaultSize" + idx))}</TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+              return (
+                <TableRow
+                  hover={true}
+                  onClick={() => {
+                    window.open(
+                      `${vaultdoorURL}byproject?project=${project.id}`,
+                      "_blank"
+                    );
+                  }}
+                  key={idx}
+                >
+                  <TableCell>{entry.name}</TableCell>
+                  <TableCell>{eval("vaultCount" + idx)}</TableCell>
+                  <TableCell>
+                    {humanFileSize(eval("vaultSize" + idx))}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Paper>
   );
 };
