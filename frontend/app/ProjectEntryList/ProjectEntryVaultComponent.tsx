@@ -30,6 +30,12 @@ const useStyles = makeStyles({
     width: "100%",
     alignItems: "center",
   },
+  archiveTitle: {
+    width: "90%",
+  },
+  archiveButton: {
+    width: "30px",
+  },
 });
 
 declare var vaultdoorURL: string;
@@ -153,9 +159,12 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
 
   return (
     <Paper className={classes.projectVaultData}>
-      <Typography variant="h4">Archived Data</Typography>
+      <Typography variant="h4" className={classes.archiveTitle}>
+        Archived Data
+      </Typography>
       <Tooltip title="Show archived data">
         <IconButton
+          className={classes.archiveButton}
           aria-label="expand data"
           size="small"
           onClick={() => {
