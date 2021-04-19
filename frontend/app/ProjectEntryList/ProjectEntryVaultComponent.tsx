@@ -12,6 +12,7 @@ import {
   Tooltip,
   IconButton,
   Collapse,
+  Grid,
 } from "@material-ui/core";
 import { authenticatedFetch } from "./auth";
 import KeyboardArrowUpIcon from "@material-ui/icons/KeyboardArrowUp";
@@ -29,9 +30,6 @@ const useStyles = makeStyles({
     flexDirection: "column",
     width: "100%",
     alignItems: "center",
-  },
-  archiveTitle: {
-    width: "90%",
   },
   archiveButton: {
     width: "30px",
@@ -159,21 +157,25 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
 
   return (
     <Paper className={classes.projectVaultData}>
-      <Typography variant="h4" className={classes.archiveTitle}>
-        Archived Data
-      </Typography>
-      <Tooltip title="Show archived data">
-        <IconButton
-          className={classes.archiveButton}
-          aria-label="expand data"
-          size="small"
-          onClick={() => {
-            setOpen(!open);
-          }}
-        >
-          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-        </IconButton>
-      </Tooltip>
+      <Grid container spacing={3}>
+        <Grid item xs={10}>
+          <Typography variant="h4">Archived Data</Typography>
+        </Grid>
+        <Grid item xs={2}>
+          <Tooltip title="Show archived data">
+            <IconButton
+              className={classes.archiveButton}
+              aria-label="expand data"
+              size="small"
+              onClick={() => {
+                setOpen(!open);
+              }}
+            >
+              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+            </IconButton>
+          </Tooltip>
+        </Grid>
+      </Grid>
       <Collapse in={open} timeout="auto" unmountOnExit>
         <TableContainer>
           <Table>
