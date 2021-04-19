@@ -35,6 +35,10 @@ const useStyles = makeStyles({
     width: "50px",
     height: "50px",
   },
+  archiveIcon: {
+    width: "30px",
+    height: "30px",
+  },
 });
 
 declare var vaultdoorURL: string;
@@ -172,7 +176,11 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
                 setOpen(!open);
               }}
             >
-              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+              {open ? (
+                <KeyboardArrowUpIcon className={classes.archiveIcon} />
+              ) : (
+                <KeyboardArrowDownIcon className={classes.archiveIcon} />
+              )}
             </IconButton>
           </Tooltip>
         </Grid>
