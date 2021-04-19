@@ -9,8 +9,13 @@ import {
   TableRow,
   TableBody,
   TableCell,
+  Tooltip,
+  IconButton,
+  Collapse,
 } from "@material-ui/core";
 import { authenticatedFetch } from "./auth";
+import KeyboardArrowUpIcon from "@material-ui/icons/KeyboardArrowUp";
+import KeyboardArrowDownIcon from "@material-ui/icons/KeyboardArrowDown";
 
 const useStyles = makeStyles({
   projectVaultData: {
@@ -64,6 +69,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   const [vaultSize9, setVaultSize9] = useState<number>(0);
   const [vaultSize10, setVaultSize10] = useState<number>(0);
   const [vaultSize11, setVaultSize11] = useState<number>(0);
+  const [open, setOpen] = useState<boolean>(false);
 
   const fetchVaults = async () => {
     const response = await authenticatedFetch(`${vaultdoorURL}api/vault`, {});
@@ -148,44 +154,57 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   return (
     <Paper className={classes.projectVaultData}>
       <Typography variant="h4">Archived Data</Typography>
-      <TableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Vault</TableCell>
-              <TableCell>File Count</TableCell>
-              <TableCell>Data Size</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {knownVaults.map(function (entry, idx) {
-              fetchVaultData(entry.vaultId).then(function (res) {
-                eval("setVaultCount" + idx)(res.total.count);
-                eval("setVaultSize" + idx)(res.total.size);
-              });
+      <Tooltip title="Show archived data">
+        <IconButton
+          aria-label="expand data"
+          size="small"
+          onClick={() => {
+            setOpen(!open);
+          }}
+        >
+          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+        </IconButton>
+      </Tooltip>
+      <Collapse in={open} timeout="auto" unmountOnExit>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Vault</TableCell>
+                <TableCell>File Count</TableCell>
+                <TableCell>Data Size</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {knownVaults.map(function (entry, idx) {
+                fetchVaultData(entry.vaultId).then(function (res) {
+                  eval("setVaultCount" + idx)(res.total.count);
+                  eval("setVaultSize" + idx)(res.total.size);
+                });
 
-              return (
-                <TableRow
-                  hover={true}
-                  onClick={() => {
-                    window.open(
-                      `${vaultdoorURL}byproject?project=${project.id}`,
-                      "_blank"
-                    );
-                  }}
-                  key={idx}
-                >
-                  <TableCell>{entry.name}</TableCell>
-                  <TableCell>{eval("vaultCount" + idx)}</TableCell>
-                  <TableCell>
-                    {humanFileSize(eval("vaultSize" + idx))}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                return (
+                  <TableRow
+                    hover={true}
+                    onClick={() => {
+                      window.open(
+                        `${vaultdoorURL}byproject?project=${project.id}`,
+                        "_blank"
+                      );
+                    }}
+                    key={idx}
+                  >
+                    <TableCell>{entry.name}</TableCell>
+                    <TableCell>{eval("vaultCount" + idx)}</TableCell>
+                    <TableCell>
+                      {humanFileSize(eval("vaultSize" + idx))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Collapse>
     </Paper>
   );
 };
