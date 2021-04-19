@@ -32,7 +32,8 @@ const useStyles = makeStyles({
     alignItems: "center",
   },
   archiveButton: {
-    width: "30px",
+    width: "40px",
+    height: "40px",
   },
 });
 
@@ -158,10 +159,10 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   return (
     <Paper className={classes.projectVaultData}>
       <Grid container spacing={3}>
-        <Grid item xs={10}>
+        <Grid item xs={11}>
           <Typography variant="h4">Archived Data</Typography>
         </Grid>
-        <Grid item xs={2}>
+        <Grid item xs={1}>
           <Tooltip title="Show archived data">
             <IconButton
               className={classes.archiveButton}
