@@ -36,8 +36,8 @@ const useStyles = makeStyles({
     height: "50px",
   },
   archiveIcon: {
-    width: "30px",
-    height: "30px",
+    width: "60px",
+    height: "60px",
   },
 });
 
