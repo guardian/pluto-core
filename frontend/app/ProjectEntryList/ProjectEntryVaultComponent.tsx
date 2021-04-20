@@ -90,6 +90,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   }, [open]);
 
   useEffect(() => {
+    if (knownVaults.length == 0) return; //don't bother to attempt data load if there is nothing to load in...
     console.log(`Loading in data for ${knownVaults.length} vaults...`);
 
     loadAllVaultData(vaultdoorURL, project, knownVaults)
@@ -138,9 +139,8 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
               className={classes.archiveButton}
               aria-label="expand data"
               size="small"
-              onClick={() => {
-                setOpen(!open);
-              }}
+              id="archive-expander-button"
+              onClick={() => setOpen(!open)}
             >
               {open ? (
                 <KeyboardArrowUpIcon className={classes.archiveIcon} />
@@ -153,9 +153,9 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
       </Grid>
       <Collapse in={open} timeout="auto" unmountOnExit>
         {loading ? (
-          <CircularProgress />
+          <CircularProgress id="loading-spinner" />
         ) : (
-          <TableContainer>
+          <TableContainer id="vaults-table">
             <Table>
               <TableHead>
                 <TableRow>
@@ -169,6 +169,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
                   .filter((v) => v.fileCount > 0)
                   .map((vault, idx) => (
                     <TableRow
+                      id={`data-${vault.vaultName.replace(" ", "-")}`}
                       hover={true}
                       onClick={() => {
                         window.open(
