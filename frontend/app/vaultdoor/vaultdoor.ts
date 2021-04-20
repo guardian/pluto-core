@@ -12,14 +12,22 @@ interface VaultdoorSummaryEntry {
 }
 
 interface VaultdoorProjectSummary {
-  gnmType?: Record<string, VaultdoorSummaryEntry>;
-  fileType?: Record<string, VaultdoorSummaryEntry>;
-  mediaType?: Record<string, VaultdoorSummaryEntry>;
-  hiddenFile?: Record<string, VaultdoorSummaryEntry>;
-  gnmProject?: Record<string, VaultdoorSummaryEntry>;
+  gnmType?: Map<string, VaultdoorSummaryEntry>;
+  fileType?: Map<string, VaultdoorSummaryEntry>;
+  mediaType?: Map<string, VaultdoorSummaryEntry>;
+  hiddenFile?: Map<string, VaultdoorSummaryEntry>;
+  gnmProject?: Map<string, VaultdoorSummaryEntry>;
   total: VaultdoorSummaryEntry;
 }
 
+/**
+ * fetches ProjectSummaryInformation from Vaultdoor for the given project in the given vault
+ * @param vaultdoorURL base URL for VaultDoor. Must end with a /.
+ * @param project [[Project]] record representing the project whose information we need
+ * @param vaultId ID of the vault to check
+ * @returns a Promise containing either the VaultdoorProjectSummary information or undefined if the server errored. Can
+ * also throw an exception if fetch() detects a network error.
+ */
 async function fetchVaultData(
   vaultdoorURL: string,
   project: Project,
@@ -34,9 +42,9 @@ async function fetchVaultData(
   );
   switch (response.status) {
     case 200:
-      const bodyText = await response.text();
+      const content = await response.json();
       //FIXME: should validate the json data format here
-      return JSON.parse(bodyText) as VaultdoorProjectSummary;
+      return content as VaultdoorProjectSummary;
     default:
       const errorContent = await response.text();
       console.error(errorContent);
@@ -44,6 +52,17 @@ async function fetchVaultData(
   }
 }
 
+/**
+ * fetches ProjectSummaryInformation for every vault identified in VaultList by performing multiple parallel
+ * fetches via `fetchVaultData`
+ * @param vaultDoorURL  base URL for VaultDoor. Must end with a /.
+ * @param project [[Project]] record representing the project whose information we need
+ * @param vaultList Array of VaultDescription instances indicating the vaults to query
+ * @returns a Promise containing a VaultState record for each value of the incoming `vaultList` parameter.  If a vault
+ * returns an error that does _not_ cause `fetchVaultData` to reject the promise, then that entry has 0 filecount and totalsize.
+ * If an error occurs that _does_ cause `fetchVaultData` to reject, then the entire loadAllVaultData operation fails. This should be
+ * caught by the caller.
+ */
 async function loadAllVaultData(
   vaultDoorURL: string,
   project: Project,

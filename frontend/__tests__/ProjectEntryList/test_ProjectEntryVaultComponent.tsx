@@ -99,7 +99,7 @@ describe("ProjectEntryVaultComponent", () => {
 
     await act(async () => {
       const expanderButton = rendered.find("button#archive-expander-button");
-      console.log("simulating click...");
+      //console.log("simulating click...");
       expanderButton.simulate("click");
     });
 

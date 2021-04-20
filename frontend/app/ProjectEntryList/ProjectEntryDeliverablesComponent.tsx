@@ -62,6 +62,7 @@ const tableHeaderTitles: string[] = ["Filename", "Size", "Status"];
 
 interface ProjectEntryDeliverablesComponentProps {
   project: Project;
+  onError?: (errorDesc: string) => void;
 }
 
 const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesComponentProps> = (
@@ -101,6 +102,11 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
     setLoading(true);
     loadProjectDeliverables();
   }, []);
+
+  useEffect(() => {
+    if (failed && props.onError)
+      props.onError("Could not load deliverables information");
+  }, [failed]);
 
   const createDeliverable = async (): Promise<void> => {
     try {

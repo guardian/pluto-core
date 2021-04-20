@@ -1,27 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { RouteComponentProps, useLocation, useHistory } from "react-router-dom";
+import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
 import {
-  TextField,
-  Paper,
   Button,
-  Typography,
-  Snackbar,
-  SnackbarContent,
-  makeStyles,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Checkbox,
-  FormControlLabel,
-  Grid,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogContentText,
-  DialogActions,
+  Grid,
+  makeStyles,
+  Paper,
+  TextField,
 } from "@material-ui/core";
 import { getProject, getProjectByVsid, updateProject } from "./helpers";
-import { validProjectStatuses } from "../utils/constants";
 import SystemNotification, {
   SystemNotificationKind,
 } from "../SystemNotification";
@@ -167,6 +157,10 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     setProject({ ...project, [field]: !checked });
   };
 
+  const subComponentErrored = (errorDesc: string) => {
+    SystemNotification.open(SystemNotificationKind.Error, errorDesc);
+  };
+
   const onProjectSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
@@ -271,10 +265,16 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         </form>
       </Paper>
       {project === EMPTY_PROJECT ? null : (
-        <ProjectEntryDeliverablesComponent project={project} />
+        <ProjectEntryDeliverablesComponent
+          project={project}
+          onError={subComponentErrored}
+        />
       )}
       {project === EMPTY_PROJECT ? null : (
-        <ProjectEntryVaultComponent project={project} />
+        <ProjectEntryVaultComponent
+          project={project}
+          onError={subComponentErrored}
+        />
       )}
       <Dialog
         open={errorDialog}

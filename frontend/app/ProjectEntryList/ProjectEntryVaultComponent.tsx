@@ -47,6 +47,7 @@ declare var vaultdoorURL: string;
 
 interface ProjectEntryVaultComponentProps {
   project: Project;
+  onError?: (errorDesc: string) => void;
 }
 
 const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
@@ -74,19 +75,33 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
             "Expected server response to be an array, got ",
             content
           );
+          if (props.onError) {
+            props.onError(
+              "Could not load archive data, see console for details"
+            );
+          }
           setLoading(false);
         }
         break;
       default:
         const errorContent = await response.text();
         console.error(errorContent);
+        if (props.onError)
+          props.onError("Could not load archive data, see console for details");
         setLoading(false);
         break;
     }
   };
 
   useEffect(() => {
-    if (open && !didLoad) fetchVaults();
+    if (open && !didLoad) {
+      setLoading(true);
+      fetchVaults().catch((err) => {
+        console.error("Could not load vaults: ", err);
+        if (props.onError)
+          props.onError("Could not load archive data, see console for details");
+      });
+    }
   }, [open]);
 
   useEffect(() => {
