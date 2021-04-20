@@ -93,7 +93,24 @@ class ProjectCreateMultistep extends React.Component {
       .then(([templates, storages, workingGroups]) => {
         const firstTemplate = templates.data.result[0]?.id ?? null;
         const firstStorage = storages.data.result[0]?.id ?? null;
-        const firstWorkingGroup = workingGroups.data.result[0]?.id ?? null;
+        //let firstWorkingGroup = null;
+
+        //let placeWorkingGroups = 0;
+        //let foundNotHiddenWorkingGroup = false;
+        //console.log("First place: " + placeWorkingGroups);
+        //while (foundNotHiddenWorkingGroup == false) {
+        //console.log("Second place: " + placeWorkingGroups);
+        //if (workingGroups.data.result[placeWorkingGroups].hidden == false) {
+        //    firstWorkingGroup = workingGroups.data.result[placeWorkingGroups].id;
+        //    foundNotHiddenWorkingGroup = true;
+        //}
+        //placeWorkingGroups = placeWorkingGroups + 1;
+        //}
+
+        //const firstWorkingGroup = workingGroups.data.result[0]?.id ?? null;
+
+        const firstWorkingGroup =
+          workingGroups.data.result.filter((g) => !g.hidden)[0] ?? null;
 
         this.requestDefaultProjectStorage(firstStorage).then(
           (projectStorage) => {
