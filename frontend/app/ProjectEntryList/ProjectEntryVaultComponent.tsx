@@ -125,8 +125,11 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
       .catch((err) => {
         console.error("Could not load data: ", err);
       });
-    isVaultDataPresent();
   }, [knownVaults]);
+
+  useEffect(() => {
+    isVaultDataPresent();
+  }, [data]);
 
   const humanFileSize = (bytes: number, si = false, dp = 1) => {
     const thresh = si ? 1000 : 1024;
