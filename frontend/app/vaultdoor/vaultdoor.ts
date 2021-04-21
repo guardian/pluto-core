@@ -1,4 +1,4 @@
-import { authenticatedFetch } from "../ProjectEntryList/auth";
+import { authenticatedFetch } from "../common/auth";
 
 interface VaultState {
   vaultName: string;

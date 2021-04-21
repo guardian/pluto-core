@@ -15,7 +15,7 @@ import {
   Grid,
   CircularProgress,
 } from "@material-ui/core";
-import { authenticatedFetch } from "./auth";
+import { authenticatedFetch } from "../common/auth";
 import KeyboardArrowUpIcon from "@material-ui/icons/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@material-ui/icons/KeyboardArrowDown";
 import { loadAllVaultData, VaultState } from "../vaultdoor/vaultdoor";
@@ -157,11 +157,11 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
 
   return (
     <Paper className={classes.projectVaultData}>
-      <Grid container spacing={3}>
-        <Grid item xs={11}>
+      <Grid container spacing={3} justify="space-between">
+        <Grid item>
           <Typography variant="h4">Storage</Typography>
         </Grid>
-        <Grid item xs={1}>
+        <Grid item>
           <Tooltip title="Show archived data">
             <IconButton
               className={classes.archiveButton}
