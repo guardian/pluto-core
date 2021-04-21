@@ -123,6 +123,10 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
       })
       .catch((err) => {
         console.error("Could not load data: ", err);
+        if (props.onError)
+          props.onError(
+            "Could not load in storage data, see console for details"
+          );
       });
   }, [knownVaults]);
 
