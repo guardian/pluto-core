@@ -60,6 +60,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   const [knownVaults, setKnownVaults] = useState<Array<VaultDescription>>([]);
   const [data, setData] = useState<VaultState[]>([]);
   const [open, setOpen] = useState<boolean>(false);
+  const [vaultDataPresent, setVaultDataPresent] = useState<boolean>(false);
 
   const fetchVaults = async () => {
     const response = await authenticatedFetch(`${vaultdoorURL}api/vault`, {});
@@ -93,6 +94,14 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
     }
   };
 
+  const isVaultDataPresent = () => {
+    data.map((vault) => {
+      if (vault.fileCount != 0 && vaultDataPresent == false) {
+        setVaultDataPresent(true);
+      }
+    });
+  };
+
   useEffect(() => {
     if (open && !didLoad) {
       setLoading(true);
@@ -116,6 +125,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
       .catch((err) => {
         console.error("Could not load data: ", err);
       });
+    isVaultDataPresent();
   }, [knownVaults]);
 
   const humanFileSize = (bytes: number, si = false, dp = 1) => {
@@ -146,7 +156,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
     <Paper className={classes.projectVaultData}>
       <Grid container spacing={3}>
         <Grid item xs={11}>
-          <Typography variant="h4">Archived Data</Typography>
+          <Typography variant="h4">Storage</Typography>
         </Grid>
         <Grid item xs={1}>
           <Tooltip title="Show archived data">
@@ -169,7 +179,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
       <Collapse in={open} timeout="auto" unmountOnExit>
         {loading ? (
           <CircularProgress id="loading-spinner" />
-        ) : (
+        ) : vaultDataPresent ? (
           <TableContainer id="vaults-table">
             <Table>
               <TableHead>
@@ -202,6 +212,8 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
               </TableBody>
             </Table>
           </TableContainer>
+        ) : (
+          <div>No locally archived data present for this project.</div>
         )}
       </Collapse>
     </Paper>
