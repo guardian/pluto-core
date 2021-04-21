@@ -69,7 +69,6 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
         const content = (await response.json()) as Array<VaultDescription>;
         if (Array.isArray(content)) {
           const reversed = content.reverse();
-          setLoading(false);
           setKnownVaults(reversed);
         } else {
           console.error(
@@ -129,6 +128,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
 
   useEffect(() => {
     isVaultDataPresent();
+    setLoading(false);
   }, [data]);
 
   const humanFileSize = (bytes: number, si = false, dp = 1) => {
