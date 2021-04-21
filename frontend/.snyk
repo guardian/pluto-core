@@ -1,5 +1,5 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
-version: v1.14.1
+version: v1.19.0
 # ignores vulnerabilities until expiry date; change duration by modifying expiry date
 ignore:
   SNYK-JS-CODEMIRROR-1016937:
@@ -13,15 +13,15 @@ ignore:
     - snyk > snyk-nodejs-lockfile-parser > @yarnpkg/core > @yarnpkg/shell > fast-glob > glob-parent:
         reason: No update available
         expires: '2021-02-26T10:44:40.521Z'
-      webpack > watchpack > watchpack-chokidar2 > chokidar > glob-parent:
-        reason: No update available
-        expires: '2021-04-01T15:41:14.012Z'
     - snyk > snyk-nodejs-lockfile-parser > @yarnpkg/core > globby > fast-glob > glob-parent:
         reason: No update available
         expires: '2021-02-26T10:44:40.521Z'
     - webpack > watchpack > watchpack-chokidar2 > chokidar > glob-parent:
         reason: No update available
         expires: '2021-02-26T10:44:40.521Z'
+    - webpack > watchpack > watchpack-chokidar2 > chokidar > glob-parent:
+        reason: No update available
+        expires: '2021-04-01T15:41:14.012Z'
   SNYK-JS-NODEFETCH-674311:
     - react-codemirror > create-react-class > fbjs > isomorphic-fetch > node-fetch:
         reason: No update available

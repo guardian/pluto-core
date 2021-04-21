@@ -45,7 +45,7 @@ class Application @Inject() (val cc:ControllerComponents,
         logger.warn("Could not get build-sha property: ", e)
         None
     }
-    Ok(views.html.index(cbVersionString.getOrElse("none"), config.getOptional[String]("deployment-root").getOrElse("")))
+    Ok(views.html.index(cbVersionString.getOrElse("none"), config.getOptional[String]("deployment-root").getOrElse(""), config.getOptional[String]("vaultdoor_server_url").getOrElse("")))
   }
 
   def timeoutTest(delay: Int) = Action {

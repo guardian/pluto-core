@@ -1,4 +1,4 @@
-@(cbVersion:String, deploymentRoot:String)
+@(cbVersion:String, deploymentRoot:String, vaultdoorURL:String)
 
 <html>
   <head>
@@ -17,6 +17,7 @@
     <div id="app" />
     <script>
       const deploymentRootPath = "@(deploymentRoot)/";
+      const vaultdoorURL = "@(vaultdoorURL)";
     </script>
     <script
       src="@(deploymentRoot)/assets/javascripts/bundle.js?v=@(cbVersion)"

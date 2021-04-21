@@ -157,3 +157,8 @@ interface DeliverableBundle {
   local_open_uri: string;
   local_path: string;
 }
+
+interface VaultDescription {
+  vaultId: string;
+  name: string;
+}
