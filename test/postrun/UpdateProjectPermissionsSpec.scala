@@ -13,7 +13,7 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.jdk.CollectionConverters._
 
-class UpdatePlutoPermissionsSpec extends Specification with Mockito {
+class UpdateProjectPermissionsSpec extends Specification with Mockito {
   "UpdatePlutoPermissions" should {
     "send a request to change the file permissions" in {
       val config = Configuration.from(Map[String,String](
