@@ -78,6 +78,10 @@ class UpdateProjectPermissions(config:Configuration) extends PojoPostrun {
       })
   }
 
+  def checkFileExists(filePath:Path) = Try {
+    filePath.toFile.exists()
+  }
+
   override def postrun(projectFileName: String,
                        projectEntry: ProjectEntry,
                        projectType: ProjectType,
@@ -86,25 +90,29 @@ class UpdateProjectPermissions(config:Configuration) extends PojoPostrun {
                        commissionMaybe: Option[PlutoCommission]): Future[Try[PostrunDataCache]] = Future {
     val projectFilePath = Paths.get(projectFileName)
 
-    if(projectFilePath.toFile.exists()) {
-      (
-        getWantedGroup(projectFilePath.getFileSystem, config),
-        getWantedPerms(config)
-      ) match {
-        case (Success(group), Success(permissions))=>
-          setPerms(projectFilePath, group, permissions).map(_=>dataCache)
-        case (Failure(groupErr), Failure(permsErr))=>
-          logger.error(s"Could not get required group or permissions: ${groupErr.getMessage}; ${permsErr.getMessage}")
-          Failure(new RuntimeException("Configuration was incorrect, see logs"))
-        case (Failure(groupErr), _)=>
-          logger.error(s"Could not get required group: ${groupErr.getMessage}")
-          Failure(new RuntimeException("Configuration was incorrect, see logs"))
-        case (_, Failure(permsErr))=>
-          logger.error(s"Could not get required permissions: ${permsErr.getMessage}")
-          Failure(new RuntimeException("Configuration was incorrect, see logs"))
-      }
-    } else {
-      Failure(new RuntimeException(s"Project file $projectFilePath did not exist"))
+    checkFileExists(projectFilePath) match {
+      case Success(true)=>
+        (
+          getWantedGroup(projectFilePath.getFileSystem, config),
+          getWantedPerms(config)
+        ) match {
+          case (Success(group), Success(permissions))=>
+            setPerms(projectFilePath, group, permissions).map(_=>dataCache)
+          case (Failure(groupErr), Failure(permsErr))=>
+            logger.error(s"Could not get required group or permissions: ${groupErr.getMessage}; ${permsErr.getMessage}")
+            Failure(new RuntimeException("Configuration was incorrect, see logs"))
+          case (Failure(groupErr), _)=>
+            logger.error(s"Could not get required group: ${groupErr.getMessage}")
+            Failure(new RuntimeException("Configuration was incorrect, see logs"))
+          case (_, Failure(permsErr))=>
+            logger.error(s"Could not get required permissions: ${permsErr.getMessage}")
+            Failure(new RuntimeException("Configuration was incorrect, see logs"))
+        }
+      case Success(false)=>
+        Failure(new RuntimeException(s"Project file $projectFilePath did not exist"))
+      case Failure(err)=>
+        logger.error(s"Could not check file existence: ${err.getMessage}")
+        Failure(err)
     }
   }
 }

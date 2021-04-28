@@ -111,15 +111,17 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
   }
 
   protected def initialisePojoClass(className:String, config:Configuration) = {
-      Try { Class.forName(className).getDeclaredConstructor(Configuration.getClass) } match {
+    logger.debug(s"Trying to initialise pojo $className using configuration-enabled constructor....")
+      Try { Class.forName(className).getDeclaredConstructor(classOf[Configuration]) } match {
         case Success(constructor)=>
           Try { constructor.newInstance(config).asInstanceOf[PojoPostrun] }
         case Failure(err)=>
-          logger.debug(s"Could not initialise pojo ${className} with config: $err")
+          logger.debug(s"Could not initialise pojo ${className} with config: $err, trying with non-configuration constructor...")
           Try { Class.forName(className).getDeclaredConstructor() } match {
             case Success(constructor)=>
               Try { constructor.newInstance().asInstanceOf[PojoPostrun] }
             case Failure(err)=>
+              logger.error(s"Could not initialise $className:", err)
               Failure(new RuntimeException(s"Could not initialise $className: ${err.getMessage}"))
           }
       }
@@ -144,9 +146,14 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     logger.debug(s"Initiating java based postrun $className...")
     initialisePojoClass(className, config) match {
       case Success(postrunClass) =>
+        logger.debug(s"Successfully initialised $className")
         postrunClass.postrun(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe).map({
-          case Success(newDataCache) => Success(JythonOutput("", "", newDataCache, raisedError = None))
-          case Failure(error) => Success(JythonOutput("", "", dataCache, raisedError = Some(error)))
+          case Success(newDataCache) =>
+            logger.debug(s"Postrun executed successfully")
+            Success(JythonOutput("", "", newDataCache, raisedError = None))
+          case Failure(error) =>
+            logger.debug(s"Postrun indicated error")
+            Success(JythonOutput("", "", dataCache, raisedError = Some(error)))
         }).recoverWith({
           case ex: Throwable => Future(Failure(ex))
         })

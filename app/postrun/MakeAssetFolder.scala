@@ -43,6 +43,8 @@ class MakeAssetFolder(config:Configuration) extends PojoPostrun {
 
       case (None,None,None)=>
         Left("Neither working group nor commission was set so asset folder path could not be created. You also need to set postrun.assetFolder.basePath in the configuration.")
+      case (None, None, _)=>
+        Left("Neither working group nor commission was set so asset folder path could not be created. ")
       case (_,_,None)=>
         Left("You need to set postrun.assetFolder.basePath in application.conf to the base path within which to create asset folders")
       case (None, _, _)=>
@@ -59,7 +61,7 @@ class MakeAssetFolder(config:Configuration) extends PojoPostrun {
    */
   protected def doCreateDir(dirPath:Path) = Try {
     val attrs = PosixFilePermissions.asFileAttribute(
-      PosixFilePermissions.fromString("r-xr-xr-x")
+      PosixFilePermissions.fromString("rwxr-xr-x")
     )
 
     Files.createDirectories(dirPath, attrs)

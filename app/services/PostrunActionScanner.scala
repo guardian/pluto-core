@@ -54,14 +54,16 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
       case e: Throwable =>
         logger.error("Precompiler could not recover, this should not happen", e)
     })
+  }
 
-    //Scan POJOs
-    logger.debug(s"URLs from classpath are ${ClasspathHelper.forClassLoader}")
+
+  def scanPojos = {
+    logger.info(s"URLs from classpath are ${ClasspathHelper.forPackage("postrun")}")
+
     val classLoadersList = ArrayBuffer(ClasspathHelper.contextClassLoader, ClasspathHelper.staticClassLoader)
     val reflections = new Reflections(new ConfigurationBuilder()
       .setScanners(new SubTypesScanner(false), new ResourcesScanner())
-      .setUrls(ClasspathHelper.forClassLoader())
-      .filterInputsBy(new FilterBuilder().include(FilterBuilder.prefix("postrun")))
+      .setUrls(ClasspathHelper.forPackage("postrun"))
     )
 
     reflections
@@ -70,9 +72,8 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
       .foreach(classRef => addIfNotExists(classRef.getCanonicalName, s"java:${classRef.getCanonicalName}"))
   }
 
-
   protected def addIfNotExists(scriptName:String,absolutePath:String) = {
-    logger.debug(s"will add $scriptName at $absolutePath if it does not exist already")
+    logger.info(s"will add $scriptName at $absolutePath if it does not exist already")
     PostrunAction.entryForRunnable(absolutePath) map {
       case Success(results)=>
         if(results.isEmpty){
@@ -100,18 +101,9 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
 
   override def receive: Receive = {
     case PostrunActionScanner.Rescan=>
-      logger.debug("Rescanning postrun actions")
+      logger.info("Rescanning postrun actions")
 
-      val scriptsDir = config.get[String]("postrun.scriptsPath")
-      MDC.put("scripts_dir", scriptsDir)
-      DirectoryScanner.scanAll(scriptsDir).map({
-        case Failure(error)=>
-          logger.error(s"Could not scan $scriptsDir: ", error)
-        case Success(filesList)=>
-          filesList
-            .filter(file=>file.getName.endsWith(".py") && ! file.getName.startsWith("__"))
-            .foreach(file=>addFileIfNotExists(file))
-      })
+      scanPojos
   }
 
 }
