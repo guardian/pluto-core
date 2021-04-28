@@ -3,7 +3,6 @@ import React from "react";
 import axios from "axios";
 import PropTypes from "prop-types";
 import MetadataComponent from "./postrun/MetadataComponent.jsx";
-import SourceComponent from "./postrun/SourceComponent.jsx";
 import DependencyComponent from "./postrun/DependencyComponent.jsx";
 import CompletionComponent from "./postrun/CompletionComponent.jsx";
 
@@ -89,15 +88,6 @@ class PostrunMultistep extends React.Component {
 
   render() {
     const steps = [
-      {
-        name: "Review source code",
-        component: (
-          <SourceComponent
-            sourceCode={this.state.postrunSource}
-            valueWasSet={this.sourceValueWasSet}
-          />
-        ),
-      },
       {
         name: "Postrun Metadata",
         component: (
