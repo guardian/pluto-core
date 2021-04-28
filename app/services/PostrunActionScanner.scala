@@ -64,7 +64,10 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
       .filterInputsBy(new FilterBuilder().include(FilterBuilder.prefix("postrun")))
     )
 
-    reflections.getSubTypesOf(classOf[PojoPostrun]).asScala.foreach(classRef => addIfNotExists(classRef.getCanonicalName, s"java:${classRef.getCanonicalName}"))
+    reflections
+      .getSubTypesOf(classOf[PojoPostrun])
+      .asScala
+      .foreach(classRef => addIfNotExists(classRef.getCanonicalName, s"java:${classRef.getCanonicalName}"))
   }
 
 

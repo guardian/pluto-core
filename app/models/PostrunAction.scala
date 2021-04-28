@@ -3,9 +3,9 @@ package models
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
 import java.sql.Timestamp
-
 import helpers.{JythonOutput, JythonRunner, PostrunDataCache}
 import org.apache.commons.io.{FileUtils, FilenameUtils}
+import org.slf4j.LoggerFactory
 import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsPath, Reads, Writes}
 import play.api.libs.functional.syntax._
@@ -19,6 +19,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class PostrunAction (id:Option[Int],runnable:String, title:String, description:Option[String],
                           owner:String, version:Int, ctime: Timestamp) extends PlutoModel {
+  private val logger = LoggerFactory.getLogger(getClass)
+
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
     * was set, then returns the same object. */
@@ -108,6 +110,21 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     }
   }
 
+  protected def initialisePojoClass(className:String, config:Configuration) = {
+      Try { Class.forName(className).getDeclaredConstructor(Configuration.getClass) } match {
+        case Success(constructor)=>
+          Try { constructor.newInstance(config).asInstanceOf[PojoPostrun] }
+        case Failure(err)=>
+          logger.debug(s"Could not initialise pojo ${className} with config: $err")
+          Try { Class.forName(className).getDeclaredConstructor() } match {
+            case Success(constructor)=>
+              Try { constructor.newInstance().asInstanceOf[PojoPostrun] }
+            case Failure(err)=>
+              Failure(new RuntimeException(s"Could not initialise $className: ${err.getMessage}"))
+          }
+      }
+  }
+
   /**
     * Runs the provided java class as a postrun
     * @param projectFileName
@@ -125,18 +142,16 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     val className: String = runnable.substring(5) //strip off "java:" prefix
     val logger = Logger(this.getClass)
     logger.debug(s"Initiating java based postrun $className...")
-    try {
-      val postrunClass = Class.forName(className).getDeclaredConstructor().newInstance().asInstanceOf[PojoPostrun]
-
-      postrunClass.postrun(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe).map({
-        case Success(newDataCache) => Success(JythonOutput("", "", newDataCache, raisedError = None))
-        case Failure(error) => Success(JythonOutput("", "", dataCache, raisedError = Some(error)))
-      }).recoverWith({
-        case ex: Throwable => Future(Failure(ex))
-      })
-    } catch {
-      //return a failure if we couldn't initialise the classs
-      case ex:Throwable=>Future(Failure(ex))
+    initialisePojoClass(className, config) match {
+      case Success(postrunClass) =>
+        postrunClass.postrun(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe).map({
+          case Success(newDataCache) => Success(JythonOutput("", "", newDataCache, raisedError = None))
+          case Failure(error) => Success(JythonOutput("", "", dataCache, raisedError = Some(error)))
+        }).recoverWith({
+          case ex: Throwable => Future(Failure(ex))
+        })
+      case Failure(err) =>
+        Future(Failure(err))
     }
   }
 
