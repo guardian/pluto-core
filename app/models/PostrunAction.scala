@@ -3,7 +3,7 @@ package models
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
 import java.sql.Timestamp
-import helpers.{JythonOutput, JythonRunner, PostrunDataCache}
+import helpers.{JythonOutput, PostrunDataCache}
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.slf4j.LoggerFactory
 import play.api.{Configuration, Logger}
@@ -72,43 +72,6 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     * returns the on-disk path for the executable script
     */
   def getScriptPath(implicit config:Configuration) = Paths.get(config.get[String]("postrun.scriptsPath"), this.runnable)
-
-  /**
-    * Runs the provided python script as a postrun
-    * @param projectFileName
-    * @param projectEntry
-    * @param projectType
-    * @param dataCache
-    * @param workingGroupMaybe
-    * @param commissionMaybe
-    * @param config
-    * @return
-    */
-  protected def runJython(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType,dataCache:PostrunDataCache,
-                          workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])
-                         (implicit config:Configuration):Future[Try[JythonOutput]] = {
-    val runner = new JythonRunner
-    val inputPath = getScriptPath
-    val scriptArgs = Map(
-      "projectFile" -> projectFileName
-    ) ++ projectEntry.asStringMap ++ projectType.asStringMap ++ commissionMaybe.map(_.asStringMap).getOrElse(Map()) ++ workingGroupMaybe.map(_.asStringMap).getOrElse(Map())
-
-    runner.runScriptAsync(inputPath.toString, scriptArgs, dataCache) map {
-      case Success(scriptOutput) =>
-        val logger = Logger(this.getClass)
-        logger.debug("Script started successfully")
-        scriptOutput.raisedError match {
-          case Some(error)=>
-            logger.error("Postrun script could not complete due to a Python exception: ")
-            logger.error("Postrun standard out:" + scriptOutput.stdOutContents)
-            logger.error("Postrun standard err:" + scriptOutput.stdErrContents)
-            Failure(error)
-          case None=>
-            Success(scriptOutput)
-        }
-      case Failure(error)=>Failure(error)
-    }
-  }
 
   protected def initialisePojoClass(className:String, config:Configuration) = {
     logger.debug(s"Trying to initialise pojo $className using configuration-enabled constructor....")
@@ -192,12 +155,12 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
         val resultFuture = if(isPojo){
           runPojo(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe)
         } else {
-          runJython(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe)
+          Future(Failure(new RuntimeException("Unsupported postrun type")))
         }
 
         resultFuture.map({
           case Failure(error) =>
-            logger.error("Unable to start postrun script: ", error)
+            logger.error(s"Unable to start postrun script: ${error.getMessage}", error)
             restoreBackupFile(backupPath, projectFileName) match {
               case Failure(restoreError)=>
                 logger.error(s"Cannot restore backup, project file $projectFileName may be corrupted")

@@ -127,7 +127,7 @@ class MakeAssetFolder(config:Configuration) extends PojoPostrun {
         } yield finalPath
 
         creationResult.map(_=> {
-          dataCache ++ Map("created_asset_folder" -> assetFolderPath.toString)
+          dataCache.withString("created_asset_folder",assetFolderPath.toString)
         })
     }
   }

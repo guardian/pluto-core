@@ -77,8 +77,6 @@ libraryDependencies ++= Seq(
   "com.nimbusds" % "nimbus-jose-jwt" % "8.21",
 )
 
-// https://mvnrepository.com/artifact/org.python/jython
-libraryDependencies += "org.python" % "jython" % "2.7.2"
 
 //nice json parsing
 libraryDependencies ++= Seq(

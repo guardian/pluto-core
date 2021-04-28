@@ -6,7 +6,6 @@ import java.sql.Timestamp
 import akka.actor.{Actor, ActorSystem}
 import com.google.inject.{Inject, Singleton}
 import play.api.{Configuration, Logger}
-import helpers.{DirectoryScanner, JythonRunner, PrecompileException}
 import models.PostrunAction
 import java.time.{Instant, ZonedDateTime}
 
@@ -36,26 +35,6 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
 
   implicit val db = dbConfigProvider.get[PostgresProfile].db
   implicit val configImplicit = config
-
-  def initialise:Unit = {
-    //call out to JythonRunner to ensure that scripts are precompiled when we start up.
-    JythonRunner.precompile.map(results => {
-      results.foreach({
-        case Success(runnable) =>
-          logger.debug(s"Successfully precompiled $runnable")
-        case Failure(error) => error match {
-          case e: PrecompileException =>
-            if(!sys.env.contains("CI")) logger.error(s"Could not precompile ${e.toString}", error)  //don't show the error if we are testing
-          case _ =>
-            if(!sys.env.contains("CI")) logger.error("Could not precompile: ", error)
-        }
-      })
-    }).recover({
-      case e: Throwable =>
-        logger.error("Precompiler could not recover, this should not happen", e)
-    })
-  }
-
 
   def scanPojos = {
     logger.info(s"URLs from classpath are ${ClasspathHelper.forPackage("postrun")}")
@@ -96,8 +75,6 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
   protected def addFileIfNotExists(scriptFile: File) = {
     addIfNotExists(scriptFile.getName, scriptFile.getName)
   }
-
-  initialise
 
   override def receive: Receive = {
     case PostrunActionScanner.Rescan=>
