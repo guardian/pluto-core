@@ -34,11 +34,31 @@ class PlutoWorkingGroupController @Inject() (override val controllerComponents:C
   implicit val db = dbConfigProvider.get[PostgresProfile].db
   implicit val cache:SyncCacheApi = cacheImpl
 
-  override def selectall(startAt: Int, limit: Int): Future[Try[(Int,Seq[PlutoWorkingGroup])]] = db.run(
-    TableQuery[PlutoWorkingGroupRow].length.result.zip(
-      TableQuery[PlutoWorkingGroupRow].drop(startAt).take(limit).sortBy(_.name.asc.nullsLast).result
-    )
-  ).map(Success(_)).recover(Failure(_))
+  override def selectall(startAt: Int, limit: Int): Future[Try[(Int,Seq[PlutoWorkingGroup])]] = selectall(startAt, limit, None)
+
+  def selectall(startAt: Int, limit: Int, withHidden:Option[Boolean]): Future[Try[(Int,Seq[PlutoWorkingGroup])]] = {
+    val initialQuery = TableQuery[PlutoWorkingGroupRow].drop(startAt).take(limit)
+    val finalQuery = withHidden match {
+      case None=>initialQuery
+      case Some(true)=>initialQuery
+      case Some(false)=>initialQuery.filter(_.hide===false)
+    }
+
+    db.run(
+      TableQuery[PlutoWorkingGroupRow].length.result.zip(
+        finalQuery.sortBy(_.name.asc.nullsLast).result
+      )
+    ).map(Success(_)).recover(Failure(_))
+  }
+
+  def list(startAt:Int, limit: Int, showHidden:Option[Boolean]) = IsAuthenticatedAsync {uid=>{request=>
+    selectall(startAt, limit, showHidden).map({
+      case Success((count, result))=>Ok(Json.obj("status"->"ok","count"->count, "result"->this.jstranslate(result)))
+      case Failure(error)=>
+        logger.error(error.toString)
+        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
+  }}
 
   override def selectid(requestedId: Int): Future[Try[Seq[PlutoWorkingGroup]]] = db.run(
     TableQuery[PlutoWorkingGroupRow].filter(_.id===requestedId).sortBy(_.name.asc.nullsLast).result.asTry
