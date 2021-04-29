@@ -88,27 +88,6 @@ class PostrunActionController  @Inject() (override val controllerComponents:Cont
     }
   }}
 
-  def getSource(itemId:Int) = IsAdminAsync {uid=>{request=>
-    selectid(itemId) map {
-      case Failure(error)=>
-        logger.error("Could not load postrun source",error)
-        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
-      case Success(rows)=>
-        if(rows.head.runnable.startsWith("java:")){
-          Ok("### Java code is not showable at the moment").as("text/x-python")
-        } else {
-          val scriptpath = rows.head.getScriptPath.toAbsolutePath
-          try {
-            Ok(Source.fromFile(scriptpath.toString).mkString).as("text/x-python")
-          } catch {
-            case e: Throwable =>
-              logger.error("Could not read postrun source code", e)
-              InternalServerError(Json.obj("status" -> "error", "detail" -> e.toString))
-          }
-        }
-    }
-  }}
-
   def insertDependency(entry: PostrunDependency) = dbConfig.db.run(
     (TableQuery[PostrunDependencyRow] returning TableQuery[PostrunDependencyRow].map(_.id) += entry).asTry
   )

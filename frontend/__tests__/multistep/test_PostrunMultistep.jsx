@@ -17,7 +17,6 @@ describe("PostrunMultistep", () => {
       const rq = moxios.requests.at(0);
       try {
         expect(rq.url).toEqual("/api/postrun/3");
-        expect(moxios.requests.at(1).url).toEqual("/api/postrun/3/source");
       } catch (err) {
         done.fail(err);
       }
