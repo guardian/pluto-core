@@ -179,6 +179,4 @@ class DataMigrationSpec extends Specification with Mockito with BuildMyApp {
       )
     }
   }
-
-  "DataMigration."
 }

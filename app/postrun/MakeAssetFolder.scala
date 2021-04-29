@@ -49,13 +49,13 @@ class MakeAssetFolder(config:Configuration) extends PojoPostrun {
         Left("You need to set postrun.assetFolder.basePath in application.conf to the base path within which to create asset folders")
       case (None, _, _)=>
         Left("Working group was not set so asset folder path could not be created")
-      case (_, _, None)=>
+      case (_, None, _)=>
         Left("Commission was not set so asset folder path could not be created")
     }
   }
 
   /**
-   * create the requested directory in the filesystem, with 555 permissions
+   * create the requested directory in the filesystem, with 755 permissions
    * @param dirPath java.nio.Path representing the directory to create
    * @return a Success with the directory path or Failure on error
    */

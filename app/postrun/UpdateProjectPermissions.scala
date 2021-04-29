@@ -73,7 +73,7 @@ class UpdateProjectPermissions(config:Configuration) extends PojoPostrun {
       .flatMap({
         case Some(p)=>Success(p)
         case None=>Failure(
-          new RuntimeException("You need to specify a valid set of unix permissions (e.g. -rw-rw-r--) under postrun.projectPermissions.groupName")
+          new RuntimeException("You need to specify a valid set of unix permissions (e.g. rw-rw-r--) under postrun.projectPermissions.groupName")
         )
       })
   }

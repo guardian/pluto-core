@@ -20,14 +20,14 @@ class MultipleCounterSpec extends Specification with BuildMyApp {
       val graph = GraphDSL.create(ctrFac) { implicit builder=> ctr=>
         import akka.stream.scaladsl.GraphDSL.Implicits._
 
-        val sources = (1 to 5).map(n=>builder.add(Source.fromIterator[String](()=>Seq(s"$n",s"${n+1}").toIterator)))
+        val sources = (1 to 5).map(n=>builder.add(Source.fromIterator[String](()=>Seq(s"$n",s"${n+1}").iterator)))
         (0 to 4).foreach(n=>sources(n) ~> ctr.inlets(n))
         val sink = builder.add(Sink.ignore)
         ctr ~> sink
         ClosedShape
       }
 
-      val result = Await.result(RunnableGraph.fromGraph(graph).run(), 3 seconds)
+      val result = Await.result(RunnableGraph.fromGraph(graph).run(), 3.seconds)
       result mustEqual Seq(2,2,2,2,2)
     }
   }
