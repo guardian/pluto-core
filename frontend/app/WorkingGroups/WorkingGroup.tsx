@@ -162,16 +162,16 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
               value={name}
               autoFocus
               onChange={onNameChanged}
-            ></TextField>
+            />
             <TextField
               label="Commissioner"
               value={commissioner}
               onChange={onCommissionerChanged}
-            ></TextField>
+            />
             <FormControlLabel
               className={classes.hide_control}
               control={<Checkbox checked={hide} onChange={onHideChanged} />}
-              label="Hide"
+              label="Discontinued"
             />
             <Button type="submit" variant="outlined">
               {editing ? "Save" : "Create"}

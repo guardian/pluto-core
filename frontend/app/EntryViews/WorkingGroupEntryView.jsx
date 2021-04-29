@@ -17,7 +17,7 @@ class WorkingGroupEntryView extends GenericEntryView {
       return (
         <span>
           {this.state.content.name}{" "}
-          {this.state.content.hide ? "(old working group)" : ""}
+          {this.state.content.hide ? "(discontinued)" : ""}
         </span>
       );
     else
