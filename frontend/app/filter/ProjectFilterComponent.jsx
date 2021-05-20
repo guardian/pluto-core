@@ -62,7 +62,7 @@ class ProjectFilterComponent extends React.Component {
     const spec = this.filterSpec.filter((entry) => entry.key === filterKey);
     const newValue = event.target.value;
 
-    if (filterKey == "showKilled") {
+    if (filterKey === "showKilled") {
       this.updateFilters(filterKey, event.target.checked);
     } else if (spec[0].validator) {
       const wasError = spec[0].validator(newValue);
@@ -177,17 +177,14 @@ class ProjectFilterComponent extends React.Component {
     });
     this.setState({ workingGroups: [] }, () => {
       axios
-        .get("/api/pluto/workinggroup?length=999999")
+        .get("/api/pluto/workinggroup?length=999999&showHidden=false")
         .then((result) => {
           const sortedGroups = result.data.result.sort((a, b) =>
             a.name.localeCompare(b.name)
           );
-          var workingGroupNames = [];
-          var workingGroupIds = [];
-          for (var i = 0; i < sortedGroups.length; i++) {
-            workingGroupNames.push(sortedGroups[i].name);
-            workingGroupIds.push(sortedGroups[i].id);
-          }
+          const workingGroupNames = sortedGroups.map((group) => group.name);
+          const workingGroupIds = sortedGroups.map((group) => group.id);
+
           this.setState({
             workingGroups: ["All"].concat(workingGroupNames),
             workingGroupsIds: ["All"].concat(workingGroupIds),
@@ -213,13 +210,13 @@ class ProjectFilterComponent extends React.Component {
             <Grid item key={filterEntry.key}>
               <label
                 className={
-                  filterEntry.key == "showKilled"
+                  filterEntry.key === "showKilled"
                     ? "project-filter-entry-label-showkilled"
                     : "project-filter-entry-label"
                 }
                 htmlFor={filterEntry.key}
               >
-                {filterEntry.key == "title" ? (
+                {filterEntry.key === "title" ? (
                   <i className="fa fa-search" />
                 ) : null}
 

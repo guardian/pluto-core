@@ -11,6 +11,7 @@ import {
   Typography,
 } from "@material-ui/core";
 import ErrorIcon from "@material-ui/icons/Error";
+import { makeStyles } from "@material-ui/core/styles";
 
 interface WorkingGroupSelectorProps {
   workingGroupId: number;
@@ -18,6 +19,17 @@ interface WorkingGroupSelectorProps {
   maxLength?: number;
   showCommissioner?: boolean;
 }
+
+const useStyles = makeStyles((theme) => ({
+  discontinuedWG: {
+    fontStyle: "italic",
+    color: "darkgrey",
+  },
+  normalWG: {},
+  validationError: {
+    color: theme.palette.error.dark,
+  },
+}));
 
 const WorkingGroupSelector: React.FC<WorkingGroupSelectorProps> = (props) => {
   const [workingGroupList, setWorkingGroupList] = useState<
@@ -27,6 +39,8 @@ const WorkingGroupSelector: React.FC<WorkingGroupSelectorProps> = (props) => {
   const [lastError, setLastError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [commissionerName, setCommissionerName] = useState<string>("");
+
+  const classes = useStyles();
 
   /**
    * validate if the user is actually allowed to select this value. If the 'hide' property is true
@@ -96,13 +110,19 @@ const WorkingGroupSelector: React.FC<WorkingGroupSelectorProps> = (props) => {
             onChange={validateChangedValue}
           >
             {workingGroupList.map((entry) => (
-              <MenuItem key={entry.id} value={entry.id}>
-                {entry.name}
+              <MenuItem
+                key={entry.id}
+                value={entry.id}
+                className={
+                  entry.hide ? classes.discontinuedWG : classes.normalWG
+                }
+              >
+                {entry.name} {entry.hide ? "(discontinued)" : ""}
               </MenuItem>
             ))}
           </Select>
           {validationError ? (
-            <Typography>
+            <Typography className={classes.validationError}>
               <ErrorIcon />
               {validationError}
             </Typography>

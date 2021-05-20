@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Tooltip,
 } from "@material-ui/core";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { getWorkingGroupsOnPage, deleteWorkingGroup } from "./helpers";
@@ -27,13 +28,16 @@ import SystemNotification, {
   SystemNotificationKind,
 } from "../SystemNotification";
 import { Helmet } from "react-helmet";
+import { Visibility, VisibilityOff } from "@material-ui/icons";
 
 const tableHeaderTitles: HeaderTitle<WorkingGroup>[] = [
   { label: "Name", key: "name" },
   { label: "Commissioner", key: "commissioner" },
+  { label: "Visibility", key: "hide" },
   { label: "" },
 ];
-const useStyles = makeStyles({
+
+const useStyles = makeStyles((theme) => ({
   table: {
     maxWidth: "100%",
     "& .MuiTableRow-hover": {
@@ -56,7 +60,11 @@ const useStyles = makeStyles({
     top: 20,
     width: 1,
   },
-});
+  success: {
+    color: theme.palette.success.dark,
+  },
+  visibilityIcon: {},
+}));
 const pageSizeOptions = [25, 50, 100];
 
 const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
@@ -149,7 +157,7 @@ const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
   return (
     <>
       <Helmet>
-        <title>All Working Groups</title>
+        <title>Working Groups - Pluto Admin</title>
       </Helmet>
       <Button
         className={classes.createNewWorkingGroup}
@@ -200,6 +208,17 @@ const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
                   >
                     <TableCell>{name}</TableCell>
                     <TableCell>{commissioner}</TableCell>
+                    <TableCell>
+                      {hide ? (
+                        <Tooltip title="This working group is discontinued">
+                          <VisibilityOff className={classes.visibilityIcon} />
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title="This working group is not discontinued">
+                          <Visibility className={classes.visibilityIcon} />
+                        </Tooltip>
+                      )}
+                    </TableCell>
                     <TableCell align={"right"}>
                       {isAdmin && (
                         <IconButton
@@ -214,7 +233,7 @@ const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
                             setOpenDialog(true);
                           }}
                         >
-                          <DeleteIcon></DeleteIcon>
+                          <DeleteIcon />
                         </IconButton>
                       )}
                     </TableCell>
@@ -238,7 +257,7 @@ const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
           onChangeRowsPerPage={handleChangeRowsPerPage}
           // FIXME: remove when count is correct
           labelDisplayedRows={({ from, to }) => `${from}-${to}`}
-        ></TablePagination>
+        />
       </Paper>
 
       <Dialog
