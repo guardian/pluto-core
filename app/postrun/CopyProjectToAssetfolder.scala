@@ -4,15 +4,39 @@ import models.{PlutoCommission, PlutoWorkingGroup, ProjectEntry, ProjectType}
 import org.slf4j.LoggerFactory
 import org.apache.commons.io.FileUtils._
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.attribute.PosixFileAttributeView
+import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.Future
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class CopyProjectToAssetfolder extends PojoPostrun {
   private val logger = LoggerFactory.getLogger(getClass)
 
   protected def doCopyFile(from:Path, to:Path) = Try { copyFile(from.toFile, to.toFile) }
+
+  def attributeViewFor(path:Path) = Files.getFileAttributeView(path, classOf[PosixFileAttributeView])
+
+  protected def preservePermissionsAndOwnership(from:Path, to:Path) = Try {
+    val sourceView = attributeViewFor(from)
+    val destView = attributeViewFor(to)
+
+    try {
+      destView.setOwner(sourceView.getOwner)
+    } catch {
+      case err:Throwable=>
+        logger.error(s"Could not set owner of ${to.toString} to ${sourceView.getOwner.toString}: $err", err)
+    }
+
+    try {
+      destView.setGroup(sourceView.readAttributes().group())
+    } catch {
+      case err:Throwable=>
+        logger.error(s"Could not set group of ${to.toString} to ${sourceView.readAttributes().group()}: $err", err)
+    }
+
+    destView.setPermissions(sourceView.readAttributes().permissions())
+  }
 
   override def postrun(projectFileName: String,
                        projectEntry: ProjectEntry,
@@ -28,8 +52,14 @@ class CopyProjectToAssetfolder extends PojoPostrun {
         val projectFileOriginalPath = Paths.get(projectFileName)
         val projectFileNameOnly = projectFileOriginalPath.getFileName
         val targetFilePath = assetFolderPath.resolve(projectFileNameOnly)
-        Future(doCopyFile(projectFileOriginalPath, targetFilePath))
-          .map(_.map(_=>dataCache)) //we don't modify the data cache here.
+//        Future(doCopyFile(projectFileOriginalPath, targetFilePath))
+//          .map(_.map(_=>dataCache)) //we don't modify the data cache here.
+
+        Future(for {
+          _ <- doCopyFile(projectFileOriginalPath, targetFilePath)
+          _ <- preservePermissionsAndOwnership(projectFileOriginalPath, targetFilePath)
+          result <- Success(dataCache)
+        } yield result)
     }
   }
 }
