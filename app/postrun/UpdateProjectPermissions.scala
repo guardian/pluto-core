@@ -37,6 +37,11 @@ class UpdateProjectPermissions(config:Configuration) extends PojoPostrun {
     attrs.setPermissions(wantedPerms)
   }
 
+  protected def lookupGroupPrincipal(fileSystem:FileSystem, groupName:String) = Try {
+    val lookup = fileSystem.getUserPrincipalLookupService
+    lookup.lookupPrincipalByGroupName(groupName)
+  }
+
   /**
    * look up the required POSIX group specified in the server configuration
    * @param fileSystem FileSystem instance representing the Unix filesystem in order to look up unix-style groups
@@ -46,10 +51,7 @@ class UpdateProjectPermissions(config:Configuration) extends PojoPostrun {
   def getWantedGroup(fileSystem:FileSystem, config:Configuration) = {
     config
       .getOptional[String]("postrun.projectPermissions.groupName")
-      .map(groupName=>Try {
-        val lookup = fileSystem.getUserPrincipalLookupService
-        lookup.lookupPrincipalByGroupName(groupName)
-      })
+      .map(groupName=>lookupGroupPrincipal(fileSystem, groupName))
       .sequence
       .flatMap({
         case Some(g)=>Success(g)
@@ -100,13 +102,13 @@ class UpdateProjectPermissions(config:Configuration) extends PojoPostrun {
             setPerms(projectFilePath, group, permissions).map(_=>dataCache)
           case (Failure(groupErr), Failure(permsErr))=>
             logger.error(s"Could not get required group or permissions: ${groupErr.getMessage}; ${permsErr.getMessage}")
-            Failure(new RuntimeException("Configuration was incorrect, see logs"))
+            Failure(new RuntimeException("Group and permissions configuration were incorrect, see logs"))
           case (Failure(groupErr), _)=>
             logger.error(s"Could not get required group: ${groupErr.getMessage}")
-            Failure(new RuntimeException("Configuration was incorrect, see logs"))
+            Failure(new RuntimeException("Group configuration was incorrect, see logs"))
           case (_, Failure(permsErr))=>
             logger.error(s"Could not get required permissions: ${permsErr.getMessage}")
-            Failure(new RuntimeException("Configuration was incorrect, see logs"))
+            Failure(new RuntimeException("Permissions configuration was incorrect, see logs"))
         }
       case Success(false)=>
         Failure(new RuntimeException(s"Project file $projectFilePath did not exist"))

@@ -15,11 +15,15 @@ class CopyProjectToAssetFolderSpec extends Specification with Mockito {
     "request a file copy from the original project path to the asset folder location" in {
       val mockCopy = mock[(Path,Path)=>Try[Unit]]
       mockCopy.apply(any, any) returns Success( () )
+      val mockSetPerms = mock[(Path,Path)=>Try[Unit]]
+      mockSetPerms.apply(any, any) returns Success( () )
       val mockDataCache = mock[PostrunDataCache]
       mockDataCache.get("created_asset_folder") returns Some("/other/path/to/assets")
 
       val toTest = new CopyProjectToAssetfolder {
         override protected def doCopyFile(from: Path, to: Path): Try[Unit] = mockCopy(from, to)
+
+        override protected def preservePermissionsAndOwnership(from: Path, to: Path): Try[Unit] = mockSetPerms(from, to)
       }
 
       val result = Await.result(
@@ -28,6 +32,10 @@ class CopyProjectToAssetFolderSpec extends Specification with Mockito {
 
       result must beSuccessfulTry(mockDataCache)
       there was one(mockCopy).apply(
+        Paths.get("/path/to/projectfile.prj"),
+        Paths.get("/other/path/to/assets/projectfile.prj")
+      )
+      there was one(mockSetPerms).apply(
         Paths.get("/path/to/projectfile.prj"),
         Paths.get("/other/path/to/assets/projectfile.prj")
       )
