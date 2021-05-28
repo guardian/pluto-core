@@ -106,7 +106,8 @@ deploy:
     - "echo built_image: guardianmultimedia/pluto-mediabrowser:$CI_PIPELINE_IID >> build-info.yaml"
   artifacts:
     paths:
-      - build/build-info.yaml
+      - periodic_trigger/build-info.yaml
+      - build-info.yaml
   cache:
     key: ${CI_COMMIT_REF_SLUG}-sbt
     policy: pull
