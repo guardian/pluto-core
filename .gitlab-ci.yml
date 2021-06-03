@@ -82,6 +82,8 @@ upload_periodictriggerapp:
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_VERIFY: 1
   script:
+    - sleep 5
+    - mkdir ~/.docker && cp -a /certs/client/*.pem ~/.docker
     - docker login -u "${DOCKER_USER}" -p "${DOCKER_PAT}"
     - cd periodic_trigger && docker build . -t guardianmultimedia/pluto-core-periodictrigger:${CI_PIPELINE_IID}
     - docker push guardianmultimedia/pluto-core-periodictrigger:${CI_PIPELINE_IID}
