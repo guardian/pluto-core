@@ -4,11 +4,12 @@ import models.{PlutoCommission, PlutoWorkingGroup, ProjectEntry, ProjectType}
 import org.slf4j.LoggerFactory
 import org.apache.commons.io.FileUtils._
 
-import java.nio.file.attribute.PosixFileAttributeView
+import java.nio.file.attribute.{PosixFileAttributeView, PosixFilePermission, PosixFilePermissions}
 import java.nio.file.{Files, Path, Paths}
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.jdk.CollectionConverters._
 
 class CopyProjectToAssetfolder extends PojoPostrun {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -35,7 +36,20 @@ class CopyProjectToAssetfolder extends PojoPostrun {
         logger.error(s"Could not set group of ${to.toString} to ${sourceView.readAttributes().group()}: $err", err)
     }
 
-    destView.setPermissions(sourceView.readAttributes().permissions())
+    val targetPerms:java.util.Set[PosixFilePermission] = if(to.endsWith(".cpr")) {
+      logger.info(s"${to.toString} is a cubase project, applying open-permissions workaround...")
+      Array(
+        PosixFilePermission.GROUP_READ,
+        PosixFilePermission.GROUP_WRITE,
+        PosixFilePermission.OTHERS_READ,
+        PosixFilePermission.OTHERS_WRITE,
+        PosixFilePermission.OWNER_READ,
+        PosixFilePermission.OWNER_WRITE
+      ).toSet.asJava
+    } else {
+      sourceView.readAttributes().permissions()
+    }
+    destView.setPermissions(targetPerms)
   }
 
   override def postrun(projectFileName: String,
