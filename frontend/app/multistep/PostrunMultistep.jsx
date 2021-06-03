@@ -3,7 +3,6 @@ import React from "react";
 import axios from "axios";
 import PropTypes from "prop-types";
 import MetadataComponent from "./postrun/MetadataComponent.jsx";
-import SourceComponent from "./postrun/SourceComponent.jsx";
 import DependencyComponent from "./postrun/DependencyComponent.jsx";
 import CompletionComponent from "./postrun/CompletionComponent.jsx";
 
@@ -16,7 +15,6 @@ class PostrunMultistep extends React.Component {
     super(props);
     this.state = {
       postrunMetadata: {},
-      postrunSource: "",
       originalDependencies: [],
       updatedDependencies: [],
       postrunList: [],
@@ -47,23 +45,25 @@ class PostrunMultistep extends React.Component {
         () => {
           const promiseList = [
             axios.get(`/api/postrun/${this.state.currentEntry}`),
-            axios.get(`/api/postrun/${this.state.currentEntry}/source`),
             axios.get(`/api/postrun/${this.state.currentEntry}/depends`),
             axios.get("/api/postrun"),
           ];
 
-          Promise.all(promiseList).then(([metadata, source, deps, postrun]) => {
-            this.setState({
-              postrunMetadata: metadata.data.result,
-              postrunSource: source?.data ?? "",
-              originalDependencies: this.getDependsId(deps?.data.result ?? []),
-              updatedDependencies: this.getDependsId(deps?.data.result ?? []),
-              postrunList: postrun?.data.result ?? [],
-              loading: false,
-            }).catch((error) => {
+          Promise.all(promiseList).then(([metadata, deps, postrun]) => {
+            try {
+              this.setState({
+                postrunMetadata: metadata.data.result,
+                originalDependencies: this.getDependsId(
+                  deps?.data.result ?? []
+                ),
+                updatedDependencies: this.getDependsId(deps?.data.result ?? []),
+                postrunList: postrun?.data.result ?? [],
+                loading: false,
+              });
+            } catch (error) {
               console.error(error);
               this.setState({ loading: false, loadingError: error });
-            });
+            }
           });
         }
       );
@@ -89,15 +89,6 @@ class PostrunMultistep extends React.Component {
 
   render() {
     const steps = [
-      {
-        name: "Review source code",
-        component: (
-          <SourceComponent
-            sourceCode={this.state.postrunSource}
-            valueWasSet={this.sourceValueWasSet}
-          />
-        ),
-      },
       {
         name: "Postrun Metadata",
         component: (

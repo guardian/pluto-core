@@ -1,11 +1,10 @@
 package helpers
 
-import org.python.core._
 import play.api.Logger
 
 import scala.jdk.CollectionConverters._
 
-class PostrunDataCache(entries:PyDictionary) {
+class PostrunDataCache(entries:Map[String,String]) {
   private val logger = Logger(getClass)
 
   /**
@@ -14,24 +13,10 @@ class PostrunDataCache(entries:PyDictionary) {
     * @return new PostrunDataCache
     */
   def ++(values:Map[String,String]):PostrunDataCache = {
-    val pythonifiedValues = values.map(kvTuple=>(new PyString(kvTuple._1), new PyString(kvTuple._2)))
-
-    val newDict = entries.copy()
-    newDict.putAll(pythonifiedValues.asJava)
-    new PostrunDataCache(newDict)
+    new PostrunDataCache(entries ++ values)
   }
 
-  def ++(values:PyObject):PostrunDataCache = {
-    logger.debug(s"++: got values ${values}")
-
-    if(values==null || values==Py.None || !values.isMappingType){
-      this
-    } else {
-      val newDict = entries.copy()
-      newDict.update(values.asInstanceOf[PyDictionary])
-      new PostrunDataCache(newDict)
-    }
-  }
+  def withString(key:String, value:String):PostrunDataCache = new PostrunDataCache(entries ++ Map(key->value))
 
   /**
     * Retrieve a value from the data cache, as a string. The internally held python object is converted back to a Scala
@@ -39,34 +24,18 @@ class PostrunDataCache(entries:PyDictionary) {
     * @param key key to check
     * @return An Option with None if no value exists or Some(string) if it does
     */
-  def get(key:String):Option[String] = {
-    logger.debug(s"asking for ${(new PyString(key)).toString}")
-    logger.debug(s"entries are ${entries.toString}")
-    val pythonValue = entries.get(new PyString(key))
-    logger.debug(s"Got python value $pythonValue")
-    if(pythonValue==null || pythonValue==Py.None)
-      None
-    else
-      Some(pythonValue.asString())
-  }
+  def get(key:String):Option[String] = entries.get(key)
 
   /**
     * Convert the contents back into a Scala map
     * @return a Map[String,String] of the cache contents
     */
-  def asScala:Map[String,String] = {
-    entries.getMap.asScala.map(kvTuple=>(kvTuple._1.asString(), kvTuple._2.asString())).toMap
-  }
-
-  /**
-    * Convert to python compatible dict
-    */
-  def asPython:PyDictionary = entries
+  def asScala:Map[String,String] = entries
 }
 
 object PostrunDataCache {
   def apply():PostrunDataCache = {
-    new PostrunDataCache(new PyDictionary())
+    new PostrunDataCache(Map())
   }
 
   /**
@@ -82,12 +51,5 @@ object PostrunDataCache {
       .filter(Character.UnicodeBlock.of(_) == Character.UnicodeBlock.BASIC_LATIN)
 
 
-  def apply(entries: Map[String,String]): PostrunDataCache = {
-    val pythonifiedEntries = entries.map(kvTuple=>(
-      new PyString(kvTuple._1).asInstanceOf[PyObject],
-      new PyString(removeNonAscii(kvTuple._2)).asInstanceOf[PyObject])
-    )
-
-    new PostrunDataCache(new PyDictionary(pythonifiedEntries.asJava))
-  }
+  def apply(entries: Map[String,String]): PostrunDataCache = new PostrunDataCache(entries)
 }

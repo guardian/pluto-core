@@ -28,9 +28,7 @@ object PostrunDependencyGraph {
     * @return a Future, containing a Map of Int (representing postrun ID) to a Seq of PostrunDependency objects
     */
   def loadAll(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Map[Int,Seq[PostrunDependency]]] =
-    db.run(TableQuery[PostrunDependencyRow].result.asTry) map {
-      case Failure(error)=>throw error  //fail the future if an error occurs
-      case Success(rows)=>
+    db.run(TableQuery[PostrunDependencyRow].result) map { rows=>
         rows.foldLeft[Map[Int,Seq[PostrunDependency]]](Map()) { (acc,entry)=>
           acc ++ Map(entry.sourceAction->rows.filter(_.sourceAction==entry.sourceAction))
         }

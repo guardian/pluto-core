@@ -63,6 +63,7 @@
     <logger name="services.DataMigration" level="INFO"/>
     <logger name="services.migrationcomponents" level="INFO"/>
     <logger name="services.PeriodicScanReceiver" level="DEBUG"/>
+    <logger name="postrun" level="DEBUG"/>
 
     <logger name="services.CommissionStatusPropagator" level="DEBUG"/>
     <root level="INFO">

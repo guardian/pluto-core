@@ -70,7 +70,7 @@ class RunXmlLintSpec extends Specification with BuildMyApp{
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[PostgresProfile].db
 
-      FileUtils.copyFile(new File("postrun/tests/test_make_asset_folder.py"), new File("/tmp/test_run_xmllint_notgzip.prproj"))
+      FileUtils.copyFile(new File("postrun/tests/data/not_a_gzip.dat"), new File("/tmp/test_run_xmllint_notgzip.prproj"))
       val dataCache = PostrunDataCache(Map())
       val s = new RunXmlLint
       val futureResults = Await.result(Future.sequence(Seq(

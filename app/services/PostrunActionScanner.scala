@@ -6,7 +6,6 @@ import java.sql.Timestamp
 import akka.actor.{Actor, ActorSystem}
 import com.google.inject.{Inject, Singleton}
 import play.api.{Configuration, Logger}
-import helpers.{DirectoryScanner, JythonRunner, PrecompileException}
 import models.PostrunAction
 import java.time.{Instant, ZonedDateTime}
 
@@ -37,39 +36,23 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
   implicit val db = dbConfigProvider.get[PostgresProfile].db
   implicit val configImplicit = config
 
-  def initialise:Unit = {
-    //call out to JythonRunner to ensure that scripts are precompiled when we start up.
-    JythonRunner.precompile.map(results => {
-      results.foreach({
-        case Success(runnable) =>
-          logger.debug(s"Successfully precompiled $runnable")
-        case Failure(error) => error match {
-          case e: PrecompileException =>
-            if(!sys.env.contains("CI")) logger.error(s"Could not precompile ${e.toString}", error)  //don't show the error if we are testing
-          case _ =>
-            if(!sys.env.contains("CI")) logger.error("Could not precompile: ", error)
-        }
-      })
-    }).recover({
-      case e: Throwable =>
-        logger.error("Precompiler could not recover, this should not happen", e)
-    })
+  def scanPojos = {
+    logger.info(s"URLs from classpath are ${ClasspathHelper.forPackage("postrun")}")
 
-    //Scan POJOs
-    logger.debug(s"URLs from classpath are ${ClasspathHelper.forClassLoader}")
     val classLoadersList = ArrayBuffer(ClasspathHelper.contextClassLoader, ClasspathHelper.staticClassLoader)
     val reflections = new Reflections(new ConfigurationBuilder()
       .setScanners(new SubTypesScanner(false), new ResourcesScanner())
-      .setUrls(ClasspathHelper.forClassLoader())
-      .filterInputsBy(new FilterBuilder().include(FilterBuilder.prefix("postrun")))
+      .setUrls(ClasspathHelper.forPackage("postrun"))
     )
 
-    reflections.getSubTypesOf(classOf[PojoPostrun]).asScala.foreach(classRef => addIfNotExists(classRef.getCanonicalName, s"java:${classRef.getCanonicalName}"))
+    reflections
+      .getSubTypesOf(classOf[PojoPostrun])
+      .asScala
+      .foreach(classRef => addIfNotExists(classRef.getCanonicalName, s"java:${classRef.getCanonicalName}"))
   }
 
-
   protected def addIfNotExists(scriptName:String,absolutePath:String) = {
-    logger.debug(s"will add $scriptName at $absolutePath if it does not exist already")
+    logger.info(s"will add $scriptName at $absolutePath if it does not exist already")
     PostrunAction.entryForRunnable(absolutePath) map {
       case Success(results)=>
         if(results.isEmpty){
@@ -93,22 +76,11 @@ class PostrunActionScanner @Inject() (dbConfigProvider: DatabaseConfigProvider, 
     addIfNotExists(scriptFile.getName, scriptFile.getName)
   }
 
-  initialise
-
   override def receive: Receive = {
     case PostrunActionScanner.Rescan=>
-      logger.debug("Rescanning postrun actions")
+      logger.info("Rescanning postrun actions")
 
-      val scriptsDir = config.get[String]("postrun.scriptsPath")
-      MDC.put("scripts_dir", scriptsDir)
-      DirectoryScanner.scanAll(scriptsDir).map({
-        case Failure(error)=>
-          logger.error(s"Could not scan $scriptsDir: ", error)
-        case Success(filesList)=>
-          filesList
-            .filter(file=>file.getName.endsWith(".py") && ! file.getName.startsWith("__"))
-            .foreach(file=>addFileIfNotExists(file))
-      })
+      scanPojos
   }
 
 }

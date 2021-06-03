@@ -3,9 +3,9 @@ package models
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
 import java.sql.Timestamp
-
-import helpers.{JythonOutput, JythonRunner, PostrunDataCache}
+import helpers.{JythonOutput, PostrunDataCache}
 import org.apache.commons.io.{FileUtils, FilenameUtils}
+import org.slf4j.LoggerFactory
 import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsPath, Reads, Writes}
 import play.api.libs.functional.syntax._
@@ -19,6 +19,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class PostrunAction (id:Option[Int],runnable:String, title:String, description:Option[String],
                           owner:String, version:Int, ctime: Timestamp) extends PlutoModel {
+  private val logger = LoggerFactory.getLogger(getClass)
+
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
     * was set, then returns the same object. */
@@ -71,41 +73,21 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     */
   def getScriptPath(implicit config:Configuration) = Paths.get(config.get[String]("postrun.scriptsPath"), this.runnable)
 
-  /**
-    * Runs the provided python script as a postrun
-    * @param projectFileName
-    * @param projectEntry
-    * @param projectType
-    * @param dataCache
-    * @param workingGroupMaybe
-    * @param commissionMaybe
-    * @param config
-    * @return
-    */
-  protected def runJython(projectFileName:String,projectEntry:ProjectEntry,projectType:ProjectType,dataCache:PostrunDataCache,
-                          workingGroupMaybe: Option[PlutoWorkingGroup], commissionMaybe: Option[PlutoCommission])
-                         (implicit config:Configuration):Future[Try[JythonOutput]] = {
-    val runner = new JythonRunner
-    val inputPath = getScriptPath
-    val scriptArgs = Map(
-      "projectFile" -> projectFileName
-    ) ++ projectEntry.asStringMap ++ projectType.asStringMap ++ commissionMaybe.map(_.asStringMap).getOrElse(Map()) ++ workingGroupMaybe.map(_.asStringMap).getOrElse(Map())
-
-    runner.runScriptAsync(inputPath.toString, scriptArgs, dataCache) map {
-      case Success(scriptOutput) =>
-        val logger = Logger(this.getClass)
-        logger.debug("Script started successfully")
-        scriptOutput.raisedError match {
-          case Some(error)=>
-            logger.error("Postrun script could not complete due to a Python exception: ")
-            logger.error("Postrun standard out:" + scriptOutput.stdOutContents)
-            logger.error("Postrun standard err:" + scriptOutput.stdErrContents)
-            Failure(error)
-          case None=>
-            Success(scriptOutput)
-        }
-      case Failure(error)=>Failure(error)
-    }
+  protected def initialisePojoClass(className:String, config:Configuration) = {
+    logger.debug(s"Trying to initialise pojo $className using configuration-enabled constructor....")
+      Try { Class.forName(className).getDeclaredConstructor(classOf[Configuration]) } match {
+        case Success(constructor)=>
+          Try { constructor.newInstance(config).asInstanceOf[PojoPostrun] }
+        case Failure(err)=>
+          logger.debug(s"Could not initialise pojo ${className} with config: $err, trying with non-configuration constructor...")
+          Try { Class.forName(className).getDeclaredConstructor() } match {
+            case Success(constructor)=>
+              Try { constructor.newInstance().asInstanceOf[PojoPostrun] }
+            case Failure(err)=>
+              logger.error(s"Could not initialise $className:", err)
+              Failure(new RuntimeException(s"Could not initialise $className: ${err.getMessage}"))
+          }
+      }
   }
 
   /**
@@ -125,18 +107,21 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
     val className: String = runnable.substring(5) //strip off "java:" prefix
     val logger = Logger(this.getClass)
     logger.debug(s"Initiating java based postrun $className...")
-    try {
-      val postrunClass = Class.forName(className).getDeclaredConstructor().newInstance().asInstanceOf[PojoPostrun]
-
-      postrunClass.postrun(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe).map({
-        case Success(newDataCache) => Success(JythonOutput("", "", newDataCache, raisedError = None))
-        case Failure(error) => Success(JythonOutput("", "", dataCache, raisedError = Some(error)))
-      }).recoverWith({
-        case ex: Throwable => Future(Failure(ex))
-      })
-    } catch {
-      //return a failure if we couldn't initialise the classs
-      case ex:Throwable=>Future(Failure(ex))
+    initialisePojoClass(className, config) match {
+      case Success(postrunClass) =>
+        logger.debug(s"Successfully initialised $className")
+        postrunClass.postrun(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe).map({
+          case Success(newDataCache) =>
+            logger.debug(s"Postrun executed successfully")
+            Success(JythonOutput("", "", newDataCache, raisedError = None))
+          case Failure(error) =>
+            logger.debug(s"Postrun indicated error")
+            Success(JythonOutput("", "", dataCache, raisedError = Some(error)))
+        }).recoverWith({
+          case ex: Throwable => Future(Failure(ex))
+        })
+      case Failure(err) =>
+        Future(Failure(err))
     }
   }
 
@@ -170,12 +155,12 @@ case class PostrunAction (id:Option[Int],runnable:String, title:String, descript
         val resultFuture = if(isPojo){
           runPojo(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe)
         } else {
-          runJython(projectFileName, projectEntry, projectType, dataCache, workingGroupMaybe, commissionMaybe)
+          Future(Failure(new RuntimeException("Unsupported postrun type")))
         }
 
         resultFuture.map({
           case Failure(error) =>
-            logger.error("Unable to start postrun script: ", error)
+            logger.error(s"Unable to start postrun script: ${error.getMessage}", error)
             restoreBackupFile(backupPath, projectFileName) match {
               case Failure(restoreError)=>
                 logger.error(s"Cannot restore backup, project file $projectFileName may be corrupted")

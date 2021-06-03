@@ -162,3 +162,21 @@ interface VaultDescription {
   vaultId: string;
   name: string;
 }
+
+interface PostrunAction {
+  id: number;
+  runnable: string;
+  title: string;
+  description?: string;
+  owner: string;
+  version: number;
+  ctime: string;
+}
+
+interface ObjectListResponse<T> {
+  status: string;
+  count: number;
+  result: T[];
+}
+
+type PostrunActionsResponse = ObjectListResponse<PostrunAction>;

@@ -1,10 +1,12 @@
 package controllers
 
 import akka.actor.ActorRef
+
 import javax.inject.{Inject, Named, Singleton}
 import akka.http.scaladsl.Http
 import auth.{BearerTokenAuth, Security}
 import exceptions.AlreadyExistsException
+import helpers.PostrunSorter
 import models._
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
@@ -88,27 +90,6 @@ class PostrunActionController  @Inject() (override val controllerComponents:Cont
     }
   }}
 
-  def getSource(itemId:Int) = IsAdminAsync {uid=>{request=>
-    selectid(itemId) map {
-      case Failure(error)=>
-        logger.error("Could not load postrun source",error)
-        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
-      case Success(rows)=>
-        if(rows.head.runnable.startsWith("java:")){
-          Ok("### Java code is not showable at the moment").as("text/x-python")
-        } else {
-          val scriptpath = rows.head.getScriptPath.toAbsolutePath
-          try {
-            Ok(Source.fromFile(scriptpath.toString).mkString).as("text/x-python")
-          } catch {
-            case e: Throwable =>
-              logger.error("Could not read postrun source code", e)
-              InternalServerError(Json.obj("status" -> "error", "detail" -> e.toString))
-          }
-        }
-    }
-  }}
-
   def insertDependency(entry: PostrunDependency) = dbConfig.db.run(
     (TableQuery[PostrunDependencyRow] returning TableQuery[PostrunDependencyRow].map(_.id) += entry).asTry
   )
@@ -147,5 +128,29 @@ class PostrunActionController  @Inject() (override val controllerComponents:Cont
   def startScan = IsAdmin {uid=> request=>
     postrunActionScanner ! PostrunActionScanner.Rescan
     Ok(Json.obj("status"->"ok","detail"->"scan started"))
+  }
+
+  def testPostrunSort(projectTypeId:Int) = IsAuthenticatedAsync { uid=> request=>
+    implicit val db = dbConfig.db
+
+    val postrunAssociationJoinQuery = TableQuery[PostrunAssociationRow] joinLeft TableQuery[PostrunActionRow] on (_.postrunEntry===_.id)
+
+    val sortedPostrunList = for {
+      associationResults <- dbConfig.db.run(postrunAssociationJoinQuery.filter(_._1.projectType===projectTypeId).result)
+      postrunDependencies <- PostrunDependencyGraph.loadAllById
+      results <- Future(PostrunSorter.doSort(associationResults.map(_._2).collect({case Some(entry)=>entry}).toList, postrunDependencies))
+    } yield (associationResults, postrunDependencies, results)
+
+    sortedPostrunList.map(results=>{
+      Ok(Json.obj("status"->"ok",
+        "associated_postruns"->results._1.map(joined_row=>(joined_row._1._1, joined_row._1._2, joined_row._2.map(_.runnable))),
+        "dependency_input"->results._2,
+        "final_results"->results._3.map(_.runnable)
+      ))
+    }).recover({
+      case err:Throwable=>
+        logger.error(s"Could not test the postrun sorting: ${err.getMessage}", err)
+        InternalServerError(Json.obj("status"->"error","description"->err.getMessage,"trace"->err.getStackTrace.map(_.toString)))
+    })
   }
 }

@@ -27,7 +27,7 @@ import ProjectDeleteComponent from "./delete/ProjectEntryDeleteComponent.jsx";
 import ProjectCreateMultistep from "./multistep/ProjectCreateMultistep.jsx";
 import ProjectEntryEditComponent from "./ProjectEntryList/ProjectEntryEditComponent.tsx";
 
-import PostrunList from "./PostrunList.jsx";
+import PostrunList from "./PostrunList";
 import PostrunMultistep from "./multistep/PostrunMultistep.jsx";
 import PostrunDeleteComponent from "./delete/PostrunDeleteComponent.jsx";
 

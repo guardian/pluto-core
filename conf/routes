@@ -62,7 +62,6 @@ PUT     /api/postrun/scan               @controllers.PostrunActionController.sta
 GET     /api/postrun                   @controllers.PostrunActionController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/postrun                   @controllers.PostrunActionController.create
 GET     /api/postrun/:id               @controllers.PostrunActionController.getitem(id: Int)
-GET     /api/postrun/:id/source        @controllers.PostrunActionController.getSource(id:Int)
 PUT     /api/postrun/:id               @controllers.PostrunActionController.update(id: Int)
 DELETE  /api/postrun/:id               @controllers.PostrunActionController.delete(id: Int)
 PUT     /api/postrun/:id/projecttype/:typeid   @controllers.PostrunActionController.associate(id: Int, typeid:Int)
@@ -70,6 +69,7 @@ DELETE  /api/postrun/:id/projecttype/:typeid   @controllers.PostrunActionControl
 GET     /api/postrun/:id/depends        @controllers.PostrunActionController.listDependencies(id:Int)
 PUT     /api/postrun/:id/depends/:dep   @controllers.PostrunActionController.addDependency(id:Int, dep:Int)
 DELETE  /api/postrun/:id/depends/:dep   @controllers.PostrunActionController.removeDependency(id:Int, dep:Int)
+GET     /api/postrun/test_sort/:project_type_id @controllers.PostrunActionController.testPostrunSort(project_type_id:Int)
 
 GET     /api/default                    @controllers.DefaultsController.list
 GET     /api/default/:key               @controllers.DefaultsController.getForKey(key:String)
