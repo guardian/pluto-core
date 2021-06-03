@@ -101,6 +101,12 @@ upload_periodictriggerapp:
   artifacts:
     paths:
       - periodic_trigger/build-info.yaml
+  tags:
+    - gnm
+    - docker
+  only:
+    - master
+    - merge_requests
 
 upload:
   image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20210302_1
