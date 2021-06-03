@@ -36,7 +36,7 @@ class CopyProjectToAssetfolder extends PojoPostrun {
         logger.error(s"Could not set group of ${to.toString} to ${sourceView.readAttributes().group()}: $err", err)
     }
 
-    val targetPerms:java.util.Set[PosixFilePermission] = if(to.endsWith(".cpr")) {
+    val targetPerms:java.util.Set[PosixFilePermission] = if(to.getFileName.toString.endsWith(".cpr")) {
       logger.info(s"${to.toString} is a cubase project, applying open-permissions workaround...")
       Array(
         PosixFilePermission.GROUP_READ,

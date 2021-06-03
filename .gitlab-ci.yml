@@ -71,8 +71,36 @@ backend:
     - master
     - merge_requests
   
+upload_periodictriggerapp:
+  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20210302_1
+  stage: deploy
+  services:
+    - docker:19.03.11-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs" #this is mounted by the gitlab CI system so is populated from the dind service
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_VERIFY: 1
+  script:
+    - docker login -u "${DOCKER_USER}" -p "${DOCKER_PAT}"
+    - cd periodic_trigger && docker build . -t guardianmultimedia/pluto-core-periodictrigger:${CI_PIPELINE_IID}
+    - docker push guardianmultimedia/pluto-core-periodictrigger:${CI_PIPELINE_IID}
+    - "echo ci_commit_branch: ${CI_COMMIT_BRANCH} >> build-info.yaml"
+    - "echo ci_commit_ref_name: ${CI_COMMIT_REF_NAME} >> build-info.yaml"
+    - "echo ci_commit_sha: ${CI_COMMIT_SHA} >> build-info.yaml"
+    - "echo ci_commit_timestamp: ${CI_COMMIT_TIMESTAMP} >> build-info.yaml"
+    - "echo ci_commit_title: ${CI_COMMIT_TITLE} >> build-info.yaml"
+    - "echo ci_job_url: ${CI_JOB_URL} >> build-info.yaml"
+    - "echo ci_project_name: ${CI_PROJECT_NAME} >> build-info.yaml"
+    - "echo ci_merge_request_project_url: ${CI_MERGE_REQUEST_PROJECT_URL} >> build-info.yaml"
+    - "echo ci_merge_request_title: ${CI_MERGE_REQUEST_TITLE} >> build-info.yaml"
+    - "echo ci_pipeline_iid: ${CI_PIPELINE_IID} >> build-info.yaml"
+    - "echo built_image: guardianmultimedia/pluto-core-periodictrigger:$CI_PIPELINE_IID >> build-info.yaml"
+  artifacts:
+    paths:
+      - periodic_trigger/build-info.yaml
 
-deploy:
+upload:
   image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20210302_1
   stage: deploy
   services:
@@ -91,8 +119,6 @@ deploy:
     - docker version
     - docker login -u "${DOCKER_USER}" -p "${DOCKER_PAT}"
     - JAVA_OPTS="-Dbuild.number=${CI_PIPELINE_IID} -Ddocker.username=guardianmultimedia" sbt docker:publish
-    - cd periodic_trigger && docker build . -t guardianmultimedia/pluto-core-periodictrigger:${CI_PIPELINE_IID}
-    - docker push guardianmultimedia/pluto-core-periodictrigger:${CI_PIPELINE_IID}
     - "echo ci_commit_branch: ${CI_COMMIT_BRANCH} >> build-info.yaml"
     - "echo ci_commit_ref_name: ${CI_COMMIT_REF_NAME} >> build-info.yaml"
     - "echo ci_commit_sha: ${CI_COMMIT_SHA} >> build-info.yaml"
@@ -106,7 +132,6 @@ deploy:
     - "echo built_image: guardianmultimedia/pluto-core:$CI_PIPELINE_IID >> build-info.yaml"
   artifacts:
     paths:
-      - periodic_trigger/build-info.yaml
       - build-info.yaml
   cache:
     key: ${CI_COMMIT_REF_SLUG}-sbt
