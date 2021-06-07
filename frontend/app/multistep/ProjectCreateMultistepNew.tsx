@@ -16,6 +16,7 @@ import { CheckCircle } from "@material-ui/icons";
 import UserContext from "../UserContext";
 import PlutoLinkageComponent from "./projectcreate_new/PlutoLinkageComponent";
 import { Helmet } from "react-helmet";
+import ProductionOfficeComponent from "./projectcreate_new/ProductionOfficeComponent";
 
 const useStyles = makeStyles((theme) => ({
   stepContainer: {
@@ -110,6 +111,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   const [commissionId, setCommissionId] = useState<number | undefined>(
     undefined
   );
+  const [productionOffice, setProductionOffice] = useState("UK");
 
   const steps = [
     "Select project template",
@@ -117,6 +119,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
     "Working Group & Commission",
     "Production Office",
     "Media Rules",
+    "Review",
   ];
 
   useEffect(() => {
@@ -193,6 +196,12 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
               }
               commissionId={commissionId}
               workingGroupId={workingGroupId}
+            />
+          ) : null}
+          {activeStep == 3 ? (
+            <ProductionOfficeComponent
+              valueWasSet={(newValue) => setProductionOffice(newValue)}
+              value={productionOffice}
             />
           ) : null}
         </>

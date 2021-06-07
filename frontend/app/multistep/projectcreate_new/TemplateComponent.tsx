@@ -10,24 +10,18 @@ import {
   Typography,
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
+import { projectCreateStyles } from "./CommonStyles";
 
 interface TemplateComponentProps {
   value?: number;
   valueDidChange: (newValue: number) => void;
 }
 
-const useStyles = makeStyles({
-  floatCentre: {
-    width: "fit-content",
-    marginLeft: "auto",
-    marginRight: "auto",
-  },
-});
 const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
   const [knownProjectTypes, setKnownProjectTypes] = useState<ProjectType[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const classes = useStyles();
+  const classes = projectCreateStyles();
 
   //load in project type data at mount
   useEffect(() => {
