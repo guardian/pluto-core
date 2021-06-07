@@ -14,6 +14,8 @@ import NameComponent from "./projectcreate_new/NameComponent";
 import TemplateComponent from "./projectcreate_new/TemplateComponent";
 import { CheckCircle } from "@material-ui/icons";
 import UserContext from "../UserContext";
+import PlutoLinkageComponent from "./projectcreate_new/PlutoLinkageComponent";
+import { Helmet } from "react-helmet";
 
 const useStyles = makeStyles((theme) => ({
   stepContainer: {
@@ -102,6 +104,13 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
     number | undefined
   >(undefined);
 
+  const [workingGroupId, setWorkingGroupId] = useState<number | undefined>(
+    undefined
+  );
+  const [commissionId, setCommissionId] = useState<number | undefined>(
+    undefined
+  );
+
   const steps = [
     "Select project template",
     "Name your project",
@@ -140,6 +149,9 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
 
   return (
     <div id="project-create-multistep">
+      <Helmet>
+        <title>New Edit</title>
+      </Helmet>
       <Stepper activeStep={activeStep}>
         {steps.map((label, index) => {
           const stepProps: { completed?: boolean } = {};
@@ -171,6 +183,16 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
               projectNameDidChange={(newName) => setProjectName(newName)}
               fileName={filename}
               fileNameDidChange={(newName) => setFilename(newName)}
+            />
+          ) : null}
+          {activeStep == 2 ? (
+            <PlutoLinkageComponent
+              commissionIdDidChange={(newValue) => setCommissionId(newValue)}
+              workingGroupIdDidChange={(newValue) =>
+                setWorkingGroupId(newValue)
+              }
+              commissionId={commissionId}
+              workingGroupId={workingGroupId}
             />
           ) : null}
         </>

@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import CommonMultistepComponent from "../common/CommonMultistepComponent.jsx";
-import WorkingGroupSelector from "../common/WorkingGroupSelector.jsx";
+import WorkingGroupSelector from "../common/WorkingGroupSelectorNew";
 import CommissionSelector from "../common/CommissionSelector.jsx";
 
 class PlutoLinkageComponent extends CommonMultistepComponent {
