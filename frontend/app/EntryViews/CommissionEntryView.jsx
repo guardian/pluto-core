@@ -1,3 +1,4 @@
+import React from "react";
 import GenericEntryView from "./GenericEntryView.jsx";
 
 class CommissionEntryView extends GenericEntryView {

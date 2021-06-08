@@ -17,6 +17,7 @@ import UserContext from "../UserContext";
 import PlutoLinkageComponent from "./projectcreate_new/PlutoLinkageComponent";
 import { Helmet } from "react-helmet";
 import ProductionOfficeComponent from "./projectcreate_new/ProductionOfficeComponent";
+import MediaRulesComponent from "./projectcreate_new/MediaRulesComponent";
 
 const useStyles = makeStyles((theme) => ({
   stepContainer: {
@@ -112,6 +113,9 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
     undefined
   );
   const [productionOffice, setProductionOffice] = useState("UK");
+  const [deletable, setDeletable] = useState(false);
+  const [deepArchive, setDeepArchive] = useState(true);
+  const [sensitive, setSensitive] = useState(false);
 
   const steps = [
     "Select project template",
@@ -153,7 +157,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   return (
     <div id="project-create-multistep">
       <Helmet>
-        <title>New Edit</title>
+        <title>Create an Edit - Pluto</title>
       </Helmet>
       <Stepper activeStep={activeStep}>
         {steps.map((label, index) => {
@@ -202,6 +206,18 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             <ProductionOfficeComponent
               valueWasSet={(newValue) => setProductionOffice(newValue)}
               value={productionOffice}
+            />
+          ) : null}
+          {activeStep == 4 ? (
+            <MediaRulesComponent
+              deletable={deletable}
+              deepArchive={deepArchive}
+              sensitive={sensitive}
+              archivalChanged={(newDeletable, newDeepArchive) => {
+                setDeletable(newDeletable);
+                setDeepArchive(newDeepArchive);
+              }}
+              sensitiveChanged={(newValue) => setSensitive(newValue)}
             />
           ) : null}
         </>
