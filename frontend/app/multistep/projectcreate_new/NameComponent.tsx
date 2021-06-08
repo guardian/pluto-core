@@ -1,28 +1,72 @@
 import React, { useContext, useEffect, useState } from "react";
-import { Input, Switch, Typography } from "@material-ui/core";
+import {
+  CircularProgress,
+  Grid,
+  Input,
+  Switch,
+  Typography,
+} from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import { format } from "date-fns";
 import UserContext from "../../UserContext";
+import DestinationStorageComponent from "../projectcreate/DestinationStorageComponent";
+import axios from "axios";
+import SystemNotification, {
+  SystemNotificationKind,
+} from "../../SystemNotification";
+import StorageSelector from "../../Selectors/StorageSelector";
 
 interface NameComponentProps {
   projectName: string;
   projectNameDidChange: (newValue: string) => void;
   fileName: string;
   fileNameDidChange: (newValue: string) => void;
+  selectedStorageId: number | undefined;
+  storageIdDidChange: (newValue: number) => void;
 }
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   inputBox: {
     width: "50vw",
     minWidth: "100px",
     maxWidth: "600px",
   },
-});
+  secondary: {
+    fontSize: theme.typography.body2.fontSize,
+    color: theme.palette.text.secondary,
+  },
+}));
 
 const NameComponent: React.FC<NameComponentProps> = (props) => {
   const [autoName, setAutoName] = useState(true);
-
+  const [knownStorages, setKnownStorages] = useState<PlutoStorage[]>([]);
+  const [loading, setLoading] = useState(false);
   const classes = useStyles();
+
+  const userContext = useContext(UserContext);
+
+  const loadStorages = async () => {
+    setLoading(true);
+    const response = await axios.get<PlutoStorageListResponse>("/api/storage", {
+      validateStatus: () => true,
+    });
+    switch (response.status) {
+      case 200:
+        setKnownStorages(response.data.result);
+        setLoading(false);
+        break;
+      default:
+        setLoading(false);
+        console.error(
+          `Could not load in storages: ${response.status} ${response.statusText}`,
+          response.data
+        );
+        SystemNotification.open(
+          SystemNotificationKind.Error,
+          `Could not load in storages, server error ${response.status}. More details in the browser console.`
+        );
+    }
+  };
 
   const makeAutoFilename = (title: string) => {
     const sanitizer = /[^\w\d_]+/g;
@@ -38,6 +82,16 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
       props.fileNameDidChange(makeAutoFilename(props.projectName));
     }
   }, [props.projectName]);
+
+  useEffect(() => {
+    loadStorages();
+  }, []);
+
+  useEffect(() => {
+    if (!props.selectedStorageId && knownStorages.length) {
+      props.storageIdDidChange(knownStorages[0].id);
+    }
+  }, [knownStorages]);
 
   return (
     <div>
@@ -88,6 +142,36 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
                 checked={autoName}
                 onChange={(event) => setAutoName(event.target.checked)}
               />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <Typography>Project storage</Typography>
+            </td>
+            <td>
+              <Grid direction="row" container>
+                <Grid item>
+                  <StorageSelector
+                    storageList={knownStorages}
+                    enabled={userContext?.isAdmin}
+                    selectionUpdated={(newValue: number) =>
+                      props.storageIdDidChange(newValue)
+                    }
+                    selectedStorage={props.selectedStorageId}
+                  />
+                  {userContext?.isAdmin ? undefined : (
+                    <Typography className={classes.secondary}>
+                      Only administrators can change the project storage
+                      location
+                    </Typography>
+                  )}
+                </Grid>
+                <Grid item>
+                  {loading ? (
+                    <CircularProgress style={{ height: "0.8em" }} />
+                  ) : undefined}
+                </Grid>
+              </Grid>
             </td>
           </tr>
         </tbody>

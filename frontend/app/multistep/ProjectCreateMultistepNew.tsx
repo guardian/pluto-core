@@ -8,6 +8,7 @@ import {
   Step,
   StepLabel,
   Stepper,
+  Tooltip,
   Typography,
 } from "@material-ui/core";
 import NameComponent from "./projectcreate_new/NameComponent";
@@ -18,6 +19,7 @@ import PlutoLinkageComponent from "./projectcreate_new/PlutoLinkageComponent";
 import { Helmet } from "react-helmet";
 import ProductionOfficeComponent from "./projectcreate_new/ProductionOfficeComponent";
 import MediaRulesComponent from "./projectcreate_new/MediaRulesComponent";
+import SummaryComponent from "./projectcreate_new/SummaryComponent";
 
 const useStyles = makeStyles((theme) => ({
   stepContainer: {
@@ -102,6 +104,11 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
 
   const [projectName, setProjectName] = useState("");
   const [filename, setFilename] = useState("");
+
+  const [selectedStorageId, setSelectedStorageId] = useState<
+    number | undefined
+  >(undefined);
+
   const [selectedTemplateId, setSelectedTemplateId] = useState<
     number | undefined
   >(undefined);
@@ -154,6 +161,23 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
+  /**
+   * returns true if we are in a position to create a project without issues
+   */
+  const canComplete = () => {
+    return (
+      projectName != "" &&
+      projectName != "My project" &&
+      filename != "" &&
+      selectedTemplateId &&
+      selectedStorageId &&
+      workingGroupId &&
+      commissionId &&
+      productionOffice != "" &&
+      (deletable || deepArchive)
+    );
+  };
+
   return (
     <div id="project-create-multistep">
       <Helmet>
@@ -190,6 +214,8 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
               projectNameDidChange={(newName) => setProjectName(newName)}
               fileName={filename}
               fileNameDidChange={(newName) => setFilename(newName)}
+              selectedStorageId={selectedStorageId}
+              storageIdDidChange={(newValue) => setSelectedStorageId(newValue)}
             />
           ) : null}
           {activeStep == 2 ? (
@@ -220,6 +246,20 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
               sensitiveChanged={(newValue) => setSensitive(newValue)}
             />
           ) : null}
+          {activeStep == 5 ? (
+            <SummaryComponent
+              projectName={projectName}
+              fileName={filename}
+              projectTemplateId={selectedTemplateId}
+              destinationStorageId={selectedStorageId}
+              workingGroupId={workingGroupId}
+              productionOffice={productionOffice}
+              commissionId={commissionId}
+              deletable={deletable}
+              deepArchive={deepArchive}
+              sensitive={sensitive}
+            />
+          ) : null}
         </>
         <hr />
         <Grid justify="space-between" container>
@@ -234,9 +274,21 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
           </Grid>
           <Grid item>
             {activeStep >= steps.length - 1 ? (
-              <Button variant="contained" endIcon={<CheckCircle />}>
-                Create
-              </Button>
+              <Tooltip
+                title={
+                  canComplete()
+                    ? "Create the project"
+                    : "You need to supply some more information, check above for details"
+                }
+              >
+                <Button
+                  variant="contained"
+                  disabled={!canComplete()}
+                  endIcon={<CheckCircle />}
+                >
+                  Create
+                </Button>
+              </Tooltip>
             ) : (
               <Button variant="contained" onClick={handleNext}>
                 Next

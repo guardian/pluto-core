@@ -25,6 +25,10 @@ const useStyles = makeStyles((theme) => ({
   selectorbox: {
     width: "50%",
   },
+  warningText: {
+    color: theme.palette.warning.dark,
+    textAlign: "center",
+  },
 }));
 
 const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
@@ -88,6 +92,11 @@ const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
             workingGroupList={knownWorkingGroups}
             currentValue={props.workingGroupId}
           />
+          {props.workingGroupId === undefined ? (
+            <Typography className={classes.warningText}>
+              No working group selected yet
+            </Typography>
+          ) : null}
         </Grid>
         <Grid item className={classes.selectorbox}>
           <Typography variant="h6">Commission</Typography>
@@ -97,6 +106,11 @@ const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
             selectedCommissionId={props.commissionId}
             showStatus={showingStatus}
           />
+          {props.commissionId === undefined ? (
+            <Typography className={classes.warningText}>
+              No commission selected yet
+            </Typography>
+          ) : null}
           <RadioGroup
             aria-label="Show status"
             name="showing_status"

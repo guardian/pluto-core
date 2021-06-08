@@ -180,3 +180,24 @@ interface ObjectListResponse<T> {
 }
 
 type PostrunActionsResponse = ObjectListResponse<PostrunAction>;
+
+type PlutoStorageStatus =
+  | "ONLINE"
+  | "OFFLINE"
+  | "DISAPPEARED"
+  | "MISCONFIGURED"
+  | "UNKNOWN";
+
+interface PlutoStorage {
+  id: number;
+  nickname?: string;
+  rootpath?: string;
+  clientpath?: string;
+  storageType: string;
+  user?: string;
+  device?: string;
+  supportsVersions: boolean;
+  status?: PlutoStorageStatus;
+}
+
+type PlutoStorageListResponse = ObjectListResponse<PlutoStorage>;
