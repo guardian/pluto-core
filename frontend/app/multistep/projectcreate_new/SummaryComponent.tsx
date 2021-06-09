@@ -5,7 +5,6 @@ import { makeStyles } from "@material-ui/core/styles";
 import StorageEntryView from "../../EntryViews/StorageEntryView";
 import WorkingGroupEntryView from "../../EntryViews/WorkingGroupEntryView";
 import CommissionEntryView from "../../EntryViews/CommissionEntryView";
-import MediaRulesView from "../projectcreate/MediaRulesView";
 import UserContext from "../../UserContext";
 
 interface SummaryComponentProps {

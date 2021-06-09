@@ -1,6 +1,5 @@
 import React from "react";
 import GeneralDeleteComponent from "./GeneralDeleteComponent.jsx";
-import SummaryComponent from "../multistep/projectcreate/SummaryComponent.jsx";
 import ProjectEntryView from "../EntryViews/ProjectEntryView.jsx";
 
 class ProjectEntryDeleteComponent extends GeneralDeleteComponent {
