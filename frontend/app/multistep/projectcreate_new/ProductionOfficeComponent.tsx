@@ -3,7 +3,7 @@ import { MenuItem, Select, Typography } from "@material-ui/core";
 import { projectCreateStyles } from "./CommonStyles";
 
 interface ProductionOfficeComponentProps {
-  valueWasSet: (newValue: string) => void;
+  valueWasSet: (newValue: ProductionOffice) => void;
   value: string;
   extraText?: string;
 }
@@ -34,7 +34,9 @@ const ProductionOfficeComponent: React.FC<ProductionOfficeComponentProps> = (
       <div className={classes.floatCentre}>
         <Select
           value={props.value}
-          onChange={(evt) => props.valueWasSet(evt.target.value as string)}
+          onChange={(evt) =>
+            props.valueWasSet(evt.target.value as ProductionOffice)
+          }
         >
           {validProductionOffices.map((officeName, idx) => (
             <MenuItem key={idx} value={officeName}>

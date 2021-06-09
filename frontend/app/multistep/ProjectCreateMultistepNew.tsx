@@ -20,6 +20,10 @@ import { Helmet } from "react-helmet";
 import ProductionOfficeComponent from "./projectcreate_new/ProductionOfficeComponent";
 import MediaRulesComponent from "./projectcreate_new/MediaRulesComponent";
 import SummaryComponent from "./projectcreate_new/SummaryComponent";
+import InProgressComponent from "./projectcreate_new/InProgressComponent";
+import { CreateProject } from "./projectcreate_new/CreationAction";
+import ProjectCreatedComponent from "./projectcreate_new/ProjectCreatedComponent";
+import { Link } from "react-router-dom";
 
 const useStyles = makeStyles((theme) => ({
   stepContainer: {
@@ -28,6 +32,9 @@ const useStyles = makeStyles((theme) => ({
     paddingTop: "0.2em",
     marginLeft: "auto",
     marginRight: "auto",
+  },
+  warning: {
+    color: theme.palette.warning.main,
   },
 }));
 
@@ -105,6 +112,13 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   const [projectName, setProjectName] = useState("");
   const [filename, setFilename] = useState("");
 
+  const [creationInProgress, setCreationInProgress] = useState<
+    boolean | undefined
+  >(undefined);
+  const [creationFailed, setCreationFailed] = useState<string | undefined>(
+    undefined
+  );
+
   const [selectedStorageId, setSelectedStorageId] = useState<
     number | undefined
   >(undefined);
@@ -119,10 +133,17 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   const [commissionId, setCommissionId] = useState<number | undefined>(
     undefined
   );
-  const [productionOffice, setProductionOffice] = useState("UK");
+  const [productionOffice, setProductionOffice] = useState<ProductionOffice>(
+    "UK"
+  );
   const [deletable, setDeletable] = useState(false);
   const [deepArchive, setDeepArchive] = useState(true);
   const [sensitive, setSensitive] = useState(false);
+  const [createdProjectId, setCreatedProjectId] = useState<undefined | number>(
+    undefined
+  );
+
+  const userContext = useContext(UserContext);
 
   const steps = [
     "Select project template",
@@ -132,6 +153,61 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
     "Media Rules",
     "Review",
   ];
+
+  const fakeUploadTimer = () => {
+    return new Promise<void>((resolve, reject) =>
+      window.setTimeout(() => resolve(), 3000)
+    );
+  };
+
+  const createClicked = async () => {
+    setActiveStep(6);
+    setCreationInProgress(true);
+    setCreationFailed(undefined);
+
+    const result = await CreateProject({
+      filename: filename,
+      title: projectName,
+      destinationStorageId: selectedStorageId as number,
+      projectTemplateId: selectedTemplateId as number,
+      user: userContext?.userName ?? "unknown",
+      workingGroupId: workingGroupId as number,
+      commissionId: commissionId as number,
+      deletable: deletable,
+      deepArchive: deepArchive,
+      sensitive: sensitive,
+      productionOffice: productionOffice,
+    });
+
+    // const result = {
+    //   createdOk: true,
+    //   projectId: 1234,
+    //   errorMessage: "",
+    //   shouldRetry: false
+    // }
+    //
+    // await fakeUploadTimer();
+
+    if (result.createdOk) {
+      if (result.projectId) setCreatedProjectId(result.projectId);
+      setCreationInProgress(false);
+      setCreationFailed(undefined);
+      setActiveStep((prev) => prev + 1);
+    } else {
+      setCreationFailed(result.errorMessage);
+      setCreationInProgress(false);
+
+      if (result.shouldRetry) {
+        window.setTimeout(() => createClicked(), 2000);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (creationInProgress === false && !creationFailed) {
+      console.log("Project created OK");
+    }
+  }, [creationInProgress, creationFailed]);
 
   useEffect(() => {
     console.log("User context changed, new value: ", context);
@@ -173,6 +249,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
       selectedStorageId &&
       workingGroupId &&
       commissionId &&
+      //@ts-ignore
       productionOffice != "" &&
       (deletable || deepArchive)
     );
@@ -260,13 +337,40 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
               sensitive={sensitive}
             />
           ) : null}
+          {activeStep == 6 ? (
+            <InProgressComponent
+              didFail={creationFailed !== undefined}
+              errorMessage={creationFailed}
+            />
+          ) : null}
+          {activeStep == 7 && createdProjectId && commissionId ? (
+            <ProjectCreatedComponent
+              projectId={createdProjectId}
+              commissionId={commissionId}
+              title={projectName}
+            />
+          ) : null}
+          {activeStep == 7 && (!createdProjectId || !commissionId) ? (
+            <div>
+              <Typography className={classes.warning} variant="h3">
+                Well this is strange
+              </Typography>
+              <Typography>
+                It appears that your project was created, but I can't find the
+                project ID so I can't show you the options screen I normally
+                would. You'll just have to go back to the Projects list and find
+                it from there.
+              </Typography>
+              <Link to="/project?mine">Go to the Projects list</Link>
+            </div>
+          ) : null}
         </>
         <hr />
         <Grid justify="space-between" container>
           <Grid item>
             <Button
               variant="outlined"
-              disabled={activeStep == 0}
+              disabled={activeStep == 0 || creationInProgress || activeStep > 5}
               onClick={handleBack}
             >
               Back
@@ -283,8 +387,14 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
               >
                 <Button
                   variant="contained"
-                  disabled={!canComplete()}
+                  disabled={
+                    !canComplete() ||
+                    creationInProgress ||
+                    creationFailed !== undefined ||
+                    activeStep > 6
+                  }
                   endIcon={<CheckCircle />}
+                  onClick={createClicked}
                 >
                   Create
                 </Button>

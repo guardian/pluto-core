@@ -201,3 +201,14 @@ interface PlutoStorage {
 }
 
 type PlutoStorageListResponse = ObjectListResponse<PlutoStorage>;
+
+interface ProjectCreatedResponse {
+  status: string;
+  detail: string;
+  projectId: number;
+}
+
+interface GenericErrorResponse {
+  status: string;
+  detail?: string;
+}
