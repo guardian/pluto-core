@@ -244,6 +244,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
     return (
       projectName != "" &&
       projectName != "My project" &&
+      projectName != `${userContext?.userName}'s project` &&
       filename != "" &&
       selectedTemplateId &&
       selectedStorageId &&

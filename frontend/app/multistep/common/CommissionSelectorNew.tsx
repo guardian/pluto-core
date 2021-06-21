@@ -67,8 +67,9 @@ const CommissionSelector: React.FC<CommissionSelectorProps> = (props) => {
     return {
       title: searchText == "" ? undefined : searchText,
       workingGroupId: props.workingGroupId,
-      showStatus: props.showStatus == "all" ? undefined : props.showStatus,
+      status: props.showStatus == "all" ? undefined : props.showStatus,
       match: "W_CONTAINS",
+      showKilled: false,
     };
   };
 
@@ -107,6 +108,10 @@ const CommissionSelector: React.FC<CommissionSelectorProps> = (props) => {
       window.clearTimeout(timerId);
     };
   }, [searchText]);
+
+  useEffect(() => {
+    updateResults();
+  }, [props.showStatus]);
 
   useEffect(() => {
     setSeenCommissions([]);

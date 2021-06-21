@@ -59,8 +59,8 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
               {props.projectName == "My project" ||
               props.projectName == `${userContext?.userName}'s project` ? (
                 <Typography className={classes.warning}>
-                  Don't be ridiculous, you need to give the project a name that
-                  means soneone can find it in the future!
+                  Don't be ridiculous, you need to give the project a
+                  descriptive name that means someone can find it in the future!
                 </Typography>
               ) : undefined}
             </td>
