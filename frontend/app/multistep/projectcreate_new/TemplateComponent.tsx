@@ -18,7 +18,9 @@ interface TemplateComponentProps {
 }
 
 const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
-  const [knownProjectTypes, setKnownProjectTypes] = useState<ProjectType[]>([]);
+  const [knownProjectTemplates, setKnownProjectTemplates] = useState<
+    ProjectTemplate[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
   const classes = projectCreateStyles();
@@ -27,8 +29,8 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
   useEffect(() => {
     const loadInData = async () => {
       setLoading(true);
-      const response = await axios.get<PlutoApiResponse<ProjectType[]>>(
-        "/api/projecttype",
+      const response = await axios.get<PlutoApiResponse<ProjectTemplate[]>>(
+        "/api/template",
         { validateStatus: () => true }
       );
       setLoading(false);
@@ -43,7 +45,9 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
               "There are no project templates defined in the system"
             );
           }
-          setKnownProjectTypes(response.data.result);
+          setKnownProjectTemplates(
+            response.data.result.filter((template) => !template.deprecated)
+          );
           break;
         default:
           console.error(
@@ -64,9 +68,9 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
 
   //ensure that we have _a_ current value set if the known projects change
   useEffect(() => {
-    if (!props.value && knownProjectTypes.length > 0)
-      props.valueDidChange(knownProjectTypes[0].id);
-  }, [knownProjectTypes]);
+    if (!props.value && knownProjectTemplates.length > 0)
+      props.valueDidChange(knownProjectTemplates[0].id);
+  }, [knownProjectTemplates]);
 
   return (
     <div>
@@ -81,9 +85,9 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
             value={props.value}
             onChange={(evt) => props.valueDidChange(evt.target.value as number)}
           >
-            {knownProjectTypes.map((type, idx) => (
-              <MenuItem value={type.id} key={idx}>
-                {type.name} (version {type.targetVersion})
+            {knownProjectTemplates.map((template, idx) => (
+              <MenuItem value={template.id} key={idx}>
+                {template.name}
               </MenuItem>
             ))}
           </Select>

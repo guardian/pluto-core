@@ -52,6 +52,8 @@ import ProjectCreateMultistepNew from "./multistep/ProjectCreateMultistepNew";
 
 library.add(faSearch);
 
+window.React = require("react");
+
 const theme = createMuiTheme({
   typography: {
     fontFamily: [

@@ -111,6 +111,20 @@ interface ProjectType {
   plutoType?: string;
 }
 
+interface ProjectTemplate {
+  id: number;
+  name: string;
+  projectTypeId: number;
+  fileRef: number;
+  deprecated?: boolean;
+}
+
+interface PlutoDefault {
+  id: number;
+  name: string;
+  value: string;
+}
+
 declare module "*.svg" {
   const content: any;
   export default content;

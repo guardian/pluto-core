@@ -9,12 +9,12 @@ import {
 import { makeStyles } from "@material-ui/core/styles";
 import { format } from "date-fns";
 import UserContext from "../../UserContext";
-import DestinationStorageComponent from "../projectcreate/DestinationStorageComponent";
 import axios from "axios";
 import SystemNotification, {
   SystemNotificationKind,
 } from "../../SystemNotification";
 import StorageSelector from "../../Selectors/StorageSelector";
+import { getProjectsDefaultStorageId } from "./ProjectStorageService";
 
 interface NameComponentProps {
   projectName: string;
@@ -89,7 +89,28 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
 
   useEffect(() => {
     if (!props.selectedStorageId && knownStorages.length) {
-      props.storageIdDidChange(knownStorages[0].id);
+      getProjectsDefaultStorageId()
+        .then((id) => props.storageIdDidChange(id))
+        .catch((error) => {
+          console.error("Could not get default storage id: ", error);
+          if (error.response && error.response.status === 404) {
+            SystemNotification.open(
+              SystemNotificationKind.Error,
+              "No default project storage has been set"
+            );
+          } else if (!error.hasOwnProperty("response")) {
+            SystemNotification.open(
+              SystemNotificationKind.Error,
+              "Could not understand response for default storage, check the console"
+            );
+          } else {
+            SystemNotification.open(
+              SystemNotificationKind.Error,
+              "Server error loading the default storage id, please try again in a couple of minutes"
+            );
+          }
+          props.storageIdDidChange(knownStorages[0].id);
+        });
     }
   }, [knownStorages]);
 
