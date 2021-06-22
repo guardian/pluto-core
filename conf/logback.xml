@@ -66,6 +66,8 @@
     <logger name="postrun" level="INFO"/>
     <logger name="services.ProjectBackup" level="DEBUG"/>
 
+    <logger name="services.actors.Auditor" level="DEBUG"/>
+
     <logger name="services.CommissionStatusPropagator" level="DEBUG"/>
     <root level="INFO">
         <appender-ref ref="STDOUT" />

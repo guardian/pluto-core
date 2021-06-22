@@ -73,6 +73,15 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
   def selectFiltered(startAt:Int, limit:Int, terms:F):Future[Try[(Int, Seq[M])]]
   def selectid(requestedId: Int):Future[Try[Seq[M]]]
 
+  /**
+    * optionally implement this method in your subclass to get a notification when something requests the object.
+    * this is for tying into auditing
+    * @param requestedId the id of the thing that was requested
+    * @param username name of the user doing the requesting
+    * @param request full Play! Request object, so you can access headers etc.
+    * @tparam T type of the Request payload, you can safely ignore this
+    */
+  def notifyRequested[T](requestedId:Int, username:String, request:Request[T]) = {}
   def deleteid(requestedId: Int):Future[Try[Int]]
 
   def insert(entry: M,uid:String):Future[Try[Int]]
@@ -218,8 +227,10 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
       case Success(result)=>
         if(result.isEmpty)
          NotFound("")
-        else
+        else {
+          notifyRequested(requestedId, uid, request)
           Ok(Json.obj("status"->"ok","result"->this.jstranslate(result.head)))
+        }
       case Failure(error)=>
         logger.error(error.toString)
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))

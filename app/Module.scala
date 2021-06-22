@@ -3,7 +3,7 @@ import com.newmotion.akka.rabbitmq.ConnectionActor
 import drivers.MXSConnectionManager
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import services.actors.ProjectCreationActor
+import services.actors.{Auditor, ProjectCreationActor}
 import services._
 
 class Module extends AbstractModule with AkkaGuiceSupport {
@@ -19,6 +19,7 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     bindActor[PostrunActionScanner]("postrun-action-scanner")
     bindActor[CommissionStatusPropagator]("commission-status-propagator")
     bindActor[RabbitMqPropagator]("rabbitmq-propagator")
+    bindActor[Auditor]("auditor")
     bind(classOf[PeriodicScanReceiver]).asEagerSingleton()
 
     bind(classOf[MXSConnectionManager]).asEagerSingleton()
