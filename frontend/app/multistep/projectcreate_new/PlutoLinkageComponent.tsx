@@ -35,7 +35,6 @@ const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
   const [knownWorkingGroups, setKnownWorkingGroups] = useState<WorkingGroup[]>(
     []
   );
-  const [knownCommissions, setKnownCommissions] = useState<Commission[]>([]);
   const [showingStatus, setShowingStatus] = useState<ProjectStatus | "all">(
     "all"
   );
@@ -72,10 +71,6 @@ const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
   useEffect(() => {
     loadWorkingGroups();
   }, []);
-
-  // useEffect(()=>{
-  //     if(props.workingGroupId) loadCommissions(props.workingGroupId);
-  // }, [props.workingGroupId]);
 
   return (
     <div>
