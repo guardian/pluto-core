@@ -179,15 +179,6 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
       productionOffice: productionOffice,
     });
 
-    // const result = {
-    //   createdOk: true,
-    //   projectId: 1234,
-    //   errorMessage: "",
-    //   shouldRetry: false
-    // }
-    //
-    // await fakeUploadTimer();
-
     if (result.createdOk) {
       if (result.projectId) setCreatedProjectId(result.projectId);
       setCreationInProgress(false);

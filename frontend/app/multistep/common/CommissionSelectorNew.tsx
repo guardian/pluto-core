@@ -16,12 +16,6 @@ import { Cancel, Search } from "@material-ui/icons";
 import { FixedSizeList, ListChildComponentProps } from "react-window";
 import { makeStyles } from "@material-ui/core/styles";
 
-/*
-valueWasSet={props.commissionIdDidChange}
-                                        workingGroupId={props.workingGroupId}
-                                        selectedCommissionId={props.commissionId}
-                                        showStatus={showingStatus}
- */
 interface CommissionSelectorProps {
   valueWasSet: (newValue: number) => void;
   workingGroupId?: number;
