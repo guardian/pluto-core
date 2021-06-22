@@ -1,6 +1,5 @@
 import React from "react";
 import GeneralDeleteComponent from "./GeneralDeleteComponent.jsx";
-import SummaryComponent from "../multistep/projectcreate/SummaryComponent.jsx";
 import FileEntryView from "../EntryViews/FileEntryView.jsx";
 import FileReferencesView from "../EntryViews/FileReferencesView.jsx";
 

@@ -52,12 +52,12 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
       {loading ? (
         <Typography variant="caption">...</Typography>
       ) : showCreate ? (
-        <span style={{ marginLeft: "1em" }}>
+        <>
           <Typography>No asset folder found</Typography>
           <Button onClick={requestNewAssetFolder} variant="outlined">
             Create
           </Button>
-        </span>
+        </>
       ) : (
         <Button
           style={{ marginLeft: "1em" }}

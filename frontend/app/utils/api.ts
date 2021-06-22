@@ -65,8 +65,10 @@ export const getProjectDeliverables = async (
 };
 
 export const createProjectDeliverable = async (
-  project: Project
-): Promise<Deliverable> => {
+  projectId: number,
+  commissionId: number,
+  name: string
+): Promise<Deliverable | number> => {
   const csrftoken = Cookies.get("csrftoken");
   if (!csrftoken) {
     console.warn("Could not find a csrf token! Request will probably fail");
@@ -76,23 +78,24 @@ export const createProjectDeliverable = async (
     const response = await axios.post<Deliverable>(
       `${API_DELIVERABLES}/bundle/new`,
       {
-        pluto_core_project_id: project.id,
-        commission_id: project.commissionId,
-        name: project.title,
+        pluto_core_project_id: projectId,
+        commission_id: commissionId,
+        name: name,
       },
       {
         headers: {
           "X-CSRFToken": csrftoken,
         },
+        validateStatus: (status) =>
+          status == 200 || status == 201 || status == 409,
       }
     );
 
-    if (response?.status == 200) {
-      return response?.data;
-    }
-
-    if (response?.status === 404) {
-      throw "";
+    if (response.status == 200) {
+      return response.data;
+    } else if (response.status == 409) {
+      //conflict - the given bundle already exists, so just return the project id
+      return projectId;
     }
 
     throw "Could not create Project deliverable";

@@ -110,7 +110,11 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
 
   const createDeliverable = async (): Promise<void> => {
     try {
-      await createProjectDeliverable(project);
+      await createProjectDeliverable(
+        project.id,
+        project.commissionId,
+        project.title
+      );
       window.location.assign(`/deliverables/project/${project.id}`);
     } catch (error) {
       console.error(error);

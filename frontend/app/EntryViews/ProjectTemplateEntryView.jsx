@@ -1,3 +1,4 @@
+import React from "react";
 import GenericEntryView from "./GenericEntryView.jsx";
 import PropTypes from "prop-types";
 import ProjectTypeView from "./ProjectTypeView.jsx";
