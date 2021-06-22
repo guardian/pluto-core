@@ -9,7 +9,6 @@ import {
   Select,
   Typography,
 } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
 import { projectCreateStyles } from "./CommonStyles";
 
 interface TemplateComponentProps {
@@ -21,12 +20,36 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
   const [knownProjectTemplates, setKnownProjectTemplates] = useState<
     ProjectTemplate[]
   >([]);
+  const [defaultProjectTemplate, setDefaultProjectTemplate] = useState<
+    number | undefined
+  >(undefined);
   const [loading, setLoading] = useState(true);
 
   const classes = projectCreateStyles();
 
   //load in project type data at mount
   useEffect(() => {
+    const loadDefaultProjectType = async () => {
+      setLoading(true);
+      const response = await axios.get<PlutoApiResponse<PlutoDefault>>(
+        "/api/default/project_template_id",
+        { validateStatus: () => true }
+      );
+      if (response.status == 200) {
+        try {
+          const numericId = parseInt(response.data.result.value);
+          setDefaultProjectTemplate(numericId);
+        } catch (err) {
+          console.error("Could not get default project template id: ", err);
+        }
+      } else if (response.status != 404) {
+        SystemNotification.open(
+          SystemNotificationKind.Error,
+          "Could not load default project template"
+        );
+      }
+    };
+
     const loadInData = async () => {
       setLoading(true);
       const response = await axios.get<PlutoApiResponse<ProjectTemplate[]>>(
@@ -63,13 +86,24 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
       }
     };
 
-    loadInData();
+    loadDefaultProjectType()
+      .then(() => loadInData())
+      .catch((err) => {
+        console.error(err);
+        SystemNotification.open(
+          SystemNotificationKind.Error,
+          "Could not set up template selector"
+        );
+      });
   }, []);
 
   //ensure that we have _a_ current value set if the known projects change
   useEffect(() => {
-    if (!props.value && knownProjectTemplates.length > 0)
-      props.valueDidChange(knownProjectTemplates[0].id);
+    if (!props.value && knownProjectTemplates.length > 0) {
+      const defaultValue =
+        defaultProjectTemplate ?? knownProjectTemplates[0].id;
+      props.valueDidChange(defaultValue);
+    }
   }, [knownProjectTemplates]);
 
   return (
