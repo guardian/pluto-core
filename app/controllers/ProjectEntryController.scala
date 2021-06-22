@@ -348,7 +348,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
-  def projectWasOpened(id: Int): EssentialAction = IsAuthenticatedAsync { uid=>request =>
+  def projectWasOpened(id: Int): EssentialAction = IsAuthenticatedAsync { uid=> request =>
     import models.EntryStatusMapper._
 
     def updateProject() = TableQuery[ProjectEntryRow]
