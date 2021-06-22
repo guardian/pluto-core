@@ -60,7 +60,7 @@ const MediaRulesComponent: React.FC<MediaRulesComponentProps> = (props) => {
             This is intended for projects containing one-off, original content
             that can't be replaced - like documentaries, dramas and such like.
           </Typography>
-          <Typography>
+          <Typography className={classes.secondaryText}>
             Deliverables are always kept indefinitely, so you only need to tick
             this if it's vitally important that the source media remains
             available in the future.
@@ -86,7 +86,7 @@ const MediaRulesComponent: React.FC<MediaRulesComponentProps> = (props) => {
             where we won't need to go back to the original media - like some
             podcasts, reactive news projects etc.
           </Typography>
-          <Typography>
+          <Typography className={classes.secondaryText}>
             Deliverables are always kept indefinitely, but the original source
             media will be deleted some time after the project is marked as
             complete
