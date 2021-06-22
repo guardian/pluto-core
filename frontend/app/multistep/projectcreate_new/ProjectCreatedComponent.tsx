@@ -74,7 +74,9 @@ const ProjectCreatedComponent: React.FC<ProjectCreatedComponentProps> = (
         <tbody>
           <tr>
             <td>
-              <Typography>Open the Asset Folder in Finder</Typography>
+              <Typography>
+                Open the Asset Folder in Finder so you can start importing media
+              </Typography>
             </td>
             <td>
               <AssetFolderLink projectId={props.projectId} />
@@ -103,7 +105,7 @@ const ProjectCreatedComponent: React.FC<ProjectCreatedComponentProps> = (
           </tr>
           <tr>
             <td>
-              <Typography>Add some deliverables</Typography>
+              <Typography>Add some deliverables right away</Typography>
             </td>
             <td>
               <Button variant="outlined" onClick={createDeliverable}>
