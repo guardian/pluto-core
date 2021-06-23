@@ -53,7 +53,7 @@ const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
           response.data.result.length,
           " working groups"
         );
-        setKnownWorkingGroups(response.data.result);
+        setKnownWorkingGroups(response.data.result.filter((wg) => !wg.hide));
         break;
       default:
         console.error(

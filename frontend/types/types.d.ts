@@ -27,23 +27,7 @@ interface CommissionFullRecord {
   originalTitle: string;
   googleFolder: string;
 }
-/*
-    (JsPath \ "id").writeNullable[Int] and
-      (JsPath \ "collectionId").writeNullable[Int] and
-      (JsPath \ "siteId").writeNullable[String] and
-      (JsPath \ "created").write[Timestamp] and
-      (JsPath \ "updated").write[Timestamp] and
-      (JsPath \ "title").write[String] and
-      (JsPath \ "status").write[EntryStatus.Value] and
-      (JsPath \ "description").writeNullable[String] and
-      (JsPath \ "workingGroupId").write[Int] and
-      (JsPath \ "originalCommissionerName").writeNullable[String] and
-      (JsPath \ "scheduledCompletion").write[Timestamp] and
-      (JsPath \ "owner").write[String] and
-      (JsPath \ "notes").writeNullable[String] and
-      (JsPath \ "productionOffice").write[ProductionOffice.Value] and
-      (JsPath \ "originalTitle").writeNullable[String]
- */
+
 interface CreateWorkingGroup {
   name: string;
   commissioner: string;
