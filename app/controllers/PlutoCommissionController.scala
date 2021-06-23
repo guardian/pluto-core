@@ -157,12 +157,15 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
       )
     }
 
-    override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = db.run(
-      (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += entry).asTry)
-      .map(id => {
-        sendToRabbitMq(CreateOperation(), id, rabbitMqPropagator)
-        id
-      })
+    override def insert(entry: PlutoCommission, uid: String): Future[Try[Int]] = {
+      val correctedEntry = entry.copy(owner = entry.owner.toLowerCase)
+      db.run(
+        (TableQuery[PlutoCommissionRow] returning TableQuery[PlutoCommissionRow].map(_.id) += correctedEntry).asTry)
+        .map(id => {
+          sendToRabbitMq(CreateOperation(), id, rabbitMqPropagator)
+          id
+        })
+    }
 
     override def deleteid(requestedId: Int):Future[Try[Int]] = throw new RuntimeException("This is not supported")
 
