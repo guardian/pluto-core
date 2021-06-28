@@ -2,12 +2,10 @@ package drivers
 
 import java.io.{EOFException, InputStream, OutputStream}
 import java.nio.ByteBuffer
-import java.nio.file.attribute.FileTime
 import java.time.ZonedDateTime
-
 import akka.stream.Materializer
-import com.om.mxs.client.japi.{Constants, MatrixStore, MxsObject, SearchTerm, UserInfo, Vault, Attribute}
-import drivers.objectmatrix.{MxsMetadata, ObjectMatrixEntry, UserInfoBuilder}
+import com.om.mxs.client.japi.{Attribute, Constants, MxsObject, SearchTerm, Vault}
+import drivers.objectmatrix.{MXSConnectionBuilder, MxsMetadata, ObjectMatrixEntry}
 import models.StorageEntry
 import org.slf4j.LoggerFactory
 
@@ -26,6 +24,7 @@ import scala.concurrent.duration._
 class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:Materializer) extends StorageDriver {
   private val logger = LoggerFactory.getLogger(getClass)
   lazy val userInfo = {
+    val splitter = "\\s*,\\s*".r
     if(storageRef.host.isEmpty){
       Failure(new RuntimeException("Driver requires host field to be set"))
     } else if(storageRef.device.isEmpty){
@@ -39,13 +38,13 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
       if(deviceParts.length!=2){
         Failure(new RuntimeException("Malformed device section, should be {cluster-id},{vault-id}"))
       }
-      UserInfoBuilder()
-        .withAddresses(storageRef.host.get)
-        .withCluster(deviceParts.head)
-        .withVault(deviceParts(1))
-        .withUser(storageRef.user.get)
-        .withPassword(storageRef.password.get)
-        .getUserInfo
+      Try {
+        MXSConnectionBuilder(splitter.split(storageRef.host.get),
+          storageRef.device.get,
+          storageRef.user.get,
+          storageRef.password.get
+        )
+      }
     }
   }
 
@@ -58,29 +57,18 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @return
     */
   def withVault[A](blk:Vault=>Try[A]):Try[A] = {
-    if(userInfo.isFailure) {
-      logger.error(s"Could not open matrixstore for $storageRef: ", userInfo.failed.get)
-      Failure(userInfo.failed.get)
-    }
-
-    val vault = MatrixStore.openVault(userInfo.get)
-    try {
-      val result = blk(vault)
-      result
-    } catch {
-      case err:Throwable=>
-        logger.error(s"Could not complete vault operation: ", err)
-        Failure(err)
-    } finally {
-      vault.dispose()
-    }
+    for {
+      builder <- userInfo
+      mxs <- builder.build()
+      result <- MXSConnectionBuilder.withVault(mxs, storageRef.device.get)(blk)
+    } yield result
   }
 
   def withObject[A](vault:Vault,oid:String)(blk:MxsObject=>Try[A]):Try[A] = {
-    Try {
-      val mxsObj = vault.getObject(oid)
-      blk(mxsObj)
-    }.flatten
+    for {
+      mxsObj <- Try { vault.getObject(oid) }
+      result <- blk(mxsObj)
+    } yield result
   }
 
   /**
