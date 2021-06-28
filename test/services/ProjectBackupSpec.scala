@@ -65,15 +65,16 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
         Some(999), None, None, None, "local",None, None, None,None, None, true, None, None
       )
 
+      val nowTime = Instant.now()
       val sourceFile = FileEntry(
         Some(123),
         "/path/to/sourcefile",
         2,
         "fred",
         1,
-        Timestamp.from(Instant.now()),
-        Timestamp.from(Instant.now()),
-        Timestamp.from(Instant.now()),
+        Timestamp.from(nowTime),
+        Timestamp.from(nowTime),
+        Timestamp.from(nowTime),
         hasContent=true,
         hasLink = true,
         backupOf = None
@@ -85,9 +86,9 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
         999,
         "fred",
         4,
-        Timestamp.from(Instant.now()),
-        Timestamp.from(Instant.now()),
-        Timestamp.from(Instant.now()),
+        Timestamp.from(nowTime),
+        Timestamp.from(nowTime),
+        Timestamp.from(nowTime),
         hasContent=true,
         hasLink = true,
         backupOf = Some(123)
@@ -103,9 +104,9 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
       result.filepath mustEqual "/path/to/sourcefile-backup1"
       result.storageId mustEqual 999
       result.version mustEqual 5
-      result.ctime mustEqual sourceFile.ctime
-      result.mtime mustEqual sourceFile.mtime
-      result.atime mustEqual sourceFile.atime
+      result.ctime mustEqual prevBackup.ctime
+      result.mtime mustEqual prevBackup.mtime
+      result.atime mustEqual prevBackup.atime
       result.hasContent must beFalse
       result.hasLink must beTrue
       result.backupOf must beSome(123)
@@ -116,15 +117,16 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
         Some(999), None, None, None, "local",None, None, None,None, None, true, None, None
       )
 
+      val nowTime = Instant.now()
       val sourceFile = FileEntry(
         Some(123),
         "/path/to/sourcefile",
         2,
         "fred",
         1,
-        Timestamp.from(Instant.now()),
-        Timestamp.from(Instant.now()),
-        Timestamp.from(Instant.now()),
+        Timestamp.from(nowTime),
+        Timestamp.from(nowTime),
+        Timestamp.from(nowTime),
         hasContent=true,
         hasLink = true,
         backupOf = None
@@ -316,7 +318,7 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
         Timestamp.from(Instant.now()),
         hasContent=true,
         hasLink = true,
-        backupOf = None
+        backupOf = Nonef
       )
 
       val prevBackup = FileEntry(
