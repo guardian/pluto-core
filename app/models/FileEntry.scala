@@ -216,6 +216,37 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
       case None=>Left(s"No storage could be found for ID $storageId on file $id")
     })
   }
+
+  /**
+    * returns some of the backups for this file.  Results are sorted by most recent version first.
+    *
+    * If the storage does not support versioning you would expect only one result.
+    *
+    * @param drop start iterating at this entry
+    * @param take only return this many results max
+    * @param db implicitly provided database object
+    * @return a Future containing a sequence of FileEntry objects. This fails if there is a problem.
+    */
+  def backups(forStorage:Option[Int]=None, drop:Int=0, take:Int=100)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = this.id match {
+    case None=>
+      Future.failed(new RuntimeException("A record must be saved before you can query for backups"))
+    case Some(_)=>
+      val baseQuery = TableQuery[FileEntryRow]
+        .filter(_.backupOf===this.id)
+
+      val finalQuery = forStorage match {
+        case Some(storageId) => baseQuery.filter(_.storage === storageId)
+        case None => baseQuery
+      }
+
+      db.run {
+          finalQuery
+          .sortBy(_.version.desc.nullsLast)
+          .drop(drop)
+          .take(take)
+          .result
+      }
+  }
 }
 
 /**

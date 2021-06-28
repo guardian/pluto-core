@@ -1,13 +1,17 @@
 package services
 
 import akka.stream.Materializer
+import akka.stream.scaladsl.{Keep, Sink}
 import drivers.StorageDriver
 import helpers.StorageHelper
-import models.{FileEntry, StorageEntry, StorageEntryHelper}
+import models.{FileEntry, StorageEntry, StorageEntryHelper, StorageEntryRow}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
+import services.ProjectBackup.BackupResults
 import slick.jdbc.PostgresProfile
+import slick.lifted
+import slick.lifted.TableQuery
 
 import java.nio.file.{Path, Paths}
 import javax.inject.{Inject, Singleton}
@@ -110,42 +114,30 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
 
   /**
     * tries to perform a backup of the given file path from the given source storage.
-    * @param forFilename java.nio.Path pointing to the
-    * @param sourceStorage
-    * @param destStorage
-    * @return
+    * @param sourceEntry FileEntry that might need to be backed up
+    * @param sourceStorage StorageEntry that holds the source
+    * @param destStorage StorageEntry that will be copied to
+    * @return a Future, which contains either:
+    *         - a string-sequence of copy errors on failure;
+    *         - None if the file did not need to be copied;
+    *         - a FileEntry of the newly copied backup file if it did need to be copied.
     */
-  def performBackup(forFilename:Path, sourceStorage:StorageEntry, destStorage:StorageEntry) = {
-    val sourceFilePath = sourceStorage.rootpath
-      .map(p=>Paths.get(p))
-      .map(basePath=>relativeFilePath(forFilename, basePath) match {
-        case Success(relative)=>
-          relative
-        case Failure(err)=>
-          logger.warn(s"Could not get a relative path for ${forFilename.toString} from ${sourceStorage.rootpath}: ${err.getMessage}")
-          forFilename
-      })
-      .getOrElse(forFilename)
-
+  def performBackup(sourceEntry:FileEntry, sourceStorage:StorageEntry, destStorage:StorageEntry) = {
     (sourceStorage.getStorageDriver, destStorage.getStorageDriver) match {
       case (Some(sourceStorageDriver), Some(destStorageDriver)) =>
         val checkFuture = for {
-          maybeSourceEntry <- FileEntry.findByFilename(sourceFilePath, sourceStorage.id, 0, 1).map(_.headOption)
-          maybePrevDestEntry <- FileEntry.findByFilename(sourceFilePath, destStorage.id, 0, 1).map(_.headOption)
-          shouldCopy <- checkNeedsBackup(maybeSourceEntry, maybePrevDestEntry, sourceStorageDriver, destStorageDriver)
-        } yield (maybeSourceEntry, maybePrevDestEntry, shouldCopy)
+          maybePrevDestEntry <- sourceEntry.backups(destStorage.id, 0, 1).map(_.headOption)
+          shouldCopy <- checkNeedsBackup(Some(sourceEntry), maybePrevDestEntry, sourceStorageDriver, destStorageDriver)
+        } yield (maybePrevDestEntry, shouldCopy)
 
         checkFuture.flatMap({
-          case (maybeSourceEntry, maybePrevDestEntry, shouldCopy)=>
+          case (maybePrevDestEntry, shouldCopy)=>
             if(shouldCopy) {
               for {
-                targetDestEntry <- ascertainTarget(maybeSourceEntry, maybePrevDestEntry, destStorage)
+                targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)
                 updatedEntryTry <- targetDestEntry.save
                 updatedDestEntry <- Future.fromTry(updatedEntryTry) //make sure that we get the updated database id of the file
-                result <- storageHelper.copyFile(maybeSourceEntry.get, updatedDestEntry).map({
-                  case Left(errs)=>Left(errs)
-                  case Right(dbEntry)=>Right(Some(dbEntry))
-                })
+                result <- storageHelper.copyFile(sourceEntry, updatedDestEntry).map(_.map(Some.apply))
               } yield result
             } else {
               Future(Right(None))
@@ -174,7 +166,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     * scans the database for every known file on the given storage ID and tries to back it up to the configured backup storage.
     * returns a Future that completes when the backup is done, or fails if there is a problem.
     * @param forStorageId storage ID to back up
-    * @return
+    * @return a Future, which contains a backup report showing the overall status of the backup
     */
   def fullStorageBackup(forStorageId:Int) = {
     val parallelCopies = config.getOptional[Int]("backup.parallelCopies").getOrElse(4)
@@ -182,11 +174,51 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     getSourceAndDestStorages(forStorageId).flatMap({
       case (storageEntry, Some(destStorageEntry))=>
         FileEntry.scanAllFiles(Some(forStorageId))
-          .map(entry=>Paths.get(entry.filepath))
-          .mapAsync(parallelCopies)(filePath=>performBackup(filePath, storageEntry, destStorageEntry))
+          .mapAsync(parallelCopies)(entry=>performBackup(entry, storageEntry, destStorageEntry))
+          .toMat(Sink.fold(BackupResults.empty(forStorageId))((acc, elem)=>elem match {
+            case Left(errs)=>
+              logger.warn(s"Backup failed: ${errs.mkString(";")}")
+              acc.copy(totalCount = acc.totalCount+1, failedCount=acc.failedCount+1)
+            case Right(Some(_))=>
+              logger.debug("File backed up")
+              acc.copy(totalCount = acc.totalCount+1, successCount = acc.successCount+1)
+            case Right(None)=>
+              logger.debug("File did not need backing up")
+              acc.copy(totalCount = acc.totalCount+1, notNeededCount=acc.notNeededCount+1)
+          }))(Keep.right)
           .run()
       case (storageEntry: StorageEntry, None)=>
         Future.failed(new RuntimeException(s"There is no destination storage with the ID of ${storageEntry.backsUpTo}"))
     })
+  }
+
+  def backupProjects = {
+    import slick.jdbc.PostgresProfile.api._
+
+    def storagesToBackup = db.run {
+      lifted.TableQuery[StorageEntryRow]
+        .filter(_.backsUpTo.isDefined)
+        .map(_.id)
+        .result
+    }
+
+    val fullBackupFuture = for {
+      storageSeq <- storagesToBackup
+      results <- Future.sequence(storageSeq.map(fullStorageBackup))
+    } yield results
+
+    fullBackupFuture.map(results=>{
+      if(results.isEmpty) {
+        logger.error("There were no storages configured for backup.  You should set a backup storage on your primary project storage in the Admin")
+      }
+      results
+    })
+  }
+}
+
+object ProjectBackup {
+  case class BackupResults(storageId:Int, totalCount:Long, failedCount:Long, successCount:Long, notNeededCount:Long)
+  object BackupResults {
+    def empty(storageId:Int) = new BackupResults(storageId, 0,0,0,0)
   }
 }

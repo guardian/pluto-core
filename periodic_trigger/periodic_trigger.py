@@ -19,7 +19,8 @@ TRIGGER_MAP = {
         "pluto.core.service.storagescan"
     ],
     "slow": [
-        "pluto.core.service.commissionstatuspropagator"
+        "pluto.core.service.commissionstatuspropagator",
+        "pluto.core.service.backuptrigger"
     ],
     "veryslow": [
         "pluto.core.service.postrunaction"
