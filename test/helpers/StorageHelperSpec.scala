@@ -3,9 +3,8 @@ package helpers
 import java.io._
 import java.sql.Timestamp
 import java.time.LocalDateTime
-
 import akka.stream.Materializer
-import drivers.{PathStorage, StorageDriver}
+import drivers.{MatrixStoreDriver, PathStorage, StorageDriver}
 import models.{FileEntry, StorageEntry}
 import org.apache.commons.io.input.NullInputStream
 import org.specs2.mock.Mockito
@@ -21,6 +20,7 @@ import scala.util.{Failure, Success, Try}
 import play.api.test.WithApplication
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
+
 import scala.language.reflectiveCalls //needed for testDoByteCopy
 
 
@@ -45,9 +45,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
       val destStream = new FileOutputStream(destFile)
 
-      implicit val mat:Materializer = mock[Materializer]
-      val h = new StorageHelper
-      val result = h.copyStream(sourceStream,destStream)
+      val result =  StorageHelper.copyStream(sourceStream,destStream)
 
       result mustEqual sourceFile.length
       val checksumDest = s"shasum -a 1 $testFileNameDest" #| "cut -c 1-40" !!
@@ -77,8 +75,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, None)
 
         val realStorageHelper = new StorageHelper
 
@@ -119,14 +117,14 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = new FileEntry(Some(1234), FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false){
+        val testSourceEntry = new FileEntry(Some(1234), FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None){
           override def storage(implicit db: JdbcBackend#DatabaseDef):Future[Option[StorageEntry]] = {
             println("testSourceEntry.storage")
             Future(Some(mockedStorage))
           }
         }
 
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false,None)
 
         val realStorageHelper = new StorageHelper
 
@@ -161,8 +159,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 2, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 2, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, None)
 
         val realStorageHelper = new StorageHelper
 
@@ -193,8 +191,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 2, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 2, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, None)
 
         val realStorageHelper = new StorageHelper
 
@@ -207,7 +205,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         val savedSource = savedResults.get.head
         val savedDest = savedResults.get(1)
         val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
-        result mustEqual Left(List("Either source or destination was missing a storage or a storage driver"))
+        result must beLeft(List("Either source or destination was missing a storage or a storage driver"))
       } finally {
         new File(testFileNameSrc).delete()
         new File(testFileNameDest).delete()
@@ -273,7 +271,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         /**
           * stub implementation to throw exception
           */
-        override def copyStream(source: InputStream, dest: OutputStream, chunkSize: Int): Int = {
+        override protected def callCopyStream(source: InputStream, dest: OutputStream, bufferSize:Int): Long = {
           throw new RuntimeException("**raspberry**")
         }
         /**

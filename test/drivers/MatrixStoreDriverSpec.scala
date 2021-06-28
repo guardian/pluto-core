@@ -11,45 +11,6 @@ import org.specs2.mutable.Specification
 import scala.util.Try
 
 class MatrixStoreDriverSpec extends Specification with Mockito {
-  "MatrixStoreDriver.copyStream" should {
-    "copy the entire contents of a stream" in {
-      val sampleData = "this is a test, this is a test, this is a test, this is a test."
-      println(s"length is ${sampleData.length}")
-      val fakeInputStream = new ByteArrayInputStream(sampleData.getBytes)
-
-      val fakeOutputStream = new ByteArrayOutputStream()
-
-      val fakeStorageRef = mock[StorageEntry]
-      implicit val fakeMaterializer:Materializer = mock[Materializer]
-      val toTest = new MatrixStoreDriver(fakeStorageRef)
-
-      val resultBytes = toTest.copyStream(fakeInputStream, fakeOutputStream, 10)
-
-      val outputData = fakeOutputStream.toString
-
-      outputData mustEqual sampleData
-      resultBytes mustEqual sampleData.length
-    }
-
-    "work even if the file size is less than the buffer size" in {
-      val sampleData = "this is a test, this is a test, this is a test, this is a test."
-      val fakeInputStream = new ByteArrayInputStream(sampleData.getBytes)
-
-      val fakeOutputStream = new ByteArrayOutputStream()
-
-      val fakeStorageRef = mock[StorageEntry]
-      implicit val fakeMaterializer:Materializer = mock[Materializer]
-      val toTest = new MatrixStoreDriver(fakeStorageRef)
-
-      val resultBytes = toTest.copyStream(fakeInputStream, fakeOutputStream, 1000000)
-
-      val outputData = fakeOutputStream.toString
-
-      outputData mustEqual sampleData
-      resultBytes mustEqual sampleData.length
-    }
-  }
-
   "MatrixStoreDriver.writeDataToPath" should {
     "create an object if none is existing already, and write to it" in {
       val sampleData = "this is a test, this is a test, this is a test, this is a test.".getBytes

@@ -1,39 +1,64 @@
 package helpers
 
-import java.io.{InputStream, OutputStream}
-
+import java.io.{EOFException, InputStream, OutputStream}
 import akka.stream.Materializer
 import drivers.StorageDriver
+import helpers.StorageHelper.{defaultBufferSize, getClass}
+
 import javax.inject.Inject
 import models.{FileEntry, StorageEntry}
 import play.api.Logger
-import org.slf4j.MDC
+import org.slf4j.{LoggerFactory, MDC}
 
+import java.nio.ByteBuffer
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class StorageHelper @Inject() (implicit mat:Materializer) {
-  val logger: Logger = Logger(this.getClass)
-  /**
-    * Internal method to copy from one stream to another, independent of the stream implementation.
-    * Note that this method is blocking.
-    * @param source [[java.io.InputStream]] instance to copy from
-    * @param dest [[java.io.OutputStream]] instance to copy to
-    * @param chunkSize [[Int]] representing the amount of data to be buffered in memory. Defaults to 2Kbyte.
-    * @return [[Int]] representing the number of bytes copied
-    */
-  def copyStream(source: InputStream,dest: OutputStream, chunkSize:Int=2048):Int = {
-    var count = -1
-    var total = 0
-    val buffer = Array.ofDim[Byte](chunkSize)
+object StorageHelper {
+  private val logger = LoggerFactory.getLogger(getClass)
 
-    while({count = source.read(buffer); count>0}){
-      dest.write(buffer,0,count)
-      total+=count
+  val defaultBufferSize:Int = 10*1024*1024  //10Mbyte copy buffer
+
+  /**
+    * utility function to directly copy from one stream to another
+    * @param input InputStream to read from
+    * @param output OutputStream to write to
+    * @param bufferSize size of the temporary buffer to use.
+    * @return the number of bytes written as a Long. Closes the streams when it is done. Raises exceptions on failure (assumed it's within a try/catch block)
+    */
+  def copyStream(input:InputStream, output:OutputStream, bufferSize:Int=defaultBufferSize) = {
+    val buf=ByteBuffer.allocate(bufferSize)
+    var bytesRead: Int = 0
+    var totalRead: Long = 0
+
+    try {
+      do {
+        bytesRead = input.read(buf.array())
+        if(bytesRead == -1) throw new EOFException
+        totalRead += bytesRead
+        buf.flip()
+        output.write(buf.array(),0,bytesRead)
+        buf.clear()
+      } while (bytesRead > 0)
+      output.close()
+      input.close()
+      totalRead
+    } catch {
+      case _:EOFException=>
+        logger.debug(s"Stream copy reached EOF")
+        totalRead
     }
-    total
   }
+}
+
+class StorageHelper @Inject() (implicit mat:Materializer) {
+  private val logger = LoggerFactory.getLogger(getClass)
+
+  /**
+    * proxy for the static copyStream method so that it can be mocked in testing
+    */
+  protected def callCopyStream(input:InputStream, output:OutputStream, bufferSize:Int=defaultBufferSize) = StorageHelper.copyStream(input, output, bufferSize)
 
   final protected def doByteCopy(sourceStorageDriver:StorageDriver, sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
                                  sourceFullPath:String, sourceVersion:Int, destFullPath: String)  = {
@@ -42,7 +67,7 @@ class StorageHelper @Inject() (implicit mat:Materializer) {
     } else {
       //safe, because we've already checked that neither Try failed
       try {
-        val bytesCopied = copyStream(sourceStreamTry.get,destStreamTry.get)
+        val bytesCopied = callCopyStream(sourceStreamTry.get,destStreamTry.get)
         logger.debug(s"copied $sourceFullPath to $destFullPath: $bytesCopied bytes")
         sourceStreamTry.get.close()
         destStreamTry.get.close()

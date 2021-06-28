@@ -1,8 +1,6 @@
 package models
 
-import org.joda.time.DateTime
 import slick.jdbc.PostgresProfile.api._
-import java.sql.Timestamp
 
 import akka.stream.Materializer
 import com.fasterxml.jackson.core.`type`.TypeReference
@@ -42,7 +40,8 @@ trait StorageSerializer {
       (JsPath \ "port").writeNullable[Int] and
       (JsPath \ "device").writeNullable[String] and
       (JsPath \ "supportsVersions").write[Boolean] and
-      (JsPath \ "status").writeNullable[StorageStatus.Value]
+      (JsPath \ "status").writeNullable[StorageStatus.Value] and
+      (JsPath \ "backsUpTo").writeNullable[Int]
     )(unlift(StorageEntry.unapply))
 
   implicit val storageReads:Reads[StorageEntry] = (
@@ -57,14 +56,16 @@ trait StorageSerializer {
       (JsPath \ "port").readNullable[Int] and
       (JsPath \ "device").readNullable[String] and
       (JsPath \ "supportsVersions").read[Boolean] and
-      (JsPath \ "status").readNullable[StorageStatus.Value]
+      (JsPath \ "status").readNullable[StorageStatus.Value] and
+      (JsPath \ "backsUpTo").readNullable[Int]
     )(StorageEntry.apply _)
 }
 
 
 case class StorageEntry(id: Option[Int], nickname:Option[String], rootpath: Option[String], clientpath: Option[String], storageType: String,
                         user:Option[String], password:Option[String], host:Option[String], port:Option[Int], device:Option[String],
-                        supportsVersions: Boolean, @JsonScalaEnumeration(classOf[StorageStatusType]) status:Option[StorageStatus.Value]) extends PlutoModel {
+                        supportsVersions: Boolean, @JsonScalaEnumeration(classOf[StorageStatusType]) status:Option[StorageStatus.Value],
+                        backsUpTo:Option[Int]) extends PlutoModel {
 
   def getStorageDriver(implicit mat:Materializer):Option[StorageDriver] = {
     val logger: Logger = Logger(this.getClass)
@@ -121,20 +122,16 @@ class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") 
   def device = column[Option[String]]("s_device")
   def status = column[Option[StorageStatus.Value]]("e_status")
   def supportsVersions = column[Boolean]("b_versions")
-
-  def * = (id.?,nickname, rootpath,clientpath,storageType,user,password,host,port,device, supportsVersions, status) <> (StorageEntry.tupled, StorageEntry.unapply)
+  def backsUpTo = column[Option[Int]]("k_backs_up_to")
+  def * = (id.?,nickname, rootpath,clientpath,storageType,user,password,host,port,device, supportsVersions, status, backsUpTo) <> (StorageEntry.tupled, StorageEntry.unapply)
 }
 
 
 object StorageEntryHelper {
   def entryFor(entryId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[StorageEntry]] =
     db.run(
-      TableQuery[StorageEntryRow].filter(_.id===entryId).result.asTry
-    ).map({
-      case Success(result)=>
-        result.headOption
-      case Failure(error)=>throw error
-    })
+      TableQuery[StorageEntryRow].filter(_.id===entryId).result
+    ).map(_.headOption)
 
   def defaultProjectfileStorage(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[StorageEntry]] =
     Defaults.entryFor("project_storage_id").flatMap({

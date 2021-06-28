@@ -1,13 +1,17 @@
 package models
 
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Keep, Sink}
+
 import java.sql.Timestamp
 import java.time.LocalDateTime
-
 import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.test.WithApplication
 import slick.jdbc.JdbcProfile
 
+import java.nio.file.Paths
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -42,7 +46,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
       val ts = Timestamp.valueOf(LocalDateTime.now())
-      val testFileEntryBefore = FileEntry(None,"notexistingtestfile",1,"test-user",1,ts,ts,ts,false,false)
+      val testFileEntryBefore = FileEntry(None,"notexistingtestfile",1,"test-user",1,ts,ts,ts,false,false, None)
 
       val resultFuture = testFileEntryBefore.updateFileHasContent
       val finalResult = Await.result(resultFuture, 10.seconds)
@@ -59,7 +63,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
       val ts = Timestamp.valueOf(LocalDateTime.now())
-      val testFileEntry = FileEntry(None,"/path/to/nonexisting",1,"test-user",1,ts,ts,ts,false,false)
+      val testFileEntry = FileEntry(None,"/path/to/nonexisting",1,"test-user",1,ts,ts,ts,false,false, None)
 
       val result = Await.result(testFileEntry.save, 10.seconds)
       result must beSuccessfulTry
@@ -106,12 +110,39 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       implicit val db = dbConfigProvider.get[JdbcProfile].db
 
-
-      val fileController = injector.instanceOf(classOf[controllers.Files])
-
       val testFileEntryBeforeFuture = FileEntry.entryFor(9999, db)
       val result = Await.result(testFileEntryBeforeFuture, 10.seconds)
       result must beNone
+
+    }
+  }
+
+  "FileEntry.findByFilename" should {
+    "return a list of matching files" in new WithApplication(buildApp) {
+      implicit val db = app.injector.instanceOf(classOf[DatabaseConfigProvider]).get[JdbcProfile].db
+
+      val result = Await.result(FileEntry.findByFilename(Paths.get("/path/to/a/file.project"), None), 2.seconds)
+      result.length mustEqual 1
+      result.head.id must beSome(2)
+    }
+  }
+
+  "FileEntry.scanAllFiles" should {
+    "return a source suitable for iterating all files" in new WithApplication(buildApp) {
+      implicit val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
+      implicit val mat = app.injector.instanceOf(classOf[Materializer])
+      implicit val db = app.injector.instanceOf(classOf[DatabaseConfigProvider]).get[JdbcProfile].db
+
+      val future = FileEntry.scanAllFiles(None)
+        .toMat(Sink.seq[FileEntry])(Keep.right)
+        .run()
+
+      val result = Await.result(future, 10.seconds)
+      result.length must beGreaterThanOrEqualTo(4)  //depending on the ordering of test cases, some test entries may have been added or removed
+      result.head mustNotEqual result(1)
+      result(1) mustNotEqual result(2)
+      result(2) mustNotEqual result(3)
+      result(1) mustNotEqual result(3)
 
     }
   }

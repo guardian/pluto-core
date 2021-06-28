@@ -6,6 +6,7 @@ import java.time.ZonedDateTime
 import akka.stream.Materializer
 import com.om.mxs.client.japi.{Attribute, Constants, MxsObject, SearchTerm, Vault}
 import drivers.objectmatrix.{MXSConnectionBuilder, MxsMetadata, ObjectMatrixEntry}
+import helpers.StorageHelper
 import models.StorageEntry
 import org.slf4j.LoggerFactory
 
@@ -71,37 +72,6 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     } yield result
   }
 
-  /**
-    * utility function to directly copy from one stream to another
-    * @param input InputStream to read from
-    * @param output OutputStream to write to
-    * @param bufferSize size of the temporary buffer to use.
-    * @return the number of bytes written as a Long. Closes the streams when it is done. Raises exceptions on failure (assumed it's within a try/catch block)
-    */
-  def copyStream(input:InputStream, output:OutputStream, bufferSize:Int) = {
-    val buf=ByteBuffer.allocate(bufferSize)
-    var bytesRead: Int = 0
-    var totalRead: Long = 0
-
-    try {
-      do {
-        bytesRead = input.read(buf.array())
-        if(bytesRead == -1) throw new EOFException
-        totalRead += bytesRead
-        buf.flip()
-        output.write(buf.array(),0,bytesRead)
-        buf.clear()
-      } while (bytesRead > 0)
-      output.close()
-      input.close()
-      totalRead
-    } catch {
-      case _:EOFException=>
-        logger.debug(s"Stream copy reached EOF")
-        totalRead
-    }
-  }
-
   def writeAttributesWithRetry(mxsFile: MxsObject, attribs:java.util.Collection[com.om.mxs.client.japi.Attribute], attempt:Int=1):Try[Unit] = try {
     val vw = mxsFile.getAttributeView
     vw.writeAllAttributes(attribs)
@@ -136,7 +106,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
 
     val stream = mxsFile.newOutputStream()
     try {
-      val copiedSize = copyStream(dataStream, stream, 10*1024*1024)
+      val copiedSize = StorageHelper.copyStream(dataStream, stream, 10*1024*1024)
       val updatedFileMeta = newFileMeta(path, version, copiedSize)
       writeAttributesWithRetry(mxsFile, updatedFileMeta.toAttributes.asJavaCollection)
     } catch {
