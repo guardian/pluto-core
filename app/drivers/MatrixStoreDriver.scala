@@ -58,11 +58,11 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @return
     */
   def withVault[A](blk:Vault=>Try[A]):Try[A] = {
-    for {
-      builder <- userInfo
-      mxs <- builder.build()
-      result <- MXSConnectionBuilder.withVault(mxs, storageRef.device.get)(blk)
-    } yield result
+    val maybeMxs = userInfo.flatMap(_.build())
+
+    val result = maybeMxs.flatMap(mxs=>MXSConnectionBuilder.withVault(mxs, storageRef.device.get)(blk))
+    maybeMxs.map(_.dispose())
+    result
   }
 
   def withObject[A](vault:Vault,oid:String)(blk:MxsObject=>Try[A]):Try[A] = {
