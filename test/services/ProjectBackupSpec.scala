@@ -318,7 +318,7 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
         Timestamp.from(Instant.now()),
         hasContent=true,
         hasLink = true,
-        backupOf = Nonef
+        backupOf = None
       )
 
       val prevBackup = FileEntry(
