@@ -4,11 +4,8 @@ import helpers.StorageHelper
 
 import java.io._
 import java.nio.file.Paths
-import java.time.{Instant, ZoneId, ZonedDateTime}
 import models.StorageEntry
 import play.api.Logger
-
-import java.nio.ByteBuffer
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -26,10 +23,8 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     new File(path)
   }
 
-  override def pathExists(path: String, version:Int): Boolean = fileForPath(path).exists()
-
-  override def writeDataToPath(path: String, version:Int, dataStream: InputStream): Try[Unit] = {
-    val finalPath = storageRef.rootpath match {
+  def getAbsolutePath(path:String) = {
+    storageRef.rootpath match {
       case Some(rootpath)=>
         if(path.startsWith(rootpath)) {
           Paths.get(path)
@@ -38,6 +33,12 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
         }
       case None=>Paths.get(path)
     }
+  }
+
+  override def pathExists(path: String, version:Int): Boolean = fileForPath(path).exists()
+
+  override def writeDataToPath(path: String, version:Int, dataStream: InputStream): Try[Unit] = {
+    val finalPath = getAbsolutePath(path)
 
     Try { this.fileForPath(finalPath.toString) }.flatMap(f=> {
       logger.info(s"Writing data to ${f.getAbsolutePath}")
@@ -73,12 +74,12 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
   }
 
   override def getWriteStream(path: String, version:Int): Try[OutputStream] = Try {
-    val f = this.fileForPath(path)
+    val f = getAbsolutePath(path).toFile
     new BufferedOutputStream(new FileOutputStream(f))
   }
 
   override def getReadStream(path: String, version:Int): Try[InputStream] = {
-    val f = this.fileForPath(path)
+    val f = getAbsolutePath(path).toFile
     if(f.exists())
       Success(new BufferedInputStream(new FileInputStream(f)))
     else
@@ -86,7 +87,7 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
   }
 
   override def getMetadata(path: String, version:Int): Map[Symbol, String] = {
-    val f = this.fileForPath(path)
+    val f = getAbsolutePath(path).toFile
     val result = Map(
       Symbol("size")->f.length().toString,
       Symbol("lastModified")->f.lastModified().toString

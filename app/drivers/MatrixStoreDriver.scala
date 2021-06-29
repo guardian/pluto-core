@@ -1,7 +1,6 @@
 package drivers
 
-import java.io.{EOFException, InputStream, OutputStream}
-import java.nio.ByteBuffer
+import java.io.{InputStream, OutputStream}
 import java.time.ZonedDateTime
 import akka.stream.Materializer
 import com.om.mxs.client.japi.{Attribute, Constants, MxsObject, SearchTerm, Vault}
@@ -71,24 +70,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
       mxsObj <- Try { vault.getObject(oid) }
       result <- blk(mxsObj)
     } yield result
-  }
 
-  def writeAttributesWithRetry(mxsFile: MxsObject, attribs:java.util.Collection[com.om.mxs.client.japi.Attribute], attempt:Int=1):Try[Unit] = try {
-    val vw = mxsFile.getAttributeView
-    vw.writeAllAttributes(attribs)
-    Success( () )
-  } catch {
-    case err:com.om.mxs.client.internal.TaggedIOException=>
-      logger.error(s"Could not write attributes for $mxsFile on attempt $attempt: ", err)
-      if(attempt>10){
-        logger.error("Could not write after 10 attempts, giving up")
-        Failure(err)
-      } else {
-        Thread.sleep(500 * attempt)
-        writeAttributesWithRetry(mxsFile, attribs, attempt+1)
-      }
-    case err:Throwable=>
-      Failure(err)
   }
 
   /**
@@ -106,17 +88,13 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     }
 
     val stream = mxsFile.newOutputStream()
-    try {
-      val copiedSize = StorageHelper.copyStream(dataStream, stream, 10*1024*1024)
-      val updatedFileMeta = newFileMeta(path, version, Some(copiedSize))
-      writeAttributesWithRetry(mxsFile, updatedFileMeta.toAttributes.asJavaCollection)
-    } catch {
-      case err:Throwable=>
-        logger.error(s"Could not copy file: ", err)
-        Failure(err)
-    } finally {
-      stream.close()
-    }
+
+    val result = for {
+      copiedSize <- Try { StorageHelper.copyStream(dataStream, stream) }
+    } yield copiedSize
+
+    stream.close()
+    result.map(copiedSize=>logger.info(s"Copied $path: $copiedSize bytes"))
   }
 
   /**
@@ -159,14 +137,10 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
       ),
       longValues = Map(
         "MXFS_MODIFICATION_TIME"->currentTime.toInstant.toEpochMilli,
-        "MXFS_CREATION_TIME"->currentTime.toInstant.toEpochMilli,
         "MXFS_ACCESS_TIME"->currentTime.toInstant.toEpochMilli,
       ),
       intValues = Map(
-        "MXFS_CREATIONDAY"->currentTime.getDayOfMonth,
         "MXFS_COMPATIBLE"->1,
-        "MXFS_CREATIONMONTH"->currentTime.getMonthValue,
-        "MXFS_CREATIONYEAR"->currentTime.getYear,
         "MXFS_CATEGORY"->4,  //set type to "document",
         "PROJECTLOCKER_VERSION"->version
       )
@@ -271,20 +245,17 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @return [[Map]] of [[Symbol]] -> [[String]] containing metadata about the given file.
     */
   def getMetadata(path:String, version:Int):Map[Symbol,String] = withVault { vault=>
-    val resultFuture = findByFilename(vault, path, version).map({
-      case None=>
-        Map(Symbol("size")->"-1")
-      case Some(omEntry)=>
-        val fileAttrKeysMap = omEntry.attributes.map(_.toSymbolMap)
-        Map(
-          Symbol("size")->omEntry.fileAttribues.map(_.size).getOrElse(-1).toString,
-          Symbol("lastModified")->omEntry.fileAttribues.map(_.mtime).getOrElse(-1).toString,
-          Symbol("version")->fileAttrKeysMap.getOrElse(Symbol("PROJECTLOCKER_VERSION"),-1).toString
-        ) ++ fileAttrKeysMap.getOrElse(Map())
-    })
+    lookupPath(vault, path, version).map(oid=>Try {
+      val mxsObj = vault.getObject(oid)
+      val attrView = mxsObj.getAttributeView
+      val fileAttrs = mxsObj.getMXFSFileAttributeView.readAttributes()
 
-    //FIXME for future - update protocol to support a Future being returned
-    Try { Await.result(resultFuture, 30.seconds) }
+      Map(
+        Symbol("size")->fileAttrs.size().toString,
+        Symbol("lastModified")->fileAttrs.lastModifiedTime().toString,
+        Symbol("version")->attrView.readInt("PROJECTLOCKER_VERSION").toString
+      )
+    }).getOrElse(Failure(new RuntimeException(s"File $path at version $version does not exist on this storage")))
   } match {
     case Success(map)=>map
     case Failure(err)=>
@@ -331,16 +302,23 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @return
     */
   def lookupPath(vault:Vault, fileName:String, version:Int)  = {
-    logger.debug(s"Lookup $fileName on OM vault ${vault.getId}")
+    logger.debug(s"Lookup $fileName at version $version on OM vault ${vault.getId}")
 
-    val searchTerm = SearchTerm.createSimpleTerm(new Attribute(Constants.CONTENT, s"MXFS_FILENAME:$fileName"))
+    val searchTerm = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\" AND PROJECTLOCKER_VERSION:$version""")
     //val searchTerm = SearchTerm.createSimpleTerm("PROJECTLOCKER_VERSION", version)
     val results = vault.searchObjects(searchTerm, 1).asScala.toSeq
 
-    val versionedMap = results.map(oid=>(vault.getObject(oid).getAttributeView.readInt("PROJECTLOCKER_VERSION"),oid)).toMap
-    logger.debug(s"Available versions for $fileName: $versionedMap")
-
-    versionedMap.get(version)
+    results.headOption match {
+      case Some(entry)=>
+        logger.debug(s"Got $entry as the OID for $fileName at version $version")
+      case None=>
+        logger.error(s"Could not find anything for $fileName at version $version")
+        val allVersionsQuery = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\"""")
+        val allVersions = vault.searchObjects(allVersionsQuery, 10).asScala.toSeq
+        logger.info(s"Found ${allVersions.length} hits for filename $fileName")
+        allVersions.foreach(oid=>logger.info(s"\t$fileName: $oid"))
+    }
+    results.headOption
   }
 
   /**

@@ -68,6 +68,7 @@ class PeriodicScanReceiver @Inject() (config:Configuration,
                 channel.basicAck(envelope.getDeliveryTag, false)
               case false=>
                 logger.warn("Could not handle message, leaving it on-queue")
+                channel.basicNack(envelope.getDeliveryTag, false, true)
             })
         }
       }

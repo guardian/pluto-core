@@ -107,8 +107,8 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
         val destSizeStr = destMeta.get(Symbol("size"))
         val destMod = extractModTime(destMeta, destEntry)
 
-        logger.debug(s"${sourceEntry.filepath} on ${sourceEntry.storageId} has size $sourceSizeStr and last modified $sourceMod")
-        logger.debug(s"${destEntry.filepath} on ${destEntry.storageId} has size $destSizeStr and last modified $destMod")
+        logger.debug(s"${sourceEntry.filepath} version ${sourceEntry.version} on ${sourceEntry.storageId} has size $sourceSizeStr and last modified $sourceMod")
+        logger.debug(s"${destEntry.filepath} version ${destEntry.version} on ${destEntry.storageId} has size $destSizeStr and last modified $destMod")
 
         if(sourceSizeStr.isEmpty || sourceMod.isEmpty) {
           Future.failed(new RuntimeException(s"Could not get one or both of file size and mod time from source storage for ${sourceEntry.filepath} on storage id ${sourceEntry.storageId}"))
@@ -136,7 +136,6 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     *         - a FileEntry of the newly copied backup file if it did need to be copied.
     */
   def performBackup(sourceEntry:FileEntry, sourceStorage:StorageEntry, destStorage:StorageEntry):Future[Either[String, Option[FileEntry]]] = {
-    logger.info(s"Starting backup of ${sourceEntry.filepath} from storage ID ${sourceStorage.id} to ${destStorage.id}")
     (sourceStorage.getStorageDriver, destStorage.getStorageDriver) match {
       case (Some(sourceStorageDriver), Some(destStorageDriver)) =>
         val checkFuture = for {
@@ -147,6 +146,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
         checkFuture.flatMap({
           case (maybePrevDestEntry, shouldCopy)=>
             if(shouldCopy) {
+              logger.info(s"Starting backup of ${sourceEntry.filepath} from storage ID ${sourceStorage.id} to ${destStorage.id}")
               val targetFileEntry = for {
                 targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)
                 updatedEntryTry <- targetDestEntry.save
@@ -166,6 +166,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
                   })
               })
             } else {
+              logger.info(s"Backup of ${sourceEntry.filepath} not needed because it has not changed.")
               Future(Right(None))
             }
         })
@@ -195,7 +196,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     * @return a Future, which contains a backup report showing the overall status of the backup
     */
   def fullStorageBackup(forStorageId:Int) = {
-    val parallelCopies = config.getOptional[Int]("backup.parallelCopies").getOrElse(4)
+    val parallelCopies = config.getOptional[Int]("backup.parallelCopies").getOrElse(1)
     logger.debug(s"Starting full backup for storage ID $forStorageId with $parallelCopies parallel copies")
 
     getSourceAndDestStorages(forStorageId).flatMap({
