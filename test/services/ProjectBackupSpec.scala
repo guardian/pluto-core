@@ -8,6 +8,7 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.Injector
 import play.api.test.WithApplication
 
 import java.nio.file.{Path, Paths}
@@ -20,7 +21,7 @@ import scala.util.Try
 class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito {
   "ProjectBackup.relativeFilePath" should {
     "relativize the given file path" in  {
-      val toTest = new ProjectBackup(mock[Configuration],mock[DatabaseConfigProvider], mock[StorageHelper])(mock[Materializer]) {
+      val toTest = new ProjectBackup(mock[Configuration],mock[DatabaseConfigProvider], mock[StorageHelper])(mock[Materializer],mock[Injector]) {
         def callRelativize(a:Path, b:Path) = relativeFilePath(a,b)
       }
 
@@ -29,7 +30,7 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
     }
 
     "fail if the path is not relativizable" in  {
-      val toTest = new ProjectBackup(mock[Configuration],mock[DatabaseConfigProvider], mock[StorageHelper])(mock[Materializer]) {
+      val toTest = new ProjectBackup(mock[Configuration],mock[DatabaseConfigProvider], mock[StorageHelper])(mock[Materializer],mock[Injector]) {
         def callRelativize(a:Path, b:Path) = relativeFilePath(a,b)
       }
 

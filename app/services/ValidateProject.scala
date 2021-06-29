@@ -3,11 +3,13 @@ package services
 import akka.actor.{Actor, ActorRef, ActorSystem}
 import akka.stream.{ActorMaterializer, ClosedShape, Materializer}
 import akka.stream.scaladsl.{Balance, GraphDSL, Merge, RunnableGraph, Sink}
+
 import javax.inject.{Inject, Singleton}
 import models.{ProjectEntry, ProjectEntryRow}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.Injector
 import slick.lifted.{Rep, TableQuery}
 import streamcomponents.{ProjectSearchSource, ValidateProjectSwitch}
 import slick.jdbc.PostgresProfile
@@ -30,7 +32,7 @@ object ValidateProject {
 }
 
 @Singleton
-class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseConfigProvider, actorSystem:ActorSystem)(implicit mat:Materializer) extends Actor {
+class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseConfigProvider, actorSystem:ActorSystem)(implicit mat:Materializer, injector:Injector) extends Actor {
   import ValidateProject._
   private val logger = LoggerFactory.getLogger(getClass)
 

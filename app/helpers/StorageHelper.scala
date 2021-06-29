@@ -9,6 +9,7 @@ import javax.inject.Inject
 import models.{FileEntry, StorageEntry}
 import play.api.Logger
 import org.slf4j.{LoggerFactory, MDC}
+import play.api.inject.Injector
 
 import java.nio.ByteBuffer
 import scala.concurrent.Future
@@ -52,7 +53,7 @@ object StorageHelper {
   }
 }
 
-class StorageHelper @Inject() (implicit mat:Materializer) {
+class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector) {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /**

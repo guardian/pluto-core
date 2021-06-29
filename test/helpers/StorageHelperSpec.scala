@@ -61,7 +61,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
   "StorageHelper.copyFile" should {
     "look up two file entries, get streams from their device drivers and initiate copy" in new WithApplication(buildApp) {
-      val injector = app.injector
+      private implicit val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
@@ -97,7 +97,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
     }
 
     "fail if the destination file is not the same size as the source" in new WithApplication(buildApp){
-      val injector = app.injector
+      private implicit val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
@@ -148,7 +148,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
     }
 
     "return an error if source does not have a valid storage driver" in new WithApplication(buildApp){
-      val injector = app.injector
+      private implicit val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
@@ -182,7 +182,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
     }
 
     "return an error if dest does not have a valid storage driver" in new WithApplication(buildApp){
-      val injector = app.injector
+      private implicit val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
       // create a test file

@@ -28,7 +28,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
 
   "CopySourceFile->NewProjectRequest" should {
     "copy a source file to a destination file specified" in new WithApplication(buildApp){
-      private val injector = app.injector
+      private implicit val injector = app.injector
 
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
@@ -58,7 +58,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
     }
 
     "return StepFailed if copy operation indicates an error" in new WithApplication(buildApp){
-      private val injector = app.injector
+      private implicit val injector = app.injector
 
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
@@ -90,7 +90,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
 
   "CopySourceFile->NewProjectRollback" should {
     "call out to StorageHelper to delete the provided FileEntry from disk" in new WithApplication(buildApp){
-      private val injector = app.injector
+      private implicit val injector = app.injector
 
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])

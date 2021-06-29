@@ -1,12 +1,12 @@
 package drivers
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, OutputStream}
-
 import akka.stream.Materializer
 import com.om.mxs.client.japi.{MxsObject, MxsOutputStream, Vault}
 import models.StorageEntry
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
+import play.api.inject.Injector
 
 import scala.util.Try
 
@@ -28,7 +28,7 @@ class MatrixStoreDriverSpec extends Specification with Mockito {
 
       fakeVault.createObject(any) returns fakeFile
 
-      val toTest = new MatrixStoreDriver(fakeStorageRef) {
+      val toTest = new MatrixStoreDriver(fakeStorageRef) (mock[Injector]){
         override def withVault[A](blk: Vault => Try[A]): Try[A] = blk(fakeVault)
 
         override def lookupPath(vault: Vault, fileName: String, version:Int): Option[String] = mockLookupPath(vault, fileName, version)
@@ -57,7 +57,7 @@ class MatrixStoreDriverSpec extends Specification with Mockito {
 
       fakeVault.getObject(any) returns fakeFile
 
-      val toTest = new MatrixStoreDriver(fakeStorageRef) {
+      val toTest = new MatrixStoreDriver(fakeStorageRef) (mock[Injector ]){
         override def withVault[A](blk: Vault => Try[A]): Try[A] = blk(fakeVault)
 
         override def lookupPath(vault: Vault, fileName: String, version:Int): Option[String] = mockLookupPath(vault, fileName, version)

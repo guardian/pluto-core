@@ -8,6 +8,7 @@ import models.{FileEntry, StorageEntry, StorageEntryHelper, StorageEntryRow}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.Injector
 import services.ProjectBackup.BackupResults
 import slick.jdbc.PostgresProfile
 import slick.lifted
@@ -21,7 +22,7 @@ import scala.util.{Failure, Success, Try}
 
 
 @Singleton
-class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseConfigProvider, storageHelper:StorageHelper)(implicit mat:Materializer) {
+class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseConfigProvider, storageHelper:StorageHelper)(implicit mat:Materializer, injector:Injector) {
   private val logger = LoggerFactory.getLogger(getClass)
   private lazy implicit val db = dbConfigProvider.get[PostgresProfile].db
 

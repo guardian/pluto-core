@@ -2,6 +2,7 @@ package controllers
 
 import akka.stream.Materializer
 import auth.BearerTokenAuth
+
 import javax.inject.Inject
 import exceptions.{AlreadyExistsException, BadDataException}
 import helpers.StorageHelper
@@ -15,6 +16,7 @@ import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.ExecutionContext.Implicits.global
 import models._
 import play.api.cache.SyncCacheApi
+import play.api.inject.Injector
 import slick.lifted.TableQuery
 
 import scala.concurrent.{CanAwait, Future}
@@ -26,7 +28,7 @@ import scala.concurrent.duration._
 class Files @Inject() (override val controllerComponents:ControllerComponents,
                        override val bearerTokenAuth:BearerTokenAuth,
                        override implicit val config: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi, storageHelper:StorageHelper)
-                      (implicit mat:Materializer)
+                      (implicit mat:Materializer, injector:Injector)
   extends GenericDatabaseObjectControllerWithFilter[FileEntry,FileEntryFilterTerms]
     with FileEntrySerializer with FileEntryFilterTermsSerializer
     with ProjectEntrySerializer with ProjectTemplateSerializer {

@@ -8,6 +8,7 @@ import drivers.objectmatrix.{MXSConnectionBuilder, MxsMetadata, ObjectMatrixEntr
 import helpers.StorageHelper
 import models.StorageEntry
 import org.slf4j.LoggerFactory
+import play.api.inject.Injector
 
 import java.nio.file.Paths
 import scala.concurrent.{Await, Future}
@@ -17,52 +18,31 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 /**
-  * TODO:
-  *  - implement no-write-lock in the protocol
   * @param storageRef [[StorageEntry]] instance that this driver instance is assocaited with
   * @param mat implicitly provided ActorMaterializer
   */
-class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:Materializer) extends StorageDriver {
+class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector:Injector) extends StorageDriver {
   private val logger = LoggerFactory.getLogger(getClass)
-  lazy val userInfo = {
-    val splitter = "\\s*,\\s*".r
-    if(storageRef.host.isEmpty){
-      Failure(new RuntimeException("Driver requires host field to be set"))
-    } else if(storageRef.device.isEmpty){
-      Failure(new RuntimeException("Driver requires device to be set"))
-    } else if(storageRef.user.isEmpty){
-      Failure(new RuntimeException("Driver requires user field to be set"))
-    } else if(storageRef.password.isEmpty){
-      Failure(new RuntimeException("Driver requires password field to be set"))
-    } else {
-      val deviceParts = storageRef.device.get.split("\\s*,\\s*")
-      if(deviceParts.length!=2){
-        Failure(new RuntimeException("Malformed device section, should be {cluster-id},{vault-id}"))
-      }
-      Try {
-        MXSConnectionBuilder(splitter.split(storageRef.host.get),
-          storageRef.device.get,
-          storageRef.user.get,
-          storageRef.password.get
-        )
-      }
-    }
-  }
+
+  private val connectionManager = injector.instanceOf(classOf[MXSConnectionManager])
 
   /**
     * wrapper to perform an operation with a vault pointer and ensure that it is disposed when completed
-    * @param blk block to perform operation. This is passed a Vault pointer, and can return anything. The wrapper returns the
+    * @param blk block to perform operation. This is passed a Vault pointer, and can return any type wrapped in a Try. The wrapper returns the
     *            value of the block wrapped in a Try indicating whether the operation succeeded or failed; the vault is disposed
     *            either way
     * @tparam A type of return value of the block
-    * @return
+    * @return the value of the block if successful, or a failure indicating why a connection could not be established
     */
   def withVault[A](blk:Vault=>Try[A]):Try[A] = {
-    val maybeMxs = userInfo.flatMap(_.build())
-
-    val result = maybeMxs.flatMap(mxs=>MXSConnectionBuilder.withVault(mxs, storageRef.device.get)(blk))
-    maybeMxs.map(_.dispose())
-    result
+    (storageRef.host, storageRef.device, storageRef.user, storageRef.password) match {
+      case (Some(h),Some(d),Some(u),Some(p))=>
+        val mxs = connectionManager.getConnection(h,u,p)
+        mxs.flatMap(mxs=>MXSConnectionBuilder.withVault(mxs, d)(blk))
+      case _=>
+        logger.error(s"Storage ${storageRef.id} is misconfigured and is missing at least one of host(s), device, username or password")
+        Failure(new RuntimeException(s"Storage ${storageRef.id} is misconfigured"))
+    }
   }
 
   def withObject[A](vault:Vault,oid:String)(blk:MxsObject=>Try[A]):Try[A] = {
@@ -70,7 +50,6 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
       mxsObj <- Try { vault.getObject(oid) }
       result <- blk(mxsObj)
     } yield result
-
   }
 
   /**
@@ -212,8 +191,8 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
         Failure(new RuntimeException(s"File $path does not exist"))
       case Some(oid)=>
         withObject(vault, oid) { mxsObject=>
-        Success(mxsObject.newInputStream())
-      }
+          Try { mxsObject.newInputStream() }
+        }
     }
   }
 
@@ -230,10 +209,10 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
         val fileMeta = newFileMeta(path, version, None)
         Try {
           vault.createObject(fileMeta.toAttributes.toArray)
-        }.map(_.newOutputStream())
+        }.flatMap(obj=>Try { obj.newOutputStream() })
       case Some(oid)=>
         withObject(vault, oid) { mxsObject=>
-          Success(mxsObject.newOutputStream())
+          Try { mxsObject.newOutputStream() }
         }
     }
   }
@@ -261,25 +240,6 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     case Failure(err)=>
       logger.error(s"Could not get metadata for $path at version $version: ", err)
       Map()
-  }
-
-  def versionsForFileWithMetadata(vault:Vault, fileName:String) = {
-    val metaFutures = versionsForFile(vault, fileName)
-      .map(oid=>
-        ObjectMatrixEntry(oid).getMetadata(vault,mat,global)
-        .map(entry=>Success(entry))
-        .recover({case err:Throwable=>Failure(err)})
-      )
-
-    Future.sequence(metaFutures).map(results=>{
-      val failures = results.collect({case Failure(err)=>err})
-      if(failures.nonEmpty){
-        logger.error(failures.map(_.toString).mkString("\n"))
-        Left("Could not look up versions, see preceding log message for details")
-      } else {
-        Right(results.collect({case Success(entry)=>entry}))
-      }
-    })
   }
 
   /**
@@ -320,20 +280,6 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     }
     results.headOption
   }
-
-  /**
-    * locate files for the given filename, as stored in the metadata. This assumes that one or at most two records will
-    * be returned and should therefore be more efficient than using the streaming interface. If many records are expected,
-    * this will be inefficient and you should use the streaming interface.
-    * this will return a Future to avoid blocking any other lookup requests that would hit the cache
-    * @param fileName file name to search for
-    * @return a Future, containing either a sequence of zero or more results as String oids or an error
-    */
-  def findByFilename(vault:Vault, fileName:String, version:Int):Future[Option[ObjectMatrixEntry]] =
-    lookupPath(vault, fileName, version) match {
-      case Some(oid)=>ObjectMatrixEntry(oid).getMetadata(vault, mat, global).map(entry=>Some(entry))
-      case None=>Future(None)
-    }
 
   /**
     * Does the given path exist on this storage?

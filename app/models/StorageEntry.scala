@@ -1,7 +1,6 @@
 package models
 
 import slick.jdbc.PostgresProfile.api._
-
 import akka.stream.Materializer
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
@@ -11,6 +10,7 @@ import play.api.libs.json.{JsPath, Reads, Writes}
 import scala.concurrent.ExecutionContext.Implicits.global
 import drivers._
 import play.api.Logger
+import play.api.inject.Injector
 import slick.lifted.TableQuery
 
 import scala.concurrent.Future
@@ -67,7 +67,7 @@ case class StorageEntry(id: Option[Int], nickname:Option[String], rootpath: Opti
                         supportsVersions: Boolean, @JsonScalaEnumeration(classOf[StorageStatusType]) status:Option[StorageStatus.Value],
                         backsUpTo:Option[Int]) extends PlutoModel {
 
-  def getStorageDriver(implicit mat:Materializer):Option[StorageDriver] = {
+  def getStorageDriver(implicit injector:Injector):Option[StorageDriver] = {
     val logger: Logger = Logger(this.getClass)
     if(storageType=="Local") {
       Some(new PathStorage(this))
@@ -98,7 +98,7 @@ case class StorageEntry(id: Option[Int], nickname:Option[String], rootpath: Opti
       })
   }
 
-  def validatePathExists(filePath:String, version:Int)(implicit mat:Materializer) = getStorageDriver.map(drv=>drv.pathExists(filePath, version)) match {
+  def validatePathExists(filePath:String, version:Int)(implicit injector:Injector) = getStorageDriver.map(drv=>drv.pathExists(filePath, version)) match {
     case None=>Left(s"No storage driver exists for storage $id ($rootpath)!")
     case Some(result)=>Right(result)
   }

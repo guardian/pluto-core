@@ -9,6 +9,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import drivers.StorageDriver
 import play.api.Logger
+import play.api.inject.Injector
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc.{RawBuffer, Result}
@@ -86,7 +87,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @param db implicitly provided [[slick.jdbc.PostgresProfile#Backend#Database]]
     * @return A future containing either a Right() containing a Boolean indicating whether the delete happened,  or a Left with an error string
     */
-  def deleteFromDisk(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer):Future[Either[String,Boolean]] = {
+  def deleteFromDisk(implicit db:slick.jdbc.PostgresProfile#Backend#Database, injector:Injector):Future[Either[String,Boolean]] = {
     /**/
     /*it either returns a Right(), with a boolean indicating whether the delete happened or not, or a Left() with an error string*/
     val maybeStorageDriverFuture = this.storage.map({
@@ -165,7 +166,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   }
 
   /* Asynchronously writes the given buffer to this file*/
-  def writeToFile(buffer: RawBuffer)(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer):Future[Try[Unit]] = {
+  def writeToFile(buffer: RawBuffer)(implicit db:slick.jdbc.PostgresProfile#Backend#Database, injector:Injector):Future[Try[Unit]] = {
     val storageResult = this.storage
 
     storageResult.map({
@@ -203,7 +204,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @return a Future, containing a Left with a string if there was an error, or a Right with a Boolean flag indicating if the
     *         pointed object exists on the storage
     */
-  def validatePathExists(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer) = {
+  def validatePathExists(implicit db:slick.jdbc.PostgresProfile#Backend#Database, injector:Injector) = {
     val preReqs = for {
       filePath <- getFullPath
       maybeStorage <- storage

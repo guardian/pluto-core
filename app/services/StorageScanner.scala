@@ -6,7 +6,9 @@ import akka.stream.Materializer
 import models.{StorageEntry, StorageEntryHelper, StorageStatus}
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.Injector
 import slick.jdbc.PostgresProfile
+
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -19,7 +21,7 @@ object StorageScanner {
 }
 
 @Singleton
-class StorageScanner @Inject() (dbConfigProvider:DatabaseConfigProvider, config:Configuration, actorSystem:ActorSystem)(implicit mat:Materializer) extends Actor {
+class StorageScanner @Inject() (dbConfigProvider:DatabaseConfigProvider, config:Configuration)(implicit mat:Materializer, injector:Injector) extends Actor {
   private val logger = Logger(getClass)
   import StorageScanner._
 
