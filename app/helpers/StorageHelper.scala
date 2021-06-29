@@ -60,31 +60,6 @@ class StorageHelper @Inject() (implicit mat:Materializer) {
     */
   protected def callCopyStream(input:InputStream, output:OutputStream, bufferSize:Int=defaultBufferSize) = StorageHelper.copyStream(input, output, bufferSize)
 
-  final protected def doByteCopy(sourceStorageDriver:StorageDriver, sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
-                                 sourceFullPath:String, sourceVersion:Int, destFullPath: String)  = {
-    if(sourceStreamTry.isFailure || destStreamTry.isFailure){
-      Left(Seq(sourceStreamTry.failed.getOrElse("").toString, destStreamTry.failed.getOrElse("").toString))
-    } else {
-      //safe, because we've already checked that neither Try failed
-      try {
-        val bytesCopied = callCopyStream(sourceStreamTry.get,destStreamTry.get)
-        logger.debug(s"copied $sourceFullPath to $destFullPath: $bytesCopied bytes")
-        sourceStreamTry.get.close()
-        destStreamTry.get.close()
-        if(bytesCopied==0)
-          Left(Seq(s"could not copy $sourceFullPath to $destFullPath - empty file"))
-        else
-          Right(Tuple2(bytesCopied,sourceStorageDriver.getMetadata(sourceFullPath, sourceVersion)))
-      } catch {
-        case ex:Throwable=>
-          Left(Seq(ex.toString))
-      } finally {
-        sourceStreamTry.get.close()
-        destStreamTry.get.close()
-      }
-    }
-  }
-
   def deleteFile(targetFile: FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Either[String, FileEntry]] = {
     val futures = Future.sequence(Seq(targetFile.storage, targetFile.getFullPath))
 
@@ -118,6 +93,79 @@ class StorageHelper @Inject() (implicit mat:Materializer) {
     })
   }
 
+  /**
+    * Copies from the file represented by sourceFile to the (non-existing) file represented by destFile.
+    * Both should have been saved to the database before calling this method.  The files do not need to be on the same
+    * storage type
+    * @param sourceFile - [[models.FileEntry]] instance representing file to copy from
+    * @param destFile - [[models.FileEntry]] instance representing file to copy to
+    * @param db - database instance, usually passed implicitly.
+    * @return Future[FileEntry] - a future containing e new, updated [[models.FileEntry]] representing @destFile.
+    *         this future fails if there was an error
+    */
+  def copyFile(sourceFile: FileEntry, destFile:FileEntry)
+              (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[FileEntry] = {
+    def getStorageDriverForFile(file:FileEntry) = {
+      file
+        .storage
+        .map(_.flatMap(_.getStorageDriver))
+        .map({
+          case Some(storageDriver)=>storageDriver
+          case None=> throw new RuntimeException(s"Storage with ID ${file.storageId} does not have a valid storage type")
+        })
+    }
+
+    def withReadStream[A](sourceFile:FileEntry)(cb:(Map[Symbol, String], InputStream)=>Try[A]) = {
+      val readStreamFut = for {
+        driver <- getStorageDriverForFile(sourceFile)
+        fullPath <- sourceFile.getFullPath
+        readStream <- Future.fromTry(driver.getReadStream(fullPath, sourceFile.version))
+        meta <- Future.fromTry(Try { driver.getMetadata(fullPath, sourceFile.version)})
+      } yield (driver, readStream, meta)
+
+      readStreamFut.map({
+        case (driver, readStream, meta)=>
+          val result = cb(meta, readStream)
+          Try { readStream.close() } match {
+            case Success(_)=>
+            case Failure(err)=>
+              logger.error(s"Could not close file $sourceFile via driver $driver: ${err.getMessage}", err)
+          }
+          Future.fromTry(result)
+      }).flatten
+    }
+
+    val destination = for {
+      destFilePath <- destFile.getFullPath
+      destStorageDriver <- getStorageDriverForFile(destFile)
+    } yield (destFilePath, destStorageDriver)
+
+    destination.flatMap({
+      case (destFilePath, destDriver)=>
+        withReadStream(sourceFile) { (sourceMeta,readStream)=>
+          destDriver
+            .writeDataToPath(destFilePath, destFile.version, readStream)
+            .flatMap(_=> {
+              //now that the copy completed successfully, we need to check that the file sizes actually match
+              val destMeta = destDriver.getMetadata(destFilePath, destFile.version)
+              (destMeta.get(Symbol("size")), sourceMeta.get(Symbol("size"))) match {
+                case (None, _) =>
+                  Failure(new RuntimeException(s"${sourceFile.filepath}: Could not get destination file size"))
+                case (_, None)=>
+                  Failure(new RuntimeException(s"${sourceFile.filepath}: Could not get source file size"))
+                case (Some(destSizeString), Some(sourceSizeString))=>
+                  logger.debug(s"${sourceFile.filepath}: Destination size is $destSizeString and source size is $sourceSizeString")
+                  if(destSizeString==sourceSizeString) {
+                    Success( () )
+                  } else {
+                    Failure(new RuntimeException(s"${sourceFile.filepath}: Copied file size $destSizeString did not match source size of $sourceSizeString"))
+                  }
+              }
+            })
+        }.map(_=>destFile.copy(hasContent=true))
+    })
+  }
+  /*
   /**
     * Copies from the file represented by sourceFile to the (non-existing) file represented by destFile.
     * Both should have been saved to the database before calling this method.  The files do not need to be on the same
@@ -192,6 +240,7 @@ class StorageHelper @Inject() (implicit mat:Materializer) {
         })
     })
   }
+*/
 
   def findFile(targetFile: FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
     val futures = Future.sequence(Seq(targetFile.storage, targetFile.getFullPath))

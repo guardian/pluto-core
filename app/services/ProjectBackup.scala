@@ -135,7 +135,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     *         - None if the file did not need to be copied;
     *         - a FileEntry of the newly copied backup file if it did need to be copied.
     */
-  def performBackup(sourceEntry:FileEntry, sourceStorage:StorageEntry, destStorage:StorageEntry):Future[Either[Seq[String],Option[FileEntry]]] = {
+  def performBackup(sourceEntry:FileEntry, sourceStorage:StorageEntry, destStorage:StorageEntry):Future[Either[String, Option[FileEntry]]] = {
     logger.info(s"Starting backup of ${sourceEntry.filepath} from storage ID ${sourceStorage.id} to ${destStorage.id}")
     (sourceStorage.getStorageDriver, destStorage.getStorageDriver) match {
       case (Some(sourceStorageDriver), Some(destStorageDriver)) =>
@@ -155,23 +155,14 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
 
               targetFileEntry.flatMap(updatedDestEntry=>{
                 storageHelper.copyFile(sourceEntry, updatedDestEntry)
-                  .flatMap({
-                    case Left(errs)=>
-                      logger.error(s"Could not copy ${updatedDestEntry.filepath} on ${updatedDestEntry.storageId} from ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${errs}")
-                      updatedDestEntry
-                        .deleteFromDisk
-                        .andThen(_=>updatedDestEntry.deleteSelf)
-                        .map(_=>Left(errs))
-                    case Right(fileEntry)=>
-                      Future(Right(Some(fileEntry)))
-                  })
+                  .map(fileEntry=>Right(Some(fileEntry)))
                   .recoverWith({
                     case err:Throwable=>
                       logger.error(s"Could not copy ${updatedDestEntry.filepath} on ${updatedDestEntry.storageId} from ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${err.getMessage}",err)
                       updatedDestEntry
                         .deleteFromDisk
                         .andThen(_=>updatedDestEntry.deleteSelf)
-                        .flatMap(_=>Future.failed(err))
+                        .map(_=>Left(err.toString))
                   })
               })
             } else {
@@ -214,7 +205,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
           .mapAsync(parallelCopies)(entry=>performBackup(entry, storageEntry, destStorageEntry))
           .toMat(Sink.fold(BackupResults.empty(forStorageId))((acc, elem)=>elem match {
             case Left(errs)=>
-              logger.warn(s"Backup failed: ${errs.mkString(";")}")
+              logger.warn(s"Backup failed: ${errs}")
               acc.copy(totalCount = acc.totalCount+1, failedCount=acc.failedCount+1)
             case Right(Some(_))=>
               acc.copy(totalCount = acc.totalCount+1, successCount = acc.successCount+1)

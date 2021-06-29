@@ -10,6 +10,7 @@ import helpers.StorageHelper
 import models.StorageEntry
 import org.slf4j.LoggerFactory
 
+import java.nio.file.Paths
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 import scala.jdk.CollectionConverters._
@@ -98,7 +99,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
   def writeDataToPath(path:String, version:Int, dataStream:InputStream):Try[Unit] = withVault { vault=>
     val mxsFile = lookupPath(vault, path, version) match {
       case None=>
-        val fileMeta = newFileMeta(path, version, -1)
+        val fileMeta = newFileMeta(path, version, None)
         vault.createObject(fileMeta.toAttributes.toArray)
       case Some(oid)=>
         vault.getObject(oid)
@@ -107,7 +108,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     val stream = mxsFile.newOutputStream()
     try {
       val copiedSize = StorageHelper.copyStream(dataStream, stream, 10*1024*1024)
-      val updatedFileMeta = newFileMeta(path, version, copiedSize)
+      val updatedFileMeta = newFileMeta(path, version, Some(copiedSize))
       writeAttributesWithRetry(mxsFile, updatedFileMeta.toAttributes.asJavaCollection)
     } catch {
       case err:Throwable=>
@@ -138,24 +139,25 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     }
   }
 
-  def newFileMeta(path:String, version:Int, length:Long) = {
+  def newFileMeta(pathString:String, version:Int, length:Option[Long]) = {
     val currentTime = ZonedDateTime.now()
 
-    MxsMetadata(
+    val path = Paths.get(pathString)
+
+    val initialMeta = MxsMetadata(
       stringValues = Map(
-        "MXFS_FILENAME_UPPER" -> path.toUpperCase,
-        "MXFS_FILENAME"->path,
+        "MXFS_FILENAME_UPPER" -> path.toString.toUpperCase,
+        "MXFS_FILENAME"->path.getFileName.toString,
         "MXFS_PATH"->path.toString,
         "MXFS_MIMETYPE"->"application/octet-stream",
         "MXFS_DESCRIPTION"->s"Projectlocker project $path",
         "MXFS_PARENTOID"->"",
-        "MXFS_FILEEXT"->getFileExt(path).getOrElse("")
+        "MXFS_FILEEXT"->getFileExt(path.getFileName.toString).getOrElse("")
       ),
       boolValues = Map(
         "MXFS_INTRASH"->false,
       ),
       longValues = Map(
-        "DPSP_SIZE"->length,
         "MXFS_MODIFICATION_TIME"->currentTime.toInstant.toEpochMilli,
         "MXFS_CREATION_TIME"->currentTime.toInstant.toEpochMilli,
         "MXFS_ACCESS_TIME"->currentTime.toInstant.toEpochMilli,
@@ -169,6 +171,11 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
         "PROJECTLOCKER_VERSION"->version
       )
     )
+
+    length match {
+      case None=>initialMeta
+      case Some(actualLength)=>initialMeta.copy(longValues = initialMeta.longValues + ("DPSP_SIZE"->actualLength))
+    }
   }
 
   /**
@@ -181,7 +188,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     val mxsFile = lookupPath(vault, path, version) match {
       case None=>
         logger.debug(s"No path found for $path at version $version on ${vault.getId}")
-        val fileMeta = newFileMeta(path, version, data.length)
+        val fileMeta = newFileMeta(path, version, Some(data.length))
         vault.createObject(fileMeta.toAttributes.toArray)
       case Some(oid)=>
         logger.debug(s"Found entry $oid for path $path at version $version on ${vault.getId}")
@@ -245,7 +252,11 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     logger.info(s"Writing to file at path $path with version $version on ${storageRef.repr}")
     lookupPath(vault, path, version) match {
       case None=>
-        Failure(new RuntimeException(s"File $path does not exist"))
+        logger.debug(s"No path found for $path at version $version on ${vault.getId}")
+        val fileMeta = newFileMeta(path, version, None)
+        Try {
+          vault.createObject(fileMeta.toAttributes.toArray)
+        }.map(_.newOutputStream())
       case Some(oid)=>
         withObject(vault, oid) { mxsObject=>
           Success(mxsObject.newOutputStream())

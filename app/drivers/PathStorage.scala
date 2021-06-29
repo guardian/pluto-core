@@ -1,5 +1,7 @@
 package drivers
 
+import helpers.StorageHelper
+
 import java.io._
 import java.nio.file.Paths
 import java.time.{Instant, ZoneId, ZonedDateTime}
@@ -26,20 +28,27 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
 
   override def pathExists(path: String, version:Int): Boolean = fileForPath(path).exists()
 
-  override def writeDataToPath(path: String, version:Int, dataStream: InputStream): Try[Unit] = Try {
+  override def writeDataToPath(path: String, version:Int, dataStream: InputStream): Try[Unit] = {
     val finalPath = storageRef.rootpath match {
-      case Some(rootpath)=>Paths.get(rootpath,path)
+      case Some(rootpath)=>
+        if(path.startsWith(rootpath)) {
+          Paths.get(path)
+        } else {
+          Paths.get(rootpath,path)
+        }
       case None=>Paths.get(path)
     }
 
-    val f = this.fileForPath(finalPath.toString)
-    logger.info(s"Writing data to ${f.getAbsolutePath}")
-    val st = new FileOutputStream(f)
+    Try { this.fileForPath(finalPath.toString) }.flatMap(f=> {
+      logger.info(s"Writing data to ${f.getAbsolutePath}")
+      val st = new FileOutputStream(f)
 
-    st.getChannel.transferFrom(dataStream.asInstanceOf[FileInputStream].getChannel, 0, Long.MaxValue)
-
-    st.close()
-    logger.info(s"Finished writing to ${f.getAbsolutePath}")
+      val bytesCopied = Try { StorageHelper.copyStream(dataStream, st) }
+      st.close()
+      bytesCopied
+    }).map(bytesCopied=>{
+      logger.info(s"Finished writing $bytesCopied to ${finalPath.toString}")
+    })
   }
 
   def writeDataToPath(path:String, version:Int, data:Array[Byte]):Try[Unit] = Try {

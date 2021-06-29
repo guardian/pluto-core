@@ -42,7 +42,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       fileEntryDest must beSuccessfulTry
       fileEntryDest.get.length mustEqual 1
       protected val storageHelper = mock[StorageHelper]
-      storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Right(fileEntryDest.get.head.copy(hasContent = true)))
+      storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(fileEntryDest.get.head.copy(hasContent = true))
 
       val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, storageHelper)))
 
@@ -72,7 +72,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       fileEntryDest must beSuccessfulTry
       fileEntryDest.get.length mustEqual 1
       protected val storageHelper = mock[StorageHelper]
-      storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Left(Seq("Something went KABOOM!")))
+      storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future.failed(new RuntimeException("Something went KABOOM!"))
 
       val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, storageHelper)))
 

@@ -89,7 +89,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         val savedSource = savedResults.get.head
         val savedDest = savedResults.get(1)
         val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
-        result must beRight(savedDest.copy(hasContent = true))
+        result mustEqual(savedDest.copy(hasContent = true))
       } finally { // ensure that test files get deleted. if you don't use try/finally, then if either of these fails the whole test does
         new File(testFileNameSrc).delete()
         new File(testFileNameDest).delete()
@@ -138,9 +138,9 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         val savedDest = savedResults.get.head
         println(savedSource)
         println(savedDest)
-        val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
+        val result = Try { Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds) }
         //intellij does not like this line, but the compiler does
-        result must beLeft(List("Copied file byte size 61440 did not match source file 1234"))
+        result must beFailedTry //(List("Copied file byte size 61440 did not match source file 1234"))
       } finally { // ensure that test files get deleted. if you don't use try/finally, then if either of these fails the whole test does
         new File(testFileNameSrc).delete()
         new File(testFileNameDest).delete()
@@ -172,8 +172,9 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
         val savedSource = savedResults.get.head
         val savedDest = savedResults.get(1)
-        val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
-        result mustEqual Left(List("Either source or destination was missing a storage or a storage driver"))
+        val result = Try { Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds) }
+        result must beFailedTry //Left(List("Either source or destination was missing a storage or a storage driver"))
+        result.failed.get.getMessage mustEqual "Storage with ID 2 does not have a valid storage type"
       } finally {
         new File(testFileNameSrc).delete()
         new File(testFileNameDest).delete()
@@ -204,8 +205,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
         val savedSource = savedResults.get.head
         val savedDest = savedResults.get(1)
-        val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
-        result must beLeft(List("Either source or destination was missing a storage or a storage driver"))
+        val result = Try { Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds) }
+        result must beFailedTry //List("Either source or destination was missing a storage or a storage driver"))
       } finally {
         new File(testFileNameSrc).delete()
         new File(testFileNameDest).delete()
@@ -214,80 +215,80 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
   }
 
-  "StorageHelper.doByteCopy" should {
-    "return an error if getting the source stream failed" in {
-      val mockStorageDriver = mock[PathStorage]
-
-      val sourceStreamTry = Failure(new RuntimeException("Kaboom!"))
-      val destStreamTry = Success(mock[FileOutputStream])
-      implicit val mat:Materializer = mock[Materializer]
-      val h = new StorageHelper {
-        def testDoByteCopy(sourceStorageDriver:StorageDriver,
-                           sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
-                           sourceFullPath:String, sourceVersion:Int, destFullPath: String) =
-          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,sourceVersion, destFullPath)
-      }
-
-      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
-
-      result must beLeft
-      result.swap.getOrElse(Seq()).length mustEqual 2
-      result.swap.getOrElse(Seq()).head mustEqual "java.lang.RuntimeException: Kaboom!"
-      result.swap.getOrElse(Seq("no values present"))(1) mustEqual ""
-    }
-
-    "return an error if getting the destination stream failed" in {
-      val mockStorageDriver = mock[PathStorage]
-
-      val sourceStreamTry = Success(mock[FileInputStream])
-      val destStreamTry = Failure(new RuntimeException("Kaboom!"))
-      implicit val mat:Materializer = mock[Materializer]
-      val h = new StorageHelper {
-        /**
-          * helper to call through to protected method
-          */
-        def testDoByteCopy(sourceStorageDriver:StorageDriver,
-                           sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
-                           sourceFullPath:String, sourceVersion:Int, destFullPath: String) =
-          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,sourceVersion, destFullPath)
-      }
-
-      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
-
-      result must beLeft
-      result.swap.getOrElse(Seq()).length mustEqual 2
-      result.swap.getOrElse(Seq()).head mustEqual ""
-      result.swap.getOrElse(Seq())(1) mustEqual "java.lang.RuntimeException: Kaboom!"
-    }
-
-    "catch and pass along any exception thrown from copyStream as a Left stringvalue" in {
-      val mockStorageDriver = mock[PathStorage]
-
-      val sourceStreamTry = Success(mock[FileInputStream])
-      val destStreamTry = Success(mock[FileOutputStream])
-
-      implicit val mat:Materializer = mock[Materializer]
-      val h = new StorageHelper {
-        /**
-          * stub implementation to throw exception
-          */
-        override protected def callCopyStream(source: InputStream, dest: OutputStream, bufferSize:Int): Long = {
-          throw new RuntimeException("**raspberry**")
-        }
-        /**
-          * helper to call through to protected method
-          */
-        def testDoByteCopy(sourceStorageDriver:StorageDriver,
-                           sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
-                           sourceFullPath:String, sourceVersion:Int, destFullPath: String) =
-          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,sourceVersion, destFullPath)
-      }
-
-      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
-
-      result must beLeft
-      result.swap.getOrElse(Seq()).length mustEqual 1
-      result.swap.getOrElse(Seq()).head mustEqual "java.lang.RuntimeException: **raspberry**"
-    }
-  }
+//  "StorageHelper.doByteCopy" should {
+//    "return an error if getting the source stream failed" in {
+//      val mockStorageDriver = mock[PathStorage]
+//
+//      val sourceStreamTry = Failure(new RuntimeException("Kaboom!"))
+//      val destStreamTry = Success(mock[FileOutputStream])
+//      implicit val mat:Materializer = mock[Materializer]
+//      val h = new StorageHelper {
+//        def testDoByteCopy(sourceStorageDriver:StorageDriver,
+//                           sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
+//                           sourceFullPath:String, sourceVersion:Int, destFullPath: String) =
+//          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,sourceVersion, destFullPath)
+//      }
+//
+//      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
+//
+//      result must beLeft
+//      result.swap.getOrElse(Seq()).length mustEqual 2
+//      result.swap.getOrElse(Seq()).head mustEqual "java.lang.RuntimeException: Kaboom!"
+//      result.swap.getOrElse(Seq("no values present"))(1) mustEqual ""
+//    }
+//
+//    "return an error if getting the destination stream failed" in {
+//      val mockStorageDriver = mock[PathStorage]
+//
+//      val sourceStreamTry = Success(mock[FileInputStream])
+//      val destStreamTry = Failure(new RuntimeException("Kaboom!"))
+//      implicit val mat:Materializer = mock[Materializer]
+//      val h = new StorageHelper {
+//        /**
+//          * helper to call through to protected method
+//          */
+//        def testDoByteCopy(sourceStorageDriver:StorageDriver,
+//                           sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
+//                           sourceFullPath:String, sourceVersion:Int, destFullPath: String) =
+//          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,sourceVersion, destFullPath)
+//      }
+//
+//      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
+//
+//      result must beLeft
+//      result.swap.getOrElse(Seq()).length mustEqual 2
+//      result.swap.getOrElse(Seq()).head mustEqual ""
+//      result.swap.getOrElse(Seq())(1) mustEqual "java.lang.RuntimeException: Kaboom!"
+//    }
+//
+//    "catch and pass along any exception thrown from copyStream as a Left stringvalue" in {
+//      val mockStorageDriver = mock[PathStorage]
+//
+//      val sourceStreamTry = Success(mock[FileInputStream])
+//      val destStreamTry = Success(mock[FileOutputStream])
+//
+//      implicit val mat:Materializer = mock[Materializer]
+//      val h = new StorageHelper {
+//        /**
+//          * stub implementation to throw exception
+//          */
+//        override protected def callCopyStream(source: InputStream, dest: OutputStream, bufferSize:Int): Long = {
+//          throw new RuntimeException("**raspberry**")
+//        }
+//        /**
+//          * helper to call through to protected method
+//          */
+//        def testDoByteCopy(sourceStorageDriver:StorageDriver,
+//                           sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
+//                           sourceFullPath:String, sourceVersion:Int, destFullPath: String) =
+//          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,sourceVersion, destFullPath)
+//      }
+//
+//      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
+//
+//      result must beLeft
+//      result.swap.getOrElse(Seq()).length mustEqual 1
+//      result.swap.getOrElse(Seq()).head mustEqual "java.lang.RuntimeException: **raspberry**"
+//    }
+//  }
 }

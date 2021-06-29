@@ -58,16 +58,15 @@ class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider, storag
               MDC.put("savedFileEntry", savedFileEntry.toString)
               logger.info(s"Copying from file $sourceFileEntry to $savedFileEntry")
               storageHelper.copyFile(sourceFileEntry, savedFileEntry)
-            }).map({
-              case Left(error)=>
-                val errorString = error.mkString("\n")
-                logger.error(errorString)
-                originalSender ! StepFailed(copyRequest.data, new RuntimeException(errorString))
-                Success(s"No storage driver was configured for ${rq.destinationStorage}")
-              case Right(copiedFileEntry:FileEntry)=>
+            }).map(copiedFileEntry=>{
                 logger.debug(copiedFileEntry.toString)
                 val updatedData = copyRequest.data.copy(destFileEntry = Some(copiedFileEntry))
                 originalSender ! StepSucceded(updatedData)
+            }).recover({
+              case error:Throwable=>
+                logger.error(error.getMessage, error)
+                originalSender ! StepFailed(copyRequest.data, error)
+                Success(s"No storage driver was configured for ${rq.destinationStorage}")
             })
         }
       }
