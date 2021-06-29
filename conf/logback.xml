@@ -31,13 +31,13 @@
     <logger name="helpers.PostrunSorter" level="WARN"/>
     <logger name="controllers.MessageTest" level="WARN"/>
     <logger name="models.ProjectRequestPluto" level="WARN"/>
-    <logger name="drivers.PathStorage" level="WARN"/>
+    <logger name="drivers.PathStorage" level="DEBUG"/>
     <logger name="models.PlutoWorkingGroup" level="WARN"/>
     <logger name="models.PlutoCommission" level="WARN"/>
     <logger name="services.ClockSingleton" level="INFO"/>
     <logger name="controllers.Files" level="WARN" />
     <logger name="controllers.StoragesController" level="INFO"/>
-    <logger name="drivers.MatrixStoreDriver" level="INFO"/>
+    <logger name="drivers.MatrixStoreDriver" level="DEBUG"/>
     <logger name="controllers.StorageControllerSpec" level="WARN"/>
     <logger name="auth" level="DEBUG"/>
     <logger name="controllers.Application" level="WARN"/>
@@ -51,19 +51,20 @@
     <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
     <logger name="models.ProjectMetadata" level="WARN"/>
     <logger name="postrun.UpdateAdobeUuidSpec" level="WARN"/>
-    <logger name="services.StorageScanner" level="DEBUG"/>
+    <logger name="services.StorageScanner" level="INFO"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
     <logger name="MockProjectCreationActor" level="DEBUG"/>
     <logger name="services.actors.ProjectCreationActor" level="INFO"/>
     <logger name="ProjectCreation.ProjectCreationSpec" level="ERROR"/>
     <logger name="services.actors.creation" level="INFO"/>
-    <logger name="services.ValidateProject" level="DEBUG"/>
-    <logger name="streamcomponents.ProjectSearchSource" level="DEBUG"/>
+    <logger name="services.ValidateProject" level="INFO"/>
+    <logger name="streamcomponents.ProjectSearchSource" level="INFO"/>
     <logger name="helpers.AllowCORSFilter" level="WARN"/>
     <logger name="services.DataMigration" level="INFO"/>
     <logger name="services.migrationcomponents" level="INFO"/>
-    <logger name="services.PeriodicScanReceiver" level="DEBUG"/>
-    <logger name="postrun" level="DEBUG"/>
+    <logger name="services.PeriodicScanReceiver" level="INFO"/>
+    <logger name="postrun" level="INFO"/>
+    <logger name="services.ProjectBackup" level="DEBUG"/>
 
     <logger name="services.CommissionStatusPropagator" level="DEBUG"/>
     <root level="INFO">

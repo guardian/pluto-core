@@ -64,6 +64,18 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     }
   }
 
+  private def extractModTime(sourceMeta:Map[Symbol, String], sourceEntry:FileEntry) = Try { sourceMeta.get(Symbol("lastModified")).map(_.toLong) } match {
+    case Success(Some(result))=>
+      logger.debug(s"${sourceEntry.filepath} on ${sourceEntry.storageId} mtime is $result")
+      Some(result)
+    case Success(None)=>
+      logger.debug(s"${sourceEntry.filepath} on ${sourceEntry.storageId} mtime is None")
+      None
+    case Failure(err)=>
+      logger.error(s"Could not get mtime for ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${err.getMessage}")
+      None
+  }
+
   /**
     * checks whether the given FileEntries actually need a backup.
     *
@@ -91,9 +103,9 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
         val sourceMeta = sourceStorageDriver.getMetadata(sourceEntry.filepath, sourceEntry.version)
         val destMeta = destStorageDriver.getMetadata(destEntry.filepath, destEntry.version)
         val sourceSizeStr = sourceMeta.get(Symbol("size"))
-        val sourceMod = Try { sourceMeta.get(Symbol("lastModified")).map(_.toLong) }.toOption.flatten
+        val sourceMod = extractModTime(sourceMeta, sourceEntry)
         val destSizeStr = destMeta.get(Symbol("size"))
-        val destMod = Try { destMeta.get(Symbol("lastModified")).map(_.toLong) }.toOption.flatten
+        val destMod = extractModTime(destMeta, destEntry)
 
         logger.debug(s"${sourceEntry.filepath} on ${sourceEntry.storageId} has size $sourceSizeStr and last modified $sourceMod")
         logger.debug(s"${destEntry.filepath} on ${destEntry.storageId} has size $destSizeStr and last modified $destMod")
@@ -101,7 +113,8 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
         if(sourceSizeStr.isEmpty || sourceMod.isEmpty) {
           Future.failed(new RuntimeException(s"Could not get one or both of file size and mod time from source storage for ${sourceEntry.filepath} on storage id ${sourceEntry.storageId}"))
         } else if(destSizeStr.isEmpty || destMod.isEmpty) {
-          Future.failed(new RuntimeException(s"Could not get one or both of file size and mod time from destination storage for ${destEntry.filepath} on storage id ${destEntry.storageId}"))
+          logger.warn(s"Got destination size ${destSizeStr} and destination modtime ${destMod} which is not correct. Forcing backup.")
+          Future(true)
         } else if(sourceSizeStr!=destSizeStr) { //file size mismatch - always backup
           Future(true)
         } else if(sourceMod.get > destMod.get) { //file sizes do match, but if the source has been modified since the backup copy it anyway
@@ -122,7 +135,8 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     *         - None if the file did not need to be copied;
     *         - a FileEntry of the newly copied backup file if it did need to be copied.
     */
-  def performBackup(sourceEntry:FileEntry, sourceStorage:StorageEntry, destStorage:StorageEntry) = {
+  def performBackup(sourceEntry:FileEntry, sourceStorage:StorageEntry, destStorage:StorageEntry):Future[Either[Seq[String],Option[FileEntry]]] = {
+    logger.info(s"Starting backup of ${sourceEntry.filepath} from storage ID ${sourceStorage.id} to ${destStorage.id}")
     (sourceStorage.getStorageDriver, destStorage.getStorageDriver) match {
       case (Some(sourceStorageDriver), Some(destStorageDriver)) =>
         val checkFuture = for {
@@ -133,12 +147,33 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
         checkFuture.flatMap({
           case (maybePrevDestEntry, shouldCopy)=>
             if(shouldCopy) {
-              for {
+              val targetFileEntry = for {
                 targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)
                 updatedEntryTry <- targetDestEntry.save
                 updatedDestEntry <- Future.fromTry(updatedEntryTry) //make sure that we get the updated database id of the file
-                result <- storageHelper.copyFile(sourceEntry, updatedDestEntry).map(_.map(Some.apply))
-              } yield result
+              } yield updatedDestEntry
+
+              targetFileEntry.flatMap(updatedDestEntry=>{
+                storageHelper.copyFile(sourceEntry, updatedDestEntry)
+                  .flatMap({
+                    case Left(errs)=>
+                      logger.error(s"Could not copy ${updatedDestEntry.filepath} on ${updatedDestEntry.storageId} from ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${errs}")
+                      updatedDestEntry
+                        .deleteFromDisk
+                        .andThen(_=>updatedDestEntry.deleteSelf)
+                        .map(_=>Left(errs))
+                    case Right(fileEntry)=>
+                      Future(Right(Some(fileEntry)))
+                  })
+                  .recoverWith({
+                    case err:Throwable=>
+                      logger.error(s"Could not copy ${updatedDestEntry.filepath} on ${updatedDestEntry.storageId} from ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${err.getMessage}",err)
+                      updatedDestEntry
+                        .deleteFromDisk
+                        .andThen(_=>updatedDestEntry.deleteSelf)
+                        .flatMap(_=>Future.failed(err))
+                  })
+              })
             } else {
               Future(Right(None))
             }
@@ -170,9 +205,11 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     */
   def fullStorageBackup(forStorageId:Int) = {
     val parallelCopies = config.getOptional[Int]("backup.parallelCopies").getOrElse(4)
+    logger.debug(s"Starting full backup for storage ID $forStorageId with $parallelCopies parallel copies")
 
     getSourceAndDestStorages(forStorageId).flatMap({
       case (storageEntry, Some(destStorageEntry))=>
+        logger.debug(s"Source storage is ${storageEntry.storageType} with ID ${storageEntry.id}, dest storage is ${storageEntry.storageType} with ID ${storageEntry.id}")
         FileEntry.scanAllFiles(Some(forStorageId))
           .mapAsync(parallelCopies)(entry=>performBackup(entry, storageEntry, destStorageEntry))
           .toMat(Sink.fold(BackupResults.empty(forStorageId))((acc, elem)=>elem match {
@@ -180,10 +217,8 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
               logger.warn(s"Backup failed: ${errs.mkString(";")}")
               acc.copy(totalCount = acc.totalCount+1, failedCount=acc.failedCount+1)
             case Right(Some(_))=>
-              logger.debug("File backed up")
               acc.copy(totalCount = acc.totalCount+1, successCount = acc.successCount+1)
             case Right(None)=>
-              logger.debug("File did not need backing up")
               acc.copy(totalCount = acc.totalCount+1, notNeededCount=acc.notNeededCount+1)
           }))(Keep.right)
           .run()
