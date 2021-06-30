@@ -166,82 +166,6 @@ class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector) {
         }.map(_=>destFile.copy(hasContent=true))
     })
   }
-  /*
-  /**
-    * Copies from the file represented by sourceFile to the (non-existing) file represented by destFile.
-    * Both should have been saved to the database before calling this method.  The files do not need to be on the same
-    * storage type
-    * @param sourceFile - [[models.FileEntry]] instance representing file to copy from
-    * @param destFile - [[models.FileEntry]] instance representing file to copy to
-    * @param db - database instance, usually passed implicitly.
-    * @return [[Future[Either[Seq[String],FileEntry]] - a future containing either a list of strings giving failure reasons or a
-    *        new, updated [[models.FileEntry]] representing @destFile
-    */
-  def copyFile(sourceFile: FileEntry, destFile: FileEntry)
-              (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Either[Seq[String],FileEntry]] = {
-    val storageDriversFuture = Future.sequence(Seq(sourceFile.storage,destFile.storage)).map(results=>{
-      val successfulResults = results.flatten.flatMap(_.getStorageDriver)
-
-      if(successfulResults.length==2){
-        Right(successfulResults)
-      } else {
-        MDC.put("sourceFile", sourceFile.toString)
-        MDC.put("destFile", destFile.toString)
-        logger.debug(s"sourceFile: ${sourceFile.toString}")
-        logger.debug(s"destFile: ${destFile.toString}")
-        Left(Seq("Either source or destination was missing a storage or a storage driver"))
-      }
-    })
-
-    val actualFilenamesFuture = Future.sequence(Seq(sourceFile.getFullPath,destFile.getFullPath))
-
-    val bytesCopiedFuture = Future.sequence(Seq(storageDriversFuture, actualFilenamesFuture)).map(futures=>{
-      val storageDrivers = futures.head.asInstanceOf[Either[Seq[String],Seq[StorageDriver]]]
-
-      storageDrivers match {
-        case Left(errors)=>Left(errors)
-        case Right(actualStorageDrivers)=>
-          val sourceStorageDriver = actualStorageDrivers.head
-          val destStorageDriver = actualStorageDrivers(1)
-
-          val sourceFullPath = futures(1).asInstanceOf[Seq[String]].head
-          val destFullPath = futures(1).asInstanceOf[Seq[String]](1)
-
-          logger.info(s"Copying from $sourceFullPath on $sourceStorageDriver to $destFullPath on $destStorageDriver")
-
-          val sourceStreamTry = sourceStorageDriver.getReadStream(sourceFullPath, sourceFile.version)
-          val destStreamTry = destStorageDriver.getWriteStream(destFullPath, destFile.version)
-
-          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath, sourceFile.version, destFullPath)
-      }
-    })
-
-    val checkFuture = bytesCopiedFuture.map({
-      case Left(errors)=>Left(errors)
-      case Right((bytesCopied,metaDict))=>
-        logger.debug(s"Copied $bytesCopied bytes")
-        //need to check if the number of bytes copied is the same as the source file. If so return Right() otherwise Left()
-        val fileSize = metaDict(Symbol("size")).toLong
-        logger.debug(s"Destination size is $fileSize")
-        if(bytesCopied!=fileSize){
-          Left(Seq(s"Copied file byte size $bytesCopied did not match source file $fileSize"))
-        } else {
-          Right( () )
-        }
-    })
-
-    checkFuture.flatMap({
-      case Left(errors)=>Future(Left(errors))
-      case Right(nothing)=>
-        destFile.updateFileHasContent.map({
-          case Success(rowsUpdated)=>
-            Right(destFile.copy(hasContent = true))
-          case Failure(error)=>
-            Left(Seq(error.toString))
-        })
-    })
-  }
-*/
 
   def findFile(targetFile: FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
     val futures = Future.sequence(Seq(targetFile.storage, targetFile.getFullPath))
@@ -254,7 +178,7 @@ class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector) {
 
       maybeStorageDriver match {
         case Some(storageDriver)=>
-          storageDriver.pathExists(targetFile.filepath, targetFile.version)
+          storageDriver.pathExists(fullPath, targetFile.version)
         case None=>
           throw new RuntimeException(s"No storage driver defined for ${maybeStorage.map(_.repr).getOrElse("unknown storage")}")
       }
