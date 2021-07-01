@@ -2,7 +2,7 @@ import React from "react";
 import axios from "axios";
 import PropTypes from "prop-types";
 import { Redirect } from "react-router-dom";
-import SummaryComponent from "./SummaryComponent.jsx";
+import SummaryComponent from "./SummaryComponent";
 import ErrorViewComponent from "../common/ErrorViewComponent.jsx";
 import CommonCompletionComponent from "../common/CommonCompletionComponent.jsx";
 

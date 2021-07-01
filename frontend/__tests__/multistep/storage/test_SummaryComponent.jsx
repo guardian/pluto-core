@@ -1,7 +1,7 @@
 import React from "react";
 import { shallow, mount } from "enzyme";
 import moxios from "moxios";
-import SummaryComponent from "../../../app/multistep/storage/SummaryComponent.jsx";
+import SummaryComponent from "../../../app/multistep/storage/SummaryComponent.tsx";
 import sinon from "sinon";
 
 const entries = require("object.entries");

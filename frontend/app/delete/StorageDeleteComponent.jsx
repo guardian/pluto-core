@@ -1,6 +1,6 @@
 import React from "react";
 import GeneralDeleteComponent from "./GeneralDeleteComponent.jsx";
-import SummaryComponent from "../multistep/storage/SummaryComponent.jsx";
+import SummaryComponent from "../multistep/storage/SummaryComponent.tsx";
 
 class StorageDeleteComponent extends GeneralDeleteComponent {
   constructor(props) {

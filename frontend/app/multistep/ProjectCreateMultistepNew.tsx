@@ -225,6 +225,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
           <InProgressComponent
             didFail={creationFailed !== undefined}
             errorMessage={creationFailed}
+            description="Creating your project, please wait..."
           />
         ) : null}
         {activeStep == 7 && createdProjectId && commissionId ? (
