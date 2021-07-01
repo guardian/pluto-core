@@ -1,5 +1,6 @@
 import React from "react";
 import { TextField, Typography } from "@material-ui/core";
+import { multistepStyles } from "../common/CommonMultistepContainer";
 
 interface StorageSubfolderComponentProps {
   currentStorage: StorageType;
@@ -12,6 +13,8 @@ interface StorageSubfolderComponentProps {
 const StorageSubfolderComponent: React.FC<StorageSubfolderComponentProps> = (
   props
 ) => {
+  const classes = multistepStyles();
+
   return (
     <>
       <Typography variant="h3">Storage Subfolder</Typography>
@@ -20,7 +23,7 @@ const StorageSubfolderComponent: React.FC<StorageSubfolderComponentProps> = (
           <table>
             <tbody>
               <tr>
-                <td style={{ verticalAlign: "bottom" }}>Subfolder path</td>
+                <td className={classes.labelCell}>Subfolder path</td>
                 <td>
                   <TextField
                     value={props.rootPath}
@@ -32,7 +35,7 @@ const StorageSubfolderComponent: React.FC<StorageSubfolderComponentProps> = (
                 </td>
               </tr>
               <tr>
-                <td style={{ verticalAlign: "bottom" }}>
+                <td className={classes.labelCell}>
                   Client mount point (if any)
                 </td>
                 <td>

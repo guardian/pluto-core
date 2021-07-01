@@ -1,5 +1,6 @@
 import React from "react";
 import { TextField, Typography } from "@material-ui/core";
+import { multistepStyles } from "../common/CommonMultistepContainer";
 
 interface StorageLoginComponentProps {
   currentStorage: StorageType;
@@ -8,6 +9,8 @@ interface StorageLoginComponentProps {
 }
 
 const StorageLoginComponent: React.FC<StorageLoginComponentProps> = (props) => {
+  const classes = multistepStyles();
+
   if (!props.currentStorage.needsLogin) {
     return (
       <>
@@ -26,13 +29,15 @@ const StorageLoginComponent: React.FC<StorageLoginComponentProps> = (props) => {
           information we need to log in to it. If any field is not applicable,
           leave it blank
         </Typography>
-        <table className="full-width">
+        <table className={classes.fullWidth}>
           <tbody>
             <tr>
-              <td className="narrow">Storage host (or bucket name)</td>
+              <td className={classes.labelCell}>
+                Storage host (or bucket name)
+              </td>
               <td>
                 <TextField
-                  className="full-width"
+                  className={classes.fullWidth}
                   id="hostname_input"
                   label="Host name"
                   value={props.loginDetails.hostname}
@@ -47,10 +52,12 @@ const StorageLoginComponent: React.FC<StorageLoginComponentProps> = (props) => {
               </td>
             </tr>
             <tr>
-              <td className="narrow">Storage port (if applicable)</td>
+              <td className={classes.labelCell}>
+                Storage port (if applicable)
+              </td>
               <td>
                 <TextField
-                  className="full-width"
+                  className={classes.fullWidth}
                   id="port_input"
                   label="Host port"
                   value={props.loginDetails.port.toString()}
@@ -65,15 +72,15 @@ const StorageLoginComponent: React.FC<StorageLoginComponentProps> = (props) => {
               </td>
             </tr>
             <tr>
-              <td className="narrow">
+              <td className={classes.labelCell}>
                 Device (if applicable)
-                <Typography className="explanation">
+                <Typography className={classes.information}>
                   For ObjectMatrix storage, this is the "vault ID"
                 </Typography>
               </td>
               <td>
                 <TextField
-                  className="full-width"
+                  className={classes.fullWidth}
                   id="device_input"
                   value={props.loginDetails.device}
                   label="Device"
@@ -88,10 +95,10 @@ const StorageLoginComponent: React.FC<StorageLoginComponentProps> = (props) => {
               </td>
             </tr>
             <tr>
-              <td className="narrow">User name</td>
+              <td className={classes.labelCell}>User name</td>
               <td>
                 <TextField
-                  className="full-width"
+                  className={classes.fullWidth}
                   id="username_input"
                   label="Username"
                   value={props.loginDetails.username}
@@ -106,10 +113,10 @@ const StorageLoginComponent: React.FC<StorageLoginComponentProps> = (props) => {
               </td>
             </tr>
             <tr>
-              <td className="narrow">Password</td>
+              <td className={classes.labelCell}>Password</td>
               <td>
                 <TextField
-                  className="full-width"
+                  className={classes.fullWidth}
                   id="password_input"
                   type="password"
                   label="Password"

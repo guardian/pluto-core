@@ -36,6 +36,18 @@ const multistepStyles = makeStyles((theme) => ({
   warning: {
     color: theme.palette.warning.main,
   },
+  information: {
+    color: theme.palette.info.main,
+    fontSize: "0.8em",
+    fontStyle: "italic",
+  },
+  labelCell: {
+    verticalAlign: "bottom",
+    width: "25%",
+  },
+  fullWidth: {
+    width: "100%",
+  },
 }));
 
 const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
