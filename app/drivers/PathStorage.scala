@@ -1,8 +1,9 @@
 package drivers
 
+import helpers.StorageHelper
+
 import java.io._
 import java.nio.file.Paths
-import java.time.{Instant, ZoneId, ZonedDateTime}
 import models.StorageEntry
 import play.api.Logger
 import scala.util.{Failure, Success, Try}
@@ -22,22 +23,33 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     new File(path)
   }
 
-  override def pathExists(path: String, version:Int): Boolean = fileForPath(path).exists()
-
-  override def writeDataToPath(path: String, version:Int, dataStream: InputStream): Try[Unit] = Try {
-    val finalPath = storageRef.rootpath match {
-      case Some(rootpath)=>Paths.get(rootpath,path)
+  def getAbsolutePath(path:String) = {
+    storageRef.rootpath match {
+      case Some(rootpath)=>
+        if(path.startsWith(rootpath)) {
+          Paths.get(path)
+        } else {
+          Paths.get(rootpath,path)
+        }
       case None=>Paths.get(path)
     }
+  }
 
-    val f = this.fileForPath(finalPath.toString)
-    logger.info(s"Writing data to ${f.getAbsolutePath}")
-    val st = new FileOutputStream(f)
+  override def pathExists(path: String, version:Int): Boolean = fileForPath(path).exists()
 
-    st.getChannel.transferFrom(dataStream.asInstanceOf[FileInputStream].getChannel, 0, Long.MaxValue)
+  override def writeDataToPath(path: String, version:Int, dataStream: InputStream): Try[Unit] = {
+    val finalPath = getAbsolutePath(path)
 
-    st.close()
-    logger.info(s"Finished writing to ${f.getAbsolutePath}")
+    Try { this.fileForPath(finalPath.toString) }.flatMap(f=> {
+      logger.info(s"Writing data to ${f.getAbsolutePath}")
+      val st = new FileOutputStream(f)
+
+      val bytesCopied = Try { StorageHelper.copyStream(dataStream, st) }
+      st.close()
+      bytesCopied
+    }).map(bytesCopied=>{
+      logger.info(s"Finished writing $bytesCopied to ${finalPath.toString}")
+    })
   }
 
   def writeDataToPath(path:String, version:Int, data:Array[Byte]):Try[Unit] = Try {
@@ -62,12 +74,12 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
   }
 
   override def getWriteStream(path: String, version:Int): Try[OutputStream] = Try {
-    val f = this.fileForPath(path)
+    val f = getAbsolutePath(path).toFile
     new BufferedOutputStream(new FileOutputStream(f))
   }
 
   override def getReadStream(path: String, version:Int): Try[InputStream] = {
-    val f = this.fileForPath(path)
+    val f = getAbsolutePath(path).toFile
     if(f.exists())
       Success(new BufferedInputStream(new FileInputStream(f)))
     else
@@ -75,11 +87,14 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
   }
 
   override def getMetadata(path: String, version:Int): Map[Symbol, String] = {
-    val f = this.fileForPath(path)
-    Map(
+    val f = getAbsolutePath(path).toFile
+    val result = Map(
       Symbol("size")->f.length().toString,
-      Symbol("lastModified")->ZonedDateTime.ofInstant(Instant.ofEpochSecond(f.lastModified()),ZoneId.systemDefault()).toString
+      Symbol("lastModified")->f.lastModified().toString
     )
+    logger.debug(s"$path: $result")
+    result
+
   }
 
   override def supportsVersions: Boolean = false

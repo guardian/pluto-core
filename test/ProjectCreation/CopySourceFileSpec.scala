@@ -28,7 +28,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
 
   "CopySourceFile->NewProjectRequest" should {
     "copy a source file to a destination file specified" in new WithApplication(buildApp){
-      private val injector = app.injector
+      private implicit val injector = app.injector
 
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
@@ -42,7 +42,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       fileEntryDest must beSuccessfulTry
       fileEntryDest.get.length mustEqual 1
       protected val storageHelper = mock[StorageHelper]
-      storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Right(fileEntryDest.get.head.copy(hasContent = true)))
+      storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(fileEntryDest.get.head.copy(hasContent = true))
 
       val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, storageHelper)))
 
@@ -58,7 +58,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
     }
 
     "return StepFailed if copy operation indicates an error" in new WithApplication(buildApp){
-      private val injector = app.injector
+      private implicit val injector = app.injector
 
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
@@ -72,7 +72,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       fileEntryDest must beSuccessfulTry
       fileEntryDest.get.length mustEqual 1
       protected val storageHelper = mock[StorageHelper]
-      storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future(Left(Seq("Something went KABOOM!")))
+      storageHelper.copyFile(any[FileEntry],any[FileEntry])(any) returns Future.failed(new RuntimeException("Something went KABOOM!"))
 
       val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, storageHelper)))
 
@@ -90,7 +90,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
 
   "CopySourceFile->NewProjectRollback" should {
     "call out to StorageHelper to delete the provided FileEntry from disk" in new WithApplication(buildApp){
-      private val injector = app.injector
+      private implicit val injector = app.injector
 
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])

@@ -1,15 +1,15 @@
 package models
 
 import java.io.FileInputStream
-import java.nio.file.Paths
-
+import java.nio.file.{Path, Paths}
 import slick.jdbc.PostgresProfile.api._
-import java.sql.Timestamp
 
+import java.sql.Timestamp
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import drivers.StorageDriver
 import play.api.Logger
+import play.api.inject.Injector
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc.{RawBuffer, Result}
@@ -33,7 +33,7 @@ import scala.concurrent.{Await, Future}
   * @param hasLink - boolean flag representing whether this entitiy is linked to anything (i.e. a project) yet.
   */
 case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String, version:Int,
-                     ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean) extends PlutoModel {
+                     ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean, backupOf:Option[Int]) extends PlutoModel {
 
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
@@ -87,7 +87,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @param db implicitly provided [[slick.jdbc.PostgresProfile#Backend#Database]]
     * @return A future containing either a Right() containing a Boolean indicating whether the delete happened,  or a Left with an error string
     */
-  def deleteFromDisk(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer):Future[Either[String,Boolean]] = {
+  def deleteFromDisk(implicit db:slick.jdbc.PostgresProfile#Backend#Database, injector:Injector):Future[Either[String,Boolean]] = {
     /**/
     /*it either returns a Right(), with a boolean indicating whether the delete happened or not, or a Left() with an error string*/
     val maybeStorageDriverFuture = this.storage.map({
@@ -166,7 +166,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   }
 
   /* Asynchronously writes the given buffer to this file*/
-  def writeToFile(buffer: RawBuffer)(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer):Future[Try[Unit]] = {
+  def writeToFile(buffer: RawBuffer)(implicit db:slick.jdbc.PostgresProfile#Backend#Database, injector:Injector):Future[Try[Unit]] = {
     val storageResult = this.storage
 
     storageResult.map({
@@ -204,7 +204,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @return a Future, containing a Left with a string if there was an error, or a Right with a Boolean flag indicating if the
     *         pointed object exists on the storage
     */
-  def validatePathExists(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer) = {
+  def validatePathExists(implicit db:slick.jdbc.PostgresProfile#Backend#Database, injector:Injector) = {
     val preReqs = for {
       filePath <- getFullPath
       maybeStorage <- storage
@@ -217,12 +217,43 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
       case None=>Left(s"No storage could be found for ID $storageId on file $id")
     })
   }
+
+  /**
+    * returns some of the backups for this file.  Results are sorted by most recent version first.
+    *
+    * If the storage does not support versioning you would expect only one result.
+    *
+    * @param drop start iterating at this entry
+    * @param take only return this many results max
+    * @param db implicitly provided database object
+    * @return a Future containing a sequence of FileEntry objects. This fails if there is a problem.
+    */
+  def backups(forStorage:Option[Int]=None, drop:Int=0, take:Int=100)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = this.id match {
+    case None=>
+      Future.failed(new RuntimeException("A record must be saved before you can query for backups"))
+    case Some(_)=>
+      val baseQuery = TableQuery[FileEntryRow]
+        .filter(_.backupOf===this.id)
+
+      val finalQuery = forStorage match {
+        case Some(storageId) => baseQuery.filter(_.storage === storageId)
+        case None => baseQuery
+      }
+
+      db.run {
+          finalQuery
+          .sortBy(_.version.desc.nullsLast)
+          .drop(drop)
+          .take(take)
+          .result
+      }
+  }
 }
 
 /**
   * Companion object for the [[FileEntry]] case class
   */
-object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Timestamp, Timestamp, Boolean, Boolean)=>FileEntry) {
+object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Timestamp, Timestamp, Boolean, Boolean, Option[Int])=>FileEntry) {
   /**
     * Get a [[FileEntry]] instance for the given database ID
     * @param entryId database ID to look up
@@ -254,6 +285,42 @@ object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Tim
     db.run(
       TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).sortBy(_.version.desc.nullsLast).result.asTry
     )
+
+
+  /**
+    * returns a list of matching records for the given file name, ordered by most recent first (if versioning is enabled)
+    * @param target file path to query. this should be a relative filepath for the given storage.
+    * @param forStorageId limit results to this storage only
+    * @param db implicitly provided database object
+    * @return a Future containing a sequence of results
+    */
+  def findByFilename(target:Path, forStorageId:Option[Int], drop:Int=0, take:Int=100)(implicit  db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    val baseQuery = TableQuery[FileEntryRow].filter(_.filepath===target.toString)
+    val finalQuery = forStorageId match {
+      case Some(storageId)=> baseQuery.filter(_.storage===storageId)
+      case None=>baseQuery
+    }
+
+    db.run {
+      finalQuery.sortBy(_.version.desc.nullsLast).drop(drop).take(take).result
+    }
+  }
+
+  /**
+    * returns a streaming source that lists out all files in the database, optionally limiting to a given storage ID
+    * @param forStorageId if provided, limit to this storage ID only
+    * @param db implicitly provided database access object
+    * @return an Akka Source, that yields FileEntry objects
+    */
+  def scanAllFiles(forStorageId:Option[Int])(implicit  db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    val baseQuery = TableQuery[FileEntryRow]
+    val finalQuery = forStorageId match {
+      case Some(storageId)=>baseQuery.filter(_.storage===storageId)
+      case None=>baseQuery
+    }
+
+    Source.fromPublisher(db.stream(finalQuery.sortBy(_.mtime.asc).result))
+  }
 }
 
 /**
@@ -273,8 +340,11 @@ class FileEntryRow(tag:Tag) extends Table[FileEntry](tag, "FileEntry") {
   def hasContent = column[Boolean]("b_has_content")
   def hasLink = column[Boolean]("b_has_link")
 
+  def backupOf = column[Option[Int]]("k_backup_of")
   def storageFk = foreignKey("fk_storage",storage,TableQuery[StorageEntryRow])(_.id)
-  def * = (id.?,filepath,storage,user,version,ctime,mtime,atime, hasContent, hasLink) <> (FileEntry.tupled, FileEntry.unapply)
+  def backupFk = foreignKey("fk_backup_of", backupOf, TableQuery[FileEntryRow])(_.id)
+
+  def * = (id.?,filepath,storage,user,version,ctime,mtime,atime, hasContent, hasLink, backupOf) <> (FileEntry.tupled, FileEntry.unapply)
 }
 
 
@@ -294,7 +364,8 @@ trait FileEntrySerializer extends TimestampSerialization {
       (JsPath \ "mtime").write[Timestamp] and
       (JsPath \ "atime").write[Timestamp] and
       (JsPath \ "hasContent").write[Boolean] and
-      (JsPath \ "hasLink").write[Boolean]
+      (JsPath \ "hasLink").write[Boolean] and
+      (JsPath \ "backupOf").writeNullable[Int]
     )(unlift(FileEntry.unapply))
 
   implicit val fileReads: Reads[FileEntry] = (
@@ -307,6 +378,7 @@ trait FileEntrySerializer extends TimestampSerialization {
       (JsPath \ "mtime").read[Timestamp] and
       (JsPath \ "atime").read[Timestamp] and
       (JsPath \ "hasContent").read[Boolean] and
-      (JsPath \ "hasLink").read[Boolean]
+      (JsPath \ "hasLink").read[Boolean] and
+      (JsPath \ "backupOf").readNullable[Int]
     )(FileEntry.apply _)
 }

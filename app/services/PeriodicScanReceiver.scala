@@ -3,6 +3,7 @@ package services
 import akka.actor.{ActorRef, ActorSystem}
 import com.newmotion.akka.rabbitmq._
 import com.rabbitmq.client.{AMQP, ShutdownSignalException}
+import models.{StorageEntry, StorageEntryHelper}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 
@@ -12,9 +13,12 @@ import scala.util.Try
 import org.apache.commons.codec.binary.StringUtils
 
 import java.util.UUID
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class PeriodicScanReceiver @Inject() (config:Configuration,
+                                      projectBackup: ProjectBackup,
                                       @Named("postrun-action-scanner") postrunActionScanner:ActorRef,
                                       @Named("storage-scanner") storageScanner: ActorRef,
                                       @Named("commission-status-propagator") commissionStatusPropagator: ActorRef
@@ -59,36 +63,53 @@ class PeriodicScanReceiver @Inject() (config:Configuration,
             logger.error(s"Received invalid scan request with key ${envelope.getRoutingKey} from exchange ${envelope.getExchange}: ${err.getMessage}", err)
 
           case Right(scanEvent)=>
-            if(handleScanEvent(consumerTag, envelope.getRoutingKey, scanEvent)) {
-              channel.basicAck(envelope.getDeliveryTag, false)
-            } else {
-              logger.warn("Could not handle message, leaving it on-queue")
-            }
+            handleScanEvent(consumerTag, envelope.getRoutingKey, scanEvent).map({
+              case true=>
+                channel.basicAck(envelope.getDeliveryTag, false)
+              case false=>
+                logger.warn("Could not handle message, leaving it on-queue")
+                channel.basicNack(envelope.getDeliveryTag, false, true)
+            })
         }
       }
 
-      def handleScanEvent(consumerTag: String, routingKey: String, scanEvent: ScanEvent): Boolean = {
+      def handleScanEvent(consumerTag: String, routingKey: String, scanEvent: ScanEvent): Future[Boolean] = {
         scanEvent.action match {
           case ServiceEventAction.CancelAction=>
             logger.warn(s"Received cancel for '$routingKey' with '$consumerTag' but this is not implemented yet")
-            false
+            Future(false)
           case ServiceEventAction.PerformAction=>
             routingKey match {
               case "pluto.core.service.storagescan"=>
                 logger.info("Triggering storage check in response to incoming message")
                 storageScanner ! StorageScanner.Rescan
-                true
+                Future(true)
               case "pluto.core.service.commissionstatuspropagator"=>
                 logger.info("Triggering commission status propagator check for retries in response to incoming message")
                 commissionStatusPropagator ! CommissionStatusPropagator.RetryFromState(UUID.randomUUID())
-                true
+                Future(true)
               case "pluto.core.service.postrunaction"=>
                 logger.info("Triggering postrun action check in response to incoming message")
                 postrunActionScanner ! PostrunActionScanner.Rescan
-                true
+                Future(true)
+              case "pluto.core.service.backuptrigger"=>
+                logger.info("Triggering backup action in response to incoming message")
+                projectBackup.backupProjects
+                  .map(results=>{
+                    logger.info(s"Timed backup completed.  ${results.length} storages were backed up")
+                    results.foreach(entry=>{
+                      logger.info(s"\tStorage ID ${entry.storageId}: ${entry.totalCount} files total, ${entry.successCount} copied, ${entry.notNeededCount} did not need backup and ${entry.failedCount} failed")
+                    })
+                    true
+                  })
+                  .recover({
+                    case err:Throwable=>
+                      logger.error(s"Timed backup failed: ${err.getMessage}", err)
+                      false
+                  })
               case _=>
                 logger.warn(s"PeriodicScanReceiver got an unknown message: $routingKey")
-                true
+                Future(true)
             }
         }
       }

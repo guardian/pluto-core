@@ -2,6 +2,7 @@ package controllers
 
 import akka.stream.Materializer
 import auth.BearerTokenAuth
+
 import javax.inject.Inject
 import com.unboundid.ldap.sdk.LDAPConnectionPool
 import models._
@@ -9,6 +10,7 @@ import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.mvc._
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.Injector
 import play.api.libs.json._
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
@@ -23,7 +25,7 @@ class ProjectTemplateController @Inject() (override val controllerComponents:Con
                                            override implicit val config: Configuration,
                                            dbConfigProvider: DatabaseConfigProvider,
                                            cacheImpl:SyncCacheApi)
-                                          (implicit mat:Materializer)
+                                          (implicit mat:Materializer, injector:Injector)
   extends GenericDatabaseObjectController[ProjectTemplate] with ProjectTemplateSerializer with StorageSerializer{
 
   implicit val cache:SyncCacheApi = cacheImpl

@@ -6,6 +6,7 @@ import com.google.inject.Inject
 import models.ProjectEntry
 import org.slf4j.{LoggerFactory, MDC}
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.Injector
 import slick.jdbc.PostgresProfile
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,7 +15,7 @@ import scala.concurrent.Future
 /**
   * pushes the incoming ProjectEntry to "yes" if it exists in the location expected or "no" if it does not.
   */
-class ValidateProjectSwitch @Inject()(dbConfigProvider:DatabaseConfigProvider)(implicit mat:Materializer) extends GraphStage[UniformFanOutShape[ProjectEntry,ProjectEntry]]{
+class ValidateProjectSwitch @Inject()(dbConfigProvider:DatabaseConfigProvider)(implicit mat:Materializer, injector:Injector) extends GraphStage[UniformFanOutShape[ProjectEntry,ProjectEntry]]{
   private val in:Inlet[ProjectEntry] = Inlet.create("ValidateProjectSwitch.in")
   private val yes:Outlet[ProjectEntry] = Outlet.create("ValidateProjectSwitch.yes")
   private val no:Outlet[ProjectEntry] = Outlet.create("ValidateProjectSwitch.no")

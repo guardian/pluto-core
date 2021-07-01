@@ -31,7 +31,7 @@ frontend:
     - merge_requests
 
 backend:
-  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20210302_1
+  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20210629_1
   stage: build
   services:
     - postgres:9.6
@@ -72,7 +72,7 @@ backend:
     - merge_requests
   
 upload_periodictriggerapp:
-  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20210302_1
+  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20210629_1
   stage: deploy
   services:
     - docker:19.03.11-dind
@@ -109,7 +109,7 @@ upload_periodictriggerapp:
     - merge_requests
 
 upload:
-  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20210302_1
+  image: registry.gitlab.com/codmill/customer-projects/guardian/pluto-core/projectlockerbuild:20210629_1
   stage: deploy
   services:
     - docker:19.03.11-dind

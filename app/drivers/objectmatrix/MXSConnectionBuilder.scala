@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 import scala.util.{Failure, Success, Try}
 
 
-case class MXSConnectionBuilder(hosts: Array[String], vaultId:String, accessKeyId:String, accessKeySecret:String) {
+case class MXSConnectionBuilder(hosts: Array[String], accessKeyId:String, accessKeySecret:String) {
   def build() = Try {
     val credentials = Credentials.newAccessKeyCredentials(accessKeyId, accessKeySecret)
 

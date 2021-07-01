@@ -1,14 +1,16 @@
 package drivers
 
-import java.io.{EOFException, InputStream, OutputStream}
-import java.nio.ByteBuffer
+import java.io.{InputStream, OutputStream}
 import java.time.ZonedDateTime
 import akka.stream.Materializer
 import com.om.mxs.client.japi.{Attribute, Constants, MxsObject, SearchTerm, Vault}
 import drivers.objectmatrix.{MXSConnectionBuilder, MxsMetadata, ObjectMatrixEntry}
+import helpers.StorageHelper
 import models.StorageEntry
 import org.slf4j.LoggerFactory
+import play.api.inject.Injector
 
+import java.nio.file.Paths
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 import scala.jdk.CollectionConverters._
@@ -16,52 +18,31 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 /**
-  * TODO:
-  *  - implement no-write-lock in the protocol
   * @param storageRef [[StorageEntry]] instance that this driver instance is assocaited with
   * @param mat implicitly provided ActorMaterializer
   */
-class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:Materializer) extends StorageDriver {
+class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector:Injector) extends StorageDriver {
   private val logger = LoggerFactory.getLogger(getClass)
-  lazy val userInfo = {
-    val splitter = "\\s*,\\s*".r
-    if(storageRef.host.isEmpty){
-      Failure(new RuntimeException("Driver requires host field to be set"))
-    } else if(storageRef.device.isEmpty){
-      Failure(new RuntimeException("Driver requires device to be set"))
-    } else if(storageRef.user.isEmpty){
-      Failure(new RuntimeException("Driver requires user field to be set"))
-    } else if(storageRef.password.isEmpty){
-      Failure(new RuntimeException("Driver requires password field to be set"))
-    } else {
-      val deviceParts = storageRef.device.get.split("\\s*,\\s*")
-      if(deviceParts.length!=2){
-        Failure(new RuntimeException("Malformed device section, should be {cluster-id},{vault-id}"))
-      }
-      Try {
-        MXSConnectionBuilder(splitter.split(storageRef.host.get),
-          storageRef.device.get,
-          storageRef.user.get,
-          storageRef.password.get
-        )
-      }
-    }
-  }
+
+  private val connectionManager = injector.instanceOf(classOf[MXSConnectionManager])
 
   /**
     * wrapper to perform an operation with a vault pointer and ensure that it is disposed when completed
-    * @param blk block to perform operation. This is passed a Vault pointer, and can return anything. The wrapper returns the
+    * @param blk block to perform operation. This is passed a Vault pointer, and can return any type wrapped in a Try. The wrapper returns the
     *            value of the block wrapped in a Try indicating whether the operation succeeded or failed; the vault is disposed
     *            either way
     * @tparam A type of return value of the block
-    * @return
+    * @return the value of the block if successful, or a failure indicating why a connection could not be established
     */
   def withVault[A](blk:Vault=>Try[A]):Try[A] = {
-    for {
-      builder <- userInfo
-      mxs <- builder.build()
-      result <- MXSConnectionBuilder.withVault(mxs, storageRef.device.get)(blk)
-    } yield result
+    (storageRef.host, storageRef.device, storageRef.user, storageRef.password) match {
+      case (Some(h),Some(d),Some(u),Some(p))=>
+        val mxs = connectionManager.getConnection(h,u,p)
+        mxs.flatMap(mxs=>MXSConnectionBuilder.withVault(mxs, d)(blk))
+      case _=>
+        logger.error(s"Storage ${storageRef.id} is misconfigured and is missing at least one of host(s), device, username or password")
+        Failure(new RuntimeException(s"Storage ${storageRef.id} is misconfigured"))
+    }
   }
 
   def withObject[A](vault:Vault,oid:String)(blk:MxsObject=>Try[A]):Try[A] = {
@@ -72,55 +53,6 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
   }
 
   /**
-    * utility function to directly copy from one stream to another
-    * @param input InputStream to read from
-    * @param output OutputStream to write to
-    * @param bufferSize size of the temporary buffer to use.
-    * @return the number of bytes written as a Long. Closes the streams when it is done. Raises exceptions on failure (assumed it's within a try/catch block)
-    */
-  def copyStream(input:InputStream, output:OutputStream, bufferSize:Int) = {
-    val buf=ByteBuffer.allocate(bufferSize)
-    var bytesRead: Int = 0
-    var totalRead: Long = 0
-
-    try {
-      do {
-        bytesRead = input.read(buf.array())
-        if(bytesRead == -1) throw new EOFException
-        totalRead += bytesRead
-        buf.flip()
-        output.write(buf.array(),0,bytesRead)
-        buf.clear()
-      } while (bytesRead > 0)
-      output.close()
-      input.close()
-      totalRead
-    } catch {
-      case _:EOFException=>
-        logger.debug(s"Stream copy reached EOF")
-        totalRead
-    }
-  }
-
-  def writeAttributesWithRetry(mxsFile: MxsObject, attribs:java.util.Collection[com.om.mxs.client.japi.Attribute], attempt:Int=1):Try[Unit] = try {
-    val vw = mxsFile.getAttributeView
-    vw.writeAllAttributes(attribs)
-    Success( () )
-  } catch {
-    case err:com.om.mxs.client.internal.TaggedIOException=>
-      logger.error(s"Could not write attributes for $mxsFile on attempt $attempt: ", err)
-      if(attempt>10){
-        logger.error("Could not write after 10 attempts, giving up")
-        Failure(err)
-      } else {
-        Thread.sleep(500 * attempt)
-        writeAttributesWithRetry(mxsFile, attribs, attempt+1)
-      }
-    case err:Throwable=>
-      Failure(err)
-  }
-
-  /**
     * Directly write an InputStream to the given path, until EOF (blocking)
     * @param path [[String]] absolute path to write
     * @param dataStream [[java.io.FileInputStream]] to write from
@@ -128,24 +60,20 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
   def writeDataToPath(path:String, version:Int, dataStream:InputStream):Try[Unit] = withVault { vault=>
     val mxsFile = lookupPath(vault, path, version) match {
       case None=>
-        val fileMeta = newFileMeta(path, version, -1)
+        val fileMeta = newFileMeta(path, version, None)
         vault.createObject(fileMeta.toAttributes.toArray)
       case Some(oid)=>
         vault.getObject(oid)
     }
 
     val stream = mxsFile.newOutputStream()
-    try {
-      val copiedSize = copyStream(dataStream, stream, 10*1024*1024)
-      val updatedFileMeta = newFileMeta(path, version, copiedSize)
-      writeAttributesWithRetry(mxsFile, updatedFileMeta.toAttributes.asJavaCollection)
-    } catch {
-      case err:Throwable=>
-        logger.error(s"Could not copy file: ", err)
-        Failure(err)
-    } finally {
-      stream.close()
-    }
+
+    val result = for {
+      copiedSize <- Try { StorageHelper.copyStream(dataStream, stream) }
+    } yield copiedSize
+
+    stream.close()
+    result.map(copiedSize=>logger.info(s"Copied $path: $copiedSize bytes"))
   }
 
   /**
@@ -168,37 +96,39 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     }
   }
 
-  def newFileMeta(path:String, version:Int, length:Long) = {
+  def newFileMeta(pathString:String, version:Int, length:Option[Long]) = {
     val currentTime = ZonedDateTime.now()
 
-    MxsMetadata(
+    val path = Paths.get(pathString)
+
+    val initialMeta = MxsMetadata(
       stringValues = Map(
-        "MXFS_FILENAME_UPPER" -> path.toUpperCase,
-        "MXFS_FILENAME"->path,
+        "MXFS_FILENAME_UPPER" -> path.toString.toUpperCase,
+        "MXFS_FILENAME"->path.getFileName.toString,
         "MXFS_PATH"->path.toString,
         "MXFS_MIMETYPE"->"application/octet-stream",
         "MXFS_DESCRIPTION"->s"Projectlocker project $path",
         "MXFS_PARENTOID"->"",
-        "MXFS_FILEEXT"->getFileExt(path).getOrElse("")
+        "MXFS_FILEEXT"->getFileExt(path.getFileName.toString).getOrElse("")
       ),
       boolValues = Map(
         "MXFS_INTRASH"->false,
       ),
       longValues = Map(
-        "DPSP_SIZE"->length,
         "MXFS_MODIFICATION_TIME"->currentTime.toInstant.toEpochMilli,
-        "MXFS_CREATION_TIME"->currentTime.toInstant.toEpochMilli,
         "MXFS_ACCESS_TIME"->currentTime.toInstant.toEpochMilli,
       ),
       intValues = Map(
-        "MXFS_CREATIONDAY"->currentTime.getDayOfMonth,
         "MXFS_COMPATIBLE"->1,
-        "MXFS_CREATIONMONTH"->currentTime.getMonthValue,
-        "MXFS_CREATIONYEAR"->currentTime.getYear,
         "MXFS_CATEGORY"->4,  //set type to "document",
         "PROJECTLOCKER_VERSION"->version
       )
     )
+
+    length match {
+      case None=>initialMeta
+      case Some(actualLength)=>initialMeta.copy(longValues = initialMeta.longValues + ("DPSP_SIZE"->actualLength))
+    }
   }
 
   /**
@@ -211,7 +141,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     val mxsFile = lookupPath(vault, path, version) match {
       case None=>
         logger.debug(s"No path found for $path at version $version on ${vault.getId}")
-        val fileMeta = newFileMeta(path, version, data.length)
+        val fileMeta = newFileMeta(path, version, Some(data.length))
         vault.createObject(fileMeta.toAttributes.toArray)
       case Some(oid)=>
         logger.debug(s"Found entry $oid for path $path at version $version on ${vault.getId}")
@@ -261,8 +191,8 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
         Failure(new RuntimeException(s"File $path does not exist"))
       case Some(oid)=>
         withObject(vault, oid) { mxsObject=>
-        Success(mxsObject.newInputStream())
-      }
+          Try { mxsObject.newInputStream() }
+        }
     }
   }
 
@@ -275,10 +205,14 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     logger.info(s"Writing to file at path $path with version $version on ${storageRef.repr}")
     lookupPath(vault, path, version) match {
       case None=>
-        Failure(new RuntimeException(s"File $path does not exist"))
+        logger.debug(s"No path found for $path at version $version on ${vault.getId}")
+        val fileMeta = newFileMeta(path, version, None)
+        Try {
+          vault.createObject(fileMeta.toAttributes.toArray)
+        }.flatMap(obj=>Try { obj.newOutputStream() })
       case Some(oid)=>
         withObject(vault, oid) { mxsObject=>
-          Success(mxsObject.newOutputStream())
+          Try { mxsObject.newOutputStream() }
         }
     }
   }
@@ -290,44 +224,22 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @return [[Map]] of [[Symbol]] -> [[String]] containing metadata about the given file.
     */
   def getMetadata(path:String, version:Int):Map[Symbol,String] = withVault { vault=>
-    val resultFuture = findByFilename(vault, path, version).map({
-      case None=>
-        Map(Symbol("size")->"-1")
-      case Some(omEntry)=>
-        val fileAttrKeysMap = omEntry.attributes.map(_.toSymbolMap)
-        Map(
-          Symbol("size")->omEntry.fileAttribues.map(_.size).getOrElse(-1).toString,
-          Symbol("lastModified")->omEntry.fileAttribues.map(_.mtime).getOrElse(-1).toString,
-          Symbol("version")->fileAttrKeysMap.getOrElse(Symbol("PROJECTLOCKER_VERSION"),-1).toString
-        ) ++ fileAttrKeysMap.getOrElse(Map())
-    })
+    lookupPath(vault, path, version).map(oid=>Try {
+      val mxsObj = vault.getObject(oid)
+      val attrView = mxsObj.getAttributeView
+      val fileAttrs = mxsObj.getMXFSFileAttributeView.readAttributes()
 
-    //FIXME for future - update protocol to support a Future being returned
-    Try { Await.result(resultFuture, 30.seconds) }
+      Map(
+        Symbol("size")->fileAttrs.size().toString,
+        Symbol("lastModified")->fileAttrs.lastModifiedTime().toString,
+        Symbol("version")->attrView.readInt("PROJECTLOCKER_VERSION").toString
+      )
+    }).getOrElse(Failure(new RuntimeException(s"File $path at version $version does not exist on this storage")))
   } match {
     case Success(map)=>map
     case Failure(err)=>
       logger.error(s"Could not get metadata for $path at version $version: ", err)
       Map()
-  }
-
-  def versionsForFileWithMetadata(vault:Vault, fileName:String) = {
-    val metaFutures = versionsForFile(vault, fileName)
-      .map(oid=>
-        ObjectMatrixEntry(oid).getMetadata(vault,mat,global)
-        .map(entry=>Success(entry))
-        .recover({case err:Throwable=>Failure(err)})
-      )
-
-    Future.sequence(metaFutures).map(results=>{
-      val failures = results.collect({case Failure(err)=>err})
-      if(failures.nonEmpty){
-        logger.error(failures.map(_.toString).mkString("\n"))
-        Left("Could not look up versions, see preceding log message for details")
-      } else {
-        Right(results.collect({case Success(entry)=>entry}))
-      }
-    })
   }
 
   /**
@@ -350,31 +262,24 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit val mat:
     * @return
     */
   def lookupPath(vault:Vault, fileName:String, version:Int)  = {
-    logger.debug(s"Lookup $fileName on OM vault ${vault.getId}")
+    logger.debug(s"Lookup $fileName at version $version on OM vault ${vault.getId}")
 
-    val searchTerm = SearchTerm.createSimpleTerm(new Attribute(Constants.CONTENT, s"MXFS_FILENAME:$fileName"))
+    val searchTerm = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\" AND PROJECTLOCKER_VERSION:$version""")
     //val searchTerm = SearchTerm.createSimpleTerm("PROJECTLOCKER_VERSION", version)
     val results = vault.searchObjects(searchTerm, 1).asScala.toSeq
 
-    val versionedMap = results.map(oid=>(vault.getObject(oid).getAttributeView.readInt("PROJECTLOCKER_VERSION"),oid)).toMap
-    logger.debug(s"Available versions for $fileName: $versionedMap")
-
-    versionedMap.get(version)
-  }
-
-  /**
-    * locate files for the given filename, as stored in the metadata. This assumes that one or at most two records will
-    * be returned and should therefore be more efficient than using the streaming interface. If many records are expected,
-    * this will be inefficient and you should use the streaming interface.
-    * this will return a Future to avoid blocking any other lookup requests that would hit the cache
-    * @param fileName file name to search for
-    * @return a Future, containing either a sequence of zero or more results as String oids or an error
-    */
-  def findByFilename(vault:Vault, fileName:String, version:Int):Future[Option[ObjectMatrixEntry]] =
-    lookupPath(vault, fileName, version) match {
-      case Some(oid)=>ObjectMatrixEntry(oid).getMetadata(vault, mat, global).map(entry=>Some(entry))
-      case None=>Future(None)
+    results.headOption match {
+      case Some(entry)=>
+        logger.debug(s"Got $entry as the OID for $fileName at version $version")
+      case None=>
+        logger.error(s"Could not find anything for $fileName at version $version")
+        val allVersionsQuery = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\"""")
+        val allVersions = vault.searchObjects(allVersionsQuery, 10).asScala.toSeq
+        logger.info(s"Found ${allVersions.length} hits for filename $fileName")
+        allVersions.foreach(oid=>logger.info(s"\t$fileName: $oid"))
     }
+    results.headOption
+  }
 
   /**
     * Does the given path exist on this storage?

@@ -3,11 +3,13 @@ package controllers
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import auth.BearerTokenAuth
+
 import javax.inject.{Inject, Singleton}
 import models.{ProjectEntryRow, StorageEntry, StorageEntryRow, StorageSerializer, StorageType, StorageTypeSerializer}
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.Injector
 import play.api.libs.json._
 import play.api.mvc.{Action, BodyParsers, ControllerComponents, Request}
 import slick.basic.DatabaseConfig
@@ -23,7 +25,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class StoragesController @Inject()
     (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
      override implicit val config: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
-    (implicit mat:Materializer, system:ActorSystem)
+    (implicit mat:Materializer, system:ActorSystem, injector:Injector)
     extends GenericDatabaseObjectController[StorageEntry] with StorageSerializer with StorageTypeSerializer {
 
   implicit val cache:SyncCacheApi = cacheImpl

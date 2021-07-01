@@ -3,9 +3,8 @@ package helpers
 import java.io._
 import java.sql.Timestamp
 import java.time.LocalDateTime
-
 import akka.stream.Materializer
-import drivers.{PathStorage, StorageDriver}
+import drivers.{MatrixStoreDriver, PathStorage, StorageDriver}
 import models.{FileEntry, StorageEntry}
 import org.apache.commons.io.input.NullInputStream
 import org.specs2.mock.Mockito
@@ -21,6 +20,7 @@ import scala.util.{Failure, Success, Try}
 import play.api.test.WithApplication
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
+
 import scala.language.reflectiveCalls //needed for testDoByteCopy
 
 
@@ -45,9 +45,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
       val destStream = new FileOutputStream(destFile)
 
-      implicit val mat:Materializer = mock[Materializer]
-      val h = new StorageHelper
-      val result = h.copyStream(sourceStream,destStream)
+      val result =  StorageHelper.copyStream(sourceStream,destStream)
 
       result mustEqual sourceFile.length
       val checksumDest = s"shasum -a 1 $testFileNameDest" #| "cut -c 1-40" !!
@@ -63,7 +61,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
   "StorageHelper.copyFile" should {
     "look up two file entries, get streams from their device drivers and initiate copy" in new WithApplication(buildApp) {
-      val injector = app.injector
+      private implicit val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
@@ -77,8 +75,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, None)
 
         val realStorageHelper = new StorageHelper
 
@@ -91,7 +89,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         val savedSource = savedResults.get.head
         val savedDest = savedResults.get(1)
         val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
-        result must beRight(savedDest.copy(hasContent = true))
+        result mustEqual(savedDest.copy(hasContent = true))
       } finally { // ensure that test files get deleted. if you don't use try/finally, then if either of these fails the whole test does
         new File(testFileNameSrc).delete()
         new File(testFileNameDest).delete()
@@ -99,7 +97,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
     }
 
     "fail if the destination file is not the same size as the source" in new WithApplication(buildApp){
-      val injector = app.injector
+      private implicit val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
@@ -119,14 +117,14 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = new FileEntry(Some(1234), FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false){
+        val testSourceEntry = new FileEntry(Some(1234), FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None){
           override def storage(implicit db: JdbcBackend#DatabaseDef):Future[Option[StorageEntry]] = {
             println("testSourceEntry.storage")
             Future(Some(mockedStorage))
           }
         }
 
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false,None)
 
         val realStorageHelper = new StorageHelper
 
@@ -140,9 +138,9 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         val savedDest = savedResults.get.head
         println(savedSource)
         println(savedDest)
-        val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
-        //intellij does not like this line, but the compiler does
-        result must beLeft(List("Copied file byte size 61440 did not match source file 1234"))
+        val result = Try { Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds) }
+
+        result must beFailedTry
       } finally { // ensure that test files get deleted. if you don't use try/finally, then if either of these fails the whole test does
         new File(testFileNameSrc).delete()
         new File(testFileNameDest).delete()
@@ -150,7 +148,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
     }
 
     "return an error if source does not have a valid storage driver" in new WithApplication(buildApp){
-      val injector = app.injector
+      private implicit val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
@@ -161,8 +159,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 2, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 2, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, None)
 
         val realStorageHelper = new StorageHelper
 
@@ -174,8 +172,9 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
         val savedSource = savedResults.get.head
         val savedDest = savedResults.get(1)
-        val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
-        result mustEqual Left(List("Either source or destination was missing a storage or a storage driver"))
+        val result = Try { Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds) }
+        result must beFailedTry //Left(List("Either source or destination was missing a storage or a storage driver"))
+        result.failed.get.getMessage mustEqual "Storage with ID 2 does not have a valid storage type"
       } finally {
         new File(testFileNameSrc).delete()
         new File(testFileNameDest).delete()
@@ -183,7 +182,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
     }
 
     "return an error if dest does not have a valid storage driver" in new WithApplication(buildApp){
-      val injector = app.injector
+      private implicit val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
       // create a test file
@@ -193,8 +192,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false)
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 2, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 2, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, None)
 
         val realStorageHelper = new StorageHelper
 
@@ -206,90 +205,13 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
         val savedSource = savedResults.get.head
         val savedDest = savedResults.get(1)
-        val result = Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds)
-        result mustEqual Left(List("Either source or destination was missing a storage or a storage driver"))
+        val result = Try { Await.result(realStorageHelper.copyFile(savedSource, savedDest), 10.seconds) }
+        result must beFailedTry //List("Either source or destination was missing a storage or a storage driver"))
       } finally {
         new File(testFileNameSrc).delete()
         new File(testFileNameDest).delete()
       }
     }
 
-  }
-
-  "StorageHelper.doByteCopy" should {
-    "return an error if getting the source stream failed" in {
-      val mockStorageDriver = mock[PathStorage]
-
-      val sourceStreamTry = Failure(new RuntimeException("Kaboom!"))
-      val destStreamTry = Success(mock[FileOutputStream])
-      implicit val mat:Materializer = mock[Materializer]
-      val h = new StorageHelper {
-        def testDoByteCopy(sourceStorageDriver:StorageDriver,
-                           sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
-                           sourceFullPath:String, sourceVersion:Int, destFullPath: String) =
-          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,sourceVersion, destFullPath)
-      }
-
-      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
-
-      result must beLeft
-      result.swap.getOrElse(Seq()).length mustEqual 2
-      result.swap.getOrElse(Seq()).head mustEqual "java.lang.RuntimeException: Kaboom!"
-      result.swap.getOrElse(Seq("no values present"))(1) mustEqual ""
-    }
-
-    "return an error if getting the destination stream failed" in {
-      val mockStorageDriver = mock[PathStorage]
-
-      val sourceStreamTry = Success(mock[FileInputStream])
-      val destStreamTry = Failure(new RuntimeException("Kaboom!"))
-      implicit val mat:Materializer = mock[Materializer]
-      val h = new StorageHelper {
-        /**
-          * helper to call through to protected method
-          */
-        def testDoByteCopy(sourceStorageDriver:StorageDriver,
-                           sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
-                           sourceFullPath:String, sourceVersion:Int, destFullPath: String) =
-          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,sourceVersion, destFullPath)
-      }
-
-      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
-
-      result must beLeft
-      result.swap.getOrElse(Seq()).length mustEqual 2
-      result.swap.getOrElse(Seq()).head mustEqual ""
-      result.swap.getOrElse(Seq())(1) mustEqual "java.lang.RuntimeException: Kaboom!"
-    }
-
-    "catch and pass along any exception thrown from copyStream as a Left stringvalue" in {
-      val mockStorageDriver = mock[PathStorage]
-
-      val sourceStreamTry = Success(mock[FileInputStream])
-      val destStreamTry = Success(mock[FileOutputStream])
-
-      implicit val mat:Materializer = mock[Materializer]
-      val h = new StorageHelper {
-        /**
-          * stub implementation to throw exception
-          */
-        override def copyStream(source: InputStream, dest: OutputStream, chunkSize: Int): Int = {
-          throw new RuntimeException("**raspberry**")
-        }
-        /**
-          * helper to call through to protected method
-          */
-        def testDoByteCopy(sourceStorageDriver:StorageDriver,
-                           sourceStreamTry:Try[InputStream], destStreamTry:Try[OutputStream],
-                           sourceFullPath:String, sourceVersion:Int, destFullPath: String) =
-          doByteCopy(sourceStorageDriver,sourceStreamTry,destStreamTry,sourceFullPath,sourceVersion, destFullPath)
-      }
-
-      val result = h.testDoByteCopy(mockStorageDriver, sourceStreamTry,destStreamTry,"/source",123,"/dest")
-
-      result must beLeft
-      result.swap.getOrElse(Seq()).length mustEqual 1
-      result.swap.getOrElse(Seq()).head mustEqual "java.lang.RuntimeException: **raspberry**"
-    }
   }
 }

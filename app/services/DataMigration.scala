@@ -277,7 +277,7 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
             val ctime = maybeCTimeRaw.map(ctime=>Timestamp.from(ctime.toInstant)).getOrElse(Timestamp.from(Instant.now))
             val atime = maybeATimeRaw.map(atime=>Timestamp.from(atime.toInstant)).getOrElse(Timestamp.from(Instant.now))
 
-            val ent = FileEntry(None, forFilePath, onStorageId, "migration",1, ctime, modTime, atime, hasContent=true, hasLink=true)
+            val ent = FileEntry(None, forFilePath, onStorageId, "migration",1, ctime, modTime, atime, hasContent=true, hasLink=true,None)
             ent.save.map({
               case Success(savedEntry)=>savedEntry
               case Failure(exception)=>throw exception
