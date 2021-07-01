@@ -3,7 +3,7 @@ import React from "react";
 import axios from "axios";
 
 import StorageTypeComponent from "./storage/TypeComponent.jsx";
-import StorageLoginComponent from "./storage/LoginComponent.jsx";
+import StorageLoginComponent from "./storage/LoginComponent";
 import StorageSubfolderComponent from "./storage/SubfolderComponent.jsx";
 import StorageCompletionComponent from "./storage/CompletionComponent.jsx";
 import CommonMultistepRoot from "./common/CommonMultistepRoot.jsx";

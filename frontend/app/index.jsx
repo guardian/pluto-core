@@ -49,6 +49,7 @@ import { Header, AppSwitcher, handleUnauthorized } from "pluto-headers";
 import "./styles/app.css";
 import CommissionEntryEditComponent from "./CommissionsList/CommissionEntryEditComponent";
 import ProjectCreateMultistepNew from "./multistep/ProjectCreateMultistepNew";
+import StorageMultistepNew from "./multistep/StorageMultistepNew";
 
 library.add(faSearch);
 
@@ -215,8 +216,8 @@ class App extends React.Component {
           }
         >
           <div className="app">
-            <Header></Header>
-            <AppSwitcher onLoginValid={this.onLoginValid}></AppSwitcher>
+            <Header />
+            <AppSwitcher onLoginValid={this.onLoginValid} />
 
             <div id="mainbody" className="mainbody">
               <Switch>
@@ -224,7 +225,10 @@ class App extends React.Component {
                   path="/storage/:itemid/delete"
                   component={StorageDeleteComponent}
                 />
-                <Route path="/storage/:itemid" component={StorageMultistep} />
+                <Route
+                  path="/storage/:itemid"
+                  component={StorageMultistepNew}
+                />
                 <Route path="/storage/" component={StorageListComponent} />
                 <Route
                   path="/template/:itemid/delete"
