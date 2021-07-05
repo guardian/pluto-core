@@ -61,11 +61,12 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
 
   /**
     * returns a FileEntry indicating a target file to write.
-    * this is guaranteed to be on the destination storage given
-    * if the destination storage supports versioning, then it is guaranteed not to exist yet (previous dest entry with the version field incremented).
-    * If the destination storage does NOT support versioning, then it will be identical to the "previous" dest entry provided
-    * if there is no "previous" destination that a new entry will be created from the source entry's metadata
-    * if the Source entry does not exist then that's an error
+    * This is guaranteed to be on the destination storage given.
+    *   - if the destination storage supports versioning, then it is guaranteed not to exist yet (previous dest entry with the version field incremented).
+    *   - If the destination storage does NOT support versioning, then it will be identical to the "previous" dest entry provided
+    *   - if there is no "previous" destination that a new entry will be created from the source entry's metadata
+    *   - if the Source entry does not exist then that's an error
+    *
     * @param maybeSourceFileEntry option containing the source file entry
     * @param maybePrevDestEntry optional destination of the previous iteration
     * @param destStorage destination storage
@@ -270,7 +271,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
             case Right(None)=>Future(Right(None))
             case Right(Some((destEntry, sourceEntry)))=>
               makeProjectLink(sourceEntry, destEntry)
-              .map(_=>Right(destEntry))
+              .map(_=>Right(Some(destEntry)))
               .recover({
                 case err:Throwable=>
                   Left(err.toString)
