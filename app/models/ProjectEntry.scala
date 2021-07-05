@@ -58,8 +58,6 @@ extends PlutoModel{
       defaultStorage <- projectDefaultStorage
       result <- lookupProjectFiles(if(allVersions) None else defaultStorage.flatMap(_.id))
     } yield result
-
-    //lookupProjectFiles(TableQuery[FileEntryRow])
   }
 
   /**
