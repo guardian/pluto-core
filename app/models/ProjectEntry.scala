@@ -2,9 +2,9 @@ package models
 
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
+
 import java.sql.Timestamp
 import java.time.LocalDateTime
-
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone.UTC
 import play.api.libs.functional.syntax._
@@ -20,13 +20,44 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
                          commissionId: Option[Int], deletable: Option[Boolean], deep_archive: Option[Boolean],
                          sensitive: Option[Boolean], status:EntryStatus.Value, productionOffice: ProductionOffice.Value)
 extends PlutoModel{
-  def associatedFiles(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Seq[FileEntry]] = {
-    db.run(
-      TableQuery[FileAssociationRow].filter(_.projectEntry===this.id.get).result.asTry
-    ).map({
-      case Success(result)=>result.map(assocTuple=>FileEntry.entryFor(assocTuple._2, db))
-      case Failure(error)=> throw error
-    }).flatMap(Future.sequence(_)).map(_.flatten)
+  def projectDefaultStorage(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Option[StorageEntry]] = {
+    import cats.implicits._
+    for {
+      defaults <- db.run(TableQuery[DefaultsRow]
+        .filter(_.name === "project_storage_id").result)
+        .map(_.headOption)
+        .map(_.flatMap(entry=>Try { entry.value.toInt }.toOption))
+      entry <- defaults.map(entryId=>
+        db.run(
+          TableQuery[StorageEntryRow].filter(_.id===entryId).result
+        ).map(_.headOption)
+      ).sequence.map(_.flatten)
+    } yield entry
+  }
+
+  /**
+    * looks up the files known to be associated with this projectEntry in the database
+    * @param allVersions if `true`, then all versions are returned across all storages with the highest version first and
+    *                    un-set versions last.  If `false`, then only results on the project default storage (assumed unversioned)
+    *                    are returned
+    * @param db implicitly provided database object
+    * @return a Future, containing a Sequence of matching FileEntry objects
+    */
+  def associatedFiles(allVersions:Boolean)(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Seq[FileEntry]] = {
+    def lookupProjectFiles(maybeLimitStorage:Option[Int]) = db.run {
+      TableQuery[FileAssociationRow]
+        .filter(_.projectEntry===id.get)
+        .join(TableQuery[FileEntryRow])
+        .on(_.fileEntry===_.id)
+        .filterOpt(maybeLimitStorage)(_._2.storage===_)
+        .sortBy(_._2.version.desc.nullsLast)
+        .result
+    }.map(_.map(_._2))
+
+    for {
+      defaultStorage <- projectDefaultStorage
+      result <- lookupProjectFiles(if(allVersions) None else defaultStorage.flatMap(_.id))
+    } yield result
   }
 
   /**

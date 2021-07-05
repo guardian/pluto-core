@@ -4,15 +4,13 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
 import drivers.StorageDriver
 import helpers.StorageHelper
-import models.{FileEntry, StorageEntry, StorageEntryHelper, StorageEntryRow}
+import models.{FileAssociation, FileAssociationRow, FileEntry, StorageEntry, StorageEntryHelper, StorageEntryRow}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import services.ProjectBackup.BackupResults
 import slick.jdbc.PostgresProfile
-import slick.lifted
-import slick.lifted.TableQuery
 
 import java.nio.file.{Path, Paths}
 import javax.inject.{Inject, Singleton}
@@ -37,29 +35,63 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
   }
 
   /**
+    * Checks to find the next available (not existing) version number on the storage
+    * @param destStorage destination storage that FileEntry will be written to. The storage driver associated with this
+    *                    storage is then used for lookup.
+    * @param intendedTarget FileEntry with `version` set to the initial estimate of what the version should be
+    */
+  protected def findAvailableVersion(destStorage:StorageEntry, intendedTarget:FileEntry) = {
+    destStorage.getStorageDriver match {
+      case Some(driver)=>
+        implicit val drv:StorageDriver = driver
+        def findAvailable(target:FileEntry):Future[FileEntry] = {
+          target.validatePathExistsDirect.flatMap({
+            case true=>
+              logger.debug(s"${target.filepath} ${target.version} exists on ${destStorage}, trying next version")
+              findAvailable(target.copy(version = target.version+1))
+            case false=>
+              logger.debug(s"${target.filepath} ${target.version} does not exist on $destStorage")
+              Future(target)
+          })
+        }
+        findAvailable(intendedTarget)
+      case None=>Future.failed(new RuntimeException(s"No storage driver available for storage ${destStorage.id}"))
+    }
+  }
+
+  /**
     * returns a FileEntry indicating a target file to write.
-    * this is guaranteed to be on the destination storage given
-    * if the destination storage supports versioning, then it is guaranteed not to exist yet (previous dest entry with the version field incremented).
-    * If the destination storage does NOT support versioning, then it will be identical to the "previous" dest entry provided
-    * if there is no "previous" destination that a new entry will be created from the source entry's metadata
-    * if the Source entry does not exist then that's an error
+    * This is guaranteed to be on the destination storage given.
+    *   - if the destination storage supports versioning, then it is guaranteed not to exist yet (previous dest entry with the version field incremented).
+    *   - If the destination storage does NOT support versioning, then it will be identical to the "previous" dest entry provided
+    *   - if there is no "previous" destination that a new entry will be created from the source entry's metadata
+    *   - if the Source entry does not exist then that's an error
+    *
     * @param maybeSourceFileEntry option containing the source file entry
     * @param maybePrevDestEntry optional destination of the previous iteration
     * @param destStorage destination storage
     * @return a Future containing a FileEntry to write to.  This should be saved to the database before proceeding to write.
     */
-  def ascertainTarget(maybeSourceFileEntry:Option[FileEntry], maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = Future {
+  def ascertainTarget(maybeSourceFileEntry:Option[FileEntry], maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = {
     (maybeSourceFileEntry, maybePrevDestEntry) match {
-      case (Some(_), Some(prevDestEntry))=>
+      case (Some(sourceEntry), Some(prevDestEntry))=>
+        logger.debug(s"${sourceEntry.filepath}: prevDestEntry is $prevDestEntry")
         if(destStorage.supportsVersions) {
-          logger.info(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${prevDestEntry.version+1}")
-          prevDestEntry.copy(id=None, version = prevDestEntry.version+1, hasContent = false, hasLink = true)
+          val intendedTarget = prevDestEntry.copy(id=None, version = prevDestEntry.version+1, hasContent = false, hasLink = true)
+          findAvailableVersion(destStorage, intendedTarget)
+            .map(correctedTarget=>{
+              logger.info(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${correctedTarget.version+1}")
+              correctedTarget
+            })
         } else {
           logger.warn(s"Backup destination storage ${destStorage.id} ${destStorage.rootpath} does not support versioning, so last backup will get over-written")
-          prevDestEntry
+          Future(prevDestEntry)
         }
       case (Some(sourceEntry), None)=>
-        sourceEntry.copy(id=None, storageId=destStorage.id.get,version=1, hasContent=false, hasLink=true,backupOf = sourceEntry.id)
+        logger.debug(s"${sourceEntry.filepath}: no prev dest entry")
+        Future(
+          sourceEntry.copy(id=None, storageId=destStorage.id.get,version=1, hasContent=false, hasLink=true,backupOf = sourceEntry.id)
+        )
       case (None, _)=>
         throw new RuntimeException("Can't back up as source file was not found")  //fail the Future
     }
@@ -127,6 +159,35 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
   }
 
   /**
+    * adds a row to the FileAssociationRow table to associate the new backup with the same project as
+    * the source file.
+    * the `destEntry` MUST have been saved, so it has an `id` attribute set. If not the Future will fail.
+    * if the `sourceEntry` does not have an existing project association nothing will be done.
+    * @param sourceEntry FileEntry instance that is being copied from
+    * @param destEntry FileEntry instance that has just been copied to
+    * @return a Future, with an Option contianing the number of changed rows if an action was taken.
+    */
+  def makeProjectLink(sourceEntry:FileEntry, destEntry:FileEntry) = {
+    import slick.jdbc.PostgresProfile.api._
+    import cats.implicits._
+
+    def addRow(forProjectId:Int) = db.run {
+      TableQuery[FileAssociationRow] += (forProjectId, destEntry.id.get)
+    }
+
+    sourceEntry.id match {
+      case Some(sourceId) =>
+        for {
+          existingLink <- db.run(TableQuery[FileAssociationRow].filter(_.fileEntry === sourceId).result)
+          result <- existingLink
+            .headOption
+            .map(existingAssociation=>addRow(existingAssociation._1))
+            .sequence //convert Option[Future[A]] into Future[Option[A]] via cats
+        } yield result
+    }
+  }
+
+  /**
     * tries to perform a backup of the given file path from the given source storage.
     * @param sourceEntry FileEntry that might need to be backed up
     * @param sourceStorage StorageEntry that holds the source
@@ -134,9 +195,9 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     * @return a Future, which contains either:
     *         - a string-sequence of copy errors on failure;
     *         - None if the file did not need to be copied;
-    *         - a FileEntry of the newly copied backup file if it did need to be copied.
+    *         - a tuple of two FileEntrues of the newly copied backup file and the source, respectfully, if the file did need to be copied.
     */
-  def performBackup(sourceEntry:FileEntry, sourceStorage:StorageEntry, destStorage:StorageEntry):Future[Either[String, Option[FileEntry]]] = {
+  def performBackup(sourceEntry:FileEntry, sourceStorage:StorageEntry, destStorage:StorageEntry):Future[Either[String, Option[(FileEntry, FileEntry)]]] = {
     (sourceStorage.getStorageDriver, destStorage.getStorageDriver) match {
       case (Some(sourceStorageDriver), Some(destStorageDriver)) =>
         val checkFuture = for {
@@ -156,7 +217,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
 
               targetFileEntry.flatMap(updatedDestEntry=>{
                 storageHelper.copyFile(sourceEntry, updatedDestEntry)
-                  .map(fileEntry=>Right(Some(fileEntry)))
+                  .map(fileEntry=>Right(Some(fileEntry, sourceEntry)))
                   .recoverWith({
                     case err:Throwable=>
                       logger.error(s"Could not copy ${updatedDestEntry.filepath} on ${updatedDestEntry.storageId} from ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${err.getMessage}",err)
@@ -205,6 +266,17 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
         logger.debug(s"Source storage is ${storageEntry.storageType} with ID ${storageEntry.id}, dest storage is ${storageEntry.storageType} with ID ${storageEntry.id}")
         FileEntry.scanAllFiles(Some(forStorageId))
           .mapAsync(parallelCopies)(entry=>performBackup(entry, storageEntry, destStorageEntry))
+          .mapAsync(parallelCopies)({
+            case err@Left(_)=>Future(err)
+            case Right(None)=>Future(Right(None))
+            case Right(Some((destEntry, sourceEntry)))=>
+              makeProjectLink(sourceEntry, destEntry)
+              .map(_=>Right(Some(destEntry)))
+              .recover({
+                case err:Throwable=>
+                  Left(err.toString)
+              })
+          })
           .toMat(Sink.fold(BackupResults.empty(forStorageId))((acc, elem)=>elem match {
             case Left(errs)=>
               logger.warn(s"Backup failed: ${errs}")
@@ -224,7 +296,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     import slick.jdbc.PostgresProfile.api._
 
     def storagesToBackup = db.run {
-      lifted.TableQuery[StorageEntryRow]
+      TableQuery[StorageEntryRow]
         .filter(_.backsUpTo.isDefined)
         .map(_.id)
         .result
