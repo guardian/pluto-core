@@ -42,7 +42,7 @@ GET     /api/project/distinctowners         @controllers.ProjectEntryController.
 
 PUT     /api/project                        @controllers.ProjectEntryController.create
 GET     /api/project/forFilename            @controllers.Files.projectFromFile(filename: String)
-GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int)
+GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int, allVersions:Boolean ?=false)
 GET     /api/project/:id                    @controllers.ProjectEntryController.getitem(id: Int)
 GET     /api/project/vsid/:vsid                  @controllers.ProjectEntryController.getByVsid(vsid:String)
 PUT     /api/project/:id/wasopened          @controllers.ProjectEntryController.projectWasOpened(id: Int)

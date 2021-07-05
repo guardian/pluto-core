@@ -28,14 +28,14 @@ class ValidateProjectSwitch @Inject()(dbConfigProvider:DatabaseConfigProvider)(i
     private implicit val db = dbConfig.db
 
     setHandler(in, new AbstractInHandler {
-      override def onPush(): Unit = {
-        val yesCb = createAsyncCallback[ProjectEntry](entry=>push(yes,entry))
-        val noCb = createAsyncCallback[ProjectEntry](entry=>push(no, entry))
-        val errorCb = createAsyncCallback[Throwable](err=>failStage(err))
+      val yesCb = createAsyncCallback[ProjectEntry](entry=>push(yes,entry))
+      val noCb = createAsyncCallback[ProjectEntry](entry=>push(no, entry))
+      val errorCb = createAsyncCallback[Throwable](err=>failStage(err))
 
+      override def onPush(): Unit = {
         val elem = grab(in)
 
-        elem.associatedFiles.map(entries=>{
+        elem.associatedFiles(true).map(entries=>{
           Future.sequence(entries.map(_.validatePathExists)).map(lookups=>{
             val failures = lookups.collect({case Left(err)=>err})
             if(failures.nonEmpty){
@@ -57,12 +57,12 @@ class ValidateProjectSwitch @Inject()(dbConfigProvider:DatabaseConfigProvider)(i
       }
     })
 
-    setHandler(yes, new AbstractOutHandler {
+    val defaultOutHandler = new AbstractOutHandler {
       override def onPull(): Unit = if(!hasBeenPulled(in)) pull(in)
-    })
+    }
 
-    setHandler(no, new AbstractOutHandler {
-      override def onPull(): Unit = if(!hasBeenPulled(in)) pull(in)
-    })
+    setHandler(yes, defaultOutHandler)
+
+    setHandler(no, defaultOutHandler)
   }
 }
