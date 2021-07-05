@@ -60,9 +60,11 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
   def writeDataToPath(path:String, version:Int, dataStream:InputStream):Try[Unit] = withVault { vault=>
     val mxsFile = lookupPath(vault, path, version) match {
       case None=>
+        logger.debug(s"Object for $path $version does not exist, creating new...")
         val fileMeta = newFileMeta(path, version, None)
         vault.createObject(fileMeta.toAttributes.toArray)
       case Some(oid)=>
+        logger.debug(s"Object for $path $version already exists at $oid")
         vault.getObject(oid)
     }
 
