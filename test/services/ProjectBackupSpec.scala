@@ -62,9 +62,18 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
     }
 
     "build a new destination entry from the destination entry with version incremented" in new WithApplication(buildApp) {
-      val fakeTargetStorage = StorageEntry(
-        Some(999), None, None, None, "local",None, None, None,None, None, true, None, None
-      )
+//      val fakeTargetStorage = StorageEntry(
+//        Some(999), None, None, None, "local",None, None, None,None, None, true, None, None
+//      )
+
+      val fakeStorageDriver = mock[StorageDriver]
+      fakeStorageDriver.pathExists(any, any) returns false
+
+      val fakeTargetStorage = mock[StorageEntry]
+      fakeTargetStorage.id returns Some(999)
+      fakeTargetStorage.storageType returns "local"
+      fakeTargetStorage.getStorageDriver(any) returns Some(fakeStorageDriver)
+      fakeTargetStorage.supportsVersions returns true
 
       val nowTime = Instant.now()
       val sourceFile = FileEntry(

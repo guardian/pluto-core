@@ -98,10 +98,11 @@ case class StorageEntry(id: Option[Int], nickname:Option[String], rootpath: Opti
       })
   }
 
-  def validatePathExists(filePath:String, version:Int)(implicit injector:Injector) = getStorageDriver.map(drv=>drv.pathExists(filePath, version)) match {
-    case None=>Left(s"No storage driver exists for storage $id ($rootpath)!")
-    case Some(result)=>Right(result)
-  }
+  def validatePathExists(filePath:String, version:Int)(implicit injector:Injector) =
+    getStorageDriver.map(drv=>drv.pathExists(filePath, version)) match {
+      case None=>Left(s"No storage driver exists for storage $id ($rootpath)!")
+      case Some(result)=>Right(result)
+    }
 }
 
 class StorageEntryRow(tag:Tag) extends Table[StorageEntry](tag, "StorageEntry") {

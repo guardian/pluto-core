@@ -60,11 +60,8 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     *  returns a StorageEntry object for the id of the storage of this FileEntry */
   def storage(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[StorageEntry]] = {
     db.run(
-      TableQuery[StorageEntryRow].filter(_.id===storageId).result.asTry
-    ).map({
-      case Success(result)=>Some(result.head)
-      case Failure(error)=>None
-    })
+      TableQuery[StorageEntryRow].filter(_.id===storageId).result
+    ).map(_.headOption)
   }
 
   /**
@@ -216,6 +213,19 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
       case Some(result)=>result
       case None=>Left(s"No storage could be found for ID $storageId on file $id")
     })
+  }
+
+  /**
+    * check if this FileEntry points to something real on disk.
+    * intended to be used in streaming/looping contexts, this expects a StorageDriver for the relevant storage
+    * to be provided externally rather than provisioning one internally
+    *
+    * @param db
+    * @param driver
+    * @return
+    */
+  def validatePathExistsDirect(implicit db:slick.jdbc.PostgresProfile#Backend#Database, driver:StorageDriver) = {
+    getFullPath.map(path=>driver.pathExists(path, version))
   }
 
   /**

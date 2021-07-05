@@ -272,7 +272,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
       case Some(entry)=>
         logger.debug(s"Got $entry as the OID for $fileName at version $version")
       case None=>
-        logger.error(s"Could not find anything for $fileName at version $version")
+        logger.info(s"Could not find anything for $fileName at version $version")
         val allVersionsQuery = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\"""")
         val allVersions = vault.searchObjects(allVersionsQuery, 10).asScala.toSeq
         logger.info(s"Found ${allVersions.length} hits for filename $fileName")

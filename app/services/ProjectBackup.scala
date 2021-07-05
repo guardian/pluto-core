@@ -35,6 +35,29 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
   }
 
   /**
+    * Checks to find the next available (not existing) version number on the storage
+    * @param destStorage destination storage that FileEntry will be written to. The storage driver associated with this
+    *                    storage is then used for lookup.
+    * @param intendedTarget FileEntry with `version` set to the initial estimate of what the version should be
+    */
+  protected def findAvailableVersion(destStorage:StorageEntry, intendedTarget:FileEntry) = {
+    destStorage.getStorageDriver match {
+      case Some(driver)=>
+        implicit val drv:StorageDriver = driver
+        def findAvailable(target:FileEntry):Future[FileEntry] = {
+          target.validatePathExistsDirect.flatMap({
+            case true=>
+              findAvailable(target.copy(version = target.version+1))
+            case false=>
+              Future(target)
+          })
+        }
+        findAvailable(intendedTarget)
+      case None=>Future.failed(new RuntimeException(s"No storage driver available for storage ${destStorage.id}"))
+    }
+  }
+
+  /**
     * returns a FileEntry indicating a target file to write.
     * this is guaranteed to be on the destination storage given
     * if the destination storage supports versioning, then it is guaranteed not to exist yet (previous dest entry with the version field incremented).
@@ -46,18 +69,26 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     * @param destStorage destination storage
     * @return a Future containing a FileEntry to write to.  This should be saved to the database before proceeding to write.
     */
-  def ascertainTarget(maybeSourceFileEntry:Option[FileEntry], maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = Future {
+  def ascertainTarget(maybeSourceFileEntry:Option[FileEntry], maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = {
     (maybeSourceFileEntry, maybePrevDestEntry) match {
-      case (Some(_), Some(prevDestEntry))=>
+      case (Some(sourceEntry), Some(prevDestEntry))=>
+        logger.debug(s"${sourceEntry.filepath}: prevDestEntry is $prevDestEntry")
         if(destStorage.supportsVersions) {
-          logger.info(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${prevDestEntry.version+1}")
-          prevDestEntry.copy(id=None, version = prevDestEntry.version+1, hasContent = false, hasLink = true)
+          val intendedTarget = prevDestEntry.copy(id=None, version = prevDestEntry.version+1, hasContent = false, hasLink = true)
+          findAvailableVersion(destStorage, intendedTarget)
+            .map(correctedTarget=>{
+              logger.info(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${correctedTarget.version+1}")
+              correctedTarget
+            })
         } else {
           logger.warn(s"Backup destination storage ${destStorage.id} ${destStorage.rootpath} does not support versioning, so last backup will get over-written")
-          prevDestEntry
+          Future(prevDestEntry)
         }
       case (Some(sourceEntry), None)=>
-        sourceEntry.copy(id=None, storageId=destStorage.id.get,version=1, hasContent=false, hasLink=true,backupOf = sourceEntry.id)
+        logger.debug(s"${sourceEntry.filepath}: no prev dest entry")
+        Future(
+          sourceEntry.copy(id=None, storageId=destStorage.id.get,version=1, hasContent=false, hasLink=true,backupOf = sourceEntry.id)
+        )
       case (None, _)=>
         throw new RuntimeException("Can't back up as source file was not found")  //fail the Future
     }
