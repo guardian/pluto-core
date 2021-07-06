@@ -104,14 +104,16 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
 
       getDestFileFor(entryRequest.rq, recordTimestamp).flatMap(fileEntry=> {
         logger.info(s"Creating file $fileEntry")
-        fileEntry.save.map({
-          case Success(savedFileEntry) =>
+        fileEntry.save
+          .map(savedFileEntry=> {
             originalSender ! StepSucceded(projectCreateData.copy(destFileEntry = Some(savedFileEntry)))
-          case Failure(error) =>
-            MDC.put("fileEntry", fileEntry.toString)
-            logger.error("Failed to create file", error)
-            originalSender ! StepFailed(projectCreateData, error)
-        })
+          })
+          .recover({
+            case error:Throwable=>
+              MDC.put("fileEntry", fileEntry.toString)
+              logger.error("Failed to create file", error)
+              originalSender ! StepFailed(projectCreateData, error)
+          })
       }).recover({
         case error:Throwable=>
           MDC.put("entryRequest", entryRequest.toString)

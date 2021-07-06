@@ -8,6 +8,7 @@ import java.sql.Timestamp
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import drivers.StorageDriver
+import org.slf4j.LoggerFactory
 import play.api.Logger
 import play.api.inject.Injector
 import play.api.libs.functional.syntax._
@@ -34,25 +35,21 @@ import scala.concurrent.{Await, Future}
   */
 case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String, version:Int,
                      ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean, backupOf:Option[Int]) extends PlutoModel {
+  private val logger = LoggerFactory.getLogger(getClass)
 
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
     * was set, then returns the same object. */
-  def save(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Try[FileEntry]] = id match {
+  def save(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[FileEntry] = id match {
     case None=>
       val insertQuery = TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
-      db.run(
-        (insertQuery+=this).asTry
-      ).map({
-        case Success(insertResult)=>Success(insertResult.asInstanceOf[FileEntry])  //maybe only intellij needs the cast here?
-        case Failure(error)=>Failure(error)
-      })
+      db.run(insertQuery+=this)
     case Some(realEntityId)=>
       db.run(
-        TableQuery[FileEntryRow].filter(_.id===realEntityId).update(this).asTry
-      ).map({
-        case Success(rowsAffected)=>Success(this)
-        case Failure(error)=>Failure(error)
+        TableQuery[FileEntryRow].filter(_.id===realEntityId).update(this)
+      ).map(rowsAffected=>{
+        logger.debug(s"Update of file entry with id $id ($filepath vers $version on $storageId) modified $rowsAffected rows")
+        this
       })
   }
 

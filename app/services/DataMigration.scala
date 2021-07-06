@@ -278,10 +278,7 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
             val atime = maybeATimeRaw.map(atime=>Timestamp.from(atime.toInstant)).getOrElse(Timestamp.from(Instant.now))
 
             val ent = FileEntry(None, forFilePath, onStorageId, "migration",1, ctime, modTime, atime, hasContent=true, hasLink=true,None)
-            ent.save.map({
-              case Success(savedEntry)=>savedEntry
-              case Failure(exception)=>throw exception
-            })
+            ent.save
         }
       case Failure(err)=>
         logger.error(s"Could not get file entry for $forFilePath: ", err)

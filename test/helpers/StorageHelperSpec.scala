@@ -80,9 +80,9 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
         val realStorageHelper = new StorageHelper
 
-        val savedResults = Await.result(
-          Future.sequence(Seq(testSourceEntry.save, testDestEntry.save)).map(results => Try(results.map(_.get)))
-          , 10.seconds)
+        val savedResults = Try { Await.result(
+          Future.sequence(Seq(testSourceEntry.save, testDestEntry.save))
+          , 10.seconds) }
 
         savedResults must beSuccessfulTry
 
@@ -128,9 +128,11 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
         val realStorageHelper = new StorageHelper
 
-        val savedResults = Await.result(
-          Future.sequence(Seq(testDestEntry.save)).map(results => Try(results.map(_.get)))
-          , 10.seconds)
+        val savedResults = Try {
+          Await.result(
+            Future.sequence(Seq(testDestEntry.save))
+            , 10.seconds)
+        }
 
         savedResults must beSuccessfulTry
 
@@ -164,9 +166,11 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
         val realStorageHelper = new StorageHelper
 
-        val savedResults = Await.result(
-          Future.sequence(Seq(testSourceEntry.save, testDestEntry.save)).map(results => Try(results.map(_.get)))
-          , 10.seconds)
+        val savedResults = Try {
+          Await.result(
+            Future.sequence(Seq(testSourceEntry.save, testDestEntry.save))
+            , 10.seconds)
+        }
 
         savedResults must beSuccessfulTry
 
@@ -197,9 +201,11 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
         val realStorageHelper = new StorageHelper
 
-        val savedResults = Await.result(
-          Future.sequence(Seq(testSourceEntry.save, testDestEntry.save)).map(results => Try(results.map(_.get)))
-          , 10.seconds)
+        val savedResults = Try {
+          Await.result(
+            Future.sequence(Seq(testSourceEntry.save, testDestEntry.save))
+            , 10.seconds)
+        }
 
         savedResults must beSuccessfulTry
 

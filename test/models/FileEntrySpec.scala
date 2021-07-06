@@ -15,6 +15,7 @@ import java.nio.file.Paths
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.util.Try
 
 class FileEntrySpec extends Specification with utils.BuildMyApp {
   tag("controllers")
@@ -65,7 +66,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       val ts = Timestamp.valueOf(LocalDateTime.now())
       val testFileEntry = FileEntry(None,"/path/to/nonexisting",1,"test-user",1,ts,ts,ts,false,false, None)
 
-      val result = Await.result(testFileEntry.save, 10.seconds)
+      val result = Try { Await.result(testFileEntry.save, 10.seconds) }
       result must beSuccessfulTry
       result.get.id must beSome //ensure that the ID has been set
 
@@ -91,7 +92,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       testFileEntry.get.mtime mustEqual Timestamp.valueOf("2016-12-11 12:21:11.021")
       val fileEntryUpdated = testFileEntry.get.copy(user="test-user", mtime = ts)
 
-      val updateResult = Await.result(fileEntryUpdated.save,10.seconds)
+      val updateResult = Try { Await.result(fileEntryUpdated.save,10.seconds) }
       updateResult must beSuccessfulTry
 
       val testEntryRead = Await.result(FileEntry.entryFor(4,db),10.seconds)

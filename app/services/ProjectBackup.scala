@@ -211,12 +211,12 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
               logger.info(s"Starting backup of ${sourceEntry.filepath} from storage ID ${sourceStorage.id} to ${destStorage.id}")
               val targetFileEntry = for {
                 targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)
-                updatedEntryTry <- targetDestEntry.save
-                updatedDestEntry <- Future.fromTry(updatedEntryTry) //make sure that we get the updated database id of the file
+                updatedDestEntry <- targetDestEntry.save
               } yield updatedDestEntry
 
               targetFileEntry.flatMap(updatedDestEntry=>{
                 storageHelper.copyFile(sourceEntry, updatedDestEntry)
+                  .flatMap(_.save)
                   .map(fileEntry=>Right(Some(fileEntry, sourceEntry)))
                   .recoverWith({
                     case err:Throwable=>
