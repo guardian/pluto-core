@@ -14,6 +14,7 @@ import {
   MakeStorageCreationDoc,
 } from "./storage/CreationAction";
 import { useHistory } from "react-router";
+import { Typography } from "@material-ui/core";
 
 interface StorageMultistepParams {
   itemId?: string;
@@ -77,7 +78,7 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
 
   //if a storage has been specified to edit, load in the data
   useEffect(() => {
-    if (props.match.params.itemId == "new") {
+    if (!props.match.params.itemId) {
       console.debug("creating new storage, nothing to load");
       return;
     }
@@ -268,15 +269,27 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
           />
         ) : undefined}
         {activeStep == 3 && selectedType != undefined ? (
-          <SummaryComponent
-            rootPath={rootpath}
-            clientPath={clientpath}
-            loginDetails={loginDetails}
-            storageType={strgTypes[selectedType]}
-            enableVersions={enableVersions}
-            nickName={nickname}
-            nickNameChanged={(newValue) => setNickname(newValue)}
-          />
+          <>
+            <Typography variant="h3">Set up storage</Typography>
+            <Typography>
+              We will set up a new storage definition with the information
+              below.
+            </Typography>
+            <Typography>
+              Press "Confirm" to go ahead, or press Previous if you need to
+              amend any details.
+            </Typography>
+
+            <SummaryComponent
+              rootPath={rootpath}
+              clientPath={clientpath}
+              loginDetails={loginDetails}
+              storageType={strgTypes[selectedType]}
+              enableVersions={enableVersions}
+              nickName={nickname}
+              nickNameChanged={(newValue) => setNickname(newValue)}
+            />
+          </>
         ) : undefined}
       </>
     </CommonMultistepContainer>

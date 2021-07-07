@@ -12,7 +12,7 @@ import ProjectTypeList from "./ProjectTypeList.jsx";
 import FileDeleteComponent from "./delete/FileDeleteComponent.jsx";
 
 import StorageMultistep from "./multistep/StorageMultistep.jsx";
-import StorageDeleteComponent from "./delete/StorageDeleteComponent.jsx";
+import StorageContextComponent from "./delete/StorageDeleteComponent";
 
 import TypeDeleteComponent from "./delete/TypeDeleteComponent.jsx";
 
@@ -221,7 +221,7 @@ class App extends React.Component {
               <Switch>
                 <Route
                   path="/storage/:itemid/delete"
-                  component={StorageDeleteComponent}
+                  component={StorageContextComponent}
                 />
                 <Route
                   path="/storage/:itemid"
