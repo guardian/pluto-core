@@ -20,6 +20,7 @@ describe("Storage SummaryComponent", () => {
           name: "test storage type",
           hasSubfolders: true,
           canVersion: false,
+          needsLogin: true,
         }}
         loginDetails={{
           host: "somehostname",
@@ -33,6 +34,7 @@ describe("Storage SummaryComponent", () => {
 
     expect(rendered.find("table")).toBeTruthy();
     expect(rendered.find("td#storageType").text()).toEqual("test storage type");
+
     expect(rendered.find(".login-description").length).toEqual(4);
     expect(rendered.find(".login-value").length).toEqual(4);
 

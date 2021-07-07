@@ -11,7 +11,6 @@ import ProjectTypeList from "./ProjectTypeList.jsx";
 
 import FileDeleteComponent from "./delete/FileDeleteComponent.jsx";
 
-import StorageMultistep from "./multistep/StorageMultistep.jsx";
 import StorageContextComponent from "./delete/StorageDeleteComponent";
 
 import TypeDeleteComponent from "./delete/TypeDeleteComponent.jsx";
