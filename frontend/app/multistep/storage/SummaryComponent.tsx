@@ -2,6 +2,7 @@ import React from "react";
 import ShowPasswordComponent from "../ShowPasswordComponent.jsx";
 import { TextField, Typography } from "@material-ui/core";
 import { multistepStyles } from "../common/CommonMultistepContainer";
+import StorageEntryView from "../../EntryViews/StorageEntryView";
 
 interface SummaryComponentProps {
   storageType: StorageType;
@@ -9,6 +10,7 @@ interface SummaryComponentProps {
   rootPath: string;
   clientPath: string;
   enableVersions: boolean;
+  backsUpTo: number | undefined;
   nickName: string;
   nickNameChanged?: (newValue: string) => void;
 }
@@ -71,6 +73,18 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
           <td className={classes.labelCell}>Client path</td>
           <td className={classes.fullWidth} id="storageClientPath">
             {props.clientPath ? props.clientPath : "(none)"}
+          </td>
+        </tr>
+        <tr>
+          <td className={classes.labelCell}>Backing up to</td>
+          <td className={classes.fullWidth} id="backsUpTo">
+            {props.backsUpTo ? (
+              <StorageEntryView entryId={props.backsUpTo} />
+            ) : (
+              <Typography className={classes.information}>
+                No backup configured
+              </Typography>
+            )}
           </td>
         </tr>
         <tr>

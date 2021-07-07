@@ -120,6 +120,7 @@ const StorageDeleteComponent: React.FC<RouteComponentProps<{
           rootPath={storageData?.rootpath ?? ""}
           clientPath={storageData?.clientpath ?? ""}
           enableVersions={storageData?.supportsVersion ?? false}
+          backsUpTo={storageData?.backsUpTo}
           nickName={storageData?.nickname ?? ""}
         />
       )}

@@ -15,6 +15,7 @@ interface StorageCreationDoc {
   device: string | undefined;
   supportsVersions: boolean;
   nickname: string | undefined;
+  backsUpTo: number | undefined;
 }
 
 interface StorageCreationResult extends GeneralCreationResult {
@@ -45,7 +46,8 @@ function MakeStorageCreationDoc(
   password: string,
   device: string,
   supportsVersions: boolean,
-  nickname: string
+  nickname: string,
+  backsUpTo?: number
 ): StorageCreationDoc {
   return {
     rootpath: rootpath,
@@ -58,6 +60,7 @@ function MakeStorageCreationDoc(
     device: device == "" ? undefined : device,
     supportsVersions: supportsVersions,
     nickname: nickname == "" ? undefined : nickname,
+    backsUpTo: backsUpTo,
   };
 }
 

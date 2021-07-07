@@ -15,6 +15,7 @@ import {
 } from "./storage/CreationAction";
 import { useHistory } from "react-router";
 import { Typography } from "@material-ui/core";
+import BackupsComponent from "./storage/BackupsComponent";
 
 interface StorageMultistepParams {
   itemid?: string;
@@ -48,6 +49,7 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
   const [rootpath, setRootpath] = useState("");
   const [clientpath, setClientpath] = useState("");
   const [nickname, setNickname] = useState("");
+  const [backsUpTo, setBacksUpTo] = useState<number | undefined>(undefined);
 
   const history = useHistory();
 
@@ -55,6 +57,7 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
     "Storage type",
     "Login details",
     "Subfolder location",
+    "Backups",
     "Confirm",
   ];
 
@@ -209,7 +212,8 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
       loginDetails.password,
       loginDetails.device,
       enableVersions,
-      nickname
+      nickname,
+      backsUpTo
     );
     setCreationFailed(undefined);
     setCreationInProgress(true);
@@ -277,7 +281,14 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
             clientPathWasSet={setClientpath}
           />
         ) : undefined}
-        {activeStep == 3 && selectedType != undefined ? (
+        {activeStep == 3 ? (
+          <BackupsComponent
+            onChange={(newValue) => setBacksUpTo(newValue)}
+            selectedBackupStorage={backsUpTo}
+            existingStorageId={existingStorageId}
+          />
+        ) : undefined}
+        {activeStep == 4 && selectedType != undefined ? (
           <>
             <Typography variant="h3">
               {existingStorageId ? "Update" : "Set up"} storage
@@ -298,6 +309,7 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
               loginDetails={loginDetails}
               storageType={strgTypes[selectedType]}
               enableVersions={enableVersions}
+              backsUpTo={backsUpTo}
               nickName={nickname}
               nickNameChanged={(newValue) => setNickname(newValue)}
             />

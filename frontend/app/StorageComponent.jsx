@@ -44,6 +44,10 @@ class StorageListComponent extends GeneralListComponent {
       GeneralListComponent.standardColumn("Hostname (if applicable)", "host"),
       GeneralListComponent.standardColumn("Port", "port"),
       GeneralListComponent.boolColumn("Versioning Enabled", "supportsVersions"),
+      GeneralListComponent.standardColumn(
+        "Backs up to storage ID",
+        "backsUpTo"
+      ),
       this.actionIcons(),
     ];
   }
