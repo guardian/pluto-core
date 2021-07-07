@@ -17,7 +17,7 @@ import { useHistory } from "react-router";
 import { Typography } from "@material-ui/core";
 
 interface StorageMultistepParams {
-  itemId?: string;
+  itemid?: string;
 }
 
 const StorageMultistepNew: React.FC<RouteComponentProps<
@@ -29,6 +29,9 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
     undefined
   );
 
+  const [existingStorageId, setExistingStorageId] = useState<
+    number | undefined
+  >(undefined);
   const [strgTypes, setStrgTypes] = useState<StorageType[]>([]);
   const [selectedType, setSelectedType] = useState<number | undefined>(0);
 
@@ -78,10 +81,11 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
 
   //if a storage has been specified to edit, load in the data
   useEffect(() => {
-    if (!props.match.params.itemId) {
+    if (!props.match.params.itemid || props.match.params.itemid == "new") {
       console.debug("creating new storage, nothing to load");
       return;
     }
+
     if (!strgTypes) {
       console.debug(
         "not loading in specified match until storage types available"
@@ -91,11 +95,11 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
 
     axios
       .get<PlutoApiResponse<StorageEntry>>(
-        `/api/storage/${props.match.params.itemId}`
+        `/api/storage/${props.match.params.itemid}`
       )
       .then((result) => {
         setSelectedType(findStorageType(result.data.result.storageType));
-        setEnableVersions(result.data.result.supportsVersion);
+        setEnableVersions(result.data.result.supportsVersion ?? false);
         setLoginDetails({
           hostname: result.data.result.host ?? "",
           port: result.data.result.port ?? 0,
@@ -103,10 +107,14 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
           username: result.data.result.user ?? "",
           password: result.data.result.password ?? "",
         });
+        setRootpath(result.data.result.rootpath ?? "");
+        setClientpath(result.data.result.clientpath ?? "");
+        setNickname(result.data.result.nickname ?? "");
+        setExistingStorageId(result.data.result.id);
       })
       .catch((err) => {
         console.error(
-          `Could not load in existing storage '${props.match.params.itemId}: `,
+          `Could not load in existing storage '${props.match.params.itemid}: `,
           err
         );
         SystemNotification.open(
@@ -205,14 +213,14 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
     );
     setCreationFailed(undefined);
     setCreationInProgress(true);
-    const result = await CreateStorage(doc, undefined);
+    const result = await CreateStorage(doc, existingStorageId);
 
     if (result.createdOk) {
       setCreationInProgress(false);
       history.push("/storage/");
       SystemNotification.open(
         SystemNotificationKind.Success,
-        "Created storage"
+        `${existingStorageId ? "Updated" : "Created"} storage`
       );
     } else {
       setCreationFailed(result.errorMessage);
@@ -239,9 +247,10 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
       creationFailed={creationFailed}
       canComplete={canComplete}
       createClicked={createClicked}
+      createButtonLabel={existingStorageId ? "Update" : "Create"}
     >
       <>
-        {activeStep == 0 ? (
+        {activeStep == 0 && strgTypes ? (
           <StorageTypeComponent
             strgTypes={strgTypes}
             selectedType={selectedType}
@@ -270,10 +279,13 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
         ) : undefined}
         {activeStep == 3 && selectedType != undefined ? (
           <>
-            <Typography variant="h3">Set up storage</Typography>
+            <Typography variant="h3">
+              {existingStorageId ? "Update" : "Set up"} storage
+            </Typography>
             <Typography>
-              We will set up a new storage definition with the information
-              below.
+              We will{" "}
+              {existingStorageId ? "update the existing" : "set up a new"}{" "}
+              storage definition with the information below.
             </Typography>
             <Typography>
               Press "Confirm" to go ahead, or press Previous if you need to

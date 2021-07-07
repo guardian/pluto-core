@@ -23,6 +23,7 @@ interface CommonMultistepContainerProps {
   creationFailed: string | undefined;
   canComplete: () => boolean | 0 | undefined;
   createClicked: () => Promise<void>;
+  createButtonLabel?: string;
 }
 
 const multistepStyles = makeStyles((theme) => ({
@@ -145,7 +146,7 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
                     endIcon={<CheckCircle />}
                     onClick={createClicked}
                   >
-                    Create
+                    {props.createButtonLabel ?? "Create"}
                   </Button>
                 </span>
               </Tooltip>
