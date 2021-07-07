@@ -3,9 +3,10 @@ package drivers
 import helpers.StorageHelper
 
 import java.io._
-import java.nio.file.Paths
+import java.nio.file.{Files, Paths}
 import models.StorageEntry
 import play.api.Logger
+
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -35,7 +36,7 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     }
   }
 
-  override def pathExists(path: String, version:Int): Boolean = fileForPath(path).exists()
+  override def pathExists(path: String, version:Int): Boolean = Files.exists(getAbsolutePath(path))
 
   override def writeDataToPath(path: String, version:Int, dataStream: InputStream): Try[Unit] = {
     val finalPath = getAbsolutePath(path)
@@ -94,7 +95,6 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
     )
     logger.debug(s"$path: $result")
     result
-
   }
 
   override def supportsVersions: Boolean = false

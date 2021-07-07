@@ -127,35 +127,44 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     * @return a boolean indicating whether copying is needed, wrapped in a Future
     */
   def checkNeedsBackup(maybeSourceEntry:Option[FileEntry], maybePrevDestEntry:Option[FileEntry], sourceStorageDriver:StorageDriver, destStorageDriver:StorageDriver) = {
-    (maybeSourceEntry, maybePrevDestEntry) match {
-      case (None, _)=>  //if there is no source we can't continue
-        Future.failed(new RuntimeException("There was no source file to back up"))
-      case (_, None)=>  //if there is no destination, then we definitely need backup
-        Future(true)
-      case (Some(sourceEntry), Some(destEntry))=>
-        val sourceMeta = sourceStorageDriver.getMetadata(sourceEntry.filepath, sourceEntry.version)
-        val destMeta = destStorageDriver.getMetadata(destEntry.filepath, destEntry.version)
-        val sourceSizeStr = sourceMeta.get(Symbol("size"))
-        val sourceMod = extractModTime(sourceMeta, sourceEntry)
-        val destSizeStr = destMeta.get(Symbol("size"))
-        val destMod = extractModTime(destMeta, destEntry)
+    import cats.implicits._
+    maybeSourceEntry
+      .map(_.validatePathExistsDirect(db, sourceStorageDriver))
+      .sequence
+      .flatMap(maybeExists=> {
+        (maybeSourceEntry, maybePrevDestEntry) match {
+          case (None, _)=>  //if there is no source we can't continue
+            Future.failed(new RuntimeException("There was no source file to back up"))
+          case (_, None)=>  //if there is no destination, then we definitely need backup
+            Future(true)
+          case (Some(sourceEntry), Some(destEntry))=>
+            val sourceMeta = sourceStorageDriver.getMetadata(sourceEntry.filepath, sourceEntry.version)
+            val destMeta = destStorageDriver.getMetadata(destEntry.filepath, destEntry.version)
+            val sourceSizeStr = sourceMeta.get(Symbol("size"))
+            val sourceMod = extractModTime(sourceMeta, sourceEntry)
+            val destSizeStr = destMeta.get(Symbol("size"))
+            val destMod = extractModTime(destMeta, destEntry)
 
-        logger.debug(s"${sourceEntry.filepath} version ${sourceEntry.version} on ${sourceEntry.storageId} has size $sourceSizeStr and last modified $sourceMod")
-        logger.debug(s"${destEntry.filepath} version ${destEntry.version} on ${destEntry.storageId} has size $destSizeStr and last modified $destMod")
+            logger.debug(s"${sourceEntry.filepath} version ${sourceEntry.version} on ${sourceEntry.storageId} has size $sourceSizeStr and last modified $sourceMod")
+            logger.debug(s"${destEntry.filepath} version ${destEntry.version} on ${destEntry.storageId} has size $destSizeStr and last modified $destMod")
 
-        if(sourceSizeStr.isEmpty || sourceMod.isEmpty) {
-          Future.failed(new RuntimeException(s"Could not get one or both of file size and mod time from source storage for ${sourceEntry.filepath} on storage id ${sourceEntry.storageId}"))
-        } else if(destSizeStr.isEmpty || destMod.isEmpty) {
-          logger.warn(s"Got destination size ${destSizeStr} and destination modtime ${destMod} which is not correct. Forcing backup.")
-          Future(true)
-        } else if(sourceSizeStr!=destSizeStr) { //file size mismatch - always backup
-          Future(true)
-        } else if(sourceMod.get > destMod.get) { //file sizes do match, but if the source has been modified since the backup copy it anyway
-          Future(true)
-        } else {                                //if we get here, then the sizes match and the source modtime is equal or earlier than the backup modtime
-          Future(false)
+            if(maybeExists.contains(false)) {
+              logger.warn(s"Known file ${sourceEntry} does not exist on disk!")
+              Future(false)
+            } else if(sourceSizeStr.isEmpty || sourceMod.isEmpty) {
+              Future.failed(new RuntimeException(s"Could not get one or both of file size and mod time from source storage for ${sourceEntry.filepath} on storage id ${sourceEntry.storageId}"))
+            } else if(destSizeStr.isEmpty || destMod.isEmpty) {
+              logger.warn(s"Got destination size ${destSizeStr} and destination modtime ${destMod} which is not correct. Forcing backup.")
+              Future(true)
+            } else if(sourceSizeStr!=destSizeStr) { //file size mismatch - always backup
+              Future(true)
+            } else if(sourceMod.get > destMod.get) { //file sizes do match, but if the source has been modified since the backup copy it anyway
+              Future(true)
+            } else {                                //if we get here, then the sizes match and the source modtime is equal or earlier than the backup modtime
+              Future(false)
+            }
         }
-    }
+      })
   }
 
   /**
@@ -184,6 +193,9 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
             .map(existingAssociation=>addRow(existingAssociation._1))
             .sequence //convert Option[Future[A]] into Future[Option[A]] via cats
         } yield result
+      case None=>
+        logger.debug(s"File $sourceEntry is not linked to any project")
+        Future(None)
     }
   }
 

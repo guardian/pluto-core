@@ -14,9 +14,11 @@ import play.api.test.WithApplication
 import java.nio.file.{Path, Paths}
 import java.sql.Timestamp
 import java.time.Instant
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.util.Try
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito {
   "ProjectBackup.relativeFilePath" should {
@@ -159,19 +161,29 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
   "ProjectBackup.checkNeedsBackup" should {
     "error if the source file is None" in new WithApplication(buildApp) {
       val toTest = app.injector.instanceOf(classOf[ProjectBackup])
+      val sourceStorageDriver = mock[StorageDriver]
+      sourceStorageDriver.pathExists(any,any) returns true
 
-      val firstResult = Try { Await.result(toTest.checkNeedsBackup(None,Some(mock[FileEntry]), mock[StorageDriver], mock[StorageDriver]), 2.seconds) }
+      val firstResult = Try { Await.result(toTest.checkNeedsBackup(None,Some(mock[FileEntry]), sourceStorageDriver, mock[StorageDriver]), 2.seconds) }
       firstResult must beFailedTry
+      there was no(sourceStorageDriver).pathExists(any,any)
 
       val nextResult = Try { Await.result(toTest.checkNeedsBackup(None,None, mock[StorageDriver], mock[StorageDriver]), 2.seconds) }
       nextResult must beFailedTry
+      there was no(sourceStorageDriver).pathExists(any,any)
     }
 
     "return true if the source file exists and the destination doesn't" in new WithApplication(buildApp) {
       val toTest = app.injector.instanceOf(classOf[ProjectBackup])
+      val fileEntry = mock[FileEntry]
+      fileEntry.filepath returns "/path/to/a/file"
+      fileEntry.version returns 3
+      fileEntry.validatePathExistsDirect(any,any) returns Future(true)
 
-      val result = Try { Await.result(toTest.checkNeedsBackup(Some(mock[FileEntry]), None, mock[StorageDriver], mock[StorageDriver]), 2.seconds) }
+      val result = Try { Await.result(toTest.checkNeedsBackup(Some(fileEntry), None, mock[StorageDriver], mock[StorageDriver]), 2.seconds) }
+
       result must beSuccessfulTry(true)
+      there was one(fileEntry).validatePathExistsDirect(any,any)
     }
 
     "return false if metadata shows no difference between files" in new WithApplication(buildApp) {
@@ -224,6 +236,7 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
       val nowTime = Instant.now().toEpochMilli.toString
       val sourceStorageDriver = mock[StorageDriver]
       sourceStorageDriver.getMetadata(any, any) returns Map(Symbol("size")->"23456", Symbol("lastModified")->nowTime)
+      sourceStorageDriver.pathExists(any,any) returns true
       val destStorageDriver = mock[StorageDriver]
       destStorageDriver.getMetadata(any, any) returns Map(Symbol("size")->"12345", Symbol("lastModified")->nowTime)
 
@@ -258,6 +271,7 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
       val result = Await.result(toTest.checkNeedsBackup(Some(sourceFile), Some(prevBackup), sourceStorageDriver, destStorageDriver), 2.seconds)
       result must beTrue
       there was one(sourceStorageDriver).getMetadata("/path/to/sourcefile", 1)
+      there was one(sourceStorageDriver).pathExists("/backups/projectfiles/path/to/sourcefile", 1)
       there was one(destStorageDriver).getMetadata("/path/to/sourcefile-backup1", 4)
     }
 
@@ -310,6 +324,7 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
       val nowTime = Instant.now().toEpochMilli
       val sourceStorageDriver = mock[StorageDriver]
       sourceStorageDriver.getMetadata(any, any) returns Map(Symbol("size")->"12345", Symbol("lastModified")->nowTime.toString)
+      sourceStorageDriver.pathExists(any,any) returns true
       val destStorageDriver = mock[StorageDriver]
       destStorageDriver.getMetadata(any, any) returns Map(Symbol("size")->"12345", Symbol("lastModified")->(nowTime-150000).toString)
 
@@ -344,6 +359,7 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
       val result = Await.result(toTest.checkNeedsBackup(Some(sourceFile), Some(prevBackup), sourceStorageDriver, destStorageDriver), 2.seconds)
       result must beTrue
       there was one(sourceStorageDriver).getMetadata("/path/to/sourcefile", 1)
+      there was one(sourceStorageDriver).pathExists("/backups/projectfiles/path/to/sourcefile", 1)
       there was one(destStorageDriver).getMetadata("/path/to/sourcefile-backup1", 4)
     }
   }
