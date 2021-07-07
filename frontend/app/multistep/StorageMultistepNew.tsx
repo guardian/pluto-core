@@ -8,6 +8,12 @@ import SystemNotification, {
 } from "../SystemNotification";
 import StorageLoginComponent from "./storage/LoginComponent";
 import StorageSubfolderComponent from "./storage/SubfolderComponent";
+import SummaryComponent from "./storage/SummaryComponent";
+import {
+  CreateStorage,
+  MakeStorageCreationDoc,
+} from "./storage/CreationAction";
+import { useHistory } from "react-router";
 
 interface StorageMultistepParams {
   itemId?: string;
@@ -37,6 +43,9 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
 
   const [rootpath, setRootpath] = useState("");
   const [clientpath, setClientpath] = useState("");
+  const [nickname, setNickname] = useState("");
+
+  const history = useHistory();
 
   const steps = [
     "Storage type",
@@ -114,7 +123,11 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
 
   //when the selected type is changed, toggle the default value for allowing versions
   useEffect(() => {
-    if (selectedType && selectedType < strgTypes.length && selectedType >= 0) {
+    if (
+      selectedType != undefined &&
+      selectedType < strgTypes.length &&
+      selectedType >= 0
+    ) {
       const actualSelectedStorage = strgTypes[selectedType];
       setEnableVersions(actualSelectedStorage.canVersion);
     } else {
@@ -124,12 +137,94 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
     }
   }, [selectedType]);
 
+  /**
+   * clear any "create failed" flag when the data changes, to re-enable the Create button
+   */
+  useEffect(() => {
+    if (creationFailed != undefined) setCreationFailed(undefined);
+  }, [rootpath, selectedType, strgTypes, loginDetails]);
+
   const canComplete = () => {
-    return false;
+    if (
+      !(
+        selectedType != undefined &&
+        selectedType < strgTypes.length &&
+        selectedType >= 0
+      )
+    ) {
+      console.log(
+        "can't complete storage because the selected type ",
+        selectedType,
+        " is not valid"
+      );
+      return false;
+    }
+    if (
+      strgTypes[selectedType].needsLogin &&
+      (loginDetails.username == "" ||
+        loginDetails.hostname == "" ||
+        loginDetails.password == "")
+    ) {
+      console.log(
+        "can't complete storage because it requires login and the login details are blank"
+      );
+      return false;
+    }
+    if (strgTypes[selectedType].hasSubFolders && rootpath == "") {
+      console.log(
+        "can't complete storage because it requires subfolders and the root path is blank"
+      );
+      return false;
+    }
+    console.log("storage information is valid, we can complete");
+    return true;
   };
 
   const createClicked = async () => {
-    return Promise.reject<void>("Not implemented yet");
+    if (
+      !(
+        selectedType != undefined &&
+        selectedType < strgTypes.length &&
+        selectedType >= 0
+      )
+    )
+      return Promise.reject("selectedType must be set");
+
+    const doc = MakeStorageCreationDoc(
+      rootpath,
+      clientpath,
+      strgTypes[selectedType].name,
+      loginDetails.hostname,
+      loginDetails.port,
+      loginDetails.username,
+      loginDetails.password,
+      loginDetails.device,
+      enableVersions,
+      nickname
+    );
+    setCreationFailed(undefined);
+    setCreationInProgress(true);
+    const result = await CreateStorage(doc, undefined);
+
+    if (result.createdOk) {
+      setCreationInProgress(false);
+      history.push("/storage/");
+      SystemNotification.open(
+        SystemNotificationKind.Success,
+        "Created storage"
+      );
+    } else {
+      setCreationFailed(result.errorMessage);
+      setCreationInProgress(false);
+
+      SystemNotification.open(
+        SystemNotificationKind.Error,
+        result.errorMessage
+      );
+      if (result.shouldRetry) {
+        window.setTimeout(() => createClicked(), 2000);
+      }
+    }
   };
 
   return (
@@ -170,6 +265,17 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
             currentStorage={strgTypes[selectedType]}
             rootPathWasSet={setRootpath}
             clientPathWasSet={setClientpath}
+          />
+        ) : undefined}
+        {activeStep == 3 && selectedType != undefined ? (
+          <SummaryComponent
+            rootPath={rootpath}
+            clientPath={clientpath}
+            loginDetails={loginDetails}
+            storageType={strgTypes[selectedType]}
+            enableVersions={enableVersions}
+            nickName={nickname}
+            nickNameChanged={(newValue) => setNickname(newValue)}
           />
         ) : undefined}
       </>

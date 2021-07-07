@@ -206,6 +206,12 @@ interface ProjectCreatedResponse {
   projectId: number;
 }
 
+interface GenericCreateResponse {
+  status: string;
+  detail: string;
+  id: number;
+}
+
 interface GenericErrorResponse {
   status: string;
   detail?: string;

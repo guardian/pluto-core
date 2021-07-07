@@ -48,6 +48,9 @@ const multistepStyles = makeStyles((theme) => ({
   fullWidth: {
     width: "100%",
   },
+  valueNotPresent: {
+    color: theme.palette.grey.A700,
+  },
 }));
 
 const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
@@ -128,19 +131,23 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
                     : "You need to supply some more information, check above for details"
                 }
               >
-                <Button
-                  variant="contained"
-                  disabled={
-                    !canComplete() ||
-                    creationInProgress ||
-                    creationFailed !== undefined ||
-                    activeStep > 6
-                  }
-                  endIcon={<CheckCircle />}
-                  onClick={createClicked}
-                >
-                  Create
-                </Button>
+                <span>
+                  {" "}
+                  {/* the <span> wrapper is required to get mouseover events when the button is in a "disabled" state*/}
+                  <Button
+                    variant="contained"
+                    disabled={
+                      !canComplete() ||
+                      creationInProgress ||
+                      creationFailed !== undefined ||
+                      activeStep > 6
+                    }
+                    endIcon={<CheckCircle />}
+                    onClick={createClicked}
+                  >
+                    Create
+                  </Button>
+                </span>
               </Tooltip>
             ) : (
               <Button variant="contained" onClick={handleNext}>

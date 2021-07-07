@@ -1,10 +1,8 @@
 import React from "react";
 import { render } from "react-dom";
-import { BrowserRouter, Route, Switch } from "react-router-dom";
+import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
 import { ThemeProvider, createMuiTheme } from "@material-ui/core";
 import StorageListComponent from "./StorageComponent.jsx";
-
-import RootComponent from "./RootComponent.jsx";
 
 import ProjectTypeMultistep from "./multistep/ProjectTypeMultistep.jsx";
 import FileEntryList from "./FileEntryList.jsx";
@@ -301,15 +299,7 @@ class App extends React.Component {
                 <Route
                   exact
                   path="/"
-                  render={() => (
-                    <RootComponent
-                      onLoggedOut={this.onLoggedOut}
-                      onLoggedIn={this.onLoggedIn}
-                      currentUsername={this.state.currentUsername}
-                      isLoggedIn={this.state.isLoggedIn}
-                      isAdmin={this.state.isAdmin}
-                    />
-                  )}
+                  render={() => <Redirect to="/project/" />}
                 />
               </Switch>
             </div>
