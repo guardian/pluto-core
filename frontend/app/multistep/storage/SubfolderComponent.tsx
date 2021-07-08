@@ -1,5 +1,5 @@
 import React from "react";
-import { TextField, Typography } from "@material-ui/core";
+import { makeStyles, TextField, Typography } from "@material-ui/core";
 import { multistepStyles } from "../common/CommonMultistepContainer";
 
 interface StorageSubfolderComponentProps {
@@ -10,17 +10,26 @@ interface StorageSubfolderComponentProps {
   clientPath: string;
 }
 
+const useMyStyles = makeStyles({
+  subfolderTable: {
+    maxWidth: "90vw",
+    minWidth: "33vw",
+    width: "800px",
+  },
+});
+
 const StorageSubfolderComponent: React.FC<StorageSubfolderComponentProps> = (
   props
 ) => {
   const classes = multistepStyles();
+  const localClasses = useMyStyles();
 
   return (
     <>
       <Typography variant="h3">Storage Subfolder</Typography>
       {props.currentStorage.hasSubFolders ? (
         <>
-          <table>
+          <table className={localClasses.subfolderTable}>
             <tbody>
               <tr>
                 <td className={classes.labelCell}>Subfolder path</td>
