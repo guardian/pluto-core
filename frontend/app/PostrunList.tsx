@@ -5,9 +5,7 @@ import EnhancedTable from "./MaterialUITable";
 import GeneralListComponent from "./GeneralListComponent";
 import ListActionButtons from "./common/ListActionButtons";
 import { Helmet } from "react-helmet";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "./SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 
 const PostrunList: React.FC<RouteComponentProps> = (props) => {
   const [tableData, setTableData] = useState<PostrunAction[]>([]);
@@ -52,13 +50,13 @@ const PostrunList: React.FC<RouteComponentProps> = (props) => {
     try {
       await axios.put("/api/postrun/scan");
       SystemNotification.open(
-        SystemNotificationKind.Success,
+        SystemNotifcationKind.Success,
         "Rescan in progress"
       );
     } catch (e) {
       console.error("Could not request rescan of postruns: ", e);
       SystemNotification.open(
-        SystemNotificationKind.Error,
+        SystemNotifcationKind.Error,
         "Could not scan postruns, see server logs and console for details"
       );
     }

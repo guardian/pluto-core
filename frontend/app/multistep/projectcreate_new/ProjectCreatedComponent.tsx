@@ -5,9 +5,7 @@ import { Button, TableCell, Typography } from "@material-ui/core";
 import AssetFolderLink from "../../ProjectEntryList/AssetFolderLink";
 import { updateProjectOpenedStatus } from "../../ProjectEntryList/helpers";
 import { createProjectDeliverable } from "../../utils/api";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import { Helmet } from "react-helmet";
 import { useHistory } from "react-router-dom";
 
@@ -51,7 +49,7 @@ const ProjectCreatedComponent: React.FC<ProjectCreatedComponentProps> = (
     } catch (error) {
       console.error(error);
       SystemNotification.open(
-        SystemNotificationKind.Error,
+        SystemNotifcationKind.Error,
         "Failed to create Project Deliverable"
       );
     }

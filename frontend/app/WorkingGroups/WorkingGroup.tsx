@@ -18,9 +18,7 @@ import {
   getWorkingGroup,
   updateWorkingGroup,
 } from "./helpers";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 
 const useStyles = makeStyles({
   root: {
@@ -128,7 +126,7 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
         }
 
         SystemNotification.open(
-          SystemNotificationKind.Success,
+          SystemNotifcationKind.Success,
           `Successfully ${
             editing ? "updated" : "created"
           } Working Group: "${name}"`
@@ -137,7 +135,7 @@ const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
         props.history.push("/working-group");
       } catch {
         SystemNotification.open(
-          SystemNotificationKind.Error,
+          SystemNotifcationKind.Error,
           `Failed to ${editing ? "update" : "create"} Working Group!`
         );
       }

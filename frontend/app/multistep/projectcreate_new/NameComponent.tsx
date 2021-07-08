@@ -10,9 +10,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import { format } from "date-fns";
 import UserContext from "../../UserContext";
 import axios from "axios";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import StorageSelector from "../../Selectors/StorageSelector";
 import { getProjectsDefaultStorageId } from "./ProjectStorageService";
 
@@ -62,7 +60,7 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
           response.data
         );
         SystemNotification.open(
-          SystemNotificationKind.Error,
+          SystemNotifcationKind.Error,
           `Could not load in storages, server error ${response.status}. More details in the browser console.`
         );
     }
@@ -95,17 +93,17 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
           console.error("Could not get default storage id: ", error);
           if (error.response && error.response.status === 404) {
             SystemNotification.open(
-              SystemNotificationKind.Error,
+              SystemNotifcationKind.Error,
               "No default project storage has been set"
             );
           } else if (!error.hasOwnProperty("response")) {
             SystemNotification.open(
-              SystemNotificationKind.Error,
+              SystemNotifcationKind.Error,
               "Could not understand response for default storage, check the console"
             );
           } else {
             SystemNotification.open(
-              SystemNotificationKind.Error,
+              SystemNotifcationKind.Error,
               "Server error loading the default storage id, please try again in a couple of minutes"
             );
           }

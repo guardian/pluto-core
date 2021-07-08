@@ -40,7 +40,7 @@ import CommissionsList from "./CommissionsList/CommissionsList.tsx";
 import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx";
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
-import SystemNotification from "./SystemNotification.tsx";
+import { SystemNotification } from "pluto-headers";
 import { Header, AppSwitcher, handleUnauthorized } from "pluto-headers";
 
 import "./styles/app.css";

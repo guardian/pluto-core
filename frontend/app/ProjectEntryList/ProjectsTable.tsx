@@ -27,9 +27,7 @@ import { updateProjectOpenedStatus, setProjectStatusToKilled } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 
 const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Project title", key: "title" },
@@ -133,12 +131,12 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
       setRefreshGeneration(refreshGeneration + 1);
 
       SystemNotification.open(
-        SystemNotificationKind.Success,
+        SystemNotifcationKind.Success,
         `Successfully killed project: "${updatingProject}"`
       );
     } catch {
       SystemNotification.open(
-        SystemNotificationKind.Error,
+        SystemNotifcationKind.Error,
         `Failed to kill project "${updatingProject}"`
       );
     }
