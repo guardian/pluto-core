@@ -18,6 +18,4 @@ trait StorageTypeSerializer {
   )(StorageType.apply _)
 }
 
-case class StorageType(name:String, needsLogin: Boolean, hasSubfolders: Boolean, canVersion: Boolean) {
-
-}
+case class StorageType(name:String, needsLogin: Boolean, hasSubfolders: Boolean, canVersion: Boolean)

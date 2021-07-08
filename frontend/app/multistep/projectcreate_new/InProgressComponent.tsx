@@ -6,6 +6,7 @@ import WarningRoundedIcon from "@material-ui/icons/WarningRounded";
 interface InProgressComponentProps {
   didFail: boolean;
   errorMessage?: string;
+  description: string;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -58,7 +59,7 @@ const InProgressComponent: React.FC<InProgressComponentProps> = (props) => {
             </Typography>
           ) : (
             <Typography className={classes.regularText}>
-              Creating your project, please wait...
+              {props.description}
             </Typography>
           )}
         </Grid>

@@ -199,7 +199,7 @@ trait GenericDatabaseObjectControllerWithFilter[M<:PlutoModel,F] extends BaseCon
                 }
             })
           case Left(errDetail)=>
-            Future(Conflict(Json.obj("status"->"error", "detail"->errDetail)))
+            Future(BadRequest(Json.obj("status"->"error", "detail"->errDetail)))
         }
       }
     )

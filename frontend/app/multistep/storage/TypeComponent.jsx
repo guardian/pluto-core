@@ -1,5 +1,12 @@
 import React from "react";
 import PropTypes from "prop-types";
+import {
+  FormControlLabel,
+  MenuItem,
+  Select,
+  Switch,
+  Typography,
+} from "@material-ui/core";
 
 class StorageTypeComponent extends React.Component {
   static propTypes = {
@@ -41,59 +48,51 @@ class StorageTypeComponent extends React.Component {
 
   render() {
     return (
-      <div>
-        <h3>Storage Type</h3>
-        <p className="information">
+      <>
+        <Typography variant="h3">Storage Type</Typography>
+        <Typography className="information">
           The first piece of information we need is what kind of storage to
-          connect to. Different storages require different configuration
-          options; currently we support a local disk, ObjectMatrix vault, or an
-          S3 bucket.
-        </p>
+          connect to.
+          <br />
+          Different storages require different configuration options; currently
+          we support a local disk, ObjectMatrix vault, or an S3 bucket.
+        </Typography>
         <table>
           <tbody>
             <tr>
               <td>
-                <select
+                <Select
                   id="storage_type_selector"
                   value={this.props.selectedType}
                   onChange={this.selectorValueChanged}
                 >
                   {this.props.strgTypes.map((typeInfo, index) => (
-                    <option key={index} value={index}>
+                    <MenuItem key={index} value={index}>
                       {typeInfo.name}
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
+                </Select>
               </td>
             </tr>
             <tr>
               <td>
-                <input
-                  type="checkbox"
-                  checked={this.props.versionsAllowed}
-                  onChange={(evt) =>
-                    this.props.versionsAllowedChanged(
-                      !this.props.versionsAllowed
-                    )
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={this.props.versionsAllowed}
+                      onChange={(evt) =>
+                        this.props.versionsAllowedChanged(evt.target.value)
+                      }
+                      disabled={this.state.disableVersions}
+                    />
                   }
-                  id="chk-versions-allowed"
-                  disabled={this.state.disableVersions}
+                  label="Enable versions"
                 />
-                <label
-                  htmlFor="chk-versions-allowed"
-                  style={{
-                    display: "inline",
-                    marginLeft: "0.4em",
-                    color: this.state.disableVersions ? "grey" : "black",
-                  }}
-                >
-                  Enable versions
-                </label>
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
+      </>
     );
   }
 }

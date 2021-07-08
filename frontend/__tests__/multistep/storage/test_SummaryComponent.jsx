@@ -1,7 +1,6 @@
 import React from "react";
 import { shallow, mount } from "enzyme";
-import moxios from "moxios";
-import SummaryComponent from "../../../app/multistep/storage/SummaryComponent.jsx";
+import SummaryComponent from "../../../app/multistep/storage/SummaryComponent.tsx";
 import sinon from "sinon";
 
 const entries = require("object.entries");
@@ -12,7 +11,17 @@ describe("Storage SummaryComponent", () => {
 
     const rendered = shallow(
       <SummaryComponent
-        name="StorageType"
+        clientPath=""
+        enableVersions={false}
+        nickName=""
+        nickNameChanged={sinon.stub()}
+        rootPath="/path/to/root"
+        storageType={{
+          name: "test storage type",
+          hasSubfolders: true,
+          canVersion: false,
+          needsLogin: true,
+        }}
         loginDetails={{
           host: "somehostname",
           port: "1234",
@@ -24,7 +33,8 @@ describe("Storage SummaryComponent", () => {
     );
 
     expect(rendered.find("table")).toBeTruthy();
-    expect(rendered.find("td#storageType").text()).toEqual("StorageType");
+    expect(rendered.find("td#storageType").text()).toEqual("test storage type");
+
     expect(rendered.find(".login-description").length).toEqual(4);
     expect(rendered.find(".login-value").length).toEqual(4);
 

@@ -1,10 +1,8 @@
 import React from "react";
 import { render } from "react-dom";
-import { BrowserRouter, Route, Switch } from "react-router-dom";
+import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
 import { ThemeProvider, createMuiTheme } from "@material-ui/core";
 import StorageListComponent from "./StorageComponent.jsx";
-
-import RootComponent from "./RootComponent.jsx";
 
 import ProjectTypeMultistep from "./multistep/ProjectTypeMultistep.jsx";
 import FileEntryList from "./FileEntryList.jsx";
@@ -13,8 +11,7 @@ import ProjectTypeList from "./ProjectTypeList.jsx";
 
 import FileDeleteComponent from "./delete/FileDeleteComponent.jsx";
 
-import StorageMultistep from "./multistep/StorageMultistep.jsx";
-import StorageDeleteComponent from "./delete/StorageDeleteComponent.jsx";
+import StorageContextComponent from "./delete/StorageDeleteComponent";
 
 import TypeDeleteComponent from "./delete/TypeDeleteComponent.jsx";
 
@@ -49,6 +46,7 @@ import { Header, AppSwitcher, handleUnauthorized } from "pluto-headers";
 import "./styles/app.css";
 import CommissionEntryEditComponent from "./CommissionsList/CommissionEntryEditComponent";
 import ProjectCreateMultistepNew from "./multistep/ProjectCreateMultistepNew";
+import StorageMultistepNew from "./multistep/StorageMultistepNew";
 
 library.add(faSearch);
 
@@ -215,16 +213,19 @@ class App extends React.Component {
           }
         >
           <div className="app">
-            <Header></Header>
-            <AppSwitcher onLoginValid={this.onLoginValid}></AppSwitcher>
+            <Header />
+            <AppSwitcher onLoginValid={this.onLoginValid} />
 
             <div id="mainbody" className="mainbody">
               <Switch>
                 <Route
                   path="/storage/:itemid/delete"
-                  component={StorageDeleteComponent}
+                  component={StorageContextComponent}
                 />
-                <Route path="/storage/:itemid" component={StorageMultistep} />
+                <Route
+                  path="/storage/:itemid"
+                  component={StorageMultistepNew}
+                />
                 <Route path="/storage/" component={StorageListComponent} />
                 <Route
                   path="/template/:itemid/delete"
@@ -297,15 +298,7 @@ class App extends React.Component {
                 <Route
                   exact
                   path="/"
-                  render={() => (
-                    <RootComponent
-                      onLoggedOut={this.onLoggedOut}
-                      onLoggedIn={this.onLoggedIn}
-                      currentUsername={this.state.currentUsername}
-                      isLoggedIn={this.state.isLoggedIn}
-                      isAdmin={this.state.isAdmin}
-                    />
-                  )}
+                  render={() => <Redirect to="/project/" />}
                 />
               </Switch>
             </div>

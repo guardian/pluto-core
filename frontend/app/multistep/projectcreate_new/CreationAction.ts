@@ -1,4 +1,8 @@
 import axios from "axios";
+import {
+  CreationErrorHandler,
+  GeneralCreationResult,
+} from "../common/CreationErrorHandler";
 
 interface ProjectCreationDoc {
   filename: string;
@@ -14,11 +18,8 @@ interface ProjectCreationDoc {
   productionOffice: ProductionOffice;
 }
 
-interface ProjectCreationResponse {
-  createdOk: boolean;
+interface ProjectCreationResponse extends GeneralCreationResult {
   projectId?: number;
-  errorMessage: string;
-  shouldRetry: boolean;
 }
 
 async function CreateProject(
@@ -44,46 +45,8 @@ async function CreateProject(
         errorMessage: "",
         shouldRetry: false,
       };
-    case 400:
-      const rqErr = response.data as GenericErrorResponse;
-      return {
-        createdOk: false,
-        shouldRetry: false,
-        errorMessage: `Bad request - ${rqErr.detail}. You should go back and double-check all of the values you put in to create the project.`,
-      };
-    case 500:
-      const intErr = response.data as GenericErrorResponse;
-      return {
-        createdOk: false,
-        shouldRetry: false,
-        errorMessage: `A server error occurred: ${intErr.detail}. You should report this to multimediatech@theguardian.com.`,
-      };
-    case 502 | 503 | 504:
-      return {
-        createdOk: false,
-        shouldRetry: true,
-        errorMessage:
-          "The server is not responding. Usually it will start again in a minute or so.  Retrying automatically...",
-      };
-    case 401 | 403:
-      return {
-        createdOk: false,
-        shouldRetry: false,
-        errorMessage: "Permission denied. Maybe your login expired?",
-      };
-    case 409:
-      return {
-        createdOk: false,
-        shouldRetry: false,
-        errorMessage:
-          "A conflict prevented this project from being created. Try changing the project and file names",
-      };
     default:
-      return {
-        createdOk: false,
-        shouldRetry: false,
-        errorMessage: `An unexpected server error happened: ${response.status} ${response.statusText}.  Your project wasn't created, please contact Multimediatech.`,
-      };
+      return CreationErrorHandler(response, "project");
   }
 }
 

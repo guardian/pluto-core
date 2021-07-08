@@ -206,7 +206,49 @@ interface ProjectCreatedResponse {
   projectId: number;
 }
 
+interface GenericCreateResponse {
+  status: string;
+  detail: string;
+  id: number;
+}
+
 interface GenericErrorResponse {
   status: string;
   detail?: string;
+}
+
+interface StorageType {
+  name: string;
+  needsLogin: boolean;
+  hasSubFolders: boolean;
+  canVersion: boolean;
+}
+
+interface StorageTypeResponse {
+  status: string;
+  types: StorageType[];
+}
+
+interface StorageLoginDetails {
+  hostname: string;
+  port: number;
+  device: string;
+  username: string;
+  password: string;
+}
+
+interface StorageEntry {
+  id: number;
+  nickname?: string;
+  rootpath?: string;
+  clientpath?: string;
+  storageType: string;
+  user?: string;
+  password?: string;
+  host?: string;
+  port?: number;
+  device?: string;
+  supportsVersion: boolean;
+  status?: string;
+  backsUpTo?: number;
 }
