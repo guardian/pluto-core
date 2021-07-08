@@ -114,6 +114,7 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
         setClientpath(result.data.result.clientpath ?? "");
         setNickname(result.data.result.nickname ?? "");
         setExistingStorageId(result.data.result.id);
+        setBacksUpTo(result.data.result.backsUpTo);
       })
       .catch((err) => {
         console.error(

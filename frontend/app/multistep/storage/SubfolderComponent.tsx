@@ -27,6 +27,7 @@ const StorageSubfolderComponent: React.FC<StorageSubfolderComponentProps> = (
                 <td>
                   <TextField
                     value={props.rootPath}
+                    className={classes.fullWidth}
                     label="Folder path"
                     onChange={(event) =>
                       props.rootPathWasSet(event.target.value)
@@ -41,6 +42,7 @@ const StorageSubfolderComponent: React.FC<StorageSubfolderComponentProps> = (
                 <td>
                   <TextField
                     value={props.clientPath}
+                    className={classes.fullWidth}
                     label="Client path"
                     onChange={(event) =>
                       props.clientPathWasSet(event.target.value)
