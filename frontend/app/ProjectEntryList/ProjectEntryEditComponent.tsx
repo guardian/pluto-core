@@ -12,9 +12,7 @@ import {
   TextField,
 } from "@material-ui/core";
 import { getProject, getProjectByVsid, updateProject } from "./helpers";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 
 import ProjectEntryDeliverablesComponent from "./ProjectEntryDeliverablesComponent";
 import { Breadcrumb } from "pluto-headers";
@@ -158,7 +156,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   };
 
   const subComponentErrored = (errorDesc: string) => {
-    SystemNotification.open(SystemNotificationKind.Error, errorDesc);
+    SystemNotification.open(SystemNotifcationKind.Error, errorDesc);
   };
 
   const onProjectSubmit = async (
@@ -171,13 +169,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         await updateProject(project as Project);
 
         SystemNotification.open(
-          SystemNotificationKind.Success,
+          SystemNotifcationKind.Success,
           `Successfully updated Project "${project.title}"`
         );
         history.goBack();
       } catch {
         SystemNotification.open(
-          SystemNotificationKind.Error,
+          SystemNotifcationKind.Error,
           `Failed to update Project "${project.title}"`
         );
       }

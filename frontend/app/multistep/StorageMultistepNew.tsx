@@ -3,9 +3,7 @@ import { RouteComponentProps } from "react-router-dom";
 import CommonMultistepContainer from "./common/CommonMultistepContainer";
 import StorageTypeComponent from "./storage/TypeComponent";
 import axios from "axios";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import StorageLoginComponent from "./storage/LoginComponent";
 import StorageSubfolderComponent from "./storage/SubfolderComponent";
 import SummaryComponent from "./storage/SummaryComponent";
@@ -69,7 +67,7 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
       .catch((err) => {
         console.error("Could not load in storage types: ", err);
         SystemNotification.open(
-          SystemNotificationKind.Error,
+          SystemNotifcationKind.Error,
           `Could not load in storage types, see console for details`
         );
       });
@@ -122,7 +120,7 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
           err
         );
         SystemNotification.open(
-          SystemNotificationKind.Error,
+          SystemNotifcationKind.Error,
           "Could not load in storage data, see browser console"
         );
       });
@@ -224,17 +222,14 @@ const StorageMultistepNew: React.FC<RouteComponentProps<
       setCreationInProgress(false);
       history.push("/storage/");
       SystemNotification.open(
-        SystemNotificationKind.Success,
+        SystemNotifcationKind.Success,
         `${existingStorageId ? "Updated" : "Created"} storage`
       );
     } else {
       setCreationFailed(result.errorMessage);
       setCreationInProgress(false);
 
-      SystemNotification.open(
-        SystemNotificationKind.Error,
-        result.errorMessage
-      );
+      SystemNotification.open(SystemNotifcationKind.Error, result.errorMessage);
       if (result.shouldRetry) {
         window.setTimeout(() => createClicked(), 2000);
       }

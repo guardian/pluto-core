@@ -9,9 +9,7 @@ import {
 import WorkingGroupSelector from "../common/WorkingGroupSelectorNew";
 import { makeStyles } from "@material-ui/core/styles";
 import axios from "axios";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import CommissionSelector from "../common/CommissionSelectorNew";
 
 interface PlutoLinkageComponentProps {
@@ -61,7 +59,7 @@ const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
           response.data
         );
         SystemNotification.open(
-          SystemNotificationKind.Error,
+          SystemNotifcationKind.Error,
           "Server error loading working groups. Try refreshing your browser in a minute or two."
         );
         break;

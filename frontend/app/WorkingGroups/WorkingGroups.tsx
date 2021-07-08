@@ -24,9 +24,7 @@ import DeleteIcon from "@material-ui/icons/Delete";
 import { getWorkingGroupsOnPage, deleteWorkingGroup } from "./helpers";
 import { sortListByOrder, SortDirection } from "../utils/lists";
 import { isLoggedIn } from "../utils/api";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import { Helmet } from "react-helmet";
 import { Visibility, VisibilityOff } from "@material-ui/icons";
 
@@ -142,13 +140,13 @@ const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
       );
 
       SystemNotification.open(
-        SystemNotificationKind.Success,
+        SystemNotifcationKind.Success,
         `Successfully deleted
         Working Group: "${updatingWorkingGroup?.name}"`
       );
     } catch {
       SystemNotification.open(
-        SystemNotificationKind.Error,
+        SystemNotifcationKind.Error,
         `Failed to delete Working Group "${updatingWorkingGroup?.name}"`
       );
     }

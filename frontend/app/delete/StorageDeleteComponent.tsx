@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { RouteComponentProps } from "react-router-dom";
 import axios from "axios";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import ImprovedDeleteComponent from "./ImprovedDeleteComponent";
 import { CircularProgress } from "@material-ui/core";
 import SummaryComponent from "../multistep/storage/SummaryComponent";
@@ -52,7 +50,7 @@ const StorageDeleteComponent: React.FC<RouteComponentProps<{
           err
         );
         SystemNotification.open(
-          SystemNotificationKind.Error,
+          SystemNotifcationKind.Error,
           "Could not load storage data"
         );
         props.history.goBack();
@@ -69,7 +67,7 @@ const StorageDeleteComponent: React.FC<RouteComponentProps<{
       } catch (err) {
         console.error("Could not delete storage: ", err);
         SystemNotification.open(
-          SystemNotificationKind.Error,
+          SystemNotifcationKind.Error,
           `Could not delete storage: ${err}`
         );
       }

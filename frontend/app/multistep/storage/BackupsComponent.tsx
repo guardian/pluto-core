@@ -9,9 +9,7 @@ import {
 import { makeStyles } from "@material-ui/core/styles";
 import StorageSelector from "../../Selectors/StorageSelector";
 import axios from "axios";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 
 interface BackupsComponentProps {
   selectedBackupStorage?: number;
@@ -65,7 +63,7 @@ const BackupsComponent: React.FC<BackupsComponentProps> = (props) => {
     loadData().catch((err) => {
       console.error("Could not load in storages: ", err);
       SystemNotification.open(
-        SystemNotificationKind.Error,
+        SystemNotifcationKind.Error,
         "Could not load in all storages, see console"
       );
     });

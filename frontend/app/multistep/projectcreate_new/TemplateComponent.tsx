@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import {
   LinearProgress,
   MenuItem,
@@ -44,7 +42,7 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
         }
       } else if (response.status != 404) {
         SystemNotification.open(
-          SystemNotificationKind.Error,
+          SystemNotifcationKind.Error,
           "Could not load default project template"
         );
       }
@@ -64,7 +62,7 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
               "There are no project templates defined so we can't create a project"
             );
             SystemNotification.open(
-              SystemNotificationKind.Error,
+              SystemNotifcationKind.Error,
               "There are no project templates defined in the system"
             );
           }
@@ -80,7 +78,7 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
             response.data
           );
           SystemNotification.open(
-            SystemNotificationKind.Error,
+            SystemNotifcationKind.Error,
             "Could not load in project types"
           );
       }
@@ -91,7 +89,7 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
       .catch((err) => {
         console.error(err);
         SystemNotification.open(
-          SystemNotificationKind.Error,
+          SystemNotifcationKind.Error,
           "Could not set up template selector"
         );
       });

@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import {
   CircularProgress,
   Grid,
@@ -89,7 +87,7 @@ const CommissionSelector: React.FC<CommissionSelectorProps> = (props) => {
           response.data
         );
         SystemNotification.open(
-          SystemNotificationKind.Error,
+          SystemNotifcationKind.Error,
           "Could not load in commissions, see browser console for details"
         );
         break;

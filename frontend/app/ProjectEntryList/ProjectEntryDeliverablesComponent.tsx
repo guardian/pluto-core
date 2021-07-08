@@ -18,9 +18,7 @@ import {
 } from "../utils/api";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 import WarningIcon from "@material-ui/icons/Warning";
-import SystemNotification, {
-  SystemNotificationKind,
-} from "../SystemNotification";
+import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 
 const useStyles = makeStyles({
   projectDeliverable: {
@@ -119,7 +117,7 @@ const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesCompon
     } catch (error) {
       console.error(error);
       SystemNotification.open(
-        SystemNotificationKind.Error,
+        SystemNotifcationKind.Error,
         "Failed to create Project Deliverable"
       );
     }
