@@ -32,6 +32,7 @@ class Auditor @Inject() (dbConfigProvider: DatabaseConfigProvider, config:Config
 
   override def receive: Receive = {
     case LogEvent(username, actionType, targetObjectId, timestamp, data)=>
+      logger.debug(s"Recording $actionType event from $username on $targetObjectId at $timestamp")
       val newRecord = AuditLog(
         None,
         username = username.toLowerCase,

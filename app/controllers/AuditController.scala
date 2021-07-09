@@ -36,7 +36,7 @@ class AuditController @Inject() (override val controllerComponents:ControllerCom
     }
 
     val dataFuture = db.run(
-      query.take(limit).drop(startAt).sortBy(_.at).result
+      query.take(limit).drop(startAt).sortBy(_.at.desc).result
     )
     val totalCountFuture = db.run(
       query.size.result

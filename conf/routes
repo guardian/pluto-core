@@ -113,7 +113,7 @@ POST    /api/migration/projectRelink        @controllers.DataMigrationController
 POST    /api/migration/vsCommission         @controllers.DataMigrationController.checkVidispineCommissions
 POST    /api/migration/fixNullProjects      @controllers.DataMigrationController.fixNullCommissionProjects
 
-imrpGET     /api/history/my/actions           @controllers.AuditController.myLastActions(actionType:Option[String], startAt:Int ?=0, length:Int ?=100)
+GET     /api/history/my/actions           @controllers.AuditController.myLastActions(actionType:Option[String], startAt:Int ?=0, length:Int ?=100)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
