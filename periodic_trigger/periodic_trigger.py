@@ -7,7 +7,7 @@ import logging
 
 pikaLogger = logging.getLogger("pika")
 pikaLogger.setLevel(logging.WARNING)
-logging.basicConfig(level=logging.INFO, format="%(asctime)-15s %(name)s|%(funcName)s [%(levelname)s] %(message)s")
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)-15s %(name)s|%(funcName)s [%(levelname)s] %(message)s")
 # Tick times in seconds
 FAST_TICK   = 30
 MEDIUM_TICK = 300       # 5min
@@ -38,7 +38,7 @@ def send(routing_key: str):
     :return: result of the basic_publish operation. Throws an exception on error
     """
     message_string = """{"action":"PerformAction"}"""
-    logging.info("Requesting {} action...".format(routing_key))
+    logging.debug("Requesting {} action...".format(routing_key))
     return channel.basic_publish(target_exchange, routing_key, message_string.encode("utf-8"))
 
 
@@ -55,7 +55,7 @@ connection = pika.BlockingConnection(pika.ConnectionParameters(host=rmq_host,
                                                                credentials=pika.PlainCredentials(user, passwd))
                                      )
 channel = connection.channel()
-logging.info("Connection established. Ticks are at {} seconds".format([FAST_TICK, SLOW_TICK, VERY_SLOW_TICK]))
+logging.info("Connection established. Ticks are at {} seconds".format([FAST_TICK, MEDIUM_TICK, SLOW_TICK, VERY_SLOW_TICK]))
 
 # we deliberately don't declare the exchange, wait for the main pluto-core to do this.
 # this does mean that at first startup we will crashloop until pluto-core has initialised the exchange
