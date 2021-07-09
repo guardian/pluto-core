@@ -35,9 +35,10 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       val probe1 = TestProbe()
       val probe2 = TestProbe()
       val probe3 = TestProbe()
+      val fakeAuditor = TestProbe()
 
       val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
-      val ac = system.actorOf(Props(new ProjectCreationActor(app) {
+      val ac = system.actorOf(Props(new ProjectCreationActor(app, fakeAuditor.ref) {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
 
@@ -74,11 +75,12 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       val probe1 = TestProbe()
       val probe2 = TestProbe()
       val probe3 = TestProbe()
+      val fakeAuditor = TestProbe()
 
       val initialData = ProjectCreateTransientData(None, None, None)
 
       val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
-      val ac = system.actorOf(Props(new ProjectCreationActor(app) {
+      val ac = system.actorOf(Props(new ProjectCreationActor(app,fakeAuditor.ref) {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
 
@@ -114,9 +116,10 @@ class ProjectCreationSpec extends Specification with BuildMyApp {
       val probe1 = TestProbe()
       val probe2 = TestProbe()
       val probe3 = TestProbe()
+      val fakeAuditor = TestProbe()
 
       val actorSeq = Seq(probe1.ref,probe2.ref,probe3.ref)
-      val ac = system.actorOf(Props(new ProjectCreationActor(app) {
+      val ac = system.actorOf(Props(new ProjectCreationActor(app,fakeAuditor.ref) {
         override val creationActorChain: Seq[ActorRef] = Seq(probe1.ref, probe2.ref, probe3.ref)
       }))
       val initialData = ProjectCreateTransientData(None, None, None)
