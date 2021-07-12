@@ -126,7 +126,7 @@ class PeriodicScanReceiver @Inject() (config:Configuration,
     /**
       * set a 60s TTL on the queue, these messages are regularly dispatched so we don't want then building up
       */
-    val queueArgs = Map[String, AnyRef](
+    val queueArgs = Map[String, Any](
       "x-message-ttl"-> 60000,
     )
 
