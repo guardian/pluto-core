@@ -9,7 +9,7 @@ import play.api.Configuration
 
 import javax.inject.{Inject, Named, Singleton}
 import scala.jdk.CollectionConverters._
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 import org.apache.commons.codec.binary.StringUtils
 
 import java.util.UUID
@@ -126,18 +126,36 @@ class PeriodicScanReceiver @Inject() (config:Configuration,
     /**
       * set a 60s TTL on the queue, these messages are regularly dispatched so we don't want then building up
       */
-    val queueArgs = Map[String, Any](
-      "x-message-ttl"-> 60000,
+    val queueArgs = Map[String, Object](
+      "x-message-ttl"-> 60000.asInstanceOf[Object],
     )
 
-    val queue = channel
-      .queueDeclare("service-actions-received",true, false, false, queueArgs.asJava)
-      .getQueue
-    logger.debug("binding to exchange....")
-    channel.queueBind(queue, exchangeName, "pluto.core.service.#")
-    logger.debug("initiating consumer...")
-    channel.basicConsume(queue, makeConsumer(channel))
-    logger.debug("setup done")
+    val maybeQueue = Try {
+      channel
+        .queueDeclare("service-actions-received", true, false, false, queueArgs.asJava)
+        .getQueue
+    }
+
+    maybeQueue match {
+      case Success(queue) =>
+        logger.debug("binding to exchange....")
+        channel.queueBind(queue, exchangeName, "pluto.core.service.#")
+        logger.debug("initiating consumer...")
+        channel.basicConsume(queue, makeConsumer(channel))
+        logger.debug("setup done")
+      case Failure(err) =>
+        logger.error(s"Could not declare queue, terminating: ${err.getMessage}", err)
+        system
+          .terminate()
+          .andThen({
+            case _=>
+              //Calling actorSystem.terminate() here is going to throw a metric f**kton of errors as the server is trying to start up.
+              //So, try to output a meaningful error message after they have all scrolled past
+              Thread.sleep(2000)
+              logger.error(s"pluto-core terminated because the setup of service-actions-received queue in rabbitmq was incorrect. Try deleting it and allowing pluto-core to startup again.")
+              logger.error(s"Actual exception was: ${err.getMessage}", err)
+          })
+    }
   }
 
 }
