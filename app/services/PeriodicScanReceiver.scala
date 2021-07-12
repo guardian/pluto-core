@@ -123,8 +123,15 @@ class PeriodicScanReceiver @Inject() (config:Configuration,
 
     logger.debug(s"exchange name is $exchangeName")
 
+    /**
+      * set a 60s TTL on the queue, these messages are regularly dispatched so we don't want then building up
+      */
+    val queueArgs = Map[String, AnyRef](
+      "x-message-ttl"-> 60000,
+    )
+
     val queue = channel
-      .queueDeclare("service-actions-received",true, false, false, Map[String,AnyRef]().asJava)
+      .queueDeclare("service-actions-received",true, false, false, queueArgs.asJava)
       .getQueue
     logger.debug("binding to exchange....")
     channel.queueBind(queue, exchangeName, "pluto.core.service.#")
