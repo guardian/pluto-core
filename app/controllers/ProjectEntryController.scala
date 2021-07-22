@@ -1,7 +1,6 @@
 package controllers
 
 import java.util.UUID
-
 import javax.inject.{Inject, Named, Singleton}
 import akka.actor.ActorRef
 import akka.pattern.ask
@@ -16,6 +15,7 @@ import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, JsResult, JsValue, Json, Writes}
 import play.api.mvc._
 import services.RabbitMqPropagator.ChangeEvent
+import services.actors.Auditor
 import services.{CreateOperation, UpdateOperation, ValidateProject}
 import services.actors.creation.{CreationMessage, GenericCreationActor}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateTransientData}
@@ -24,6 +24,7 @@ import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 
+import java.time.ZonedDateTime
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
@@ -37,6 +38,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         dbConfigProvider: DatabaseConfigProvider,
                                         cacheImpl:SyncCacheApi,
                                         @Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef,
+                                        @Named("auditor") auditor:ActorRef,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
@@ -71,6 +73,22 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         sendToRabbitMq(UpdateOperation(), itemId, rabbitMqPropagator)
         rows
       })
+  }
+
+  override def notifyRequested[T](requestedId: Int, username: String, request: Request[T]): Unit = {
+    request.headers.get("User-Agent") match {
+      case None=>
+      case Some(userAgent)=>
+        if(userAgent.contains("Mozilla")) { //we are only interested in logging requests that came from a browser, otherwise the log would fill with the automated requests
+          auditor ! Auditor.LogEvent(
+            username,
+            AuditAction.ViewProjectPage,
+            requestedId,
+            ZonedDateTime.now(),
+            Some(userAgent)
+          )
+        }
+    }
   }
 
   /**
@@ -348,7 +366,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
-  def projectWasOpened(id: Int): EssentialAction = IsAuthenticatedAsync { uid=>request =>
+  def projectWasOpened(id: Int): EssentialAction = IsAuthenticatedAsync { uid=> request =>
     import models.EntryStatusMapper._
 
     def updateProject() = TableQuery[ProjectEntryRow]
@@ -384,6 +402,8 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         DBIOAction.successful(())
       }
     })
+
+    auditor ! Auditor.LogEvent(uid, AuditAction.OpenProject, id, ZonedDateTime.now(), request.headers.get("User-Agent"))
 
     dbConfig.db.run(
         TableQuery[ProjectEntryRow]
@@ -427,6 +447,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             NotFound(Json.obj("status"->"not_found","detail"->s"No project with id $projectId"))
           } else {
             if(rowsUpdated>1) logger.error(s"Status update request for project $projectId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
+            auditor ! Auditor.LogEvent(uid, AuditAction.ChangeProjectStatus, projectId, ZonedDateTime.now, request.headers.get("User-Agent"))
             sendToRabbitMq(UpdateOperation(), projectId, rabbitMqPropagator).foreach(_ => ())
             Ok(Json.obj("status"->"ok","detail"->"Project status updated"))
           }

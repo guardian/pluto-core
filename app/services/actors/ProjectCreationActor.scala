@@ -1,22 +1,24 @@
 package services.actors
 
-import javax.inject.Inject
+import javax.inject.{Inject, Named, Singleton}
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.pattern.ask
-import models.ProjectRequestFull
+import models.{AuditAction, ProjectRequestFull}
 import org.slf4j.{LoggerFactory, MDC}
 import play.api.{Application, Logger}
 import play.api.inject.Injector
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, NewProjectRollback, StepFailed, StepSucceded}
 import services.actors.creation._
 
+import java.time.ZonedDateTime
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 
-class ProjectCreationActor @Inject() (app:Application)(implicit system:ActorSystem,injector: Injector) extends GenericCreationActor {
+@Singleton
+class ProjectCreationActor @Inject() (app:Application, @Named("auditor") auditor:ActorRef)(implicit system:ActorSystem,injector: Injector) extends GenericCreationActor {
   override val persistenceId = "project-creation-actor-" + self.path.name
   override protected val logger=Logger(getClass)
 
@@ -94,6 +96,15 @@ class ProjectCreationActor @Inject() (app:Application)(implicit system:ActorSyst
               logger.error("Project creation actors succeeded but no created project entry?")
               originalSender ! ProjectCreateFailed(rq.rq, new RuntimeException("Project creation actors succeeded but no created project entry?"))
             case Some(projectEntry)=>
+              if(projectEntry.id.isDefined) {
+                auditor ! Auditor.LogEvent(
+                  rq.rq.user.toLowerCase,
+                  AuditAction.CreateProject,
+                  projectEntry.id.get,
+                  ZonedDateTime.now(),
+                  None
+                )
+              }
               originalSender ! ProjectCreateSucceeded(rq.rq, projectEntry)
           }
       })
