@@ -37,7 +37,8 @@ import { UserContextProvider } from "./UserContext";
 import Raven from "raven-js";
 import ProjectValidationView from "./ProjectValidationView.jsx";
 import CommissionsList from "./CommissionsList/CommissionsList.tsx";
-import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx";
+import CommissionMultistepNew from "./multistep/CommissionMultistepNew";
+
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
 import { SystemNotification } from "pluto-headers";
@@ -269,7 +270,7 @@ class App extends React.Component {
                 <Route
                   path="/commission/new"
                   render={(props) => (
-                    <CommissionCreateMultistep
+                    <CommissionMultistepNew
                       match={props.match}
                       userName={this.state.currentUsername}
                     />
