@@ -30,9 +30,11 @@ const multistepStyles = makeStyles((theme) => ({
   stepContainer: {
     width: "fit-content",
     padding: "3em",
-    paddingTop: "0.2em",
+    paddingTop: "0.5em",
+    paddingBottom: "1em",
     marginLeft: "auto",
     marginRight: "auto",
+    marginTop: "3em",
   },
   warning: {
     color: theme.palette.warning.main,

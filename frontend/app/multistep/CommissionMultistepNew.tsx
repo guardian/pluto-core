@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import CommonMultistepContainer from "./common/CommonMultistepContainer";
 import PlutoLinkageComponent from "./commissioncreate_new/PlutoLinkageComponent";
+import CommissionTitleComponent from "./commissioncreate_new/CommissionTitleComponent";
+import add from "date-fns/add";
 
 interface CommissionMultistepNewProps {
   itemId?: number;
@@ -17,6 +19,11 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
 
   const [workingGroupId, setWorkingGroupId] = useState<number | undefined>(
     undefined
+  );
+
+  const [title, setTitle] = useState("");
+  const [scheduledCompletion, setScheduledCompletion] = useState<Date>(
+    add(new Date(), { weeks: 4 })
   );
 
   const steps = ["Working group", "Title", "Production Office", "Review"];
@@ -45,6 +52,14 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
         <PlutoLinkageComponent
           workingGroupIdDidChange={setWorkingGroupId}
           workingGroupId={workingGroupId}
+        />
+      ) : undefined}
+      {activeStep == 1 ? (
+        <CommissionTitleComponent
+          title={title}
+          expiration={scheduledCompletion}
+          onTitleChanged={setTitle}
+          onExpirationChanged={setScheduledCompletion}
         />
       ) : undefined}
     </CommonMultistepContainer>

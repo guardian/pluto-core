@@ -1,7 +1,7 @@
 import React from "react";
 import { render } from "react-dom";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
-import { ThemeProvider, createMuiTheme } from "@material-ui/core";
+import { ThemeProvider, createMuiTheme, CssBaseline } from "@material-ui/core";
 import StorageListComponent from "./StorageComponent.jsx";
 
 import ProjectTypeMultistep from "./multistep/ProjectTypeMultistep.jsx";
@@ -41,7 +41,7 @@ import CommissionMultistepNew from "./multistep/CommissionMultistepNew";
 
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
-import { SystemNotification } from "pluto-headers";
+import { PlutoThemeProvider, SystemNotification } from "pluto-headers";
 import { Header, AppSwitcher, handleUnauthorized } from "pluto-headers";
 
 import "./styles/app.css";
@@ -202,7 +202,8 @@ class App extends React.Component {
 
   render() {
     return (
-      <ThemeProvider theme={theme}>
+      <PlutoThemeProvider>
+        <CssBaseline />
         <UserContextProvider
           value={
             this.state.isLoggedIn
@@ -306,7 +307,7 @@ class App extends React.Component {
           </div>
           <SystemNotification />
         </UserContextProvider>
-      </ThemeProvider>
+      </PlutoThemeProvider>
     );
   }
 }
