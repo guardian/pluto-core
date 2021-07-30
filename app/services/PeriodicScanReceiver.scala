@@ -105,7 +105,7 @@ class PeriodicScanReceiver @Inject() (config:Configuration,
                   .recover({
                     case err:Throwable=>
                       logger.error(s"Timed backup failed: ${err.getMessage}", err)
-                      false
+                      true  //don't re-queue otherwise we get into a loop
                   })
               case _=>
                 logger.warn(s"PeriodicScanReceiver got an unknown message: $routingKey")
