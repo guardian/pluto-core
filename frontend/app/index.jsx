@@ -1,7 +1,7 @@
 import React from "react";
 import { render } from "react-dom";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
-import { ThemeProvider, createMuiTheme, CssBaseline } from "@material-ui/core";
+import { ThemeProvider, CssBaseline, createTheme } from "@material-ui/core";
 import StorageListComponent from "./StorageComponent.jsx";
 
 import ProjectTypeMultistep from "./multistep/ProjectTypeMultistep.jsx";
@@ -53,7 +53,7 @@ library.add(faSearch);
 
 window.React = require("react");
 
-const theme = createMuiTheme({
+const theme = createTheme({
   typography: {
     fontFamily: [
       "sans-serif",
@@ -202,7 +202,7 @@ class App extends React.Component {
 
   render() {
     return (
-      <PlutoThemeProvider>
+      <ThemeProvider theme={theme}>
         <CssBaseline />
         <UserContextProvider
           value={
@@ -307,7 +307,7 @@ class App extends React.Component {
           </div>
           <SystemNotification />
         </UserContextProvider>
-      </PlutoThemeProvider>
+      </ThemeProvider>
     );
   }
 }
