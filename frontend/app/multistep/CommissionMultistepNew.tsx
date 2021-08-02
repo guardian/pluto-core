@@ -184,7 +184,7 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
         <InProgressComponent
           didFail={errorMessage != undefined}
           description="Creating your commission, please wait..."
-          errorMessage="Could not create commission. Please report this to multimediatech."
+          errorMessage={errorMessage}
         />
       ) : undefined}
       {activeStep == 6 ? (
