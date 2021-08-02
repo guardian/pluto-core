@@ -10,6 +10,7 @@ import InProgressComponent from "./projectcreate_new/InProgressComponent";
 
 import axios from "axios";
 import UserContext from "../UserContext";
+import CommissionCreated from "./commissioncreate_new/CommissionCreated";
 
 interface CommissionMultistepNewProps {
   itemId?: number;
@@ -35,6 +36,10 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
   const [productionOffice, setProductionOffice] = useState<ProductionOffice>(
     "UK"
   );
+
+  const [createdCommissionId, setCreatedCommissionId] = useState<
+    number | undefined
+  >(undefined);
 
   const steps = ["Working group", "Title", "Production Office", "Review"];
 
@@ -78,7 +83,9 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
       );
       switch (response.status) {
         case 200:
-          setActiveStep(5);
+          const content = response.data as GenericCreateResponse;
+          setCreatedCommissionId(content.id);
+          setActiveStep(6);
           setCreationInProgress(false);
           break;
         case 409:
@@ -177,7 +184,19 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
         <InProgressComponent
           didFail={errorMessage != undefined}
           description="Creating your commission, please wait..."
+          errorMessage="Could not create commission. Please report this to multimediatech."
         />
+      ) : undefined}
+      {activeStep == 6 ? (
+        createdCommissionId ? (
+          <CommissionCreated commissionId={createdCommissionId} title={title} />
+        ) : (
+          <InProgressComponent
+            didFail={true}
+            description=""
+            errorMessage="Commission created but no commission ID found. Please click 'Commissions' in the menu bar above to continue."
+          />
+        )
       ) : undefined}
     </CommonMultistepContainer>
   );
