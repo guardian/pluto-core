@@ -258,7 +258,7 @@ const CommissionsList: React.FC = () => {
           count={-1}
           rowsPerPage={pageSize}
           page={page}
-          onChangePage={handleChangePage}
+          onPageChange={handleChangePage}
           onChangeRowsPerPage={handleChangeRowsPerPage}
           // FIXME: remove when count is correct
           labelDisplayedRows={({ from, to }) => `${from}-${to}`}
