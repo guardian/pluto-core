@@ -48,6 +48,7 @@ import "./styles/app.css";
 import CommissionEntryEditComponent from "./CommissionsList/CommissionEntryEditComponent";
 import ProjectCreateMultistepNew from "./multistep/ProjectCreateMultistepNew";
 import StorageMultistepNew from "./multistep/StorageMultistepNew";
+import { CssBaseline } from "@material-ui/core";
 
 library.add(faSearch);
 
