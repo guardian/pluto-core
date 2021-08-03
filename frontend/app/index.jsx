@@ -185,7 +185,7 @@ class App extends React.Component {
   render() {
     return (
       <PlutoThemeProvider>
-        <CssBaseline/>
+        <CssBaseline />
         <UserContextProvider
           value={
             this.state.isLoggedIn
