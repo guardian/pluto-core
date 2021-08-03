@@ -30,9 +30,11 @@ const multistepStyles = makeStyles((theme) => ({
   stepContainer: {
     width: "fit-content",
     padding: "3em",
-    paddingTop: "0.2em",
+    paddingTop: "0.5em",
+    paddingBottom: "1em",
     marginLeft: "auto",
     marginRight: "auto",
+    marginTop: "3em",
   },
   warning: {
     color: theme.palette.warning.main,
@@ -51,6 +53,9 @@ const multistepStyles = makeStyles((theme) => ({
   },
   valueNotPresent: {
     color: theme.palette.grey.A700,
+  },
+  stepper: {
+    backgroundColor: "#00000000",
   },
 }));
 
@@ -95,7 +100,7 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
       <Helmet>
         <title>{props.title}</title>
       </Helmet>
-      <Stepper activeStep={activeStep}>
+      <Stepper activeStep={activeStep} className={classes.stepper}>
         {steps.map((label, index) => {
           const stepProps: { completed?: boolean } = {};
           const labelProps: { optional?: React.ReactNode } = {};
