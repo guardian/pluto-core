@@ -252,7 +252,7 @@ const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
           rowsPerPage={pageSize}
           page={page}
           onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
+          onChangeRowsPerPage={handleChangeRowsPerPage}
           // FIXME: remove when count is correct
           labelDisplayedRows={({ from, to }) => `${from}-${to}`}
         />
