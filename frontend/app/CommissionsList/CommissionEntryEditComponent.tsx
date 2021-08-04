@@ -123,6 +123,16 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
     props.onChange({ ...props.commission, [field]: event.target.value });
   };
 
+  let createdTime: string | undefined = undefined;
+  let timeValue;
+  try {
+    timeValue = ParseDateISO(props.commission.created);
+    createdTime = FormatDate(timeValue, "E do MMM yyyy, h:mm a");
+  } catch (err) {
+    console.warn("Invalid creation time ", props.commission.created, ": ", err);
+    console.warn("timeValue was ", timeValue);
+  }
+
   return (
     <form onSubmit={props.onSubmit} className={classes.root}>
       <Grid container xs={12} direction="row" spacing={3}>
@@ -187,10 +197,7 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
           <TextField
             id="created"
             label="Created"
-            value={FormatDate(
-              ParseDateISO(props.commission.created),
-              "E do MMM yyyy, h:mm a"
-            )}
+            value={createdTime ?? "(error)"}
             disabled={true}
           />
           <StatusSelector

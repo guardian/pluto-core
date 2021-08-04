@@ -1,7 +1,25 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { Grid, Select, MenuItem, Checkbox } from "@material-ui/core";
+import {
+  Grid,
+  Select,
+  MenuItem,
+  Checkbox,
+  Input,
+  Switch,
+  FormControlLabel,
+  Typography,
+  withStyles,
+  createStyles,
+} from "@material-ui/core";
 import axios from "axios";
+import { Search } from "@material-ui/icons";
+
+const styles = createStyles({
+  formControl: {
+    marginLeft: "8px",
+  },
+});
 
 class ProjectFilterComponent extends React.Component {
   static propTypes = {
@@ -109,6 +127,7 @@ class ProjectFilterComponent extends React.Component {
         }
         return (
           <Select
+            className={this.props.classes.formControl}
             id={filterEntry.key}
             onChange={(event) => this.entryUpdated(event, filterEntry.key)}
             value={
@@ -123,6 +142,7 @@ class ProjectFilterComponent extends React.Component {
       } else {
         return (
           <Select
+            className={this.props.classes.formControl}
             id={filterEntry.key}
             onChange={(event) => this.entryUpdated(event, filterEntry.key)}
             value={
@@ -139,9 +159,10 @@ class ProjectFilterComponent extends React.Component {
           </Select>
         );
       }
-    } else if (filterEntry.key == "showKilled") {
+    } else if (filterEntry.key === "showKilled") {
       return (
-        <Checkbox
+        <Switch
+          className={this.props.classes.formControl}
           id={filterEntry.key}
           onChange={(event) => this.entryUpdated(event, filterEntry.key)}
           color={"primary"}
@@ -149,7 +170,7 @@ class ProjectFilterComponent extends React.Component {
       );
     } else {
       return (
-        <input
+        <Input
           disabled={disabled}
           id={filterEntry.key}
           onChange={(event) => this.entryUpdated(event, filterEntry.key)}
@@ -205,27 +226,25 @@ class ProjectFilterComponent extends React.Component {
           alignContent="center"
           justify="left"
           alignItems="center"
+          spacing={2}
+          style={{ marginTop: "-0.6em" }}
         >
           {this.filterSpec.map((filterEntry) => (
             <Grid item key={filterEntry.key}>
-              <label
+              {filterEntry.key === "title" ? (
+                <Search style={{ verticalAlign: "bottom" }} />
+              ) : null}
+
+              <FormControlLabel
+                labelPlacement="start"
                 className={
                   filterEntry.key === "showKilled"
                     ? "project-filter-entry-label-showkilled"
                     : "project-filter-entry-label"
                 }
-                htmlFor={filterEntry.key}
-              >
-                {filterEntry.key === "title" ? (
-                  <i className="fa fa-search" />
-                ) : null}
-
-                {filterEntry.label}
-              </label>
-              <div className="project-filter-entry-input">
-                {this.controlFor(filterEntry)}
-                <br style={{ marginTop: "5px" }} />
-              </div>
+                control={this.controlFor(filterEntry)}
+                label={filterEntry.label}
+              />
             </Grid>
           ))}
         </Grid>
@@ -234,4 +253,4 @@ class ProjectFilterComponent extends React.Component {
   }
 }
 
-export default ProjectFilterComponent;
+export default withStyles(styles)(ProjectFilterComponent);

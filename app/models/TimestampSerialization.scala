@@ -1,21 +1,20 @@
 package models
 
 import java.sql.Timestamp
-
-import org.joda.time.DateTime
 import play.api.libs.json._
 
+import java.time.format.DateTimeFormatter
+import java.time.{ZoneId, ZonedDateTime}
+
 trait TimestampSerialization {
-  def timestampToDateTime(t: Timestamp): DateTime = new DateTime(t.getTime)
-  def dateTimeToTimestamp(dt: DateTime): Timestamp = new Timestamp(dt.getMillis)
-  implicit val dateWrites = JodaWrites.jodaDateWrites("yyyy-MM-dd'T'HH:mm:ss.SSSZ") //this DOES take numeric timezones - Z means Zone, not literal letter Z
-  implicit val dateReads = JodaReads.jodaDateReads("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+  def timestampToDateTime(t: Timestamp): ZonedDateTime = ZonedDateTime.ofInstant(t.toInstant, ZoneId.systemDefault())
+  def dateTimeToTimestamp(dt: ZonedDateTime): Timestamp = new Timestamp(dt.toInstant.getEpochSecond*1000)
 
   /**
     *  performs a conversion from java.sql.Timestamp to Joda DateTime and back again
     */
   implicit val timestampFormat = new Format[Timestamp] {
-    def writes(t: Timestamp): JsValue = Json.toJson(timestampToDateTime(t))
-    def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[DateTime](json).map(dateTimeToTimestamp)
+    def writes(t: Timestamp): JsValue = Json.toJson(timestampToDateTime(t).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
+    def reads(json: JsValue): JsResult[Timestamp] = Json.fromJson[ZonedDateTime](json).map(dateTimeToTimestamp)
   }
 }

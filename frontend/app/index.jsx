@@ -1,6 +1,7 @@
 import React from "react";
 import { render } from "react-dom";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
+import { CssBaseline } from "@material-ui/core";
 import StorageListComponent from "./StorageComponent.jsx";
 
 import ProjectTypeMultistep from "./multistep/ProjectTypeMultistep.jsx";
@@ -36,7 +37,8 @@ import { UserContextProvider } from "./UserContext";
 import Raven from "raven-js";
 import ProjectValidationView from "./ProjectValidationView.jsx";
 import CommissionsList from "./CommissionsList/CommissionsList.tsx";
-import CommissionCreateMultistep from "./multistep/CommissionCreateMultistep.jsx";
+import CommissionMultistepNew from "./multistep/CommissionMultistepNew";
+
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
 import { PlutoThemeProvider, SystemNotification } from "pluto-headers";
@@ -46,6 +48,7 @@ import "./styles/app.css";
 import CommissionEntryEditComponent from "./CommissionsList/CommissionEntryEditComponent";
 import ProjectCreateMultistepNew from "./multistep/ProjectCreateMultistepNew";
 import StorageMultistepNew from "./multistep/StorageMultistepNew";
+import { CssBaseline } from "@material-ui/core";
 
 library.add(faSearch);
 
@@ -182,6 +185,7 @@ class App extends React.Component {
   render() {
     return (
       <PlutoThemeProvider>
+        <CssBaseline />
         <UserContextProvider
           value={
             this.state.isLoggedIn
@@ -249,7 +253,7 @@ class App extends React.Component {
                 <Route
                   path="/commission/new"
                   render={(props) => (
-                    <CommissionCreateMultistep
+                    <CommissionMultistepNew
                       match={props.match}
                       userName={this.state.currentUsername}
                     />
