@@ -58,6 +58,9 @@ const useStyles = makeStyles({
       marginLeft: "1rem",
     },
   },
+  projectPane: {
+    width: "100%",
+  },
 });
 
 declare var deploymentRootPath: string;
@@ -306,7 +309,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             </form>
           </Paper>
         {project === EMPTY_PROJECT ? null : (
-          <Grid item>
+          <Grid item className={classes.projectPane}>
             <ProjectEntryDeliverablesComponent
               project={project}
               onError={subComponentErrored}
@@ -314,14 +317,14 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           </Grid>
         )}
         {project === EMPTY_PROJECT ? null : (
-          <Grid item>
+          <Grid item className={classes.projectPane}>
             <ProjectAssetsComponent projectid={project.id}>
               <ProjectAssetsView projectid={project.id} />
             </ProjectAssetsComponent>
           </Grid>
         )}
         {project === EMPTY_PROJECT ? null : (
-          <Grid item>
+          <Grid item className={classes.projectPane}>
             <ProjectEntryVaultComponent
               project={project}
               onError={subComponentErrored}

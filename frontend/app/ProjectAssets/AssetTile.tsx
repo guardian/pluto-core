@@ -53,7 +53,9 @@ const AssetTile: React.FC<AssetTileProps> = (props) => {
       );
     }
 
-    const maybeValues = props.item.getMetadataValues("representativeThumbnail");
+    const maybeValues = props.item.getMetadataValues(
+      "representativeThumbnailNoAuth"
+    );
     if (maybeValues && maybeValues.length > 0 && mediabrowserContext) {
       return mediabrowserContext.vidispineBaseUrl + maybeValues[0];
     } else {

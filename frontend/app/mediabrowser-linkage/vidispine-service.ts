@@ -33,18 +33,21 @@ async function assetsForProject(
   pageSize: number
 ): Promise<VidispineItem[]> {
   const standardSearchDocument = `
-        <ItemSearchDocument xmlns="http://xml.vidispine.com/schema/vidispine">
-            <field name="gnm_containing_projects" value="${projectId}"/>
-            <sort>
-                <field>durationSeconds</field>
-                <order>descending</order>
-            </sort>
-        </ItemSearchDocument>
+<ItemSearchDocument xmlns="http://xml.vidispine.com/schema/vidispine">
+    <field>gnm_containing_projects</field>
+    <value>${projectId}</value>
+    <sort>
+        <field>durationSeconds</field>
+        <order>descending</order>
+    </sort>
+</ItemSearchDocument>
     `;
 
-  const fieldList = ["title", "representativeThumbnail", "gnm_category"].join(
-    ","
-  );
+  const fieldList = [
+    "title",
+    "representativeThumbnailNoAuth",
+    "gnm_category",
+  ].join(",");
 
   const response = await axios.put(
     `${vidispineBaseUrl}/API/item?content=metadata&field=${fieldList}&first=${fromCount}&number=${pageSize}&count=true`,

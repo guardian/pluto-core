@@ -42,7 +42,10 @@ class ProjectAssetsComponent extends React.Component<
       <Paper elevation={3} style={{ padding: "1rem" }}>
         <Typography variant="h4">Project Media</Typography>
         <Grid container direction="row">
-          <Grid item style={{ width: "10%", overflow: "hidden" }}>
+          <Grid
+            item
+            style={{ width: "10%", minWidth: "150px", overflow: "hidden" }}
+          >
             <AssetFolderLink projectId={this.props.projectid} />
           </Grid>
           <Grid

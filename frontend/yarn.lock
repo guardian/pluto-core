@@ -966,6 +966,18 @@
   dependencies:
     "@types/node" "*"
 
+"@types/lodash.omit@^4.5.6":
+  version "4.5.6"
+  resolved "https://registry.yarnpkg.com/@types/lodash.omit/-/lodash.omit-4.5.6.tgz#f2a9518259e481a48ff7ec423420fa8fd58933e2"
+  integrity sha512-KXPpOSNX2h0DAG2w7ajpk7TXvWF28ZHs5nJhOJyP0BQHkehgr948RVsToItMme6oi0XJkp19CbuNXkIX8FiBlQ==
+  dependencies:
+    "@types/lodash" "*"
+
+"@types/lodash@*":
+  version "4.14.172"
+  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.172.tgz#aad774c28e7bfd7a67de25408e03ee5a8c3d028a"
+  integrity sha512-/BHF5HAx3em7/KkzVKm3LrsD6HZAXuXO1AJZQ3cRRBZj4oHZDviWPYu0aEplAqDFNHZPW6d3G7KN+ONcCCC7pw==
+
 "@types/moxios@^0.4.12":
   version "0.4.12"
   resolved "https://registry.yarnpkg.com/@types/moxios/-/moxios-0.4.12.tgz#c55882ab85a6e7687597a74ec201b366eb608b3e"
