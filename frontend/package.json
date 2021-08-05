@@ -121,7 +121,6 @@
     "y18n": "^4.0.1",
     "yarn": "^1.21.1"
   },
-  "snyk": true,
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
