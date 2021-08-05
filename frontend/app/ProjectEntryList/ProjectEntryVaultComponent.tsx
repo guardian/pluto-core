@@ -25,7 +25,6 @@ const useStyles = makeStyles({
     display: "flex",
     flexDirection: "column",
     padding: "1rem",
-    marginTop: "1rem",
   },
   loading: {
     display: "flex",

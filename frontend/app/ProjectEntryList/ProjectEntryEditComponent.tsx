@@ -267,59 +267,68 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
               />
             </Grid>
 
-            <Grid item xs={6}>
-              <TextField
-                disabled={true}
-                value={moment(project.created).format("MMM Do, YYYY, hh:mm a")}
-                label="Created"
-              />
-              {projectType ? (
-                <TextField
-                  disabled={true}
-                  value={`${projectType.name} v${projectType.targetVersion}`}
-                  label="Project type"
-                />
-              ) : null}
+                <Grid item xs={6}>
+                  <TextField
+                    disabled={true}
+                    value={moment(project.created).format(
+                      "MMM Do, YYYY, hh:mm a"
+                    )}
+                    label="Created"
+                  />
+                  {projectType ? (
+                    <TextField
+                      disabled={true}
+                      value={`${projectType.name} v${projectType.targetVersion}`}
+                      label="Project type"
+                    />
+                  ) : null}
 
-              <ApplicableRulesSelector
-                deletable={project.deletable}
-                deep_archive={project.deep_archive}
-                sensitive={project.sensitive}
-                onChange={checkboxChanged}
-              />
-            </Grid>
+                  <ApplicableRulesSelector
+                    deletable={project.deletable}
+                    deep_archive={project.deep_archive}
+                    sensitive={project.sensitive}
+                    onChange={checkboxChanged}
+                  />
+                </Grid>
+              </Grid>
+              <div className={classes.formButtons}>
+                <Button
+                  className="cancel"
+                  variant="outlined"
+                  onClick={() => history.goBack()}
+                >
+                  Back
+                </Button>
+                <Button type="submit" variant="outlined">
+                  Update
+                </Button>
+              </div>
+            </form>
+          </Paper>
+        {project === EMPTY_PROJECT ? null : (
+          <Grid item>
+            <ProjectEntryDeliverablesComponent
+              project={project}
+              onError={subComponentErrored}
+            />
           </Grid>
-          <div className={classes.formButtons}>
-            <Button
-              className="cancel"
-              variant="outlined"
-              onClick={() => history.goBack()}
-            >
-              Back
-            </Button>
-            <Button type="submit" variant="outlined">
-              Update
-            </Button>
-          </div>
-        </form>
-      </Paper>
-      {project === EMPTY_PROJECT ? null : (
-        <ProjectEntryDeliverablesComponent
-          project={project}
-          onError={subComponentErrored}
-        />
-      )}
-      {project === EMPTY_PROJECT ? null : (
-        <ProjectAssetsComponent projectid={project.id}>
-          <ProjectAssetsView projectid={project.id} />
-        </ProjectAssetsComponent>
-      )}
-      {project === EMPTY_PROJECT ? null : (
-        <ProjectEntryVaultComponent
-          project={project}
-          onError={subComponentErrored}
-        />
-      )}
+        )}
+        {project === EMPTY_PROJECT ? null : (
+          <Grid item>
+            <ProjectAssetsComponent projectid={project.id}>
+              <ProjectAssetsView projectid={project.id} />
+            </ProjectAssetsComponent>
+          </Grid>
+        )}
+        {project === EMPTY_PROJECT ? null : (
+          <Grid item>
+            <ProjectEntryVaultComponent
+              project={project}
+              onError={subComponentErrored}
+            />
+          </Grid>
+        )}
+
       <Dialog
         open={errorDialog}
         onClose={closeDialog}

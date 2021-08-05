@@ -66,12 +66,17 @@ const AssetTile: React.FC<AssetTileProps> = (props) => {
   const maybeTitle = props.item.getMetadataValues("title");
   const maybeCategory = props.item.getMetadataValues("gnm_category");
 
+  const jumpToMediabrowser = () => {
+    window.open(`/vs/item/${props.item.id}`, "_blank");
+  };
+
   return (
     <div style={props.style}>
       <Paper
         elevation={3}
         style={{ width: props.tileWidth, height: props.tileHeight }}
         className={classes.container}
+        onClick={jumpToMediabrowser}
       >
         <Typography className={classes.caption}>
           {maybeTitle && maybeTitle.length > 0 ? maybeTitle[0] : "(untitled)"}

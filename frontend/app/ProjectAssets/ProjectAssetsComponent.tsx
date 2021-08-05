@@ -2,7 +2,6 @@ import React from "react";
 import { Button, Grid, Paper, Typography } from "@material-ui/core";
 import { MediabrowserContextProvider } from "../mediabrowser-linkage/mediabrowser";
 import { Alert } from "@material-ui/lab";
-import { Launch } from "@material-ui/icons";
 import AssetFolderLink from "../ProjectEntryList/AssetFolderLink";
 
 interface ProjectAssetsComponentProps {
@@ -40,7 +39,7 @@ class ProjectAssetsComponent extends React.Component<
 
   render() {
     return (
-      <Paper elevation={3}>
+      <Paper elevation={3} style={{ padding: "1rem" }}>
         <Typography variant="h4">Project Media</Typography>
         <Grid container direction="row">
           <Grid item style={{ width: "10%", overflow: "hidden" }}>
