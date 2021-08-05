@@ -42,11 +42,14 @@ class ProjectAssetsComponent extends React.Component<
     return (
       <Paper elevation={3}>
         <Typography variant="h4">Project Media</Typography>
-        <Grid container direction="column">
-          <Grid item style={{ maxWidth: "100px" }}>
+        <Grid container direction="row">
+          <Grid item style={{ width: "10%", overflow: "hidden" }}>
             <AssetFolderLink projectId={this.props.projectid} />
           </Grid>
-          <Grid item>
+          <Grid
+            item
+            style={{ width: "90%", overflowY: "hidden", overflowX: "scroll" }}
+          >
             <MediabrowserContextProvider>
               {this.state.didError ? (
                 <Alert severity="error">

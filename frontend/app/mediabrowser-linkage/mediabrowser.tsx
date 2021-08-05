@@ -18,12 +18,19 @@ const MediabrowserContextProvider: React.FC = (props) => {
   const [baseUrl, setBaseUrl] = useState<string | undefined>(undefined);
 
   async function loadMediabrowserConfiguration() {
-    const configResponse = await fetch("/config/config.json");
+    const configResponse = await fetch("/vs/config/config.json");
 
     switch (configResponse.status) {
       case 200:
-        const content = await configResponse.json();
-        setBaseUrl(content.vidispineBaseUrl);
+        try {
+          const content = await configResponse.json();
+          setBaseUrl(content.vidispineBaseUrl);
+        } catch (err) {
+          console.error(
+            "could not load in config response from mediabrowser: ",
+            err
+          );
+        }
         break;
       case 502 | 503 | 504:
         SystemNotification.open(

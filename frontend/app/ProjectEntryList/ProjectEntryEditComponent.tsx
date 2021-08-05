@@ -29,6 +29,8 @@ import { Helmet } from "react-helmet";
 import ProjectEntryVaultComponent from "./ProjectEntryVaultComponent";
 import { FileCopy, PermMedia } from "@material-ui/icons";
 import UsersAutoComplete from "../common/UsersAutoComplete";
+import ProjectAssetsView from "../ProjectAssets/ProjectAssetsView";
+import ProjectAssetsComponent from "../ProjectAssets/ProjectAssetsComponent";
 
 const useStyles = makeStyles({
   root: {
@@ -306,6 +308,11 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           project={project}
           onError={subComponentErrored}
         />
+      )}
+      {project === EMPTY_PROJECT ? null : (
+        <ProjectAssetsComponent projectid={project.id}>
+          <ProjectAssetsView projectid={project.id} />
+        </ProjectAssetsComponent>
       )}
       {project === EMPTY_PROJECT ? null : (
         <ProjectEntryVaultComponent
