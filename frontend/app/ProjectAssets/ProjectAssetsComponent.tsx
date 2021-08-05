@@ -1,8 +1,16 @@
 import React from "react";
-import { Button, Grid, Paper, Typography } from "@material-ui/core";
+import {
+  Button,
+  Grid,
+  Paper,
+  Typography,
+  withStyles,
+  WithStyles,
+} from "@material-ui/core";
 import { MediabrowserContextProvider } from "../mediabrowser-linkage/mediabrowser";
 import { Alert } from "@material-ui/lab";
 import AssetFolderLink from "../ProjectEntryList/AssetFolderLink";
+import ProjectAssetsView from "./ProjectAssetsView";
 
 interface ProjectAssetsComponentProps {
   projectid: number;
@@ -10,6 +18,7 @@ interface ProjectAssetsComponentProps {
 
 interface ProjectAssetsComponentState {
   didError: boolean;
+  totalCount: number | undefined;
 }
 
 /**
@@ -24,6 +33,7 @@ class ProjectAssetsComponent extends React.Component<
 
     this.state = {
       didError: false,
+      totalCount: undefined,
     };
   }
 
@@ -46,7 +56,17 @@ class ProjectAssetsComponent extends React.Component<
             item
             style={{ width: "10%", minWidth: "150px", overflow: "hidden" }}
           >
-            <AssetFolderLink projectId={this.props.projectid} />
+            <AssetFolderLink
+              projectId={this.props.projectid}
+              color="primary"
+              variant="contained"
+            />
+            {this.state.totalCount !== undefined ? (
+              <Typography style={{ fontSize: "0.8em", fontStyle: "italic" }}>
+                Total of {this.state.totalCount} assets associated with this
+                project
+              </Typography>
+            ) : undefined}
           </Grid>
           <Grid
             item
@@ -59,7 +79,12 @@ class ProjectAssetsComponent extends React.Component<
                   Please report to multimediatech.
                 </Alert>
               ) : (
-                this.props.children
+                <ProjectAssetsView
+                  projectid={this.props.projectid}
+                  totalCountUpdated={(newCount) =>
+                    this.setState({ totalCount: newCount })
+                  }
+                />
               )}
             </MediabrowserContextProvider>
           </Grid>

@@ -18,6 +18,7 @@ import {
   TableRow,
   TableSortLabel,
   Box,
+  Grid,
 } from "@material-ui/core";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
@@ -218,33 +219,30 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      className={classes.openProjectButton}
-                      variant="contained"
-                      color="primary"
-                      onClick={async () => {
-                        try {
-                          await openProject(id);
-                        } catch (error) {
-                          SystemNotification.open(
-                            SystemNotifcationKind.Error,
-                            `An error occurred when attempting to open the project. `
-                          );
-                          console.error(error);
-                        }
+                    <Grid container spacing={2}>
+                      <Grid item>
+                        <Button
+                          className={classes.openProjectButton}
+                          variant="contained"
+                          color="primary"
+                          onClick={async () => {
+                            window.open(`pluto:openproject:${id}`, "_blank");
+                            try {
+                              await updateProjectOpenedStatus(id);
 
-                        try {
-                          await updateProjectOpenedStatus(id);
-
-                          await props.updateRequired(page, rowsPerPage);
-                        } catch (error) {
-                          console.error(error);
-                        }
-                      }}
-                    >
-                      Open project
-                    </Button>
-                    <AssetFolderLink projectId={id} />
+                              await props.updateRequired(page, rowsPerPage);
+                            } catch (error) {
+                              console.error(error);
+                            }
+                          }}
+                        >
+                          Open project
+                        </Button>
+                      </Grid>
+                      <Grid item>
+                        <AssetFolderLink projectId={id} />
+                      </Grid>
+                    </Grid>
                   </TableCell>
                 </TableRow>
               );

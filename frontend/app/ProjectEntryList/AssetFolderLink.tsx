@@ -2,9 +2,12 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Button, Typography, IconButton, Tooltip } from "@material-ui/core";
 import ReplayIcon from "@material-ui/icons/Replay";
+import { Launch } from "@material-ui/icons";
 
 interface AssetFolderLinkProps {
   projectId: number;
+  variant?: "text" | "outlined" | "contained";
+  color?: "inherit" | "primary" | "secondary" | "default";
 }
 
 const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
@@ -68,9 +71,10 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
         </>
       ) : (
         <Button
-          style={{ marginLeft: "1em" }}
           href={`pluto:openfolder:${assetFolderPath}`}
-          variant="contained"
+          variant={props.variant ?? "contained"}
+          color={props.color}
+          endIcon={<Launch />}
         >
           Asset folder
         </Button>

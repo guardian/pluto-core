@@ -1,27 +1,46 @@
 import React, { useContext, useEffect, useState } from "react";
 import { FixedSizeGrid, GridChildComponentProps } from "react-window";
-import { CircularProgress } from "@material-ui/core";
+import { CircularProgress, Typography } from "@material-ui/core";
 import { VidispineItem } from "../mediabrowser-linkage/vidispine/item/VidispineItem";
 import { MediabrowserContext } from "../mediabrowser-linkage/mediabrowser";
 import AssetTile from "./AssetTile";
 import { assetsForProject } from "../mediabrowser-linkage/vidispine-service";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import { makeStyles } from "@material-ui/core/styles";
 
 interface ProjectAssetsViewProps {
   projectid: number;
+  totalCountUpdated?: (newValue: number | undefined) => void;
 }
+
+const useStyles = makeStyles((theme) => ({
+  note: {
+    fontSize: "0.8em",
+    fontStyle: "italic",
+    textAlign: "center",
+  },
+}));
 
 const ProjectAssetsView: React.FC<ProjectAssetsViewProps> = (props) => {
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
   const [loadedAssetCount, setLoadedAssetCount] = useState(0);
+  const [totalAssetCount, setTotalAssetCount] = useState<number | undefined>(
+    undefined
+  );
+
   const [projectAssets, setProjectAssets] = useState<VidispineItem[]>([]);
 
   const mediaBrowserContext = useContext(MediabrowserContext);
+  const classes = useStyles();
 
   const tileHeight = 240;
   const tileWidth = 220;
   const tileMargin = 20;
+
+  useEffect(() => {
+    if (props.totalCountUpdated) props.totalCountUpdated(totalAssetCount);
+  }, [totalAssetCount]);
 
   const reload = () => {
     if (mediaBrowserContext) {
@@ -34,8 +53,9 @@ const ProjectAssetsView: React.FC<ProjectAssetsViewProps> = (props) => {
         30
       )
         .then((assets) => {
-          setProjectAssets(assets);
-          setLoadedAssetCount(assets.length);
+          setProjectAssets(assets.items);
+          setLoadedAssetCount(assets.items.length);
+          setTotalAssetCount(assets.totalCount);
           setLoading(false);
         })
         .catch((err) => {
@@ -82,7 +102,7 @@ const ProjectAssetsView: React.FC<ProjectAssetsViewProps> = (props) => {
         style={{ marginTop: (tileHeight + tileMargin) / 2 - 20 }}
       />
     </div>
-  ) : (
+  ) : totalAssetCount ? (
     <FixedSizeGrid
       columnWidth={tileWidth + tileMargin}
       rowHeight={tileHeight + tileMargin}
@@ -93,6 +113,11 @@ const ProjectAssetsView: React.FC<ProjectAssetsViewProps> = (props) => {
     >
       {renderTile}
     </FixedSizeGrid>
+  ) : (
+    <Typography className={classes.note}>
+      There are no online media items registered with this project, this could
+      be because it has not yet been scanned or because it has been archived
+    </Typography>
   );
 };
 

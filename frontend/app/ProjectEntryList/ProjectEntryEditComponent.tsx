@@ -318,9 +318,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         )}
         {project === EMPTY_PROJECT ? null : (
           <Grid item className={classes.projectPane}>
-            <ProjectAssetsComponent projectid={project.id}>
-              <ProjectAssetsView projectid={project.id} />
-            </ProjectAssetsComponent>
+            <ProjectAssetsComponent projectid={project.id} />
           </Grid>
         )}
         {project === EMPTY_PROJECT ? null : (

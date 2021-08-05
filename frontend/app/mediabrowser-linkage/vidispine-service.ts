@@ -1,7 +1,6 @@
 import axios from "axios";
 import { VidispineItem } from "./vidispine/item/VidispineItem";
 import { VError } from "ts-interface-checker";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 
 /**
  * validates a given vidispine item, returning either a VidispineItem or undefined if it fails to validate.
@@ -26,16 +25,32 @@ const validateVSItem = (content: any) => {
   }
 };
 
+interface AssetsResponse {
+  items: VidispineItem[];
+  totalCount: number;
+}
+
+function getHitCount(data: any, defaultValue: number): number {
+  if (data.hits && typeof data.hits == "number") {
+    return data.hits as number;
+  } else {
+    console.log("invalid hit count: ", data.hits);
+    return defaultValue;
+  }
+}
+
 async function assetsForProject(
   vidispineBaseUrl: string,
   projectId: number,
   fromCount: number,
   pageSize: number
-): Promise<VidispineItem[]> {
+): Promise<AssetsResponse> {
   const standardSearchDocument = `
 <ItemSearchDocument xmlns="http://xml.vidispine.com/schema/vidispine">
-    <field>gnm_containing_projects</field>
-    <value>${projectId}</value>
+    <field>
+        <name>gnm_containing_projects</name>
+        <value>"${projectId}"</value>
+    </field>
     <sort>
         <field>durationSeconds</field>
         <order>descending</order>
@@ -63,16 +78,23 @@ async function assetsForProject(
 
   switch (response.status) {
     case 200:
+      const hitcount = getHitCount(response.data, 0);
       if (response.data.item) {
-        return response.data.item
-          .map(validateVSItem)
-          .filter((item: VidispineItem | undefined) => item !== undefined);
+        return {
+          totalCount: hitcount,
+          items: response.data.item
+            .map(validateVSItem)
+            .filter((item: VidispineItem | undefined) => item !== undefined),
+        };
       } else {
-        return [];
+        console.error("Response had no `item` field", response.data);
+        return Promise.reject("vidispine returned invalid data");
       }
     case 400:
       console.log("vidispine returned bad request: ", response.data);
-      return Promise.reject("Internal error: vidispine search was incorrect");
+      return Promise.reject(
+        "of an internal error: vidispine search was incorrect"
+      );
     case 500 | 502 | 503 | 504:
       console.log(
         "vidispine server error ",
