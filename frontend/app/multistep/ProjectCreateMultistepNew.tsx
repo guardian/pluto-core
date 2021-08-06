@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps, useLocation } from "react-router-dom";
 import {
   Button,
   Grid,
@@ -65,8 +65,8 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
     undefined
   );
 
+  const location = useLocation();
   const userContext = useContext(UserContext);
-
   const classes = multistepStyles();
 
   const steps = [
@@ -78,11 +78,27 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
     "Review",
   ];
 
-  const fakeUploadTimer = () => {
-    return new Promise<void>((resolve, reject) =>
-      window.setTimeout(() => resolve(), 3000)
-    );
-  };
+  useEffect(() => {
+    console.log("location updated: ", location);
+    const query = new URLSearchParams(location.search);
+    const urlCommId = query.get("commissionId");
+    if (urlCommId) {
+      try {
+        setCommissionId(parseInt(urlCommId));
+      } catch (err) {
+        console.log("invalid commission id passed in: ", urlCommId, err);
+      }
+    }
+
+    const urlWGId = query.get("workingGroupId");
+    if (urlWGId) {
+      try {
+        setWorkingGroupId(parseInt(urlWGId));
+      } catch (err) {
+        console.log("invalid working group id passed in: ", urlWGId, err);
+      }
+    }
+  }, [location]);
 
   const createClicked = async () => {
     setActiveStep(6);

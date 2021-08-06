@@ -188,13 +188,17 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
         />
       ) : undefined}
       {activeStep == 6 ? (
-        createdCommissionId ? (
-          <CommissionCreated commissionId={createdCommissionId} title={title} />
+        createdCommissionId && workingGroupId ? (
+          <CommissionCreated
+            commissionId={createdCommissionId}
+            workingGroupId={workingGroupId}
+            title={title}
+          />
         ) : (
           <InProgressComponent
             didFail={true}
             description=""
-            errorMessage="Commission created but no commission ID found. Please click 'Commissions' in the menu bar above to continue."
+            errorMessage="Commission created but no commission ID and/or working group ID found. Please click 'Commissions' in the menu bar above to continue."
           />
         )
       ) : undefined}
