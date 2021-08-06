@@ -46,7 +46,7 @@ const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
         direction="row"
         container
         style={{ marginTop: "0.8em" }}
-        justify="center"
+        justifyContent="center"
       >
         <Grid item className={classes.selectorbox}>
           <Typography variant="h6">Working group</Typography>

@@ -161,7 +161,7 @@ const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
 
   return (
     <Paper className={classes.projectVaultData}>
-      <Grid container spacing={3} justify="space-between">
+      <Grid container spacing={3} justifyContent="space-between">
         <Grid item>
           <Typography variant="h4">Storage</Typography>
         </Grid>

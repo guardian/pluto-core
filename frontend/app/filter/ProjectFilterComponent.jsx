@@ -224,7 +224,7 @@ class ProjectFilterComponent extends React.Component {
         <Grid
           container
           alignContent="center"
-          justify="left"
+          justifyContent="flex-start"
           alignItems="center"
           spacing={2}
           style={{ marginTop: "-0.6em" }}

@@ -97,7 +97,7 @@
     "lodash.omit": "^4.5.0",
     "material-ui-chip-input": "^1.1.0",
     "moment": "^2.20.1",
-    "pluto-headers": "https://gitlab.com/codmill/customer-projects/guardian/pluto-headers.git#333e4a16",
+    "pluto-headers": "https://gitlab.com/codmill/customer-projects/guardian/pluto-headers.git#e9de8f57834efd8e0a98960efe5c79501e184c19",
     "process": "^0.11.10",
     "prop-types": "^15.7.2",
     "query-string": "^6.13.1",

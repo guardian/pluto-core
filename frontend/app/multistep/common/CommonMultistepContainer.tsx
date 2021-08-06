@@ -118,7 +118,7 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
       <StepContent activeStep={activeStep} className={classes.stepContainer}>
         {props.children}
         <hr />
-        <Grid justify="space-between" container>
+        <Grid justifyContent="space-between" container>
           <Grid item>
             <Button
               variant="outlined"

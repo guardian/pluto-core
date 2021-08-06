@@ -410,7 +410,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
           <Grid
             container
             direction="row"
-            justify="space-around"
+            justifyContent="space-around"
             alignContent="center"
           >
             <Grid item>
@@ -423,7 +423,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
           </Grid>
         ) : null}
         {lastError ? (
-          <Grid container direction="row" justify="space-around">
+          <Grid container direction="row" justifyContent="space-around">
             <Grid item className={classes.error}>
               <ErrorIcon className={classes.inlineThrobber} />
               <Typography className={classes.inlineText}>
