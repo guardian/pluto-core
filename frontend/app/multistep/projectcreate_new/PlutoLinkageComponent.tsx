@@ -8,15 +8,13 @@ import {
 } from "@material-ui/core";
 import WorkingGroupSelector from "../common/WorkingGroupSelectorNew";
 import { makeStyles } from "@material-ui/core/styles";
-import axios from "axios";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import CommissionSelector from "../common/CommissionSelectorNew";
 import { loadWorkingGroups } from "../common/WorkingGroupService";
 
 interface PlutoLinkageComponentProps {
   commissionId?: number;
   workingGroupId?: number;
-  commissionIdDidChange: (newValue: number) => void;
+  commissionIdDidChange: (newValue: number | undefined) => void;
   workingGroupIdDidChange: (newValue: number | undefined) => void;
 }
 
