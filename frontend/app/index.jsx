@@ -1,7 +1,7 @@
 import React from "react";
 import { render } from "react-dom";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
-import { ThemeProvider, CssBaseline, createTheme } from "@material-ui/core";
+import { CssBaseline } from "@material-ui/core";
 import StorageListComponent from "./StorageComponent.jsx";
 
 import ProjectTypeMultistep from "./multistep/ProjectTypeMultistep.jsx";
@@ -48,23 +48,11 @@ import "./styles/app.css";
 import CommissionEntryEditComponent from "./CommissionsList/CommissionEntryEditComponent";
 import ProjectCreateMultistepNew from "./multistep/ProjectCreateMultistepNew";
 import StorageMultistepNew from "./multistep/StorageMultistepNew";
+import { CssBaseline } from "@material-ui/core";
 
 library.add(faSearch);
 
 window.React = require("react");
-
-const theme = createTheme({
-  typography: {
-    fontFamily: [
-      "sans-serif",
-      '"Helvetica Neue"',
-      "Helvetica",
-      "Arial",
-      "sans-serif",
-    ].join(","),
-    fontWeight: 400,
-  },
-});
 
 axios.interceptors.request.use(function (config) {
   const token = window.localStorage.getItem("pluto:access-token");
@@ -135,12 +123,6 @@ class App extends React.Component {
     });
   }
 
-  setStatePromise(newState) {
-    return new Promise((resolve, reject) =>
-      this.setState(newState, () => resolve())
-    );
-  }
-
   componentDidMount() {
     this.setState({
       loading: true,
@@ -202,7 +184,7 @@ class App extends React.Component {
 
   render() {
     return (
-      <ThemeProvider theme={theme}>
+      <PlutoThemeProvider>
         <CssBaseline />
         <UserContextProvider
           value={
@@ -307,7 +289,7 @@ class App extends React.Component {
           </div>
           <SystemNotification />
         </UserContextProvider>
-      </ThemeProvider>
+      </PlutoThemeProvider>
     );
   }
 }

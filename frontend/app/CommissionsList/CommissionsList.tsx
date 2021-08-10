@@ -158,10 +158,6 @@ const CommissionsList: React.FC = () => {
           <ProjectFilterComponent
             filterTerms={filterTerms}
             filterDidUpdate={(newFilters: ProjectFilterTerms) => {
-              console.log(
-                "ProjectFilterComponent filterDidUpdate ",
-                newFilters
-              );
               if (newFilters.user === "Everyone") {
                 newFilters.user = undefined;
               }

@@ -21,7 +21,7 @@ const ImprovedDeleteComponent: React.FC<ImprovedDeleteComponentProps> = (
         click the Delete button below. Do you want to continue?
       </Typography>
       {props.children}
-      <Grid container direction="row" justify="space-between">
+      <Grid container direction="row" justifyContent="space-between">
         <Grid item>
           <Button
             variant="outlined"

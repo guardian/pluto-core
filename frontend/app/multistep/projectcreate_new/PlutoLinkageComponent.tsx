@@ -8,16 +8,14 @@ import {
 } from "@material-ui/core";
 import WorkingGroupSelector from "../common/WorkingGroupSelectorNew";
 import { makeStyles } from "@material-ui/core/styles";
-import axios from "axios";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import CommissionSelector from "../common/CommissionSelectorNew";
 import { loadWorkingGroups } from "../common/WorkingGroupService";
 
 interface PlutoLinkageComponentProps {
   commissionId?: number;
   workingGroupId?: number;
-  commissionIdDidChange: (newValue: number) => void;
-  workingGroupIdDidChange: (newValue: number) => void;
+  commissionIdDidChange: (newValue: number | undefined) => void;
+  workingGroupIdDidChange: (newValue: number | undefined) => void;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -43,6 +41,18 @@ const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
   useEffect(() => {
     loadWorkingGroups(setKnownWorkingGroups);
   }, []);
+
+  useEffect(() => {
+    if (knownWorkingGroups.length > 0 && props.workingGroupId) {
+      const matches = knownWorkingGroups.filter(
+        (wg) => wg.id == props.workingGroupId
+      );
+      if (matches.length == 0) {
+        console.log("the working group is invalid and will be removed");
+        props.workingGroupIdDidChange(undefined);
+      }
+    }
+  }, [knownWorkingGroups, props.workingGroupId]);
 
   return (
     <div>
