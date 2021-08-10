@@ -152,7 +152,7 @@ class GenericEntryFilterComponent extends React.Component {
         <Grid
           container
           alignContent="space-around"
-          justify="center"
+          justifyContent="center"
           style={{ display: this.state.showFilters ? "flex" : "none" }}
         >
           {this.filterSpec.map((filterEntry) => (

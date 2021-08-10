@@ -17,7 +17,7 @@ interface PlutoLinkageComponentProps {
   commissionId?: number;
   workingGroupId?: number;
   commissionIdDidChange: (newValue: number) => void;
-  workingGroupIdDidChange: (newValue: number) => void;
+  workingGroupIdDidChange: (newValue: number | undefined) => void;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -43,6 +43,18 @@ const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
   useEffect(() => {
     loadWorkingGroups(setKnownWorkingGroups);
   }, []);
+
+  useEffect(() => {
+    if (knownWorkingGroups.length > 0 && props.workingGroupId) {
+      const matches = knownWorkingGroups.filter(
+        (wg) => wg.id == props.workingGroupId
+      );
+      if (matches.length == 0) {
+        console.log("the working group is invalid and will be removed");
+        props.workingGroupIdDidChange(undefined);
+      }
+    }
+  }, [knownWorkingGroups, props.workingGroupId]);
 
   return (
     <div>

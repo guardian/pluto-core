@@ -158,10 +158,6 @@ const CommissionsList: React.FC = () => {
           <ProjectFilterComponent
             filterTerms={filterTerms}
             filterDidUpdate={(newFilters: ProjectFilterTerms) => {
-              console.log(
-                "ProjectFilterComponent filterDidUpdate ",
-                newFilters
-              );
               if (newFilters.user === "Everyone") {
                 newFilters.user = undefined;
               }
@@ -259,7 +255,7 @@ const CommissionsList: React.FC = () => {
           rowsPerPage={pageSize}
           page={page}
           onPageChange={handleChangePage}
-          onChangeRowsPerPage={handleChangeRowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
           // FIXME: remove when count is correct
           labelDisplayedRows={({ from, to }) => `${from}-${to}`}
         />

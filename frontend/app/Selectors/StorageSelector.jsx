@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import StatusIndicator from "../EntryViews/StatusIndicator.jsx";
+import { MenuItem, Select } from "@material-ui/core";
 
 class StorageSelector extends React.Component {
   static propTypes = {
@@ -40,7 +41,7 @@ class StorageSelector extends React.Component {
   render() {
     return (
       <span>
-        <select
+        <Select
           id="storageSelector"
           value={this.props.selectedStorage}
           disabled={!this.props.enabled}
@@ -50,11 +51,11 @@ class StorageSelector extends React.Component {
           }
         >
           {this.props.storageList.map((storage) => (
-            <option key={storage.id} value={storage.id}>
+            <MenuItem key={storage.id} value={storage.id}>
               {this.displayName(storage)}
-            </option>
+            </MenuItem>
           ))}
-        </select>
+        </Select>
         <StatusIndicator
           status={this.getSelectedStatus()}
           showLabel={this.props.showLabel}

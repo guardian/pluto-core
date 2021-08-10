@@ -7,6 +7,7 @@ import { Button, Typography } from "@material-ui/core";
 
 interface CommissionCreatedProps {
   commissionId: number;
+  workingGroupId: number;
   title: string;
 }
 
@@ -56,7 +57,11 @@ const CommissionCreated: React.FC<CommissionCreatedProps> = (props) => {
                 variant="contained"
                 color="primary"
                 endIcon={<ChevronRight />}
-                onClick={() => history.push("/project/new")}
+                onClick={() =>
+                  history.push(
+                    `/project/new?commissionId=${props.commissionId}&workingGroupId=${props.workingGroupId}`
+                  )
+                }
               >
                 New Project
               </Button>
@@ -64,7 +69,7 @@ const CommissionCreated: React.FC<CommissionCreatedProps> = (props) => {
           </tr>
           <tr>
             <td>
-              <Typography>Go to the commission page</Typography>
+              <Typography>Go to the new commission's page</Typography>
             </td>
             <td>
               <Button

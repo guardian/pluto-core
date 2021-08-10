@@ -15,7 +15,7 @@ import { FixedSizeList, ListChildComponentProps } from "react-window";
 import { makeStyles } from "@material-ui/core/styles";
 
 interface CommissionSelectorProps {
-  valueWasSet: (newValue: number) => void;
+  valueWasSet: (newValue: number | undefined) => void;
   workingGroupId?: number;
   selectedCommissionId?: number;
   showStatus?: ProjectStatus | "all";
@@ -110,6 +110,21 @@ const CommissionSelector: React.FC<CommissionSelectorProps> = (props) => {
     setTotalResultCount(0);
     updateResults();
   }, [props.workingGroupId]);
+
+  /**
+   * if the commission id has been set externally, validate that it is in fact part of this working group
+   */
+  useEffect(() => {
+    if (seenCommissions.length > 0 && props.selectedCommissionId) {
+      const matches = seenCommissions.filter(
+        (comm) => comm.id == props.selectedCommissionId
+      );
+      if (matches.length == 0) {
+        console.log("selected commission id was not found, removing it");
+        props.valueWasSet(undefined);
+      }
+    }
+  }, [seenCommissions, props.selectedCommissionId]);
 
   const renderRow = (rowProps: ListChildComponentProps) => {
     if (rowProps.index > seenCommissions.length) return null;
