@@ -240,7 +240,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
                   })
               })
             } else {
-              logger.info(s"Backup of ${sourceEntry.filepath} not needed because it has not changed.")
+              logger.debug(s"Backup of ${sourceEntry.filepath} not needed because it has not changed.")
               Future(Right(None))
             }
         })
