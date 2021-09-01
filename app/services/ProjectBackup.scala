@@ -307,6 +307,11 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
   def backupProjects = {
     import slick.jdbc.PostgresProfile.api._
 
+    if(sys.env.get("DISABLE_BACKUPS").contains("true")) {
+      logger.warn("Project backups are currently disabled.  Remove the DISABLE_BACKUPS environment variable to enable again")
+      return Future(Seq())
+    }
+
     def storagesToBackup = db.run {
       TableQuery[StorageEntryRow]
         .filter(_.backsUpTo.isDefined)
