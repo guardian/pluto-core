@@ -304,7 +304,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     })
   }
 
-  def backupProjects = {
+  def backupProjects:Future[Seq[BackupResults]] = {
     import slick.jdbc.PostgresProfile.api._
 
     if(sys.env.get("DISABLE_BACKUPS").contains("true")) {
