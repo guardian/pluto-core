@@ -240,7 +240,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
                   })
               })
             } else {
-              logger.info(s"Backup of ${sourceEntry.filepath} not needed because it has not changed.")
+              logger.debug(s"Backup of ${sourceEntry.filepath} not needed because it has not changed.")
               Future(Right(None))
             }
         })
@@ -304,8 +304,13 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     })
   }
 
-  def backupProjects = {
+  def backupProjects:Future[Seq[BackupResults]] = {
     import slick.jdbc.PostgresProfile.api._
+
+    if(sys.env.get("DISABLE_BACKUPS").contains("true")) {
+      logger.warn("Project backups are currently disabled.  Remove the DISABLE_BACKUPS environment variable to enable again")
+      return Future(Seq())
+    }
 
     def storagesToBackup = db.run {
       TableQuery[StorageEntryRow]
