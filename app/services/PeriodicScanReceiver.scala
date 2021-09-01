@@ -81,19 +81,19 @@ class PeriodicScanReceiver @Inject() (config:Configuration,
           case ServiceEventAction.PerformAction=>
             routingKey match {
               case "pluto.core.service.storagescan"=>
-                logger.info("Triggering storage check in response to incoming message")
+                logger.debug("Triggering storage check in response to incoming message")
                 storageScanner ! StorageScanner.Rescan
                 Future(true)
               case "pluto.core.service.commissionstatuspropagator"=>
-                logger.info("Triggering commission status propagator check for retries in response to incoming message")
+                logger.debug("Triggering commission status propagator check for retries in response to incoming message")
                 commissionStatusPropagator ! CommissionStatusPropagator.RetryFromState(UUID.randomUUID())
                 Future(true)
               case "pluto.core.service.postrunaction"=>
-                logger.info("Triggering postrun action check in response to incoming message")
+                logger.debug("Triggering postrun action check in response to incoming message")
                 postrunActionScanner ! PostrunActionScanner.Rescan
                 Future(true)
               case "pluto.core.service.backuptrigger"=>
-                logger.info("Triggering backup action in response to incoming message")
+                logger.debug("Triggering backup action in response to incoming message")
                 projectBackup.backupProjects
                   .map(results=>{
                     logger.info(s"Timed backup completed.  ${results.length} storages were backed up")
