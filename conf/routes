@@ -48,7 +48,7 @@ GET     /api/project/vsid/:vsid                  @controllers.ProjectEntryContro
 PUT     /api/project/:id/wasopened          @controllers.ProjectEntryController.projectWasOpened(id: Int)
 PUT     /api/project/:id                    @controllers.ProjectEntryController.updateByAnyone(id: Int)
 #DELETE  /api/project/:id                   @controllers.ProjectEntryController.delete(id: Int)
-POST     /api/project/validate              @controllers.ProjectEntryController.performFullValidation
+POST     /api/validations                   @controllers.ValidationsController.startValidation
 PUT     /api/project/:id/status             @controllers.ProjectEntryController.updateStatus(id:Int)
 
 GET     /api/projecttype                   @controllers.ProjectTypeController.list(startAt:Int ?=0,length:Int ?=100)

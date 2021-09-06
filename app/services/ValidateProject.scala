@@ -2,20 +2,23 @@ package services
 
 import akka.actor.{Actor, ActorRef, ActorSystem}
 import akka.stream.{ActorMaterializer, ClosedShape, Materializer}
-import akka.stream.scaladsl.{Balance, GraphDSL, Merge, RunnableGraph, Sink}
+import akka.stream.scaladsl.{Balance, Flow, GraphDSL, Merge, RunnableGraph, Sink}
 
 import javax.inject.{Inject, Singleton}
-import models.{ProjectEntry, ProjectEntryRow}
+import models.{ProjectEntry, ProjectEntryRow, ValidationJob, ValidationJobDAO, ValidationJobStatus, ValidationJobType, ValidationProblem, ValidationProblemDAO}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import slick.lifted.{Rep, TableQuery}
-import streamcomponents.{ProjectSearchSource, ValidateProjectSwitch}
+import streamcomponents.{ProjectSearchSource, ProjectValidationComponent}
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
 
+import java.sql.Timestamp
+import java.time.Instant
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -24,15 +27,18 @@ object ValidateProject {
   trait VPMsg
 
   /* public messages that are expected to be received */
-  case object ValidateAllProjects extends VPMsg
+  case class RequestValidation(job:ValidationJob) extends VPMsg
 
   /* public messages that will be sent in reply */
-  case class ValidationSuccess(totalProjects:Int, projectCount:Int, failedProjects:Seq[ProjectEntry]) extends VPMsg
+  case class ValidationSuccess(jobId:UUID) extends VPMsg
   case class ValidationError(err:Throwable) extends VPMsg
 }
 
 @Singleton
-class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseConfigProvider, actorSystem:ActorSystem)(implicit mat:Materializer, injector:Injector) extends Actor {
+class ValidateProject @Inject()(config:Configuration,
+                                dbConfigProvider:DatabaseConfigProvider,
+                                validationJobDAO:ValidationJobDAO,
+                                validationProblemDAO:ValidationProblemDAO)(implicit mat:Materializer, injector:Injector) extends Actor {
   import ValidateProject._
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -44,28 +50,25 @@ class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseC
     * @param queryFunc
     * @return
     */
-  def buildStream(parallelism:Int=4)(queryFunc: TableQuery[ProjectEntryRow]) = {
-    val sinkFactory = Sink.fold[Seq[ProjectEntry],ProjectEntry](Seq())((acc,entry)=>acc++Seq(entry))
+  def buildStream(currentJob:ValidationJob, parallelism:Int=4, batchSize:Int=20)(queryFunc: TableQuery[ProjectEntryRow]) = {
+    //val sinkFactory = Sink.fold[Seq[ProjectEntry],ProjectEntry](Seq())((acc,entry)=>acc++Seq(entry))
+    val sinkFactory = Sink.foreach[Seq[ValidationProblem]](validationProblemDAO.batchInsertIntoDb)
+
     GraphDSL.create(sinkFactory) { implicit builder=> sink=>
       import akka.stream.scaladsl.GraphDSL.Implicits._
       val src = builder.add(new ProjectSearchSource(dbConfigProvider)(queryFunc))
       val distrib = builder.add(Balance[ProjectEntry](parallelism))
-      val noMerge = builder.add(Merge[ProjectEntry](parallelism))
-      val yesMerge = builder.add(Merge[ProjectEntry](parallelism))
-      val yesSink = builder.add(Sink.ignore)
+      val noMerge = builder.add(Merge[ValidationProblem](parallelism))
+      val switcher = builder.add(new ProjectValidationComponent(dbConfigProvider, currentJob))
+      val batcher = builder.add(Flow[ValidationProblem].grouped(batchSize))
 
-      //distrib.log("services.ValidateProject")
+      src.out.log("services.ValidateProject") ~> distrib
 
-      src ~> distrib
       for(i<- 0 until parallelism){
-        val switcher = builder.add(new ValidateProjectSwitch(dbConfigProvider))
-        distrib.out(i) ~> switcher
-        switcher.out(0) ~> yesMerge //"yes" branch
-        switcher.out(1) ~> noMerge  //"no" branch
+        distrib.out(i) ~> switcher ~> noMerge
       }
 
-      yesMerge ~> yesSink
-      noMerge ~> sink
+      noMerge ~> batcher ~> sink
       ClosedShape
     }
   }
@@ -76,8 +79,8 @@ class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseC
     * @param parallelism
     * @return
     */
-  def runStream(parallelism:Int=4)(queryFunc:TableQuery[ProjectEntryRow]) =
-    RunnableGraph.fromGraph(buildStream(parallelism)(queryFunc)).run()
+  def runStream(currentJob:ValidationJob, parallelism:Int=4)(queryFunc:TableQuery[ProjectEntryRow]) =
+    RunnableGraph.fromGraph(buildStream(currentJob, parallelism)(queryFunc)).run()
 
   /**
     * return the total number of records matching the query
@@ -98,30 +101,47 @@ class ValidateProject @Inject()(config:Configuration, dbConfigProvider:DatabaseC
     * @param queryFunc
     * @return
     */
-  def performValidation(parallelism:Int=4)(queryFunc: TableQuery[ProjectEntryRow]) = {
-    val resultFuture = for {
+  def performValidation(currentJob:ValidationJob, parallelism:Int=4)(queryFunc: TableQuery[ProjectEntryRow]) = {
+    for {
       c <- getTotalCount(queryFunc)
-      r <- runStream()(queryFunc)
-    } yield (c,r)
+      r <- runStream(currentJob)(queryFunc)
+    } yield c
+  }
 
-    resultFuture
-      .map(resultTuple=>ValidationSuccess(resultTuple._1,resultTuple._2.length, resultTuple._2))
+  def runRequestedValidation(job:ValidationJob):Future[Int] = {
+    job.jobType match {
+      case ValidationJobType.CheckAllFiles=>
+        performValidation(job)(TableQuery[ProjectEntryRow])
+      case ValidationJobType.CheckSomeFiles=>
+        Future.failed(new RuntimeException("CheckSomeFiles has not been implemented yet"))
+      case ValidationJobType.MislinkedPTR=>
+        Future.failed(new RuntimeException("MislinkedPTR has not been implemented yet"))
+    }
   }
 
   override def receive: Receive = {
-    case ValidateAllProjects=>
+    case RequestValidation(job:ValidationJob)=>
       val originalSender = sender()
+      logger.info(s"${job.uuid}: Received validation request for ${job.jobType} from ${job.userName}")
+      val result = for {
+        inProgressJob <- validationJobDAO.writeJob(job.copy(status = ValidationJobStatus.Running))
+        validationResult <- runRequestedValidation(inProgressJob)
+      } yield (inProgressJob, validationResult)
 
-      logger.info("Starting validation of all projects...")
-      performValidation()(TableQuery[ProjectEntryRow]).onComplete({
+      result.map(result=>{
+        logger.info(s"${job.uuid}: Validation completed successfully, processed ${result._2} records")
+        validationJobDAO.setJobCompleted(job)
+      }).onComplete({
+        case Success(_)=>
+          originalSender ! ValidationSuccess(job.uuid)
         case Failure(err)=>
-          logger.error(s"Projects validation failed: $err")
-          originalSender ! ValidationError(err)
-
-        case Success(result)=>
-          logger.info(s"Project validation completed: $result")
-          originalSender ! result
-
+          val failedJob = job.copy(status=ValidationJobStatus.Failure, completedAt=Some(Timestamp.from(Instant.now())))
+          validationJobDAO.writeJob(failedJob).onComplete({
+            case Success(_)=>()
+            case Failure(err)=>
+              logger.error(s"${job.uuid}: Could not write validation job failure to the database: ${err.getMessage}", err)
+          })
+          logger.error(s"${job.uuid}: Validation failed: ${err.getMessage}", err)
       })
   }
 }
