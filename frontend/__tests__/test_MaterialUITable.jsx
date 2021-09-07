@@ -706,20 +706,6 @@ describe("MaterialUITable", () => {
     { header: "", key: "links" },
   ];
 
-  test("stableSort should sort data correctly", () => {
-    const sortedData = stableSort(testTableData, getComparator("asc", "id"));
-    expect(sortedData[0]["id"]).toEqual(5);
-    expect(sortedData[1]["id"]).toEqual(6);
-    expect(sortedData[2]["id"]).toEqual(9);
-    const sortedDataTwo = stableSort(
-      testTableData,
-      getComparator("desc", "id")
-    );
-    expect(sortedDataTwo[0]["id"]).toEqual(128);
-    expect(sortedDataTwo[1]["id"]).toEqual(126);
-    expect(sortedDataTwo[2]["id"]).toEqual(125);
-  });
-
   test("should render an EnhancedTable", (done) => {
     const result = mount(
       <EnhancedTable tableData={testTableData} columnData={testColumnData} />
