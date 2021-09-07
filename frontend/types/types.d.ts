@@ -252,3 +252,37 @@ interface StorageEntry {
   status?: string;
   backsUpTo?: number;
 }
+
+/*
+case class ValidationJob(id:Option[Int],uuid:UUID,
+                         userName:String,
+                         jobType:ValidationJobType.Value,
+                         startedAt:Option[Timestamp],
+                         completedAt:Option[Timestamp],
+                         status:ValidationJobStatus.Value,
+                         errorMessage:Option[String])
+ */
+interface ValidationJob {
+  uuid: string;
+  userName: string;
+  jobType: string;
+  startedAt?: string;
+  completedAt?: string;
+  status: string;
+  errorMessage?: string;
+}
+
+type ValidationJobColumn =
+  | "uuid"
+  | "userName"
+  | "jobType"
+  | "startedAt"
+  | "completedAt"
+  | "status"
+  | "errorMessage";
+
+interface ValidationJobListResponse {
+  status: string;
+  totalCount: number;
+  jobs: ValidationJob[];
+}

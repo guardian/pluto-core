@@ -49,6 +49,7 @@ import CommissionEntryEditComponent from "./CommissionsList/CommissionEntryEditC
 import ProjectCreateMultistepNew from "./multistep/ProjectCreateMultistepNew";
 import StorageMultistepNew from "./multistep/StorageMultistepNew";
 import { CssBaseline } from "@material-ui/core";
+import ProjectValidationMain from "./ProjectRecordValidation/ProjectValidationMain";
 
 library.add(faSearch);
 
@@ -270,7 +271,7 @@ class App extends React.Component {
                 <Route path="/working-group/" component={WorkingGroups} />
                 <Route
                   path="/validate/project"
-                  component={ProjectValidationView}
+                  component={ProjectValidationMain}
                 />
                 <Route
                   path="/postrun/:itemid/delete"
