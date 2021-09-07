@@ -4,7 +4,13 @@ async function getValidationRecords(
   username?: string,
   status?: string
 ): Promise<ValidationJobListResponse> {
-  const args = [username, status].filter((s) => !!s);
+  const args = [
+    { key: "userName", value: username },
+    { key: "status", value: status },
+  ]
+    .filter((entry) => !!entry.value)
+    .map((entry) => `${entry.key}=${entry.value}`);
+
   const url =
     args.length > 0 ? `/api/validation?${args.join("&")}` : "/api/validation";
 

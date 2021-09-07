@@ -16,6 +16,10 @@ import { getComparator, stableSort } from "../TableUtils";
 
 interface ValidationJobsTableProps {
   data: ValidationJob[];
+  onUserFilterClicked: (newUserName: string) => void;
+  currentUserFilter?: string;
+  onStatusFilterClicked: (newFilterStatus: string) => void;
+  currentStatusFilter?: string;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -136,7 +140,14 @@ const ValidationJobsTable: React.FC<ValidationJobsTableProps> = (props) => {
           <TableBody>
             {stableSort(props.data, getComparator(sortOrder, sortColumn)).map(
               (row, idx) => (
-                <ValidationJobRow data={row} key={idx} />
+                <ValidationJobRow
+                  data={row}
+                  onUserFilterClicked={props.onUserFilterClicked}
+                  onStatusFilterClicked={props.onStatusFilterClicked}
+                  currentStatusFilter={props.currentStatusFilter}
+                  currentUserFilter={props.currentUserFilter}
+                  key={idx}
+                />
               )
             )}
           </TableBody>

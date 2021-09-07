@@ -29,6 +29,20 @@ const ProjectValidationMain: React.FC = () => {
     updateData();
   }, []);
 
+  const userFilterClicked = (userName: string) => {
+    setSelectedUserName((prevValue) =>
+      prevValue === userName ? "" : userName
+    );
+    window.setTimeout(() => updateData(), 100);
+  };
+
+  const statusFilterClicked = (statusValue: string) => {
+    setSelectedStatus((prevValue) =>
+      prevValue === statusValue ? "" : statusValue
+    );
+    window.setTimeout(() => updateData(), 100);
+  };
+
   const updateData = async () => {
     setLoading(true);
     try {
@@ -87,7 +101,13 @@ const ProjectValidationMain: React.FC = () => {
           </Button>
         </Grid>
       </Grid>
-      <ValidationJobsTable data={loadedJobs} />
+      <ValidationJobsTable
+        data={loadedJobs}
+        onUserFilterClicked={userFilterClicked}
+        onStatusFilterClicked={statusFilterClicked}
+        currentUserFilter={selectedUserName}
+        currentStatusFilter={selectedStatus}
+      />
 
       <Dialog
         open={showingNewRun}
