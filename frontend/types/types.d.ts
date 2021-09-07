@@ -253,15 +253,6 @@ interface StorageEntry {
   backsUpTo?: number;
 }
 
-/*
-case class ValidationJob(id:Option[Int],uuid:UUID,
-                         userName:String,
-                         jobType:ValidationJobType.Value,
-                         startedAt:Option[Timestamp],
-                         completedAt:Option[Timestamp],
-                         status:ValidationJobStatus.Value,
-                         errorMessage:Option[String])
- */
 interface ValidationJob {
   uuid: string;
   userName: string;
@@ -285,4 +276,18 @@ interface ValidationJobListResponse {
   status: string;
   totalCount: number;
   jobs: ValidationJob[];
+}
+
+interface ValidationProblem {
+  job: string;
+  timestamp: string;
+  entityClass: string;
+  entityId: number;
+  notes?: string;
+}
+
+interface ValidationProblemListResponse {
+  status: string;
+  totalCount: number;
+  entries: ValidationProblem[];
 }

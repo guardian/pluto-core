@@ -54,7 +54,7 @@ object ValidationProblemMappers {
   )
 }
 
-class ValidationProblemRow(tag:Tag) extends Table[ValidationProblem](tag, "ValidationProblems") {
+class ValidationProblemRow(tag:Tag) extends Table[ValidationProblem](tag, "ValidationProblem") {
   import ValidationProblemMappers._
 
   def pk = column[Int]("pk",O.PrimaryKey, O.AutoInc)

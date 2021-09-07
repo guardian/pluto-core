@@ -116,6 +116,8 @@ GET     /api/history/my/actions           @controllers.AuditController.myLastAct
 
 POST    /api/validation                    @controllers.ValidationsController.startValidation
 GET     /api/validation                     @controllers.ValidationsController.getJobs(userName:Option[String], status:Option[String], limit:Option[Int])
+GET     /api/validation/:jobId/faults    @controllers.ValidationsController.faultsForJobId(jobId:String, from:Int ?= 0, limit:Int ?=100)
+GET     /api/validation/:jobId              @controllers.ValidationsController.jobDetails(jobId:String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
