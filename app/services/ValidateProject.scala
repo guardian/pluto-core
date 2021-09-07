@@ -59,12 +59,13 @@ class ValidateProject @Inject()(config:Configuration,
       val src = builder.add(new ProjectSearchSource(dbConfigProvider)(queryFunc))
       val distrib = builder.add(Balance[ProjectEntry](parallelism))
       val noMerge = builder.add(Merge[ValidationProblem](parallelism))
-      val switcher = builder.add(new ProjectValidationComponent(dbConfigProvider, currentJob))
+      val switcherFactory = new ProjectValidationComponent(dbConfigProvider, currentJob)
       val batcher = builder.add(Flow[ValidationProblem].grouped(batchSize))
 
       src.out.log("services.ValidateProject") ~> distrib
 
       for(i<- 0 until parallelism){
+        val switcher = builder.add(switcherFactory)
         distrib.out(i) ~> switcher ~> noMerge
       }
 
@@ -124,7 +125,7 @@ class ValidateProject @Inject()(config:Configuration,
       val originalSender = sender()
       logger.info(s"${job.uuid}: Received validation request for ${job.jobType} from ${job.userName}")
       val result = for {
-        inProgressJob <- validationJobDAO.writeJob(job.copy(status = ValidationJobStatus.Running))
+        inProgressJob <- validationJobDAO.writeJob(job.copy(status = ValidationJobStatus.Running, startedAt = Some(Timestamp.from(Instant.now()))))
         validationResult <- runRequestedValidation(inProgressJob)
       } yield (inProgressJob, validationResult)
 

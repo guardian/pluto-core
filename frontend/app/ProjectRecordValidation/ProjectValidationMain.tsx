@@ -1,15 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
-import { LinearProgress, Typography } from "@material-ui/core";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Grid,
+  LinearProgress,
+  Typography,
+} from "@material-ui/core";
 import { getValidationRecords } from "./ProjectValidationDataService";
 import { Alert } from "@material-ui/lab";
 import ValidationJobsTable from "./ValidationJobsTable";
+import axios from "axios";
 
 const ProjectValidationMain: React.FC = () => {
   const [totalJobsCount, setTotalJobsCount] = useState(0);
   const [loadedJobs, setLoadedJobs] = useState<ValidationJob[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastError, setLastError] = useState<string | undefined>(undefined);
+
+  const [showingNewRun, setShowingNewRun] = useState(false);
 
   const [selectedUserName, setSelectedUserName] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -30,8 +41,23 @@ const ProjectValidationMain: React.FC = () => {
       setLoadedJobs(response.jobs);
       setLoading(false);
     } catch (err) {
-      setLastError(err);
+      setLastError(err.toString());
       setLoading(false);
+    }
+  };
+
+  const triggerNewRun = async () => {
+    try {
+      setShowingNewRun(false);
+      setLoading(true);
+      const validationDoc = {
+        validationType: "CheckAllFiles",
+      };
+      const response = await axios.post("/api/validation", validationDoc);
+      window.setTimeout(() => updateData(), 1000); //reload the list
+    } catch (err) {
+      setLoading(false);
+      setLastError(err.toString());
     }
   };
 
@@ -44,12 +70,42 @@ const ProjectValidationMain: React.FC = () => {
       <Typography variant="h2">Validate project files</Typography>
 
       {lastError ? <Alert severity="error">{lastError}</Alert> : undefined}
-      <div>
-        <Typography>
-          There have been {totalJobsCount} recorded validation runs
-        </Typography>
-        <ValidationJobsTable data={loadedJobs} />
-      </div>
+
+      <Grid
+        container
+        justify="space-between"
+        style={{ marginTop: "1em", marginBottom: "1em" }}
+      >
+        <Grid item>
+          <Typography>
+            There have been {totalJobsCount} recorded validation runs
+          </Typography>
+        </Grid>
+        <Grid item>
+          <Button variant="contained" onClick={() => setShowingNewRun(true)}>
+            Start New Run
+          </Button>
+        </Grid>
+      </Grid>
+      <ValidationJobsTable data={loadedJobs} />
+
+      <Dialog
+        open={showingNewRun}
+        style={{ minWidth: "640px", minHeight: "480px" }}
+      >
+        <DialogTitle>New run</DialogTitle>
+        <DialogContent>There are no options yet</DialogContent>
+        <Grid container justify="space-between" style={{ padding: "2em" }}>
+          <Grid item>
+            <Button onClick={() => setShowingNewRun(false)}>Close</Button>
+          </Grid>
+          <Grid item>
+            <Button variant="contained" onClick={triggerNewRun}>
+              Start run
+            </Button>
+          </Grid>
+        </Grid>
+      </Dialog>
     </>
   );
 };

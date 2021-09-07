@@ -35,7 +35,7 @@ class ValidationsController @Inject() (override val config:Configuration,
     logger.info(s"Validation request uuid is ${newJob.uuid}")
     validationJobDAO.writeJob(newJob)
       .map(writtenJob=>{
-        validateProjectActor ! ValidateProject.RequestValidation(newJob)
+        validateProjectActor ! ValidateProject.RequestValidation(writtenJob)
         logger.info(s"Validation has started")
         Ok(Json.obj("status"->"ok", "entry"->writtenJob))
       })
