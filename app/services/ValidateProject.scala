@@ -11,7 +11,7 @@ import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import slick.lifted.{AbstractTable, Rep, TableQuery}
-import streamcomponents.{FindMislinkedProjectsComponent, GeneralValidationComponent, ProjectSearchSource, ProjectValidationComponent}
+import streamcomponents.{FindMislinkedProjectsComponent, FindUnlinkedProjects, GeneralValidationComponent, ProjectSearchSource, ProjectValidationComponent}
 import slick.jdbc.PostgresProfile.api._
 
 import java.sql.Timestamp
@@ -129,6 +129,8 @@ class ValidateProject @Inject()(config:Configuration,
         Future.failed(new RuntimeException("CheckSomeFiles has not been implemented yet"))
       case ValidationJobType.MislinkedPTR=>
         performValidation(new FindMislinkedProjectsComponent(dbConfigProvider, job))(TableQuery[ProjectEntryRow])
+      case ValidationJobType.UnlinkedProjects=>
+        performValidation(new FindUnlinkedProjects(dbConfigProvider, job))(TableQuery[ProjectEntryRow])
     }
   }
 

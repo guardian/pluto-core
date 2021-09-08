@@ -292,7 +292,11 @@ interface ValidationProblemListResponse {
   entries: ValidationProblem[];
 }
 
-type ValidationScanType = "CheckAllFiles" | "CheckSomeFiles" | "MislinkedPTR";
+type ValidationScanType =
+  | "CheckAllFiles"
+  | "CheckSomeFiles"
+  | "MislinkedPTR"
+  | "UnlinkedProjects";
 
 interface ValidationRequestDoc {
   validationType: ValidationScanType;

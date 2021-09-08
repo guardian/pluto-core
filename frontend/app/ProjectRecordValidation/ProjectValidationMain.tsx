@@ -141,6 +141,11 @@ const ProjectValidationMain: React.FC = () => {
               label="Check for incorrect file extensions on linked project files"
               value="MislinkedPTR"
             />
+            <FormControlLabel
+              control={<Radio />}
+              label="Check for project entries wth no files"
+              value="UnlinkedProjects"
+            />
           </RadioGroup>
         </DialogContent>
         <Grid container justify="space-between" style={{ padding: "2em" }}>
