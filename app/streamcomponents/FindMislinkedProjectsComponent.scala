@@ -5,13 +5,12 @@ import akka.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet}
 import models.{FileEntry, ProjectEntry, ProjectEntryRow, ProjectType, ValidationJob, ValidationProblem}
 import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.inject.Injector
 import slick.jdbc.PostgresProfile
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class FindMislinkedProjectsComponent (dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit injector:Injector, ec:ExecutionContext) extends GeneralValidationComponent[ProjectEntryRow] {
+class FindMislinkedProjectsComponent (dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit ec:ExecutionContext) extends GeneralValidationComponent[ProjectEntryRow] {
   private val logger = LoggerFactory.getLogger(getClass)
 
   private final val in:Inlet[ProjectEntry] = Inlet.create("FindMislinkedProjectsComponent.in")

@@ -46,15 +46,11 @@ class FindMistlinkedProjectsComponentSpec extends Specification with Mockito {
 
   "FindMislinkedProjectsComponent.ValidateProjectExtension" should {
     "return None if the project type has no extension set" in {
-      implicit val mockInjector:Injector = mock[Injector]
-
       val toTest = new FindMislinkedProjectsComponent(mock[DatabaseConfigProvider], fakeJob)
       toTest.validateProjectExtension(fakeProject, fakeProjectType.copy(fileExtension = None), fakeFileList) must beNone
     }
 
     "return a problem if there is an invalid file in the given file list" in {
-      implicit val mockInjector:Injector = mock[Injector]
-
       val toTest = new FindMislinkedProjectsComponent(mock[DatabaseConfigProvider], fakeJob)
       val result = toTest.validateProjectExtension(fakeProject, fakeProjectType, fakeFileList)
       result must beSome
@@ -65,8 +61,6 @@ class FindMistlinkedProjectsComponentSpec extends Specification with Mockito {
     }
 
     "return None if there are no problem files in the given file list" in {
-      implicit val mockInjector:Injector = mock[Injector]
-
       val toTest = new FindMislinkedProjectsComponent(mock[DatabaseConfigProvider], fakeJob)
       val okFileList = fakeFileList.filter(_.filepath.endsWith(".prproj"))
       toTest.validateProjectExtension(fakeProject, fakeProjectType, okFileList) must beNone
