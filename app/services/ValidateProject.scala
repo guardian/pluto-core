@@ -51,7 +51,6 @@ class ValidateProject @Inject()(config:Configuration,
     * @return
     */
   def buildStream(currentJob:ValidationJob, parallelism:Int=4, batchSize:Int=20)(queryFunc: TableQuery[ProjectEntryRow]) = {
-    //val sinkFactory = Sink.fold[Seq[ProjectEntry],ProjectEntry](Seq())((acc,entry)=>acc++Seq(entry))
     val sinkFactory = Sink.foreach[Seq[ValidationProblem]](validationProblemDAO.batchInsertIntoDb)
 
     GraphDSL.create(sinkFactory) { implicit builder=> sink=>
