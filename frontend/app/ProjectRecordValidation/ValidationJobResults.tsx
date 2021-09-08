@@ -12,6 +12,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   Typography,
 } from "@material-ui/core";
@@ -48,10 +49,31 @@ const ValidationJobResults: React.FC = () => {
   );
   const [lastError, setLastError] = useState<string | undefined>(undefined);
 
+  const [currentPageNumber, setCurrentPageNumber] = useState(0);
+  const [currentRowsPerPage, setCurrentRowsPerPage] = useState(50);
+
   const routerParams = useParams<ValidationJobResultsLocationParams>();
   const history = useHistory();
 
   const classes = useStyles();
+
+  const changeRowsPerPage = (
+    evt: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => {
+    setCurrentRowsPerPage(parseInt(evt.target.value, 10));
+    setCurrentPageNumber(0);
+  };
+
+  const tablePageChanged = (
+    evt: React.MouseEvent<HTMLButtonElement> | null,
+    page: number
+  ) => {
+    setCurrentPageNumber(page);
+  };
+
+  useEffect(() => {
+    refreshData();
+  }, [currentPageNumber, currentRowsPerPage]);
 
   const refreshData = async () => {
     setLoading(true);
@@ -65,8 +87,10 @@ const ValidationJobResults: React.FC = () => {
         setLoading(false);
       } else {
         setJobDetails(jobDetailsResponse.data);
+        const startAt = currentPageNumber * currentRowsPerPage;
+
         const response = await axios.get<ValidationProblemListResponse>(
-          `/api/validation/${routerParams.jobId}/faults`
+          `/api/validation/${routerParams.jobId}/faults?from=${startAt}&limit=${currentRowsPerPage}`
         );
         setLastError(undefined);
         setProblemReports(response.data.entries);
@@ -79,10 +103,6 @@ const ValidationJobResults: React.FC = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    refreshData();
-  }, []);
 
   /**
    * returns a UI string representing the time that the job has been in progress
@@ -225,6 +245,14 @@ const ValidationJobResults: React.FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        <TablePagination
+          count={totalProblemReports}
+          page={currentPageNumber}
+          onPageChange={tablePageChanged}
+          rowsPerPage={currentRowsPerPage}
+          onRowsPerPageChange={changeRowsPerPage}
+          rowsPerPageOptions={[25, 50, 75, 100]}
+        />
       </Paper>
     </>
   );
