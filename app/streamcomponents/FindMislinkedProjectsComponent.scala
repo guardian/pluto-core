@@ -25,12 +25,12 @@ class FindMislinkedProjectsComponent (dbConfigProvider:DatabaseConfigProvider, c
   }
 
   def validateProjectExtension(projectEntry:ProjectEntry, projectType:ProjectType, associatedFiles:Seq[FileEntry]):Option[ValidationProblem] = {
-    projectType.fileExtension match {
+    projectType.fileExtension.map(_.toLowerCase) match {
       case None=>
         logger.warn(s"Can't check file extensions for project type ${projectType.id} ${projectType.name} because there is no file extension registered in the system for it")
         None
       case Some(xtn)=>
-        val problemFiles = associatedFiles.filter(! _.filepath.endsWith(xtn))
+        val problemFiles = associatedFiles.filter(! _.filepath.toLowerCase.endsWith(xtn))
         if(problemFiles.isEmpty) {
           logger.info(s"No problems with ${projectEntry.id.getOrElse(0)} ${projectEntry.projectTitle}")
           None
