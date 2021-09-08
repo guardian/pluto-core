@@ -11,19 +11,22 @@ import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ProjectSearchSource[E <:AbstractTable[_]](dbConfigProvider:DatabaseConfigProvider, pageSize:Int=100)(queryFunc: TableQuery[ProjectEntryRow]) extends GraphStage[SourceShape[ProjectEntry]]{
-  private final val out:Outlet[ProjectEntry] = Outlet.create("ProjectSearchSource.out")
+class ProjectSearchSource[E <:AbstractTable[_]](dbConfigProvider:DatabaseConfigProvider, pageSize:Int=100)(queryFunc: TableQuery[E]) extends GraphStage[SourceShape[E#TableElementType]]{
+  private final val out:Outlet[E#TableElementType] = Outlet.create("ProjectSearchSource.out")
+
+  //T represents the type of the table's row elements
+  type T = E#TableElementType
 
   override def shape = SourceShape.of(out)
 
   override def createLogic(inheritedAttributes: Attributes) = new GraphStageLogic(shape) {
     private val logger = LoggerFactory.getLogger(getClass)
     private val dbConfig = dbConfigProvider.get[PostgresProfile]
-    private var cache:List[ProjectEntry] = List()
+    private var cache:List[T] = List()
     private var resultCounter = 0
 
     setHandler(out, new AbstractOutHandler(){
-      val nextResultCb = createAsyncCallback[ProjectEntry](entry=>push(out,entry))
+      val nextResultCb = createAsyncCallback[T](entry=>push(out,entry))
       val failureCb = createAsyncCallback[Throwable](err=>fail(out, err))
       val completionCb = createAsyncCallback[Unit](_=>complete(out))
 

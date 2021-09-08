@@ -10,10 +10,8 @@ import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
-import slick.lifted.{Rep, TableQuery}
-import streamcomponents.{ProjectSearchSource, ProjectValidationComponent}
-import slick.jdbc.PostgresProfile
-import slick.lifted.TableQuery
+import slick.lifted.{AbstractTable, Rep, TableQuery}
+import streamcomponents.{FindMislinkedProjectsComponent, FindUnlinkedProjects, GeneralValidationComponent, ProjectSearchSource, ProjectValidationComponent}
 import slick.jdbc.PostgresProfile.api._
 
 import java.sql.Timestamp
@@ -50,15 +48,16 @@ class ValidateProject @Inject()(config:Configuration,
     * @param queryFunc
     * @return
     */
-  def buildStream(currentJob:ValidationJob, parallelism:Int=4, batchSize:Int=20)(queryFunc: TableQuery[ProjectEntryRow]) = {
+  def buildStream[E <:AbstractTable[_]](switcherFactory:GeneralValidationComponent[E], parallelism:Int=4, batchSize:Int=20)(queryFunc: TableQuery[E]) = {
     val sinkFactory = Sink.foreach[Seq[ValidationProblem]](validationProblemDAO.batchInsertIntoDb)
+
+    type T = E#TableElementType
 
     GraphDSL.create(sinkFactory) { implicit builder=> sink=>
       import akka.stream.scaladsl.GraphDSL.Implicits._
       val src = builder.add(new ProjectSearchSource(dbConfigProvider)(queryFunc))
-      val distrib = builder.add(Balance[ProjectEntry](parallelism))
+      val distrib = builder.add(Balance[T](parallelism))
       val noMerge = builder.add(Merge[ValidationProblem](parallelism))
-      val switcherFactory = new ProjectValidationComponent(dbConfigProvider, currentJob)
       val batcher = builder.add(Flow[ValidationProblem].grouped(batchSize))
 
       src.out.log("services.ValidateProject") ~> distrib
@@ -73,21 +72,29 @@ class ValidateProject @Inject()(config:Configuration,
     }
   }
 
-  /**
-    * runs the validation stream with the given database query
-    * @param queryFunc
-    * @param parallelism
-    * @return
-    */
-  def runStream(currentJob:ValidationJob, parallelism:Int=4)(queryFunc:TableQuery[ProjectEntryRow]) =
-    RunnableGraph.fromGraph(buildStream(currentJob, parallelism)(queryFunc)).run()
 
   /**
-    * return the total number of records matching the query
-    * @param queryFunc
-    * @return
+    * runs the validation stream with the given database query
+    *
+    * @param switcherFactory Akka flow constructor class for the validator. This must receive data from the data type of the
+    *                        given TableQuery and output ValidationProblem reports
+    * @param parallelism     number of validations to run concurrently
+    * @param queryFunc       Slick query that determines the data source to validate, e.g. `TableQuery[ProjectEntryRow]`
+    * @tparam E              Data type of the Slick table that is being queried e.g. `ProjectEntryRow`.
+    *                        This can be inferred from the `queryFunc` and `switcherFactory` arguments
+    * @return                A Future, which completes with no value when the stream finishes
     */
-  def getTotalCount(queryFunc: TableQuery[ProjectEntryRow]) = {
+  def runStream[E <:AbstractTable[_]](switcherFactory:GeneralValidationComponent[E], parallelism:Int=4)(queryFunc:TableQuery[E]) =
+    RunnableGraph.fromGraph(buildStream(switcherFactory, parallelism)(queryFunc)).run()
+
+  /**
+    * return the total number of records matching the query via a `SELECT COUNT` query
+    * @param queryFunc Slick query that determines the data source to validate, e.g. `TableQuery[ProjectEntryRow]`
+    * @tparam E              Data type of the Slick table that is being queried e.g. `ProjectEntryRow`.
+    *                        This can be inferred from the `queryFunc` and `switcherFactory` arguments
+    * @return                A Future, which completes with an integer representing the nmber of matching rows
+    */
+  def getTotalCount[E <:AbstractTable[_]](queryFunc: TableQuery[E]) = {
     val db = dbConfigProvider.get.db
 
     db.run(queryFunc.size.result)
@@ -97,25 +104,33 @@ class ValidateProject @Inject()(config:Configuration,
     * performs validation by checking the total count of projects matching the query and running the verification
     * stream and returns the result as a ValidationSuccess object in a Future.
     * If the operation fails, then the future fails; catch this with .recover()
-    * @param parallelism
-    * @param queryFunc
-    * @return
+    *
+    * @param switcherFactory Akka flow constructor class for the validator. This must receive data from the data type of the
+    *                        given TableQuery and output ValidationProblem reports
+    * @param parallelism     number of validations to run concurrently
+    * @param queryFunc       Slick query that determines the data source to validate, e.g. `TableQuery[ProjectEntryRow]`
+    * @tparam E              Data type of the Slick table that is being queried e.g. `ProjectEntryRow`.
+    *                        This can be inferred from the `queryFunc` and `switcherFactory` arguments
+    * @return                A Future, which completes once the validation is done, returning an integer of the number of
+    *                        records queried as determined by a `SELECT COUNT` carried out at the start of the validation run
     */
-  def performValidation(currentJob:ValidationJob, parallelism:Int=4)(queryFunc: TableQuery[ProjectEntryRow]) = {
+  def performValidation[E <:AbstractTable[_]](switcherFactory:GeneralValidationComponent[E], parallelism:Int=4)(queryFunc: TableQuery[E]) = {
     for {
       c <- getTotalCount(queryFunc)
-      r <- runStream(currentJob)(queryFunc)
+      r <- runStream(switcherFactory)(queryFunc)
     } yield c
   }
 
   def runRequestedValidation(job:ValidationJob):Future[Int] = {
     job.jobType match {
       case ValidationJobType.CheckAllFiles=>
-        performValidation(job)(TableQuery[ProjectEntryRow])
+        performValidation(new ProjectValidationComponent(dbConfigProvider, job))(TableQuery[ProjectEntryRow])
       case ValidationJobType.CheckSomeFiles=>
         Future.failed(new RuntimeException("CheckSomeFiles has not been implemented yet"))
       case ValidationJobType.MislinkedPTR=>
-        Future.failed(new RuntimeException("MislinkedPTR has not been implemented yet"))
+        performValidation(new FindMislinkedProjectsComponent(dbConfigProvider, job))(TableQuery[ProjectEntryRow])
+      case ValidationJobType.UnlinkedProjects=>
+        performValidation(new FindUnlinkedProjects(dbConfigProvider, job))(TableQuery[ProjectEntryRow])
     }
   }
 
