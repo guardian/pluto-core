@@ -291,3 +291,9 @@ interface ValidationProblemListResponse {
   totalCount: number;
   entries: ValidationProblem[];
 }
+
+type ValidationScanType = "CheckAllFiles" | "CheckSomeFiles" | "MislinkedPTR";
+
+interface ValidationRequestDoc {
+  validationType: ValidationScanType;
+}

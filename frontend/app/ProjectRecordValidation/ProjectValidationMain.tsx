@@ -5,8 +5,11 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   Grid,
   LinearProgress,
+  Radio,
+  RadioGroup,
   Typography,
 } from "@material-ui/core";
 import { getValidationRecords } from "./ProjectValidationDataService";
@@ -19,6 +22,9 @@ const ProjectValidationMain: React.FC = () => {
   const [loadedJobs, setLoadedJobs] = useState<ValidationJob[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastError, setLastError] = useState<string | undefined>(undefined);
+  const [selectedScanType, setSelectedScanType] = useState<ValidationScanType>(
+    "CheckAllFiles"
+  );
 
   const [showingNewRun, setShowingNewRun] = useState(false);
 
@@ -65,7 +71,7 @@ const ProjectValidationMain: React.FC = () => {
       setShowingNewRun(false);
       setLoading(true);
       const validationDoc = {
-        validationType: "CheckAllFiles",
+        validationType: selectedScanType,
       };
       const response = await axios.post("/api/validation", validationDoc);
       window.setTimeout(() => updateData(), 1000); //reload the list
@@ -73,6 +79,11 @@ const ProjectValidationMain: React.FC = () => {
       setLoading(false);
       setLastError(err.toString());
     }
+  };
+
+  const scanTypeChanged = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    const stringValue = (evt.target as HTMLInputElement).value;
+    setSelectedScanType(stringValue as ValidationScanType); //since this comes from a closed set configured below it's safe here
   };
 
   return (
@@ -114,7 +125,24 @@ const ProjectValidationMain: React.FC = () => {
         style={{ minWidth: "640px", minHeight: "480px" }}
       >
         <DialogTitle>New run</DialogTitle>
-        <DialogContent>There are no options yet</DialogContent>
+        <DialogContent>
+          <RadioGroup
+            aria-label="Validation type"
+            value={selectedScanType}
+            onChange={scanTypeChanged}
+          >
+            <FormControlLabel
+              control={<Radio />}
+              label="Check all projects for missing files"
+              value="CheckAllFiles"
+            />
+            <FormControlLabel
+              control={<Radio />}
+              label="Check for incorrect file extensions on linked project files"
+              value="MislinkedPTR"
+            />
+          </RadioGroup>
+        </DialogContent>
         <Grid container justify="space-between" style={{ padding: "2em" }}>
           <Grid item>
             <Button onClick={() => setShowingNewRun(false)}>Close</Button>

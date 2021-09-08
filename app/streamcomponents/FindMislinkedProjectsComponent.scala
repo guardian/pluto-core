@@ -54,13 +54,28 @@ class FindMislinkedProjectsComponent (dbConfigProvider:DatabaseConfigProvider, c
     })
 
     setHandler(in, new AbstractInHandler {
-      val noProblemCb = createAsyncCallback[Unit](_=>pull(in))
-      val problemDetectedCb = createAsyncCallback[ValidationProblem](entry=>push(out, entry))
+      private var asyncInProgress = false
+      private var shouldComplete = false
+
+      val noProblemCb = createAsyncCallback[Unit](_=>{
+        if(shouldComplete) {
+          completeStage();
+        } else {
+          pull(in)
+        }
+      })
+
+      val problemDetectedCb = createAsyncCallback[ValidationProblem](entry=>{
+        push(out, entry)
+        if(shouldComplete) completeStage()
+      })
+
       val errorCb = createAsyncCallback[Throwable](err=>failStage(err))
 
       override def onPush(): Unit = {
         val elem = grab(in)
 
+        asyncInProgress = true
         val problemFut = for {
           typeInfo <- ProjectType.entryFor(elem.projectTypeId)
           associatedFiles <- elem.associatedFiles(true)
@@ -69,13 +84,32 @@ class FindMislinkedProjectsComponent (dbConfigProvider:DatabaseConfigProvider, c
 
         problemFut.onComplete({
           case Success(Some(problem))=>
+            asyncInProgress = false
             problemDetectedCb.invoke(problem)
           case Success(None)=>
+            asyncInProgress = false
             noProblemCb.invoke()
           case Failure(exception)=>
+            asyncInProgress = false
             logger.error(s"Could not validate project ${elem.projectTitle} (${elem.id}): ${exception.getMessage}", exception)
             errorCb.invoke(exception)
         })
+      }
+
+      override def onUpstreamFinish(): Unit = {
+        if(asyncInProgress) {
+          shouldComplete = true
+        } else {
+          completeStage()
+        }
+      }
+
+      override def onUpstreamFailure(ex: Throwable): Unit = {
+        if(asyncInProgress) {
+          shouldComplete = true
+        } else {
+          completeStage()
+        }
       }
     })
   }
