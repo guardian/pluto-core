@@ -1,9 +1,8 @@
 package streamcomponents
 
-import akka.stream.{Attributes, Inlet, Materializer, Outlet, UniformFanOutShape}
+import akka.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet, UniformFanOutShape}
 import akka.stream.stage.{AbstractInHandler, AbstractOutHandler, GraphStage, GraphStageLogic}
-import com.google.inject.Inject
-import models.ProjectEntry
+import models.{ProjectEntry, ValidationJob, ValidationProblem}
 import org.slf4j.{LoggerFactory, MDC}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
@@ -13,14 +12,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /**
-  * pushes the incoming ProjectEntry to "yes" if it exists in the location expected or "no" if it does not.
+  * checks if the given ProjectEntry exists in the expected location(s) or not.
+  * If it validates then grabs the next input from the stream, if it does not validate then outputs a ValidationProblem
   */
-class ValidateProjectSwitch @Inject()(dbConfigProvider:DatabaseConfigProvider)(implicit mat:Materializer, injector:Injector) extends GraphStage[UniformFanOutShape[ProjectEntry,ProjectEntry]]{
+class ProjectValidationComponent(dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit mat:Materializer, injector:Injector) extends GraphStage[FlowShape[ProjectEntry,ValidationProblem]]{
   private val in:Inlet[ProjectEntry] = Inlet.create("ValidateProjectSwitch.in")
-  private val yes:Outlet[ProjectEntry] = Outlet.create("ValidateProjectSwitch.yes")
-  private val no:Outlet[ProjectEntry] = Outlet.create("ValidateProjectSwitch.no")
+  private val out:Outlet[ValidationProblem] = Outlet.create("ValidateProject.out")
 
-  override def shape: UniformFanOutShape[ProjectEntry, ProjectEntry] = UniformFanOutShape(in,yes,no)
+  override def shape = FlowShape.of(in, out)
 
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) {
     private val logger = LoggerFactory.getLogger(getClass)
@@ -28,8 +27,8 @@ class ValidateProjectSwitch @Inject()(dbConfigProvider:DatabaseConfigProvider)(i
     private implicit val db = dbConfig.db
 
     setHandler(in, new AbstractInHandler {
-      val yesCb = createAsyncCallback[ProjectEntry](entry=>push(yes,entry))
-      val noCb = createAsyncCallback[ProjectEntry](entry=>push(no, entry))
+      val yesCb = createAsyncCallback[ProjectEntry](_=>pull(in))
+      val noCb = createAsyncCallback[ValidationProblem](entry=>push(out, entry))
       val errorCb = createAsyncCallback[Throwable](err=>failStage(err))
 
       override def onPush(): Unit = {
@@ -46,8 +45,11 @@ class ValidateProjectSwitch @Inject()(dbConfigProvider:DatabaseConfigProvider)(i
             } else {
               val notexist = lookups.collect({case Right(result)=>result}).filter(_==false)
               if(notexist.nonEmpty){
-                logger.warn(s"Project ${elem.id} (${elem.projectTitle}) is missing ${notexist.length} files out of ${lookups.length}!")
-                noCb.invoke(elem)
+                val errorMsg = s"Project ${elem.id} (${elem.projectTitle}) is missing ${notexist.length} files out of ${lookups.length}!"
+                ValidationProblem.fromProjectEntry(elem, currentJob, Some(errorMsg)) match {
+                  case Some(problem)=>noCb.invoke(problem)
+                  case None=>errorCb.invoke(new RuntimeException(s"Project entry $elem is invalid, I can't generate a problem report from it"))
+                }
               } else {
                 yesCb.invoke(elem)
               }
@@ -57,12 +59,8 @@ class ValidateProjectSwitch @Inject()(dbConfigProvider:DatabaseConfigProvider)(i
       }
     })
 
-    val defaultOutHandler = new AbstractOutHandler {
+    setHandler(out, new AbstractOutHandler {
       override def onPull(): Unit = if(!hasBeenPulled(in)) pull(in)
-    }
-
-    setHandler(yes, defaultOutHandler)
-
-    setHandler(no, defaultOutHandler)
+    })
   }
 }

@@ -252,3 +252,42 @@ interface StorageEntry {
   status?: string;
   backsUpTo?: number;
 }
+
+interface ValidationJob {
+  uuid: string;
+  userName: string;
+  jobType: string;
+  startedAt?: string;
+  completedAt?: string;
+  status: string;
+  errorMessage?: string;
+}
+
+type ValidationJobColumn =
+  | "uuid"
+  | "userName"
+  | "jobType"
+  | "startedAt"
+  | "completedAt"
+  | "status"
+  | "errorMessage";
+
+interface ValidationJobListResponse {
+  status: string;
+  totalCount: number;
+  jobs: ValidationJob[];
+}
+
+interface ValidationProblem {
+  job: string;
+  timestamp: string;
+  entityClass: string;
+  entityId: number;
+  notes?: string;
+}
+
+interface ValidationProblemListResponse {
+  status: string;
+  totalCount: number;
+  entries: ValidationProblem[];
+}

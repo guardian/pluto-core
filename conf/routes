@@ -48,7 +48,6 @@ GET     /api/project/vsid/:vsid                  @controllers.ProjectEntryContro
 PUT     /api/project/:id/wasopened          @controllers.ProjectEntryController.projectWasOpened(id: Int)
 PUT     /api/project/:id                    @controllers.ProjectEntryController.updateByAnyone(id: Int)
 #DELETE  /api/project/:id                   @controllers.ProjectEntryController.delete(id: Int)
-POST     /api/project/validate              @controllers.ProjectEntryController.performFullValidation
 PUT     /api/project/:id/status             @controllers.ProjectEntryController.updateStatus(id:Int)
 
 GET     /api/projecttype                   @controllers.ProjectTypeController.list(startAt:Int ?=0,length:Int ?=100)
@@ -114,6 +113,11 @@ POST    /api/migration/vsCommission         @controllers.DataMigrationController
 POST    /api/migration/fixNullProjects      @controllers.DataMigrationController.fixNullCommissionProjects
 
 GET     /api/history/my/actions           @controllers.AuditController.myLastActions(actionType:Option[String], startAt:Int ?=0, length:Int ?=100)
+
+POST    /api/validation                    @controllers.ValidationsController.startValidation
+GET     /api/validation                     @controllers.ValidationsController.getJobs(userName:Option[String], status:Option[String], limit:Option[Int])
+GET     /api/validation/:jobId/faults    @controllers.ValidationsController.faultsForJobId(jobId:String, from:Int ?= 0, limit:Int ?=100)
+GET     /api/validation/:jobId              @controllers.ValidationsController.jobDetails(jobId:String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

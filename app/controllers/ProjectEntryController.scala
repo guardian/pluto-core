@@ -33,7 +33,6 @@ import scala.language.postfixOps
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
-                                       @Named("validate-project-actor") validateProjectActor:ActorRef,
                                         override implicit val config: Configuration,
                                         dbConfigProvider: DatabaseConfigProvider,
                                         cacheImpl:SyncCacheApi,
@@ -325,21 +324,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       case Failure(error)=>
         logger.error("Could not look up distinct project owners: ", error)
         InternalServerError(Json.obj("status"->"error","detail"->error.toString))
-    })
-  }}
-
-  def performFullValidation = IsAuthenticatedAsync {uid=>{request=>
-    implicit val actorTimeout:akka.util.Timeout = 55 seconds  //loadbalancer ususally times out after 60
-
-    (validateProjectActor ? ValidateProject.ValidateAllProjects).mapTo[ValidateProject.VPMsg].map({
-      case ValidateProject.ValidationSuccess(totalProjects, projectCount, failedProjects)=>
-        Ok(Json.obj("status"->"ok","totalProjectsCount"->totalProjects,"failedProjectsList"->failedProjects))
-      case ValidateProject.ValidationError(err)=>
-        InternalServerError(Json.obj("status"->"error","detail"->err.toString))
-    }).recover({
-      case err:Throwable=>
-        logger.error(s"Error calling ValidateProject actor: ", err)
-        InternalServerError(Json.obj("status"->"error", "detail"->err.toString))
     })
   }}
 
