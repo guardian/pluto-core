@@ -132,9 +132,9 @@ class ValidateProject @Inject()(config:Configuration,
       case ValidationJobType.UnlinkedProjects=>
         performValidation(new FindUnlinkedProjects(dbConfigProvider, job))(TableQuery[ProjectEntryRow])
       case ValidationJobType.UnlinkedFiles=>
-        performValidation(new FileValidationComponent(dbConfigProvider, job))(TableQuery[FileEntryRow])
-      case ValidationJobType.UnlinkedFilesWithBlanks=>
         performValidation(new FileValidationComponent(dbConfigProvider, job))(TableQuery[FileEntryRow].filter(_.hasContent===true))
+      case ValidationJobType.UnlinkedFilesWithBlanks=>
+        performValidation(new FileValidationComponent(dbConfigProvider, job))(TableQuery[FileEntryRow])
     }
   }
 
