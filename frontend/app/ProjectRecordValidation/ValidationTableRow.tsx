@@ -10,6 +10,7 @@ import { format, parseISO } from "date-fns";
 import { Launch } from "@material-ui/icons";
 import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
 import { getProject } from "../ProjectEntryList/helpers";
+import axios from "axios";
 
 interface ValidationTableRowProps {
   data: ValidationProblem;
@@ -18,6 +19,15 @@ interface ValidationTableRowProps {
 const ValidationTableRow: React.FC<ValidationTableRowProps> = (props) => {
   const [loading, setLoading] = useState(false);
   const [projectTitle, setProjectTitle] = useState("");
+
+  const getFile: (id: number) => Promise<FileEntry> = async (
+    fileId: number
+  ) => {
+    const response = await axios.get<PlutoApiResponse<FileEntry>>(
+      `/api/file/${fileId}`
+    );
+    return response.data.result;
+  };
 
   useState(() => {
     switch (props.data.entityClass) {
@@ -39,6 +49,23 @@ const ValidationTableRow: React.FC<ValidationTableRowProps> = (props) => {
             setLoading(false);
           });
         break;
+      case "FileEntry":
+        setLoading(true);
+        getFile(props.data.entityId)
+          .then((fileInfo) => {
+            setProjectTitle(
+              `${fileInfo.filepath} on ${fileInfo.storageid}, hasContent?: ${fileInfo.hasContent}`
+            );
+            setLoading(false);
+          })
+          .catch((err) => {
+            console.error(
+              `Could not load info for file with id ${props.data.entityId}`,
+              err
+            );
+            setProjectTitle("(no info)");
+            setLoading(false);
+          });
       default:
         break;
     }

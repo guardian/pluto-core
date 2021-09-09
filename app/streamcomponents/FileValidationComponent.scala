@@ -26,9 +26,9 @@ class FileValidationComponent(dbConfigProvider:DatabaseConfigProvider, currentJo
         Future(None)
       case Right(false)=> //path does not exist
         elem.backupsCount().map(backupsCount=>{
-          val isBackupMsg = if(elem.backupOf.isDefined) "This file is a backup" else "This file is a master"
+          val isBackupMsg = if(elem.backupOf.isDefined) "This file is a backup." else s"This file is a master, there are $backupsCount backups in the system"
 
-          val errMsg = s"${elem.filepath} on storage ${elem.storageId} does not exist. $isBackupMsg, there are $backupsCount backups in the system"
+          val errMsg = s"${elem.filepath} on storage ${elem.storageId} does not exist. $isBackupMsg"
           ValidationProblem.fromFileEntry(elem, currentJob, Some(errMsg))
         })
     })
