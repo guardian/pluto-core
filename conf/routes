@@ -27,6 +27,7 @@ GET     /api/storage/knowntypes            @controllers.StoragesController.types
 GET     /api/storage/:id                   @controllers.StoragesController.getitem(id: Int)
 PUT     /api/storage/:id                   @controllers.StoragesController.update(id: Int)
 DELETE  /api/storage/:id                   @controllers.StoragesController.delete(id: Int)
+POST    /api/storage/:storageId/purge-empty       @controllers.StoragesController.purgeEmptyFiles(storageId:Int)
 
 GET     /api/template                      @controllers.ProjectTemplateController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/template                      @controllers.ProjectTemplateController.create

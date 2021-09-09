@@ -12,6 +12,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import play.api.libs.json._
 import play.api.mvc.{Action, BodyParsers, ControllerComponents, Request}
+import services.StoragePurger
 import slick.basic.DatabaseConfig
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
@@ -23,8 +24,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class StoragesController @Inject()
-    (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
-     override implicit val config: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi)
+    (override val controllerComponents:ControllerComponents,
+     override val bearerTokenAuth:BearerTokenAuth,
+     override implicit val config: Configuration,
+     dbConfigProvider: DatabaseConfigProvider,
+     cacheImpl:SyncCacheApi,
+     storagePurger: StoragePurger)
     (implicit mat:Materializer, system:ActorSystem, injector:Injector)
     extends GenericDatabaseObjectController[StorageEntry] with StorageSerializer with StorageTypeSerializer {
 
@@ -131,5 +136,15 @@ class StoragesController @Inject()
       case None=>
         Left("No root path was set for the storage")
     }
+  }
+
+  def purgeEmptyFiles(storageId:Int) = IsAdminAsync { uid=> request=>
+    storagePurger
+      .purgeEmptyFiles(storageId)
+      .map(_=>Ok(Json.obj("status"->"complete", "detail"->"empty file purge completed")))
+      .recover({
+        case err:Throwable=>
+          InternalServerError(Json.obj("status"->"error","detail"->err.getMessage))
+      })
   }
 }

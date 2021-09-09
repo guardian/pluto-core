@@ -11,7 +11,7 @@ import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import slick.lifted.{AbstractTable, Rep, TableQuery}
-import streamcomponents.{FileValidationComponent, FindMislinkedProjectsComponent, FindUnlinkedProjects, GeneralValidationComponent, ProjectSearchSource, ProjectValidationComponent}
+import streamcomponents.{DatabaseSearchSource, FileValidationComponent, FindMislinkedProjectsComponent, FindUnlinkedProjects, GeneralValidationComponent, ProjectValidationComponent}
 import slick.jdbc.PostgresProfile.api._
 
 import java.sql.Timestamp
@@ -55,7 +55,7 @@ class ValidateProject @Inject()(config:Configuration,
 
     GraphDSL.create(sinkFactory) { implicit builder=> sink=>
       import akka.stream.scaladsl.GraphDSL.Implicits._
-      val src = builder.add(new ProjectSearchSource(dbConfigProvider)(queryFunc))
+      val src = builder.add(new DatabaseSearchSource(dbConfigProvider)(queryFunc))
       val distrib = builder.add(Balance[T](parallelism))
       val noMerge = builder.add(Merge[ValidationProblem](parallelism))
       val batcher = builder.add(Flow[ValidationProblem].grouped(batchSize))

@@ -11,7 +11,7 @@ import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ProjectSearchSource[E <:AbstractTable[_]](dbConfigProvider:DatabaseConfigProvider, pageSize:Int=100)(queryFunc: Query[E, E#TableElementType, Seq]) extends GraphStage[SourceShape[E#TableElementType]]{
+class DatabaseSearchSource[E <:AbstractTable[_]](dbConfigProvider:DatabaseConfigProvider, pageSize:Int=100)(queryFunc: Query[E, E#TableElementType, Seq]) extends GraphStage[SourceShape[E#TableElementType]]{
   private final val out:Outlet[E#TableElementType] = Outlet.create("ProjectSearchSource.out")
 
   //T represents the type of the table's row elements

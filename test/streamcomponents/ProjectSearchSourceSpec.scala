@@ -26,7 +26,7 @@ class ProjectSearchSourceSpec extends Specification with BuildMyApp {
       val graph = GraphDSL.create(sinkFactory) { implicit builder => sink =>
         import akka.stream.scaladsl.GraphDSL.Implicits._
 
-        val src = new ProjectSearchSource(dbConfigProvider)(TableQuery[ProjectEntryRow])
+        val src = new DatabaseSearchSource(dbConfigProvider)(TableQuery[ProjectEntryRow])
         src ~> sink
         ClosedShape
       }
