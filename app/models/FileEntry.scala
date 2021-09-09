@@ -228,6 +228,15 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     getFullPath.map(path=>driver.pathExists(path, version))
   }
 
+  private def makeQuery(forId:Int, forStorage:Option[Int]) = {
+    val baseQuery = TableQuery[FileEntryRow].filter(_.backupOf===forId)
+
+    forStorage match {
+      case Some(storageId) => baseQuery.filter(_.storage===storageId)
+      case None=> baseQuery
+    }
+  }
+
   /**
     * returns some of the backups for this file.  Results are sorted by most recent version first.
     *
@@ -241,20 +250,23 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   def backups(forStorage:Option[Int]=None, drop:Int=0, take:Int=100)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = this.id match {
     case None=>
       Future.failed(new RuntimeException("A record must be saved before you can query for backups"))
-    case Some(_)=>
-      val baseQuery = TableQuery[FileEntryRow]
-        .filter(_.backupOf===this.id)
-
-      val finalQuery = forStorage match {
-        case Some(storageId) => baseQuery.filter(_.storage === storageId)
-        case None => baseQuery
-      }
-
+    case Some(fileId)=>
       db.run {
-          finalQuery
+          makeQuery(fileId, forStorage)
           .sortBy(_.version.desc.nullsLast)
           .drop(drop)
           .take(take)
+          .result
+      }
+  }
+
+  def backupsCount(forStorage:Option[Int]=None)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = this.id match {
+    case None=>
+      Future.failed(new RuntimeException("A record must be saved before you can query for backups"))
+    case Some(fileId)=>
+      db.run {
+        makeQuery(fileId, forStorage)
+          .length
           .result
       }
   }

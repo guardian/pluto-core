@@ -10,13 +10,15 @@ import slick.jdbc.PostgresProfile
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class FindMislinkedProjectsComponent (dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit ec:ExecutionContext) extends GeneralValidationComponent[ProjectEntryRow] {
+class FindMislinkedProjectsComponent (dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit ec:ExecutionContext) extends GeneralValidationComponent[ProjectEntryRow](dbConfigProvider) {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  private final val in:Inlet[ProjectEntry] = Inlet.create("FindMislinkedProjectsComponent.in")
-  private final val out:Outlet[ValidationProblem] = Outlet.create("FindMislinkedProjectsComponent.out")
+  override protected final val in:Inlet[ProjectEntry] = Inlet.create("FindMislinkedProjectsComponent.in")
+  override protected final val out:Outlet[ValidationProblem] = Outlet.create("FindMislinkedProjectsComponent.out")
 
   override def shape: FlowShape[ProjectEntry, ValidationProblem] = FlowShape.of(in, out)
+
+  private implicit lazy val db = dbConfigProvider.get[PostgresProfile].db
 
   def formatProblemList(lst:Seq[FileEntry]):String = {
     lst
@@ -46,6 +48,17 @@ class FindMislinkedProjectsComponent (dbConfigProvider:DatabaseConfigProvider, c
     }
   }
 
+  override def handleRecord(elem: ProjectEntry): Future[Option[ValidationProblem]] = {
+    for {
+      typeInfo <- ProjectType.entryFor(elem.projectTypeId)
+      associatedFiles <- elem.associatedFiles(true)
+      result <- Future(validateProjectExtension(elem, typeInfo, associatedFiles))
+    } yield result
+  }
+
+  override def logError(elem: ProjectEntry, err: Throwable): Unit = logger.error(s"Could not validate project ${elem.projectTitle} (${elem.id}): ${err.getMessage}", err)
+
+  /*
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) {
     private implicit val db = dbConfigProvider.get[PostgresProfile].db
 
@@ -112,5 +125,5 @@ class FindMislinkedProjectsComponent (dbConfigProvider:DatabaseConfigProvider, c
         }
       }
     })
-  }
+  }*/
 }

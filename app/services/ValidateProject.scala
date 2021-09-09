@@ -5,13 +5,13 @@ import akka.stream.{ActorMaterializer, ClosedShape, Materializer}
 import akka.stream.scaladsl.{Balance, Flow, GraphDSL, Merge, RunnableGraph, Sink}
 
 import javax.inject.{Inject, Singleton}
-import models.{ProjectEntry, ProjectEntryRow, ValidationJob, ValidationJobDAO, ValidationJobStatus, ValidationJobType, ValidationProblem, ValidationProblemDAO}
+import models.{FileEntryRow, ProjectEntry, ProjectEntryRow, ValidationJob, ValidationJobDAO, ValidationJobStatus, ValidationJobType, ValidationProblem, ValidationProblemDAO}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import slick.lifted.{AbstractTable, Rep, TableQuery}
-import streamcomponents.{FindMislinkedProjectsComponent, FindUnlinkedProjects, GeneralValidationComponent, ProjectSearchSource, ProjectValidationComponent}
+import streamcomponents.{FileValidationComponent, FindMislinkedProjectsComponent, FindUnlinkedProjects, GeneralValidationComponent, ProjectSearchSource, ProjectValidationComponent}
 import slick.jdbc.PostgresProfile.api._
 
 import java.sql.Timestamp
@@ -131,6 +131,8 @@ class ValidateProject @Inject()(config:Configuration,
         performValidation(new FindMislinkedProjectsComponent(dbConfigProvider, job))(TableQuery[ProjectEntryRow])
       case ValidationJobType.UnlinkedProjects=>
         performValidation(new FindUnlinkedProjects(dbConfigProvider, job))(TableQuery[ProjectEntryRow])
+      case ValidationJobType.UnlinkedFiles=>
+        performValidation(new FileValidationComponent(dbConfigProvider, job))(TableQuery[FileEntryRow])
     }
   }
 
