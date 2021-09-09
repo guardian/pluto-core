@@ -146,6 +146,16 @@ const ProjectValidationMain: React.FC = () => {
               label="Check for project entries wth no files"
               value="UnlinkedProjects"
             />
+            <FormControlLabel
+              control={<Radio />}
+              label="Check for file records which should have content but point to non-existent files"
+              value="UnlinkedFiles"
+            />
+            <FormControlLabel
+              control={<Radio />}
+              label="Check for all file records which point to non-existent files"
+              value="UnlinkedFilesWithBlanks"
+            />
           </RadioGroup>
         </DialogContent>
         <Grid container justify="space-between" style={{ padding: "2em" }}>

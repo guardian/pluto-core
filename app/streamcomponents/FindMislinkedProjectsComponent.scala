@@ -10,13 +10,15 @@ import slick.jdbc.PostgresProfile
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class FindMislinkedProjectsComponent (dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit ec:ExecutionContext) extends GeneralValidationComponent[ProjectEntryRow] {
+class FindMislinkedProjectsComponent (dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit ec:ExecutionContext) extends GeneralValidationComponent[ProjectEntryRow](dbConfigProvider) {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  private final val in:Inlet[ProjectEntry] = Inlet.create("FindMislinkedProjectsComponent.in")
-  private final val out:Outlet[ValidationProblem] = Outlet.create("FindMislinkedProjectsComponent.out")
+  override protected final val in:Inlet[ProjectEntry] = Inlet.create("FindMislinkedProjectsComponent.in")
+  override protected final val out:Outlet[ValidationProblem] = Outlet.create("FindMislinkedProjectsComponent.out")
 
   override def shape: FlowShape[ProjectEntry, ValidationProblem] = FlowShape.of(in, out)
+
+  private implicit lazy val db = dbConfigProvider.get[PostgresProfile].db
 
   def formatProblemList(lst:Seq[FileEntry]):String = {
     lst
@@ -46,71 +48,13 @@ class FindMislinkedProjectsComponent (dbConfigProvider:DatabaseConfigProvider, c
     }
   }
 
-  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) {
-    private implicit val db = dbConfigProvider.get[PostgresProfile].db
-
-    setHandler(out, new AbstractOutHandler {
-      override def onPull(): Unit = pull(in)
-    })
-
-    setHandler(in, new AbstractInHandler {
-      private var asyncInProgress = false
-      private var shouldComplete = false
-
-      val noProblemCb = createAsyncCallback[Unit](_=>{
-        if(shouldComplete) {
-          completeStage();
-        } else {
-          pull(in)
-        }
-      })
-
-      val problemDetectedCb = createAsyncCallback[ValidationProblem](entry=>{
-        push(out, entry)
-        if(shouldComplete) completeStage()
-      })
-
-      val errorCb = createAsyncCallback[Throwable](err=>failStage(err))
-
-      override def onPush(): Unit = {
-        val elem = grab(in)
-
-        asyncInProgress = true
-        val problemFut = for {
-          typeInfo <- ProjectType.entryFor(elem.projectTypeId)
-          associatedFiles <- elem.associatedFiles(true)
-          result <- Future(validateProjectExtension(elem, typeInfo, associatedFiles))
-        } yield result
-
-        problemFut.onComplete({
-          case Success(Some(problem))=>
-            asyncInProgress = false
-            problemDetectedCb.invoke(problem)
-          case Success(None)=>
-            asyncInProgress = false
-            noProblemCb.invoke()
-          case Failure(exception)=>
-            asyncInProgress = false
-            logger.error(s"Could not validate project ${elem.projectTitle} (${elem.id}): ${exception.getMessage}", exception)
-            errorCb.invoke(exception)
-        })
-      }
-
-      override def onUpstreamFinish(): Unit = {
-        if(asyncInProgress) {
-          shouldComplete = true
-        } else {
-          completeStage()
-        }
-      }
-
-      override def onUpstreamFailure(ex: Throwable): Unit = {
-        if(asyncInProgress) {
-          shouldComplete = true
-        } else {
-          completeStage()
-        }
-      }
-    })
+  override def handleRecord(elem: ProjectEntry): Future[Option[ValidationProblem]] = {
+    for {
+      typeInfo <- ProjectType.entryFor(elem.projectTypeId)
+      associatedFiles <- elem.associatedFiles(true)
+      result <- Future(validateProjectExtension(elem, typeInfo, associatedFiles))
+    } yield result
   }
+
+  override def logError(elem: ProjectEntry, err: Throwable): Unit = logger.error(s"Could not validate project ${elem.projectTitle} (${elem.id}): ${err.getMessage}", err)
 }

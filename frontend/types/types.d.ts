@@ -296,8 +296,24 @@ type ValidationScanType =
   | "CheckAllFiles"
   | "CheckSomeFiles"
   | "MislinkedPTR"
-  | "UnlinkedProjects";
+  | "UnlinkedProjects"
+  | "UnlinkedFiles"
+  | "UnlinkedFilesWithBlanks";
 
 interface ValidationRequestDoc {
   validationType: ValidationScanType;
+}
+
+interface FileEntry {
+  id: number;
+  filepath: string;
+  storageid: number;
+  user: string;
+  version: number;
+  ctime: string;
+  mtime: string;
+  atime: string;
+  hasContent: boolean;
+  hasLink: boolean;
+  backupOf?: number;
 }

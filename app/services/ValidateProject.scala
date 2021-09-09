@@ -5,13 +5,13 @@ import akka.stream.{ActorMaterializer, ClosedShape, Materializer}
 import akka.stream.scaladsl.{Balance, Flow, GraphDSL, Merge, RunnableGraph, Sink}
 
 import javax.inject.{Inject, Singleton}
-import models.{ProjectEntry, ProjectEntryRow, ValidationJob, ValidationJobDAO, ValidationJobStatus, ValidationJobType, ValidationProblem, ValidationProblemDAO}
+import models.{FileEntryRow, ProjectEntry, ProjectEntryRow, ValidationJob, ValidationJobDAO, ValidationJobStatus, ValidationJobType, ValidationProblem, ValidationProblemDAO}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import slick.lifted.{AbstractTable, Rep, TableQuery}
-import streamcomponents.{FindMislinkedProjectsComponent, FindUnlinkedProjects, GeneralValidationComponent, ProjectSearchSource, ProjectValidationComponent}
+import streamcomponents.{FileValidationComponent, FindMislinkedProjectsComponent, FindUnlinkedProjects, GeneralValidationComponent, ProjectSearchSource, ProjectValidationComponent}
 import slick.jdbc.PostgresProfile.api._
 
 import java.sql.Timestamp
@@ -48,7 +48,7 @@ class ValidateProject @Inject()(config:Configuration,
     * @param queryFunc
     * @return
     */
-  def buildStream[E <:AbstractTable[_]](switcherFactory:GeneralValidationComponent[E], parallelism:Int=4, batchSize:Int=20)(queryFunc: TableQuery[E]) = {
+  def buildStream[E <:AbstractTable[_]](switcherFactory:GeneralValidationComponent[E], parallelism:Int=4, batchSize:Int=20)(queryFunc: Query[E, E#TableElementType, Seq]) = {
     val sinkFactory = Sink.foreach[Seq[ValidationProblem]](validationProblemDAO.batchInsertIntoDb)
 
     type T = E#TableElementType
@@ -84,7 +84,7 @@ class ValidateProject @Inject()(config:Configuration,
     *                        This can be inferred from the `queryFunc` and `switcherFactory` arguments
     * @return                A Future, which completes with no value when the stream finishes
     */
-  def runStream[E <:AbstractTable[_]](switcherFactory:GeneralValidationComponent[E], parallelism:Int=4)(queryFunc:TableQuery[E]) =
+  def runStream[E <:AbstractTable[_]](switcherFactory:GeneralValidationComponent[E], parallelism:Int=4)(queryFunc:Query[E, E#TableElementType, Seq]) =
     RunnableGraph.fromGraph(buildStream(switcherFactory, parallelism)(queryFunc)).run()
 
   /**
@@ -94,7 +94,7 @@ class ValidateProject @Inject()(config:Configuration,
     *                        This can be inferred from the `queryFunc` and `switcherFactory` arguments
     * @return                A Future, which completes with an integer representing the nmber of matching rows
     */
-  def getTotalCount[E <:AbstractTable[_]](queryFunc: TableQuery[E]) = {
+  def getTotalCount[E <:AbstractTable[_]](queryFunc: Query[E, E#TableElementType, Seq]) = {
     val db = dbConfigProvider.get.db
 
     db.run(queryFunc.size.result)
@@ -114,7 +114,7 @@ class ValidateProject @Inject()(config:Configuration,
     * @return                A Future, which completes once the validation is done, returning an integer of the number of
     *                        records queried as determined by a `SELECT COUNT` carried out at the start of the validation run
     */
-  def performValidation[E <:AbstractTable[_]](switcherFactory:GeneralValidationComponent[E], parallelism:Int=4)(queryFunc: TableQuery[E]) = {
+  def performValidation[E <:AbstractTable[_]](switcherFactory:GeneralValidationComponent[E], parallelism:Int=4)(queryFunc: Query[E, E#TableElementType, Seq]) = {
     for {
       c <- getTotalCount(queryFunc)
       r <- runStream(switcherFactory)(queryFunc)
@@ -131,6 +131,10 @@ class ValidateProject @Inject()(config:Configuration,
         performValidation(new FindMislinkedProjectsComponent(dbConfigProvider, job))(TableQuery[ProjectEntryRow])
       case ValidationJobType.UnlinkedProjects=>
         performValidation(new FindUnlinkedProjects(dbConfigProvider, job))(TableQuery[ProjectEntryRow])
+      case ValidationJobType.UnlinkedFiles=>
+        performValidation(new FileValidationComponent(dbConfigProvider, job))(TableQuery[FileEntryRow])
+      case ValidationJobType.UnlinkedFilesWithBlanks=>
+        performValidation(new FileValidationComponent(dbConfigProvider, job))(TableQuery[FileEntryRow].filter(_.hasContent===true))
     }
   }
 

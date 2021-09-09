@@ -13,7 +13,7 @@ object ValidationJobStatus extends Enumeration {
 }
 
 object ValidationJobType extends Enumeration {
-  val CheckAllFiles, CheckSomeFiles, MislinkedPTR, UnlinkedProjects = Value
+  val CheckAllFiles, CheckSomeFiles, MislinkedPTR, UnlinkedProjects, UnlinkedFiles, UnlinkedFilesWithBlanks = Value
 }
 
 case class ValidationJob(id:Option[Int],uuid:UUID,

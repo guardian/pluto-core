@@ -15,11 +15,13 @@ import scala.concurrent.Future
   * checks if the given ProjectEntry exists in the expected location(s) or not.
   * If it validates then grabs the next input from the stream, if it does not validate then outputs a ValidationProblem
   */
-class ProjectValidationComponent(dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit mat:Materializer, injector:Injector) extends GeneralValidationComponent[ProjectEntryRow]{
-  private val in:Inlet[ProjectEntry] = Inlet.create("ValidateProjectSwitch.in")
-  private val out:Outlet[ValidationProblem] = Outlet.create("ValidateProject.out")
+class ProjectValidationComponent(dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit mat:Materializer, injector:Injector) extends GeneralValidationComponent[ProjectEntryRow](dbConfigProvider){
+  override protected val in:Inlet[ProjectEntry] = Inlet.create("ValidateProjectSwitch.in")
+  override protected  val out:Outlet[ValidationProblem] = Outlet.create("ValidateProject.out")
 
   override def shape = FlowShape.of(in, out)
+
+  override def handleRecord(elem: ProjectEntry): Future[Option[ValidationProblem]] = Future.failed(new RuntimeException("not needed here"))
 
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = new GraphStageLogic(shape) {
     private val logger = LoggerFactory.getLogger(getClass)

@@ -11,7 +11,7 @@ import java.sql.Timestamp
 import java.time.Instant
 
 object ValidationEntityClass extends Enumeration {
-  val ProjectEntry = Value
+  val ProjectEntry,FileEntry = Value
 }
 
 case class ValidationProblem(pk:Option[Int], jobId:UUID, timestamp:Timestamp, entityClass:ValidationEntityClass.Value, entityId:Int, notes:Option[String])
@@ -45,6 +45,13 @@ object ValidationProblem extends ((Option[Int], UUID, Timestamp, ValidationEntit
       )
     )
   }
+
+  def fromFileEntry(fileEntry:FileEntry, job:ValidationJob, notes:Option[String]=None, timestamp: Option[Timestamp]=None) =
+    fileEntry.id.map(fileId=>
+      new ValidationProblem(
+        None, job.uuid, timestamp.getOrElse(Timestamp.from(Instant.now())), ValidationEntityClass.FileEntry, fileId, notes
+      )
+    )
 }
 
 object ValidationProblemMappers {
