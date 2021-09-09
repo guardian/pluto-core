@@ -66,6 +66,7 @@ const ValidationTableRow: React.FC<ValidationTableRowProps> = (props) => {
             setProjectTitle("(no info)");
             setLoading(false);
           });
+        break;
       default:
         break;
     }

@@ -331,15 +331,18 @@ object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Tim
   /**
     * returns a streaming source that lists out all files in the database, optionally limiting to a given storage ID
     * @param forStorageId if provided, limit to this storage ID only
+    * @param onlyWithContent if true, then limit to only returning files that have the 'haveContent' field set. Defaults to True.
     * @param db implicitly provided database access object
     * @return an Akka Source, that yields FileEntry objects
     */
-  def scanAllFiles(forStorageId:Option[Int])(implicit  db:slick.jdbc.PostgresProfile#Backend#Database) = {
+  def scanAllFiles(forStorageId:Option[Int], onlyWithContent:Boolean=true)(implicit  db:slick.jdbc.PostgresProfile#Backend#Database) = {
     val baseQuery = TableQuery[FileEntryRow]
-    val finalQuery = forStorageId match {
+    val storageQuery = forStorageId match {
       case Some(storageId)=>baseQuery.filter(_.storage===storageId)
       case None=>baseQuery
     }
+
+    val finalQuery = if(onlyWithContent) storageQuery else storageQuery.filter(_.hasContent===true)
 
     Source.fromPublisher(db.stream(finalQuery.sortBy(_.mtime.asc).result))
   }

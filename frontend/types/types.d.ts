@@ -297,7 +297,8 @@ type ValidationScanType =
   | "CheckSomeFiles"
   | "MislinkedPTR"
   | "UnlinkedProjects"
-  | "UnlinkedFiles";
+  | "UnlinkedFiles"
+  | "UnlinkedFilesWithBlanks";
 
 interface ValidationRequestDoc {
   validationType: ValidationScanType;
