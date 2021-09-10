@@ -122,7 +122,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
       println(responseBody.toString)
       status(response) mustEqual OK
 
-      val writtenContent = Source.fromFile("/tmp/testprojectfile").getLines().mkString("\n")
+      val writtenContent = Source.fromFile("/tmp/anothertestprojectfile").getLines().mkString("\n")
       writtenContent mustEqual testbuffer
     }
 
