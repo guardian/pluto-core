@@ -5,8 +5,7 @@ import helpers.StorageHelper
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.test.{FakeRequest, WithApplication}
-import utils.AkkaTestkitSpecs2Support
+import play.api.test.WithApplication
 import akka.pattern.ask
 import drivers.StorageDriver
 import models.{FileEntry, ProjectRequestFull, ProjectTemplate, StorageEntry}
