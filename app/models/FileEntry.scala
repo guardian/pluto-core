@@ -44,17 +44,22 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
       db.run(
         (insertQuery+=this).asTry
       ).map({
-        case Success(insertResult)=>Success(insertResult.asInstanceOf[FileEntry])  //maybe only intellij needs the cast here?
+        case Success(insertResult)=>Success(insertResult)
         case Failure(error)=>Failure(error)
       })
     case Some(realEntityId)=>
       db.run(
         TableQuery[FileEntryRow].filter(_.id===realEntityId).update(this).asTry
       ).map({
-        case Success(rowsAffected)=>Success(this)
+        case Success(_)=>Success(this)
         case Failure(error)=>Failure(error)
       })
   }
+
+  def saveSimple(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[FileEntry] = save.flatMap({
+    case Success(e)=>Future(e)
+    case Failure(err)=>Future.failed(err)
+  })
 
   /**
     *  returns a StorageEntry object for the id of the storage of this FileEntry */
