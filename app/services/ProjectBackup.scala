@@ -229,7 +229,10 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
 
               targetFileEntry.flatMap(updatedDestEntry=>{
                 storageHelper.copyFile(sourceEntry, updatedDestEntry)
-                  .map(fileEntry=>Right(Some(fileEntry, sourceEntry)))
+                  .flatMap(fileEntry=>{
+                    //ensure that we save the record with `b_has_content` set to true
+                    fileEntry.saveSimple.map(finalEntry=>Right(Some(finalEntry, sourceEntry)))
+                  })
                   .recoverWith({
                     case err:Throwable=>
                       logger.error(s"Could not copy ${updatedDestEntry.filepath} on ${updatedDestEntry.storageId} from ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${err.getMessage}",err)

@@ -58,10 +58,12 @@ class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider, storag
               MDC.put("savedFileEntry", savedFileEntry.toString)
               logger.info(s"Copying from file $sourceFileEntry to $savedFileEntry")
               storageHelper.copyFile(sourceFileEntry, savedFileEntry)
-            }).map(copiedFileEntry=>{
+            }).flatMap(copiedFileEntry=>{
                 logger.debug(copiedFileEntry.toString)
-                val updatedData = copyRequest.data.copy(destFileEntry = Some(copiedFileEntry))
-                originalSender ! StepSucceded(updatedData)
+                copiedFileEntry.saveSimple.map(_=>{
+                  val updatedData = copyRequest.data.copy(destFileEntry = Some(copiedFileEntry))
+                  originalSender ! StepSucceded(updatedData)
+                })
             }).recover({
               case error:Throwable=>
                 logger.error(error.getMessage, error)

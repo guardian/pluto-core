@@ -113,7 +113,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
       val testbuffer = "this is my test data\nwith another line"
       val response = route(app, FakeRequest(
         method="PUT",
-        uri="/api/file/4/content",
+        uri="/api/file/57/content",
         headers=FakeHeaders(Seq(("Content-Type", "application/octet-stream"))),
         body=testbuffer
       ).withSession("uid"->"testuser")).get
@@ -122,7 +122,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
       println(responseBody.toString)
       status(response) mustEqual OK
 
-      val writtenContent = Source.fromFile("/tmp/testprojectfile").getLines().mkString("\n")
+      val writtenContent = Source.fromFile("/tmp/anothertestprojectfile").getLines().mkString("\n")
       writtenContent mustEqual testbuffer
     }
 
