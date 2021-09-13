@@ -36,14 +36,22 @@ class ValidationProblemDAO @Inject() (dbConfigProvider:DatabaseConfigProvider) {
     * @param limit maximum number of records to return in one call
     * @return a Future containing a list of the reports.  If there is an error, the future fails.
     */
-  def faultsForJobID(jobId:UUID, from:Int, limit:Int) = db.run(
-    TableQuery[ValidationProblemRow]
-      .filter(_.jobId===jobId)
-      .sortBy(_.timestamp.asc)
-      .drop(from)
-      .take(limit)
-      .result
-  )
+  def faultsForJobID(jobId:UUID, from:Int, limit:Int, sortColumn:Option[String], sortOrder:Option[String]) = {
+    db.run(
+      TableQuery[ValidationProblemRow]
+        .filter(_.jobId===jobId)
+        .sortBy(row=>(sortColumn, sortOrder) match {
+          case (Some("item-id"), Some("asc"))=>row.entityId.asc
+          case (Some("item-id"), Some("desc"))=>row.entityId.desc
+          case (Some("detection-time"), Some("asc"))=>row.timestamp.asc
+          case (Some("detection-time"), Some("desc"))=>row.timestamp.desc
+          case (_,_)=>row.timestamp.asc
+        })
+        .drop(from)
+        .take(limit)
+        .result
+    )
+  }
 
   def faultCountForJob(jobId:UUID) = db.run(
     TableQuery[ValidationProblemRow].filter(_.jobId===jobId).length.result

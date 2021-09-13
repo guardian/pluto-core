@@ -12,7 +12,9 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
+  TableSortLabel,
   Typography,
 } from "@material-ui/core";
 import { Alert } from "@material-ui/lab";
@@ -20,6 +22,7 @@ import { differenceInMinutes, format, parseISO } from "date-fns";
 import ValidationTableRow from "./ValidationTableRow";
 import { useHistory } from "react-router";
 import { ArrowBackRounded } from "@material-ui/icons";
+import { Helmet } from "react-helmet";
 
 interface ValidationJobResultsLocationParams {
   jobId: string;
@@ -37,8 +40,13 @@ const useStyles = makeStyles({
     marginTop: "1em",
     marginBottom: "1em",
   },
+  fullWidth: {
+    width: "100%",
+  },
 });
 
+type SortColumns = "job-id" | "item-id" | "detection-time";
+type SortOrders = "asc" | "desc";
 const ValidationJobResults: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [totalProblemReports, setTotalProblemReports] = useState(0);
@@ -48,10 +56,35 @@ const ValidationJobResults: React.FC = () => {
   );
   const [lastError, setLastError] = useState<string | undefined>(undefined);
 
+  const [currentPageNumber, setCurrentPageNumber] = useState(0);
+  const [currentRowsPerPage, setCurrentRowsPerPage] = useState(10);
+  const rowsPerPageOptions = [10, 25, 50, 75, 100];
+
+  const [sortColumn, setSortColumn] = useState<SortColumns>("detection-time");
+  const [sortOrder, setSortOrder] = useState<SortOrders>("desc");
+
   const routerParams = useParams<ValidationJobResultsLocationParams>();
   const history = useHistory();
 
   const classes = useStyles();
+
+  const changeRowsPerPage = (
+    evt: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => {
+    setCurrentRowsPerPage(parseInt(evt.target.value, 10));
+    setCurrentPageNumber(0);
+  };
+
+  const tablePageChanged = (
+    evt: React.MouseEvent<HTMLButtonElement> | null,
+    page: number
+  ) => {
+    setCurrentPageNumber(page);
+  };
+
+  useEffect(() => {
+    refreshData();
+  }, [currentPageNumber, currentRowsPerPage, sortColumn, sortOrder]);
 
   const refreshData = async () => {
     setLoading(true);
@@ -65,8 +98,10 @@ const ValidationJobResults: React.FC = () => {
         setLoading(false);
       } else {
         setJobDetails(jobDetailsResponse.data);
+        const startAt = currentPageNumber * currentRowsPerPage;
+
         const response = await axios.get<ValidationProblemListResponse>(
-          `/api/validation/${routerParams.jobId}/faults`
+          `/api/validation/${routerParams.jobId}/faults?from=${startAt}&limit=${currentRowsPerPage}&sortColumn=${sortColumn}&sortOrder=${sortOrder}`
         );
         setLastError(undefined);
         setProblemReports(response.data.entries);
@@ -79,10 +114,6 @@ const ValidationJobResults: React.FC = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    refreshData();
-  }, []);
 
   /**
    * returns a UI string representing the time that the job has been in progress
@@ -146,8 +177,24 @@ const ValidationJobResults: React.FC = () => {
     }
   };
 
+  const columnClicked = (col: SortColumns) => {
+    setSortColumn((prevSortColumn) => {
+      if (prevSortColumn === col) {
+        //if we are clicking on the column already selected, change the sort order
+        setSortOrder((prevState) => (prevState === "asc" ? "desc" : "asc"));
+        return col;
+      } else {
+        //otherwise change the column
+        return col;
+      }
+    });
+  };
+
   return (
     <>
+      <Helmet>
+        <title>Project validation results</title>
+      </Helmet>
       {loading ? <LinearProgress style={{ width: "100%" }} /> : undefined}
       <Typography variant="h2">Validate project files</Typography>
 
@@ -207,17 +254,30 @@ const ValidationJobResults: React.FC = () => {
             <TableHead>
               <TableRow>
                 <TableCell>
-                  <Typography>Problem detected at</Typography>
+                  <TableSortLabel
+                    active={sortColumn === "detection-time"}
+                    direction={
+                      sortColumn === "detection-time" ? sortOrder : "asc"
+                    }
+                    onClick={() => columnClicked("detection-time")}
+                  >
+                    Problem detected at
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell>
-                  <Typography>Affected item</Typography>
+                  <TableSortLabel
+                    active={sortColumn === "item-id"}
+                    direction={sortColumn === "item-id" ? sortOrder : "asc"}
+                    onClick={() => columnClicked("item-id")}
+                  >
+                    Affected item
+                  </TableSortLabel>
                 </TableCell>
                 <TableCell>
                   <Typography>Details</Typography>
                 </TableCell>
               </TableRow>
             </TableHead>
-
             <TableBody>
               {problemReports.map((entry, idx) => (
                 <ValidationTableRow data={entry} key={idx} />
@@ -225,6 +285,16 @@ const ValidationJobResults: React.FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        <TablePagination
+          count={totalProblemReports}
+          component="div"
+          classes={{ root: classes.fullWidth }}
+          page={currentPageNumber}
+          onPageChange={tablePageChanged}
+          rowsPerPage={currentRowsPerPage}
+          onRowsPerPageChange={changeRowsPerPage}
+          rowsPerPageOptions={rowsPerPageOptions}
+        />
       </Paper>
     </>
   );

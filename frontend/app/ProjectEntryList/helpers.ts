@@ -59,6 +59,13 @@ export const getProject = async (id: number): Promise<Project> => {
   }
 };
 
+export const getProjectType = async (id: number): Promise<ProjectType> => {
+  const response = await Axios.get<PlutoApiResponse<ProjectType>>(
+    `/api/projecttype/${id}`
+  );
+  return response.data.result;
+};
+
 export const getProjectByVsid = async (vsid: string): Promise<Project> => {
   const response = await Axios.get<PlutoApiResponse<Project>>(
     `${API_PROJECTS}/vsid/${vsid}`
