@@ -29,6 +29,16 @@ const ValidationTableRow: React.FC<ValidationTableRowProps> = (props) => {
     return response.data.result;
   };
 
+  const formattedDate = (dateStr: string) => {
+    try {
+      const parsedDate = parseISO(dateStr);
+      return format(parsedDate, "eeeeee do MMM yyy");
+    } catch (err) {
+      console.log(`Could not parse date value ${dateStr}: ${err}`);
+      return "";
+    }
+  };
+
   useEffect(() => {
     switch (props.data.entityClass) {
       case "ProjectEntry":
@@ -38,7 +48,11 @@ const ValidationTableRow: React.FC<ValidationTableRowProps> = (props) => {
             getProjectType(projectInfo.projectTypeId)
               .then((projectTypeInfo) => {
                 setProjectTitle(
-                  `${projectInfo.title} ${projectTypeInfo.name} ${projectTypeInfo.targetVersion} - ${projectInfo.productionOffice}`
+                  `${projectInfo.title} - ${formattedDate(
+                    projectInfo.created
+                  )} - ${projectTypeInfo.name} ${
+                    projectTypeInfo.targetVersion
+                  } - ${projectInfo.productionOffice}`
                 );
                 setLoading(false);
               })
@@ -48,7 +62,11 @@ const ValidationTableRow: React.FC<ValidationTableRowProps> = (props) => {
                   err
                 );
                 setProjectTitle(
-                  `${projectInfo.title} (unknown type ${projectInfo.projectTypeId}) - ${projectInfo.productionOffice}`
+                  `${projectInfo.title} - ${formattedDate(
+                    projectInfo.created
+                  )} - (unknown type ${projectInfo.projectTypeId}) - ${
+                    projectInfo.productionOffice
+                  }`
                 );
                 setLoading(false);
               });
