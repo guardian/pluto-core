@@ -60,7 +60,7 @@ class DataMigrationSpec extends Specification with Mockito with BuildMyApp {
       implicit val mat:Materializer   = app.injector.instanceOf(classOf[Materializer])
       implicit val dbConfigProvider:DatabaseConfigProvider = app.injector.instanceOf(classOf[DatabaseConfigProvider])
       implicit val db = dbConfigProvider.get[PostgresProfile].db
-
+      implicit val injector = app.injector
       val testComm = PlutoCommission(None,None,None,Timestamp.from(Instant.now()), Timestamp.from(Instant.now()), "test to update",
       EntryStatus.New,None,2, None, Timestamp.from(Instant.now()), "",None,ProductionOffice.UK,None, None)
 
@@ -107,6 +107,7 @@ class DataMigrationSpec extends Specification with Mockito with BuildMyApp {
       implicit val dbConfigProvider:DatabaseConfigProvider = app.injector.instanceOf(classOf[DatabaseConfigProvider])
       implicit val db = dbConfigProvider.get[PostgresProfile].db
       implicit val ec:ExecutionContext = system.dispatcher
+      implicit val injector = app.injector
 
       val mockUpdateCommission = mock[(PlutoCommission)=>Future[Option[PlutoCommission]]]
       mockUpdateCommission.apply(any) returns Future(Some(mock[PlutoCommission]))
@@ -148,6 +149,7 @@ class DataMigrationSpec extends Specification with Mockito with BuildMyApp {
 
       val mockUserCache = mock[VSUserCache]
       mockUserCache.lookup(any) returns Some("test-user")
+      implicit val injector = app.injector
 
       val toTest = new DataMigration("source-base","user","passwrod","VX",mockUserCache) {
         override def requestOriginalRecord(vsId: String): Future[JsValue] = mockRequestOriginal(vsId)
