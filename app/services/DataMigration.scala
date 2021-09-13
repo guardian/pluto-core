@@ -475,13 +475,11 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
     * @param storageId storage onto which to put the file
     * @return a Future, which contains the created FileEntry if successful or fails if there is a problem.
     */
-  def importProblemProject(dataSource:Source[ByteString, _], projectVsid:String, userName: String, fileName:String, storageId:Int) = {
-    val defaultTimestamp = Timestamp.from(Instant.now())
-
+  def importProblemProject(dataSource:Source[ByteString, _], projectVsid:String, userName: String, fileName:String, storageId:Int, timestamp:Timestamp) = {
     for {
       storageInfo <- StorageEntryHelper.entryFor(storageId)
       streamedFileMeta <- Future.fromTry(streamInProjectContents(dataSource, fileName, storageInfo))
-      fileEntry <- makeFileEntry(storageId, fileName, userName, streamedFileMeta, defaultTimestamp)
+      fileEntry <- makeFileEntry(storageId, fileName, userName, streamedFileMeta, timestamp)
       _ <- makeProjectLink(fileEntry, projectVsid)
     } yield fileEntry
   }
