@@ -83,7 +83,7 @@ const ValidationTableRow: React.FC<ValidationTableRowProps> = (props) => {
       default:
         break;
     }
-  }, []);
+  }, [props.data]);
 
   const safeTimestamp = () => {
     try {
