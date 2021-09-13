@@ -64,11 +64,11 @@ class ValidationsController @Inject() (override val config:Configuration,
     }
   }
 
-  def faultsForJobId(jobId:String,from:Int=0, limit:Int=100) = IsAdminAsync {uid=> request=>
+  def faultsForJobId(jobId:String,from:Int=0, limit:Int=100, sortColumn:Option[String], sortOrder:Option[String]) = IsAdminAsync {uid=> request=>
     val resultsFut = for {
       jobUUID    <- Future.fromTry(Try { UUID.fromString(jobId)})
       totalCount <- validationProblemDAO.faultCountForJob(jobUUID)
-      records    <- validationProblemDAO.faultsForJobID(jobUUID, from, limit)
+      records    <- validationProblemDAO.faultsForJobID(jobUUID, from, limit, sortColumn, sortOrder)
     } yield (totalCount, records)
 
     resultsFut
