@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   CircularProgress,
   Grid,
@@ -9,7 +9,7 @@ import {
 import { format, parseISO } from "date-fns";
 import { Launch } from "@material-ui/icons";
 import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
-import { getProject } from "../ProjectEntryList/helpers";
+import { getProject, getProjectType } from "../ProjectEntryList/helpers";
 import axios from "axios";
 
 interface ValidationTableRowProps {
@@ -29,16 +29,29 @@ const ValidationTableRow: React.FC<ValidationTableRowProps> = (props) => {
     return response.data.result;
   };
 
-  useState(() => {
+  useEffect(() => {
     switch (props.data.entityClass) {
       case "ProjectEntry":
         setLoading(true);
         getProject(props.data.entityId)
           .then((projectInfo) => {
-            setProjectTitle(
-              `${projectInfo.title} - ${projectInfo.productionOffice}`
-            );
-            setLoading(false);
+            getProjectType(projectInfo.projectTypeId)
+              .then((projectTypeInfo) => {
+                setProjectTitle(
+                  `${projectInfo.title} ${projectTypeInfo.name} ${projectTypeInfo.targetVersion} - ${projectInfo.productionOffice}`
+                );
+                setLoading(false);
+              })
+              .catch((err) => {
+                console.log(
+                  `Could not get project type information for type id ${projectInfo.projectTypeId}: `,
+                  err
+                );
+                setProjectTitle(
+                  `${projectInfo.title} (unknown type ${projectInfo.projectTypeId}) - ${projectInfo.productionOffice}`
+                );
+                setLoading(false);
+              });
           })
           .catch((err) => {
             console.error(
@@ -70,7 +83,7 @@ const ValidationTableRow: React.FC<ValidationTableRowProps> = (props) => {
       default:
         break;
     }
-  });
+  }, []);
 
   const safeTimestamp = () => {
     try {
