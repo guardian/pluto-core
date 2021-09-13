@@ -1,22 +1,24 @@
 package services
 
+import akka.NotUsed
+
 import java.io.File
-import java.nio.file.Files
+import java.nio.file.{Files, Paths}
 import java.sql.Timestamp
 import java.time.{Instant, LocalDate}
 import java.time.format.DateTimeFormatter
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{HttpCharset, HttpRequest, MediaRange, MediaType, StatusCodes}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.{Accept, Authorization, BasicHttpCredentials}
 import akka.stream.{ClosedShape, Materializer}
-import akka.stream.scaladsl.{GraphDSL, Keep, RunnableGraph, Sink}
+import akka.stream.scaladsl.{GraphDSL, Keep, RunnableGraph, Sink, Source, StreamConverters}
 import akka.util.ByteString
-import models.{FileAssociationRow, FileEntry, PlutoCommission, PlutoCommissionRow, ProductionOffice, StorageEntry, StorageEntryHelper}
+import models.{FileAssociationRow, FileEntry, PlutoCommission, PlutoCommissionRow, ProductionOffice, ProjectEntry, StorageEntry, StorageEntryHelper}
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.Injector
 import services.migrationcomponents.{DBObjectSource, HttpHelper, LinkVSCommissiontoPL, LinkVStoPL, MultipleCounter, PlutoCommissionSource, ProjectEntryNullCommissionSource, ProjectFileExistsSwitch, ProjectFileResult, ProjectNoFilesSource, VSCommissionSource, VSGlobalMetadata, VSProjectEntity, VSProjectSource, VSUserCache}
 import play.api.libs.json.{JsArray, JsValue, Json}
 import slick.jdbc.PostgresProfile
@@ -66,7 +68,7 @@ object DataMigration {
 }
 
 class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:String, sourceSystemId:String, userCache:VSUserCache)
-                    (implicit system:ActorSystem, mat:Materializer, dbConfigProvider:DatabaseConfigProvider) {
+                    (implicit system:ActorSystem, mat:Materializer, dbConfigProvider:DatabaseConfigProvider, injector:Injector) {
   private implicit val http:akka.http.scaladsl.HttpExt = Http()
   private implicit val dispatcher = system.dispatcher
   private final val logger = LoggerFactory.getLogger(getClass)
@@ -389,5 +391,98 @@ class DataMigration (sourceBasePath:String, sourceUser:String, sourcePasswd:Stri
       ClosedShape
     }
     RunnableGraph.fromGraph(graph).run()
+  }
+
+  /**
+    * writes the given data source into a file on the destination storage
+    * @param dataSource akka data source that renders a ByteString containing the raw file data
+    * @param fileName file name to write to
+    * @param storageInfo storage information as returned from StorageEntryHelper.entryFor()
+    * @return a Try that completes when the file copy is complete and fails if there is an error
+    */
+  protected def streamInProjectContents(dataSource:Source[ByteString, _], fileName:String, storageInfo:Option[StorageEntry]) =
+    storageInfo.flatMap(_.getStorageDriver) match {
+      case None=>
+        Failure(new RuntimeException(s"Requested storage does not exist or has no driver associated"))
+      case Some(storageDriver)=>
+        if(storageDriver.pathExists(fileName,1)) {
+          Failure(new RuntimeException(s"File $fileName already exists on storage ${storageInfo.get.repr}"))
+        } else {
+          Try {
+            val inputStream = dataSource.runWith(StreamConverters.asInputStream())
+            storageDriver.writeDataToPath(fileName, 1, inputStream)
+            inputStream.close()
+            storageDriver.getMetadata(fileName, 1)
+          }
+        }
+    }
+
+  /**
+    * creates a new FileEntry object associated with the given file on the given storage,
+    * saves it to the database and returns the saved record
+    * @param storageId storage ID
+    * @param fileName file name
+    * @param userName the user creating this file
+    * @param fileMeta metadata for the file as returned from the StorageDriver
+    * @param defaultTime default timestamp to use if the fields are not present in the file metadata
+    * @return a Future containing the saved FileEntry record
+    */
+  protected def makeFileEntry(storageId:Int, fileName:String, userName:String, fileMeta:Map[Symbol, String], defaultTime:Timestamp) = {
+    val maybeLastModified = fileMeta
+      .get(Symbol("lastModified"))
+      .flatMap(stringValue => Try { Timestamp.valueOf(stringValue) }.toOption)
+      .getOrElse(defaultTime)
+
+    val ent = FileEntry(None, fileName, storageId, userName, 1, maybeLastModified, maybeLastModified, maybeLastModified, true, false, None)
+    ent.saveSimple
+  }
+
+  protected def insertFileAssociation(projectEntryId:Int, sourceFileId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run(
+    (TableQuery[FileAssociationRow]+=(projectEntryId,sourceFileId))
+  )
+
+  protected def makeProjectLink(fileEntry: FileEntry, projectVsid:String) = {
+    ProjectEntry.lookupByVidispineId(projectVsid).flatMap({
+      case Failure(err)=>Future.failed(err)
+      case Success(matchingProjects)=>
+        if(matchingProjects.isEmpty) {
+          logger.warn(s"Cannot link file entry ${fileEntry.id} ${fileEntry.filepath} on ${fileEntry.storageId}, there is no project with vsid $projectVsid to link to")
+          Future.failed(new RuntimeException("No project with that VSID"))
+        } else if(matchingProjects.length > 1) {
+          logger.warn(s"There are ${matchingProjects.length} projects that share the VSID ${projectVsid}")
+          Future.failed(new RuntimeException(s"${matchingProjects.length} matching projects, need exactly 1"))
+        } else {
+          val project = matchingProjects.head
+          project.associatedFiles(true).flatMap(existingFiles=>{
+            if(existingFiles.nonEmpty) {
+              Future.failed(new RuntimeException(s"Project with VSID $projectVsid already has ${existingFiles.length} associated files"))
+            } else {
+              insertFileAssociation(project.id.get, fileEntry.id.get)
+            }
+          })
+        }
+    })
+  }
+
+  /**
+    * streams in the contents of a "problematic" project.  This involves saving the contents to the given filename on
+    * the given storage (rejected if the name already exists); creating a FileEntry associated with the new file; and
+    * creating a ProjectFileAssociation to link that to the project with the given (legacy) VSID
+    * @param dataSource an akka Source that yields the file contents as a byte stream
+    * @param projectVsid VSID of the project that this should be associated with
+    * @param userName name of the user carrying out the operation
+    * @param fileName name of the file to write to
+    * @param storageId storage onto which to put the file
+    * @return a Future, which contains the created FileEntry if successful or fails if there is a problem.
+    */
+  def importProblemProject(dataSource:Source[ByteString, _], projectVsid:String, userName: String, fileName:String, storageId:Int) = {
+    val defaultTimestamp = Timestamp.from(Instant.now())
+
+    for {
+      storageInfo <- StorageEntryHelper.entryFor(storageId)
+      streamedFileMeta <- Future.fromTry(streamInProjectContents(dataSource, fileName, storageInfo))
+      fileEntry <- makeFileEntry(storageId, fileName, userName, streamedFileMeta, defaultTimestamp)
+      _ <- makeProjectLink(fileEntry, projectVsid)
+    } yield fileEntry
   }
 }
