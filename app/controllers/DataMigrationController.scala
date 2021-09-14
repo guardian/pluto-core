@@ -1,26 +1,39 @@
 package controllers
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import auth.{BearerTokenAuth, Security}
+
 import javax.inject.{Inject, Singleton}
 import models.datamigration.{CommissionUpdateRequest, ProjectRelinkRequest, ProjectsUpdateRequest}
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.inject.Injector
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.libs.streams.Accumulator
+import play.api.libs.ws.{EmptyBody, InMemoryBody, SourceBody, WSRequest}
+import play.api.mvc.{AbstractController, BodyParser, ControllerComponents}
 import services.DataMigration
 import services.migrationcomponents.VSUserCache
 
+import java.sql.Timestamp
+import java.time.{Instant, LocalDateTime, ZoneOffset, ZonedDateTime}
+import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class DataMigrationController @Inject()
-  (override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth, override implicit val config:Configuration, override val cache:SyncCacheApi)
-  (implicit dbProvider:DatabaseConfigProvider, system:ActorSystem, mat:Materializer)
+  (override val controllerComponents:ControllerComponents,
+   override val bearerTokenAuth:BearerTokenAuth,
+   override implicit val config:Configuration,
+   override val cache:SyncCacheApi)
+  (implicit dbProvider:DatabaseConfigProvider, system:ActorSystem, mat:Materializer, injector:Injector)
   extends AbstractController(controllerComponents) with Security {
 
   def updateNewCommissionFields = IsAdminAsync(parse.json) { user=> request=>
@@ -163,5 +176,41 @@ class DataMigrationController @Inject()
         }
       }
     )
+  }
+
+  //see https://stackoverflow.com/questions/38269853/play-framework-scala-how-to-stream-request-body
+  //rather than buffering in the request body we just pass the stream on to the main app, from whence it can
+  //be streamed directly to disk
+  def fakeBodyParser:BodyParser[Source[ByteString, _]] = BodyParser { _=>
+    Accumulator.source[ByteString].map(Right.apply)
+  }
+
+  protected def parseTimestamp(from:String):Either[String,Timestamp] = {
+    Try {
+      val numeric = from.toInt
+      Instant.ofEpochSecond(numeric)
+    }.map(Timestamp.from) match {
+      case Success(ts)=>Right(ts)
+      case Failure(err)=>Left(err.getMessage)
+    }
+  }
+
+  def importProblematicProject(vsid:String,filename:String, storage:Int, modtime:String) = IsAdminAsync(fakeBodyParser) { user=> request=>
+    parseTimestamp(modtime) match {
+      case Left(err) =>
+        Future(BadRequest(Json.obj("status" -> "bad_request", "detail" -> s"timestamp is malformed: $err")))
+      case Right(timestamp) =>
+        val m = new DataMigration("", "", "", "", null)
+        m.importProblemProject(request.body, vsid, user, filename, storage, timestamp)
+          .map(createdEntry => {
+            logger.info(s"Created file $createdEntry and linked to project with vsid $vsid")
+            Ok(Json.obj("status" -> "ok", "detail" -> "created file", "entryId" -> createdEntry.id))
+          })
+          .recover({
+            case err: Throwable =>
+              logger.error(s"Could not create a file for given data and link it to $vsid: ${err.getMessage}", err)
+              InternalServerError(Json.obj("status" -> "error", "detail" -> err.getMessage))
+          })
+    }
   }
 }
