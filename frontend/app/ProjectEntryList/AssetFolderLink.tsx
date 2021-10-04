@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Button, Typography } from "@material-ui/core";
+import { Button, Typography, IconButton, Tooltip } from "@material-ui/core";
+import ReplayIcon from "@material-ui/icons/Replay";
 
 interface AssetFolderLinkProps {
   projectId: number;
@@ -44,7 +45,7 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
   }, []);
 
   const requestNewAssetFolder = async () => {
-    alert("This is not implemented in the backend yet");
+    loadData();
   };
 
   return (
@@ -53,10 +54,17 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
         <Typography variant="caption">...</Typography>
       ) : showCreate ? (
         <>
-          <Typography>No asset folder found</Typography>
-          <Button onClick={requestNewAssetFolder} variant="outlined">
-            Create
-          </Button>
+          <Typography>
+            No asset folder found
+            <Tooltip title="Check again">
+              <IconButton
+                onClick={requestNewAssetFolder}
+                style={{ marginLeft: "1em" }}
+              >
+                <ReplayIcon />
+              </IconButton>
+            </Tooltip>
+          </Typography>
         </>
       ) : (
         <Button
