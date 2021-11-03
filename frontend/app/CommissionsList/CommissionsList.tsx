@@ -146,6 +146,35 @@ const CommissionsList: React.FC = () => {
     };
 
     fetchWhoIsLoggedIn();
+
+    let oldParmas = {};
+    location.search
+      .substr(1)
+      .split("&")
+      .forEach(function (item) {
+        // @ts-ignore
+        oldParmas[item.split("=")[0]] = decodeURIComponent(item.split("=")[1]);
+      });
+
+    let newFilters = Object.assign({}, filterTerms, oldParmas);
+
+    // @ts-ignore
+    if (newFilters["showKilled"] == "false") {
+      newFilters["showKilled"] = false;
+    }
+
+    // @ts-ignore
+    if (newFilters["showKilled"] == "true") {
+      newFilters["showKilled"] = true;
+    }
+
+    // @ts-ignore
+    if (newFilters[""]) {
+      // @ts-ignore
+      delete newFilters[""];
+    }
+
+    setFilterTerms(newFilters);
   }, []);
 
   return (

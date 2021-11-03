@@ -59,6 +59,9 @@ const useStyles = makeStyles({
 
 interface ProjectFilterTerms extends FilterTerms {
   commissionId?: number;
+  title?: string;
+  group?: string;
+  mine?: string;
 }
 
 const ProjectEntryList: React.FC<RouteComponentProps> = () => {
@@ -131,8 +134,37 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
     ) {
       newFilterTerms.commissionId = commissionIdAsNumber;
     }
-    console.log("filter terms set: ", newFilterTerms);
-    setFilterTerms(newFilterTerms);
+
+    let oldParmas = {};
+    location.search
+      .substr(1)
+      .split("&")
+      .forEach(function (item) {
+        // @ts-ignore
+        oldParmas[item.split("=")[0]] = decodeURIComponent(item.split("=")[1]);
+      });
+
+    let newFilters = Object.assign({}, newFilterTerms, oldParmas);
+
+    delete newFilters["mine"];
+
+    // @ts-ignore
+    if (newFilters["showKilled"] == "false") {
+      newFilters["showKilled"] = false;
+    }
+
+    // @ts-ignore
+    if (newFilters["showKilled"] == "true") {
+      newFilters["showKilled"] = true;
+    }
+
+    if (newFilters["title"]) {
+      newFilters["match"] = "W_CONTAINS";
+    }
+
+    console.log("filter terms set: ", newFilters);
+
+    setFilterTerms(newFilters);
   }, [commissionId, user?.uid]);
 
   return (

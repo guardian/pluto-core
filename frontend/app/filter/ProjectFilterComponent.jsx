@@ -66,14 +66,66 @@ class ProjectFilterComponent extends React.Component {
     let newFilters = {};
     newFilters[filterKey] = value;
 
+    let filtersToUse = {};
+    let oldParmas = {};
+    location.search
+      .substr(1)
+      .split("&")
+      .forEach(function (item) {
+        oldParmas[item.split("=")[0]] = decodeURIComponent(item.split("=")[1]);
+      });
+
+    let newParmas = Object.assign({}, oldParmas, newFilters);
+    let newParmasString = "";
+    let firstLoop = true;
+
+    for (let key in newParmas) {
+      if (key != "") {
+        let possibleAmpersand = "&";
+        if (firstLoop) {
+          possibleAmpersand = "";
+        }
+        if (newParmas[key] != "undefined") {
+          newParmasString =
+            newParmasString +
+            possibleAmpersand +
+            encodeURIComponent(key) +
+            "=" +
+            encodeURIComponent(newParmas[key]);
+          filtersToUse[key] = newParmas[key];
+        } else {
+          newParmasString =
+            newParmasString + possibleAmpersand + encodeURIComponent(key);
+        }
+      }
+      firstLoop = false;
+    }
+
+    if (filtersToUse["showKilled"] == "false") {
+      filtersToUse["showKilled"] = false;
+    }
+
+    if (filtersToUse["showKilled"] == "true") {
+      filtersToUse["showKilled"] = true;
+    }
+
     this.props.filterDidUpdate(
       Object.assign(
         {},
         this.props.filterTerms,
         { match: this.state.matchType },
-        newFilters
+        filtersToUse
       )
     );
+
+    const newurl =
+      window.location.protocol +
+      "//" +
+      window.location.host +
+      window.location.pathname +
+      "?" +
+      newParmasString;
+    window.history.pushState({ path: newurl }, "", newurl);
   }
 
   entryUpdated(event, filterKey) {
@@ -166,6 +218,7 @@ class ProjectFilterComponent extends React.Component {
           id={filterEntry.key}
           onChange={(event) => this.entryUpdated(event, filterEntry.key)}
           color={"primary"}
+          checked={this.props.filterTerms[filterEntry.key]}
         />
       );
     } else {
@@ -174,7 +227,7 @@ class ProjectFilterComponent extends React.Component {
           disabled={disabled}
           id={filterEntry.key}
           onChange={(event) => this.entryUpdated(event, filterEntry.key)}
-          value={this.props.filterTerms[filterEntry.key]}
+          value={this.props.filterTerms[filterEntry.key] || ""}
         />
       );
     }
