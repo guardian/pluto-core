@@ -147,16 +147,16 @@ const CommissionsList: React.FC = () => {
 
     fetchWhoIsLoggedIn();
 
-    let oldParmas = {};
+    let oldParams = {};
     location.search
       .substr(1)
       .split("&")
       .forEach(function (item) {
         // @ts-ignore
-        oldParmas[item.split("=")[0]] = decodeURIComponent(item.split("=")[1]);
+        oldParams[item.split("=")[0]] = decodeURIComponent(item.split("=")[1]);
       });
 
-    let newFilters = Object.assign({}, filterTerms, oldParmas);
+    let newFilters = Object.assign({}, filterTerms, oldParams);
 
     // @ts-ignore
     if (newFilters["showKilled"] == "false") {
@@ -195,6 +195,7 @@ const CommissionsList: React.FC = () => {
               }
               setFilterTerms(newFilters);
             }}
+            history={history}
           />
         </Grid>
         <Grid item className={classes.buttonGrid}>

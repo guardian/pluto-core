@@ -189,6 +189,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
               }
               setFilterTerms(newFilters);
             }}
+            history={history}
           />
         </Grid>
         <Grid item className={classes.buttonGrid}>

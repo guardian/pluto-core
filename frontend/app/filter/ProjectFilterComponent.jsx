@@ -27,6 +27,7 @@ class ProjectFilterComponent extends React.Component {
     //key-value object of the terms.
     isAdmin: PropTypes.bool,
     filterTerms: PropTypes.object.isRequired,
+    history: PropTypes.object,
   };
 
   constructor(props) {
@@ -118,14 +119,9 @@ class ProjectFilterComponent extends React.Component {
       )
     );
 
-    const newurl =
-      window.location.protocol +
-      "//" +
-      window.location.host +
-      window.location.pathname +
-      "?" +
-      newParmasString;
-    window.history.pushState({ path: newurl }, "", newurl);
+    const newurl = "?" + newParmasString;
+
+    this.props.history.push(newurl);
   }
 
   entryUpdated(event, filterKey) {
