@@ -26,6 +26,7 @@ import { isLoggedIn } from "../utils/api";
 import { getProjectsOnPage, updateProjectOpenedStatus } from "./helpers";
 import ProjectsTable from "./ProjectsTable";
 import { Helmet } from "react-helmet";
+import { buildFilterTerms } from "../filter/terms";
 
 const useStyles = makeStyles({
   table: {
@@ -135,28 +136,9 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
       newFilterTerms.commissionId = commissionIdAsNumber;
     }
 
-    let oldParmas = {};
-    location.search
-      .substr(1)
-      .split("&")
-      .forEach(function (item) {
-        // @ts-ignore
-        oldParmas[item.split("=")[0]] = decodeURIComponent(item.split("=")[1]);
-      });
-
-    let newFilters = Object.assign({}, newFilterTerms, oldParmas);
+    const newFilters = buildFilterTerms(newFilterTerms);
 
     delete newFilters["mine"];
-
-    // @ts-ignore
-    if (newFilters["showKilled"] == "false") {
-      newFilters["showKilled"] = false;
-    }
-
-    // @ts-ignore
-    if (newFilters["showKilled"] == "true") {
-      newFilters["showKilled"] = true;
-    }
 
     if (newFilters["title"]) {
       newFilters["match"] = "W_CONTAINS";

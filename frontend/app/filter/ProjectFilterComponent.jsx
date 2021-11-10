@@ -67,7 +67,15 @@ class ProjectFilterComponent extends React.Component {
     let newFilters = {};
     newFilters[filterKey] = value;
 
-    let filtersToUse = {};
+    this.props.filterDidUpdate(
+      Object.assign(
+        {},
+        this.props.filterTerms,
+        { match: this.state.matchType },
+        newFilters
+      )
+    );
+
     let oldParmas = {};
     location.search
       .substr(1)
@@ -93,7 +101,6 @@ class ProjectFilterComponent extends React.Component {
             encodeURIComponent(key) +
             "=" +
             encodeURIComponent(newParmas[key]);
-          filtersToUse[key] = newParmas[key];
         } else {
           newParmasString =
             newParmasString + possibleAmpersand + encodeURIComponent(key);
@@ -101,23 +108,6 @@ class ProjectFilterComponent extends React.Component {
       }
       firstLoop = false;
     }
-
-    if (filtersToUse["showKilled"] == "false") {
-      filtersToUse["showKilled"] = false;
-    }
-
-    if (filtersToUse["showKilled"] == "true") {
-      filtersToUse["showKilled"] = true;
-    }
-
-    this.props.filterDidUpdate(
-      Object.assign(
-        {},
-        this.props.filterTerms,
-        { match: this.state.matchType },
-        filtersToUse
-      )
-    );
 
     const newurl = "?" + newParmasString;
 

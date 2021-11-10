@@ -19,6 +19,7 @@ import { SortDirection } from "../utils/lists";
 import { Helmet } from "react-helmet";
 import ProjectFilterComponent from "../filter/ProjectFilterComponent.jsx";
 import { isLoggedIn } from "../utils/api";
+import { buildFilterTerms } from "../filter/terms";
 
 const tableHeaderTitles: HeaderTitle<Commission>[] = [
   { label: "Title", key: "title" },
@@ -147,32 +148,7 @@ const CommissionsList: React.FC = () => {
 
     fetchWhoIsLoggedIn();
 
-    let oldParams = {};
-    location.search
-      .substr(1)
-      .split("&")
-      .forEach(function (item) {
-        // @ts-ignore
-        oldParams[item.split("=")[0]] = decodeURIComponent(item.split("=")[1]);
-      });
-
-    let newFilters = Object.assign({}, filterTerms, oldParams);
-
-    // @ts-ignore
-    if (newFilters["showKilled"] == "false") {
-      newFilters["showKilled"] = false;
-    }
-
-    // @ts-ignore
-    if (newFilters["showKilled"] == "true") {
-      newFilters["showKilled"] = true;
-    }
-
-    // @ts-ignore
-    if (newFilters[""]) {
-      // @ts-ignore
-      delete newFilters[""];
-    }
+    const newFilters = buildFilterTerms(filterTerms);
 
     setFilterTerms(newFilters);
   }, []);
