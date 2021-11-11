@@ -4,7 +4,20 @@ interface ProjectFilterTerms extends FilterTerms {
   mine?: string;
 }
 
-function buildFilterTerms(filterTerms: ProjectFilterTerms) {
+function buildFilterTerms(
+  user: PlutoUser | null,
+  isMineInURL: boolean,
+  commissionIdAsNumber: number | null
+) {
+  let filterTerms: ProjectFilterTerms =
+    user && isMineInURL
+      ? { user: user.uid, match: "W_EXACT", showKilled: false }
+      : { match: "W_CONTAINS", showKilled: false };
+
+  if (commissionIdAsNumber != null) {
+    filterTerms.commissionId = commissionIdAsNumber;
+  }
+
   const oldParams = new Map(
     location.search
       .substr(1)

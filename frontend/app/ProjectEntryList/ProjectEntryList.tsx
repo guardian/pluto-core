@@ -121,22 +121,15 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   }, []);
 
   useEffect(() => {
-    const newFilterTerms: ProjectFilterTerms =
-      user && new URLSearchParams(search).has("mine")
-        ? { user: user.uid, match: "W_EXACT", showKilled: false }
-        : { match: "W_CONTAINS", showKilled: false };
+    const isMineInURL = new URLSearchParams(search).has("mine");
 
-    const commissionIdAsNumber = Number(commissionId);
+    let commissionIdAsNumber = null;
 
-    if (
-      commissionId !== undefined &&
-      commissionId.length > 0 &&
-      !Number.isNaN(commissionIdAsNumber)
-    ) {
-      newFilterTerms.commissionId = commissionIdAsNumber;
+    if (commissionId !== undefined && commissionId.length > 0) {
+      commissionIdAsNumber = Number(commissionId);
     }
 
-    const newFilters = buildFilterTerms(newFilterTerms);
+    let newFilters = buildFilterTerms(user, isMineInURL, commissionIdAsNumber);
 
     delete newFilters["mine"];
 
