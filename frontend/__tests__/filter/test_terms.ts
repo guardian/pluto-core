@@ -1,4 +1,7 @@
-import { buildFilterTerms } from "../../app/filter/terms";
+import {
+  buildFilterTerms,
+  filterTermsToQuerystring,
+} from "../../app/filter/terms";
 
 describe("terms.buildFilterTerms", () => {
   it("return the correct value when showKilled is set to true in the URL", () => {
@@ -46,5 +49,46 @@ describe("terms.buildFilterTerms", () => {
       "?mine&title=test&user=mr_flibble&group=1&showKilled=false"
     );
     expect(objectOutput6.match).toBe("W_CONTAINS");
+  });
+});
+
+describe("terms.filterTermsToQuerystring", () => {
+  it("should convert FilterTerms into a query string", () => {
+    const terms: ProjectFilterTerms = {
+      match: "W_CONTAINS",
+      user: "kevin",
+      title: "something",
+    };
+
+    expect(filterTermsToQuerystring(terms)).toEqual(
+      "match=W_CONTAINS&user=kevin&title=something"
+    );
+  });
+
+  it("should urlencode dodgy characters", () => {
+    const terms: ProjectFilterTerms = {
+      match: "W_CONTAINS",
+      user: "kevin",
+      title: "something here",
+    };
+
+    expect(filterTermsToQuerystring(terms)).toEqual(
+      "match=W_CONTAINS&user=kevin&title=something%20here"
+    );
+  });
+
+  it("must generate terms that can be read back by buildFilterTerms", () => {
+    const terms: ProjectFilterTerms = {
+      match: "W_CONTAINS",
+      user: "kevin",
+      title: "something here",
+    };
+    //buildFilterTerms gives back explicit defaults in its response
+    const expectedResult = Object.assign({}, terms, {
+      group: undefined,
+      showKilled: false,
+    });
+    const result = buildFilterTerms(filterTermsToQuerystring(terms));
+    expect(result).toEqual(expectedResult);
   });
 });

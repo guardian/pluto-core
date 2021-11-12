@@ -19,7 +19,7 @@ import { SortDirection } from "../utils/lists";
 import { Helmet } from "react-helmet";
 import ProjectFilterComponent from "../filter/ProjectFilterComponent.jsx";
 import { isLoggedIn } from "../utils/api";
-import { buildFilterTerms } from "../filter/terms";
+import { buildFilterTerms, filterTermsToQuerystring } from "../filter/terms";
 
 const tableHeaderTitles: HeaderTitle<Commission>[] = [
   { label: "Title", key: "title" },
@@ -110,21 +110,6 @@ const CommissionsList: React.FC = () => {
     setPage(0);
   };
 
-  // TODO: for use later?
-  // const [uid, setUid] = useState(null);
-  // const [isAdmin, setIsAdmin] = useState(false);
-  // const [filterEnabled, setFilterEnabled] = useState(false);
-  // useEffect(async () => {
-  //   try {
-  //     await loadDependencies({
-  //       setIsAdmin,
-  //       setUid,
-  //     });
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }, []);
-
   const sortByColumn = (property: keyof Commission) => (
     _event: React.MouseEvent<unknown>
   ) => {
@@ -162,6 +147,7 @@ const CommissionsList: React.FC = () => {
           <ProjectFilterComponent
             filterTerms={filterTerms}
             filterDidUpdate={(newFilters: ProjectFilterTerms) => {
+              const updatedUrlParams = filterTermsToQuerystring(newFilters);
               if (newFilters.user === "Everyone") {
                 newFilters.user = undefined;
               }
@@ -169,8 +155,9 @@ const CommissionsList: React.FC = () => {
                 newFilters.user = user.uid;
               }
               setFilterTerms(newFilters);
+
+              history.push("?" + updatedUrlParams);
             }}
-            history={history}
           />
         </Grid>
         <Grid item className={classes.buttonGrid}>

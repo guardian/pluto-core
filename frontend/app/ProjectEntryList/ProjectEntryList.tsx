@@ -1,19 +1,4 @@
-import {
-  Button,
-  IconButton,
-  makeStyles,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  Typography,
-  Grid,
-} from "@material-ui/core";
+import { Button, IconButton, makeStyles, Paper, Grid } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
 import {
   RouteComponentProps,
@@ -26,7 +11,7 @@ import { isLoggedIn } from "../utils/api";
 import { getProjectsOnPage, updateProjectOpenedStatus } from "./helpers";
 import ProjectsTable from "./ProjectsTable";
 import { Helmet } from "react-helmet";
-import { buildFilterTerms } from "../filter/terms";
+import { buildFilterTerms, filterTermsToQuerystring } from "../filter/terms";
 
 const useStyles = makeStyles({
   table: {
@@ -140,6 +125,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                 "ProjectFilterComponent filterDidUpdate ",
                 newFilters
               );
+              const updatedUrlParams = filterTermsToQuerystring(newFilters);
+
               if (newFilters.user === "Everyone") {
                 newFilters.user = undefined;
               }
@@ -147,8 +134,9 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                 newFilters.user = user.uid;
               }
               setFilterTerms(newFilters);
+
+              history.push("?" + updatedUrlParams);
             }}
-            history={history}
           />
         </Grid>
         <Grid item className={classes.buttonGrid}>
