@@ -1,3 +1,9 @@
+/**
+ * Creates a ProjectFilterTerms object based on data from the URL and a PlutoUser object or lack thereof.
+ * @param  {string} currentURL String containing the data from the URL.
+ * @param  {PlutoUser or null} user A PlutoUser object or a null.
+ * @return {ProjectFilterTerms} A ProjectFilterTerms object.
+ */
 function buildFilterTerms(
   currentURL: string,
   user?: PlutoUser | null
