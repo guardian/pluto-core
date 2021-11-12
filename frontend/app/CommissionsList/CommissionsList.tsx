@@ -13,7 +13,7 @@ import {
   Grid,
 } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 import { getCommissionsOnPage, getWorkingGroupNameMap } from "./helpers";
 import { SortDirection } from "../utils/lists";
 import { Helmet } from "react-helmet";
@@ -77,6 +77,7 @@ const CommissionsList: React.FC = () => {
     showKilled: false,
   });
   const [user, setUser] = useState<PlutoUser | null>(null);
+  const { search } = useLocation();
 
   useEffect(() => {
     const updateCommissions = async () => {
@@ -144,7 +145,9 @@ const CommissionsList: React.FC = () => {
 
     fetchWhoIsLoggedIn();
 
-    const newFilters = buildFilterTerms("");
+    const currentURL = new URLSearchParams(search).toString();
+
+    const newFilters = buildFilterTerms(currentURL);
 
     setFilterTerms(newFilters);
   }, []);

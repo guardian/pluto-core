@@ -2,14 +2,6 @@ import { buildFilterTerms } from "../../app/filter/terms";
 
 describe("terms.buildFilterTerms", () => {
   it("return the correct value when showKilled is set to true in the URL", () => {
-    global.window = Object.create(window);
-    const url = "?mine&title=test&user=mr_flibble&group=1&showKilled=true";
-    Object.defineProperty(window, "location", {
-      value: {
-        search: url,
-      },
-      writable: true,
-    });
     const objectOutput = buildFilterTerms(
       "?mine&title=test&user=mr_flibble&group=1&showKilled=true"
     );
@@ -17,13 +9,6 @@ describe("terms.buildFilterTerms", () => {
   });
 
   it("return the correct value when showKilled is set to false in the URL", () => {
-    global.window = Object.create(window);
-    const url2 = "?mine&title=test&user=mr_flibble&group=1&showKilled=false";
-    Object.defineProperty(window, "location", {
-      value: {
-        search: url2,
-      },
-    });
     const objectOutput2 = buildFilterTerms(
       "?mine&title=test&user=mr_flibble&group=1&showKilled=false"
     );
@@ -31,13 +16,6 @@ describe("terms.buildFilterTerms", () => {
   });
 
   it("return the correct value when title is set to 'test' in the URL", () => {
-    global.window = Object.create(window);
-    const url3 = "?mine&title=test&user=mr_flibble&group=1&showKilled=false";
-    Object.defineProperty(window, "location", {
-      value: {
-        search: url3,
-      },
-    });
     const objectOutput3 = buildFilterTerms(
       "?mine&title=test&user=mr_flibble&group=1&showKilled=false"
     );
@@ -45,13 +23,6 @@ describe("terms.buildFilterTerms", () => {
   });
 
   it("return the correct value when group is set to '1' in the URL", () => {
-    global.window = Object.create(window);
-    const url4 = "?mine&title=test&user=mr_flibble&group=1&showKilled=false";
-    Object.defineProperty(window, "location", {
-      value: {
-        search: url4,
-      },
-    });
     const objectOutput4 = buildFilterTerms(
       "?mine&title=test&user=mr_flibble&group=1&showKilled=false"
     );
@@ -63,13 +34,6 @@ describe("terms.buildFilterTerms", () => {
   };
 
   it("return the correct value of match when a user object is present and 'mine' is in the URL", () => {
-    global.window = Object.create(window);
-    const url5 = "?mine&title=test&user=mr_flibble&group=1&showKilled=false";
-    Object.defineProperty(window, "location", {
-      value: {
-        search: url5,
-      },
-    });
     const objectOutput5 = buildFilterTerms(
       "?mine&title=test&user=mr_flibble&group=1&showKilled=false",
       testUser
@@ -78,13 +42,6 @@ describe("terms.buildFilterTerms", () => {
   });
 
   it("return the correct value of match when no user object is present and 'mine' is not in the URL", () => {
-    global.window = Object.create(window);
-    const url6 = "?title=test&user=mr_flibble&group=1&showKilled=false";
-    Object.defineProperty(window, "location", {
-      value: {
-        search: url6,
-      },
-    });
     const objectOutput6 = buildFilterTerms(
       "?mine&title=test&user=mr_flibble&group=1&showKilled=false"
     );

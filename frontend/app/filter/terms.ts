@@ -11,8 +11,8 @@ function buildFilterTerms(
   const isMineInURL = currentURL.includes("mine");
 
   const urlParams = new Map(
-    location.search
-      .substr(1)
+    currentURL
+      .substr(0)
       .split("&")
       .map((param) => {
         const kv = param.split("=");
