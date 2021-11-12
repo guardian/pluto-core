@@ -1,7 +1,13 @@
-function buildFilterTerms(currentURL: string, user?: PlutoUser | null) {
-  const isMineInURL = currentURL.includes("mine");
+interface ProjectFilterTerms extends FilterTerms {
+  title?: string;
+  group?: string;
+}
 
-  console.log(isMineInURL);
+function buildFilterTerms(
+  currentURL: string,
+  user?: PlutoUser | null
+): ProjectFilterTerms {
+  const isMineInURL = currentURL.includes("mine");
 
   const urlParams = new Map(
     location.search
