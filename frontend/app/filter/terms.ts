@@ -29,4 +29,14 @@ function buildFilterTerms(
   };
 }
 
-export { buildFilterTerms };
+/**
+ * creates a query string to represent the given filter terms.
+ * Note that a leading ? is _not_ added to the string.
+ * @param terms ProjectFilterTerms to represent
+ */
+function filterTermsToQuerystring(terms: ProjectFilterTerms): string {
+  return Object.entries(terms)
+    .map(([k, v]) => k + "=" + encodeURIComponent(v))
+    .join("&");
+}
+export { buildFilterTerms, filterTermsToQuerystring };

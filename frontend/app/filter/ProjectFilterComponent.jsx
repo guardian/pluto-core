@@ -27,7 +27,6 @@ class ProjectFilterComponent extends React.Component {
     //key-value object of the terms.
     isAdmin: PropTypes.bool,
     filterTerms: PropTypes.object.isRequired,
-    history: PropTypes.object,
   };
 
   constructor(props) {
@@ -75,43 +74,6 @@ class ProjectFilterComponent extends React.Component {
         newFilters
       )
     );
-
-    let oldParmas = {};
-    location.search
-      .substr(1)
-      .split("&")
-      .forEach(function (item) {
-        oldParmas[item.split("=")[0]] = decodeURIComponent(item.split("=")[1]);
-      });
-
-    let newParmas = Object.assign({}, oldParmas, newFilters);
-    let newParmasString = "";
-    let firstLoop = true;
-
-    for (let key in newParmas) {
-      if (key != "") {
-        let possibleAmpersand = "&";
-        if (firstLoop) {
-          possibleAmpersand = "";
-        }
-        if (newParmas[key] != "undefined") {
-          newParmasString =
-            newParmasString +
-            possibleAmpersand +
-            encodeURIComponent(key) +
-            "=" +
-            encodeURIComponent(newParmas[key]);
-        } else {
-          newParmasString =
-            newParmasString + possibleAmpersand + encodeURIComponent(key);
-        }
-      }
-      firstLoop = false;
-    }
-
-    const newurl = "?" + newParmasString;
-
-    this.props.history.push(newurl);
   }
 
   entryUpdated(event, filterKey) {
