@@ -1,8 +1,3 @@
-interface ProjectFilterTerms extends FilterTerms {
-  title?: string;
-  group?: string;
-}
-
 function buildFilterTerms(
   currentURL: string,
   user?: PlutoUser | null

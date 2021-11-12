@@ -64,6 +64,10 @@ interface FilterTerms {
   user?: string;
   showKilled?: boolean | string;
 }
+interface ProjectFilterTerms extends FilterTerms {
+  title?: string;
+  group?: string;
+}
 
 interface PlutoUser {
   uid: string;

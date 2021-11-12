@@ -58,12 +58,6 @@ const useStyles = makeStyles({
   },
 });
 
-interface ProjectFilterTerms extends FilterTerms {
-  commissionId?: number;
-  title?: string;
-  group?: string;
-}
-
 const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // React Router
   const history = useHistory<Project>();

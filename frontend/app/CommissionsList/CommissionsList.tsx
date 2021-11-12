@@ -57,10 +57,6 @@ const useStyles = makeStyles({
   },
 });
 
-interface ProjectFilterTerms extends FilterTerms {
-  commissionId?: number;
-}
-
 const pageSizeOptions = [25, 50, 100];
 
 const CommissionsList: React.FC = () => {
