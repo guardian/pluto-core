@@ -148,7 +148,7 @@ const CommissionsList: React.FC = () => {
 
     fetchWhoIsLoggedIn();
 
-    const newFilters = buildFilterTerms(null, false, null);
+    const newFilters = buildFilterTerms("");
 
     setFilterTerms(newFilters);
   }, []);

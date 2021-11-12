@@ -1,24 +1,9 @@
-interface ProjectFilterTerms extends FilterTerms {
-  commissionId?: number;
-  title?: string;
-  mine?: string;
-}
+function buildFilterTerms(currentURL: string, user?: PlutoUser | null) {
+  const isMineInURL = currentURL.includes("mine");
 
-function buildFilterTerms(
-  user: PlutoUser | null,
-  isMineInURL: boolean,
-  commissionIdAsNumber: number | null
-) {
-  let filterTerms: ProjectFilterTerms =
-    user && isMineInURL
-      ? { user: user.uid, match: "W_EXACT", showKilled: false }
-      : { match: "W_CONTAINS", showKilled: false };
+  console.log(isMineInURL);
 
-  if (commissionIdAsNumber != null) {
-    filterTerms.commissionId = commissionIdAsNumber;
-  }
-
-  const oldParams = new Map(
+  let urlParams = new Map(
     location.search
       .substr(1)
       .split("&")
@@ -28,22 +13,13 @@ function buildFilterTerms(
       })
   );
 
-  let oldParamsObject = Array.from(oldParams).reduce(
-    (obj, [key, value]) => Object.assign(obj, { [key]: value }),
-    {}
-  );
-
-  let newFilters = Object.assign({}, filterTerms, oldParamsObject);
-
-  if (newFilters["showKilled"] == "false") {
-    newFilters["showKilled"] = false;
-  }
-
-  if (newFilters["showKilled"] == "true") {
-    newFilters["showKilled"] = true;
-  }
-
-  return newFilters;
+  return {
+    match: <FilterOrderType>(user && isMineInURL ? "W_EXACT" : "W_CONTAINS"),
+    user: urlParams.get("user") ?? user?.uid,
+    title: urlParams.get("title"),
+    group: urlParams.get("group"),
+    showKilled: urlParams.get("showKilled") == "true" ?? false,
+  };
 }
 
 export { buildFilterTerms };

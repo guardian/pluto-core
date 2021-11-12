@@ -62,14 +62,12 @@ interface ProjectFilterTerms extends FilterTerms {
   commissionId?: number;
   title?: string;
   group?: string;
-  mine?: string;
 }
 
 const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // React Router
   const history = useHistory<Project>();
   const { search } = useLocation();
-  const { commissionId } = useParams<{ commissionId?: string }>();
 
   // React state
   const [user, setUser] = useState<PlutoUser | null>(null);
@@ -121,26 +119,18 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   }, []);
 
   useEffect(() => {
-    const isMineInURL = new URLSearchParams(search).has("mine");
+    const currentURL = new URLSearchParams(search).toString();
 
-    let commissionIdAsNumber = null;
+    let newFilters = buildFilterTerms(currentURL, user);
 
-    if (commissionId !== undefined && commissionId.length > 0) {
-      commissionIdAsNumber = Number(commissionId);
-    }
-
-    let newFilters = buildFilterTerms(user, isMineInURL, commissionIdAsNumber);
-
-    delete newFilters["mine"];
-
-    if (newFilters["title"]) {
-      newFilters["match"] = "W_CONTAINS";
+    if (newFilters.title) {
+      newFilters.match = "W_CONTAINS";
     }
 
     console.log("filter terms set: ", newFilters);
 
     setFilterTerms(newFilters);
-  }, [commissionId, user?.uid]);
+  }, [user?.uid]);
 
   return (
     <>
@@ -192,11 +182,6 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
           projects={projects}
         />
       </Paper>
-      {typeof commissionId === "string" && projects.length === 0 && (
-        <Typography variant="subtitle1" style={{ marginTop: "1rem" }}>
-          No projects for this commission.
-        </Typography>
-      )}
     </>
   );
 };
