@@ -3,7 +3,7 @@ function buildFilterTerms(currentURL: string, user?: PlutoUser | null) {
 
   console.log(isMineInURL);
 
-  let urlParams = new Map(
+  const urlParams = new Map(
     location.search
       .substr(1)
       .split("&")
