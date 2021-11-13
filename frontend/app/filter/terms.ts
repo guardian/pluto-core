@@ -16,7 +16,11 @@ function buildFilterTerms(
       .split("&")
       .map((param) => {
         const kv = param.split("=");
-        return [kv[0], decodeURIComponent(kv[1])];
+        if (kv[1] === "undefined") {
+          return [kv[0], undefined];
+        } else {
+          return [kv[0], decodeURIComponent(kv[1])];
+        }
       })
   );
 
