@@ -72,28 +72,29 @@ const CommissionsList: React.FC = () => {
   const [orderBy, setOrderBy] = useState<keyof Commission>("created");
 
   const history = useHistory();
-  const [filterTerms, setFilterTerms] = useState<ProjectFilterTerms>({
-    match: "W_CONTAINS",
-    showKilled: false,
-  });
+  const [filterTerms, setFilterTerms] = useState<
+    ProjectFilterTerms | undefined
+  >(undefined);
   const [user, setUser] = useState<PlutoUser | null>(null);
   const { search } = useLocation();
 
   useEffect(() => {
-    const updateCommissions = async () => {
-      const commissions = await getCommissionsOnPage({
-        page,
-        pageSize,
-        filterTerms: filterTerms,
-        order,
-        orderBy,
-      });
-      const workingGroups = await getWorkingGroupNameMap(commissions);
-      setCommissions(commissions);
-      setWorkingGroups(workingGroups);
-    };
+    if (filterTerms != undefined) {
+      const updateCommissions = async () => {
+        const commissions = await getCommissionsOnPage({
+          page,
+          pageSize,
+          filterTerms: filterTerms,
+          order,
+          orderBy,
+        });
+        const workingGroups = await getWorkingGroupNameMap(commissions);
+        setCommissions(commissions);
+        setWorkingGroups(workingGroups);
+      };
 
-    updateCommissions();
+      updateCommissions();
+    }
   }, [filterTerms, page, pageSize, order, orderBy]);
 
   const handleChangePage = (
@@ -131,9 +132,7 @@ const CommissionsList: React.FC = () => {
     fetchWhoIsLoggedIn();
 
     const currentURL = new URLSearchParams(search).toString();
-
     const newFilters = buildFilterTerms(currentURL);
-
     setFilterTerms(newFilters);
   }, []);
 
@@ -143,23 +142,25 @@ const CommissionsList: React.FC = () => {
         <title>All Commissions</title>
       </Helmet>
       <Grid container>
-        <Grid item>
-          <ProjectFilterComponent
-            filterTerms={filterTerms}
-            filterDidUpdate={(newFilters: ProjectFilterTerms) => {
-              const updatedUrlParams = filterTermsToQuerystring(newFilters);
-              if (newFilters.user === "Everyone") {
-                newFilters.user = undefined;
-              }
-              if (newFilters.user === "Mine" && user) {
-                newFilters.user = user.uid;
-              }
-              setFilterTerms(newFilters);
+        {filterTerms ? (
+          <Grid item>
+            <ProjectFilterComponent
+              filterTerms={filterTerms}
+              filterDidUpdate={(newFilters: ProjectFilterTerms) => {
+                const updatedUrlParams = filterTermsToQuerystring(newFilters);
+                if (newFilters.user === "Everyone") {
+                  newFilters.user = undefined;
+                }
+                if (newFilters.user === "Mine" && user) {
+                  newFilters.user = user.uid;
+                }
+                setFilterTerms(newFilters);
 
-              history.push("?" + updatedUrlParams);
-            }}
-          />
-        </Grid>
+                history.push("?" + updatedUrlParams);
+              }}
+            />
+          </Grid>
+        ) : null}
         <Grid item className={classes.buttonGrid}>
           <Button
             className={classes.createButton}
