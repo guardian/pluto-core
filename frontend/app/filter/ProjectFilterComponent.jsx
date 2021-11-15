@@ -166,6 +166,7 @@ class ProjectFilterComponent extends React.Component {
           id={filterEntry.key}
           onChange={(event) => this.entryUpdated(event, filterEntry.key)}
           color={"primary"}
+          checked={this.props.filterTerms[filterEntry.key]}
         />
       );
     } else {
@@ -174,7 +175,7 @@ class ProjectFilterComponent extends React.Component {
           disabled={disabled}
           id={filterEntry.key}
           onChange={(event) => this.entryUpdated(event, filterEntry.key)}
-          value={this.props.filterTerms[filterEntry.key]}
+          value={this.props.filterTerms[filterEntry.key] || ""}
         />
       );
     }

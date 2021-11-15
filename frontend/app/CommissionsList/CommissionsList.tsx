@@ -13,12 +13,13 @@ import {
   Grid,
 } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 import { getCommissionsOnPage, getWorkingGroupNameMap } from "./helpers";
 import { SortDirection } from "../utils/lists";
 import { Helmet } from "react-helmet";
 import ProjectFilterComponent from "../filter/ProjectFilterComponent.jsx";
 import { isLoggedIn } from "../utils/api";
+import { buildFilterTerms, filterTermsToQuerystring } from "../filter/terms";
 
 const tableHeaderTitles: HeaderTitle<Commission>[] = [
   { label: "Title", key: "title" },
@@ -56,10 +57,6 @@ const useStyles = makeStyles({
   },
 });
 
-interface ProjectFilterTerms extends FilterTerms {
-  commissionId?: number;
-}
-
 const pageSizeOptions = [25, 50, 100];
 
 const CommissionsList: React.FC = () => {
@@ -80,6 +77,7 @@ const CommissionsList: React.FC = () => {
     showKilled: false,
   });
   const [user, setUser] = useState<PlutoUser | null>(null);
+  const { search } = useLocation();
 
   useEffect(() => {
     const updateCommissions = async () => {
@@ -112,21 +110,6 @@ const CommissionsList: React.FC = () => {
     setPage(0);
   };
 
-  // TODO: for use later?
-  // const [uid, setUid] = useState(null);
-  // const [isAdmin, setIsAdmin] = useState(false);
-  // const [filterEnabled, setFilterEnabled] = useState(false);
-  // useEffect(async () => {
-  //   try {
-  //     await loadDependencies({
-  //       setIsAdmin,
-  //       setUid,
-  //     });
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }, []);
-
   const sortByColumn = (property: keyof Commission) => (
     _event: React.MouseEvent<unknown>
   ) => {
@@ -146,6 +129,12 @@ const CommissionsList: React.FC = () => {
     };
 
     fetchWhoIsLoggedIn();
+
+    const currentURL = new URLSearchParams(search).toString();
+
+    const newFilters = buildFilterTerms(currentURL);
+
+    setFilterTerms(newFilters);
   }, []);
 
   return (
@@ -158,6 +147,7 @@ const CommissionsList: React.FC = () => {
           <ProjectFilterComponent
             filterTerms={filterTerms}
             filterDidUpdate={(newFilters: ProjectFilterTerms) => {
+              const updatedUrlParams = filterTermsToQuerystring(newFilters);
               if (newFilters.user === "Everyone") {
                 newFilters.user = undefined;
               }
@@ -165,6 +155,8 @@ const CommissionsList: React.FC = () => {
                 newFilters.user = user.uid;
               }
               setFilterTerms(newFilters);
+
+              history.push("?" + updatedUrlParams);
             }}
           />
         </Grid>

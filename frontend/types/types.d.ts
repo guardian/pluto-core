@@ -62,7 +62,11 @@ interface FilterTerms {
   match?: FilterOrderType;
   commissionId?: number;
   user?: string;
-  showKilled?: boolean;
+  showKilled?: boolean | string;
+}
+interface ProjectFilterTerms extends FilterTerms {
+  title?: string;
+  group?: string;
 }
 
 interface PlutoUser {

@@ -1,19 +1,4 @@
-import {
-  Button,
-  IconButton,
-  makeStyles,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  Typography,
-  Grid,
-} from "@material-ui/core";
+import { Button, IconButton, makeStyles, Paper, Grid } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
 import {
   RouteComponentProps,
@@ -26,6 +11,7 @@ import { isLoggedIn } from "../utils/api";
 import { getProjectsOnPage, updateProjectOpenedStatus } from "./helpers";
 import ProjectsTable from "./ProjectsTable";
 import { Helmet } from "react-helmet";
+import { buildFilterTerms, filterTermsToQuerystring } from "../filter/terms";
 
 const useStyles = makeStyles({
   table: {
@@ -57,15 +43,10 @@ const useStyles = makeStyles({
   },
 });
 
-interface ProjectFilterTerms extends FilterTerms {
-  commissionId?: number;
-}
-
 const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // React Router
   const history = useHistory<Project>();
   const { search } = useLocation();
-  const { commissionId } = useParams<{ commissionId?: string }>();
 
   // React state
   const [user, setUser] = useState<PlutoUser | null>(null);
@@ -117,23 +98,18 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   }, []);
 
   useEffect(() => {
-    const newFilterTerms: ProjectFilterTerms =
-      user && new URLSearchParams(search).has("mine")
-        ? { user: user.uid, match: "W_EXACT", showKilled: false }
-        : { match: "W_CONTAINS", showKilled: false };
+    const currentURL = new URLSearchParams(search).toString();
 
-    const commissionIdAsNumber = Number(commissionId);
+    let newFilters = buildFilterTerms(currentURL, user);
 
-    if (
-      commissionId !== undefined &&
-      commissionId.length > 0 &&
-      !Number.isNaN(commissionIdAsNumber)
-    ) {
-      newFilterTerms.commissionId = commissionIdAsNumber;
+    if (newFilters.title) {
+      newFilters.match = "W_CONTAINS";
     }
-    console.log("filter terms set: ", newFilterTerms);
-    setFilterTerms(newFilterTerms);
-  }, [commissionId, user?.uid]);
+
+    console.log("filter terms set: ", newFilters);
+
+    setFilterTerms(newFilters);
+  }, [user?.uid]);
 
   return (
     <>
@@ -149,6 +125,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                 "ProjectFilterComponent filterDidUpdate ",
                 newFilters
               );
+              const updatedUrlParams = filterTermsToQuerystring(newFilters);
+
               if (newFilters.user === "Everyone") {
                 newFilters.user = undefined;
               }
@@ -156,6 +134,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
                 newFilters.user = user.uid;
               }
               setFilterTerms(newFilters);
+
+              history.push("?" + updatedUrlParams);
             }}
           />
         </Grid>
@@ -184,11 +164,6 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
           projects={projects}
         />
       </Paper>
-      {typeof commissionId === "string" && projects.length === 0 && (
-        <Typography variant="subtitle1" style={{ marginTop: "1rem" }}>
-          No projects for this commission.
-        </Typography>
-      )}
     </>
   );
 };
