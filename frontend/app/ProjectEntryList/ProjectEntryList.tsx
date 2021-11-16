@@ -54,10 +54,9 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   const [page, setPage] = useState<number>(1);
   const [projects, setProjects] = useState<Project[]>([]);
 
-  const [filterTerms, setFilterTerms] = useState<ProjectFilterTerms>({
-    match: "W_CONTAINS",
-    showKilled: false,
-  });
+  const [filterTerms, setFilterTerms] = useState<
+    ProjectFilterTerms | undefined
+  >(undefined);
 
   // Material-UI
   const classes = useStyles();
@@ -81,7 +80,9 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   };
 
   useEffect(() => {
-    fetchProjectsOnPage();
+    if (filterTerms) {
+      fetchProjectsOnPage();
+    }
   }, [filterTerms, page, pageSize]);
 
   useEffect(() => {
@@ -117,28 +118,30 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
         <title>All Projects</title>
       </Helmet>
       <Grid container>
-        <Grid item>
-          <ProjectFilterComponent
-            filterTerms={filterTerms}
-            filterDidUpdate={(newFilters: ProjectFilterTerms) => {
-              console.log(
-                "ProjectFilterComponent filterDidUpdate ",
-                newFilters
-              );
-              const updatedUrlParams = filterTermsToQuerystring(newFilters);
+        {filterTerms ? (
+          <Grid item>
+            <ProjectFilterComponent
+              filterTerms={filterTerms}
+              filterDidUpdate={(newFilters: ProjectFilterTerms) => {
+                console.log(
+                  "ProjectFilterComponent filterDidUpdate ",
+                  newFilters
+                );
+                const updatedUrlParams = filterTermsToQuerystring(newFilters);
 
-              if (newFilters.user === "Everyone") {
-                newFilters.user = undefined;
-              }
-              if (newFilters.user === "Mine" && user) {
-                newFilters.user = user.uid;
-              }
-              setFilterTerms(newFilters);
+                if (newFilters.user === "Everyone") {
+                  newFilters.user = undefined;
+                }
+                if (newFilters.user === "Mine" && user) {
+                  newFilters.user = user.uid;
+                }
+                setFilterTerms(newFilters);
 
-              history.push("?" + updatedUrlParams);
-            }}
-          />
-        </Grid>
+                history.push("?" + updatedUrlParams);
+              }}
+            />
+          </Grid>
+        ) : null}
         <Grid item className={classes.buttonGrid}>
           <Button
             className={classes.createButton}
