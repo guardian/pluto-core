@@ -41,7 +41,7 @@ OPTIONS /api/project/list                   @controllers.Application.corsOptions
 GET     /api/project/distinctowners         @controllers.ProjectEntryController.distinctOwners
 
 PUT     /api/project                        @controllers.ProjectEntryController.create
-GET     /api/project/forFilename            @controllers.Files.projectFromFile(filename: String,startAt:Int ?= 0,limit:Int ?=50)
+GET     /api/project/forFilename            @controllers.Files.projectFromFile(filename: String,startAt:Int ?= 0,limit:Int ?=50, includeBackups:Boolean ?=false)
 GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int, allVersions:Boolean ?=false)
 GET     /api/project/:id                    @controllers.ProjectEntryController.getitem(id: Int)
 GET     /api/project/vsid/:vsid                  @controllers.ProjectEntryController.getByVsid(vsid:String)
