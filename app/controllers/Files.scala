@@ -254,10 +254,12 @@ class Files @Inject() (override val controllerComponents:ControllerComponents,
     )
   }
 
-  def projectFromFile(filename:String) = IsAuthenticatedAsync(parse.anyContent) {uid=>{ request =>
+  def projectFromFile(filename:String, startAt:Int, limit:Int, includeBackups:Boolean) = IsAuthenticatedAsync(parse.anyContent) {uid=>{ request =>
     implicit val db = dbConfig.db
+    val baseQuery = TableQuery[FileEntryRow].filter(_.filepath===filename)
+    val filteredQuery = if(includeBackups) baseQuery else baseQuery.filter(_.backupOf.isEmpty)
     dbConfig.db.run(
-      TableQuery[FileEntryRow].filter(_.filepath===filename).sortBy(_.version.desc.nullsLast).result.asTry
+      filteredQuery.sortBy(_.version.desc.nullsLast).drop(startAt).take(limit).result.asTry
     ).flatMap({
       case Success(rows: Seq[FileEntry]) =>
         if (rows.isEmpty) {
