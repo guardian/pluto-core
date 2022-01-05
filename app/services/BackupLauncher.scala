@@ -1,14 +1,16 @@
 package services
 import com.google.inject.Guice
-import _root_.Module
+import play.api.inject.guice.GuiceApplicationBuilder
+import services.guice.InjectionConfig
+
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object BackupLauncher {
   def main(args:Array[String]):Unit = {
-    implicit val injector = Guice.createInjector(new Module())
-
-    val projectBackup = injector.getInstance(classOf[ProjectBackup])
+    val app = new GuiceApplicationBuilder().build()
+    implicit val injector = app.injector
+    val projectBackup = injector.instanceOf(classOf[ProjectBackup])
 
     projectBackup.backupProjects.onComplete({
       case Success(backupResults)=>

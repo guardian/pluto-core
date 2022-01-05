@@ -18,7 +18,6 @@ val circeVersion = "0.12.3"
 
 lazy val `pluto-core` = (project in file("."))
   .enablePlugins(PlayScala)
-  .enablePlugins(AshScriptPlugin) //needed for alpine-based images
     .settings(
       version := sys.props.getOrElse("build.number","DEV"),
       dockerExposedPorts := Seq(9000),

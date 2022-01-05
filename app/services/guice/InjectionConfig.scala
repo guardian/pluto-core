@@ -1,3 +1,5 @@
+package services.guice
+
 import com.google.inject.AbstractModule
 import drivers.MXSConnectionManager
 import play.api.Logger
@@ -5,10 +7,11 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 import services._
 import services.actors.{Auditor, ProjectCreationActor}
 
-class Module extends AbstractModule with AkkaGuiceSupport {
+class InjectionConfig extends AbstractModule with AkkaGuiceSupport {
   private val logger = Logger(getClass)
 
   override def configure(): Unit = {
+    logger.warn(s"Running guice module ${getClass.getCanonicalName}")
     bind(classOf[TestModeWarning]).asEagerSingleton()
 
     //this makes the actor instance accessible via injection
