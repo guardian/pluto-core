@@ -93,20 +93,22 @@ class PeriodicScanReceiver @Inject() (config:Configuration,
                 postrunActionScanner ! PostrunActionScanner.Rescan
                 Future(true)
               case "pluto.core.service.backuptrigger"=>
-                logger.debug("Triggering backup action in response to incoming message")
-                projectBackup.backupProjects
-                  .map(results=>{
-                    logger.info(s"Timed backup completed.  ${results.length} storages were backed up")
-                    results.foreach(entry=>{
-                      logger.info(s"\tStorage ID ${entry.storageId}: ${entry.totalCount} files total, ${entry.successCount} copied, ${entry.notNeededCount} did not need backup and ${entry.failedCount} failed")
-                    })
-                    true
-                  })
-                  .recover({
-                    case err:Throwable=>
-                      logger.error(s"Timed backup failed: ${err.getMessage}", err)
-                      true  //don't re-queue otherwise we get into a loop
-                  })
+                logger.info("Timed backup is now run from an external job")
+                Future(true)
+//                logger.debug("Triggering backup action in response to incoming message")
+//                projectBackup.backupProjects
+//                  .map(results=>{
+//                    logger.info(s"Timed backup completed.  ${results.length} storages were backed up")
+//                    results.foreach(entry=>{
+//                      logger.info(s"\tStorage ID ${entry.storageId}: ${entry.totalCount} files total, ${entry.successCount} copied, ${entry.notNeededCount} did not need backup and ${entry.failedCount} failed")
+//                    })
+//                    true
+//                  })
+//                  .recover({
+//                    case err:Throwable=>
+//                      logger.error(s"Timed backup failed: ${err.getMessage}", err)
+//                      true  //don't re-queue otherwise we get into a loop
+//                  })
               case _=>
                 logger.warn(s"PeriodicScanReceiver got an unknown message: $routingKey")
                 Future(true)

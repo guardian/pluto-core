@@ -1,10 +1,11 @@
-import com.google.inject.{AbstractModule, Provides}
-import com.newmotion.akka.rabbitmq.ConnectionActor
+package services.guice
+
+import com.google.inject.AbstractModule
 import drivers.MXSConnectionManager
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import services.actors.{Auditor, ProjectCreationActor}
 import services._
+import services.actors.{Auditor, ProjectCreationActor}
 
 class Module extends AbstractModule with AkkaGuiceSupport {
   private val logger = Logger(getClass)
