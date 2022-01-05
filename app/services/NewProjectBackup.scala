@@ -42,6 +42,32 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     })
   }
 
+  val timeSuffixes = Seq("seconds","minutes","hours","days")
+  def getTimeDifference(sourceMeta:Map[Symbol, String], destMeta:Map[Symbol, String]) = try {
+    val millisecondDelta = destMeta('lastModified).toLong - sourceMeta('lastModified).toLong
+
+    val secondsDelta = millisecondDelta / 1000.0
+    if(secondsDelta < 60) {
+      s"$secondsDelta seconds"
+    } else {
+      val minsDelta = secondsDelta / 60.0
+      if(minsDelta < 60) {
+        s"$minsDelta minutes"
+      } else {
+        val hoursDelta = minsDelta / 60
+        if(hoursDelta < 24) {
+          s"$hoursDelta hours"
+        } else {
+          val daysDelta = hoursDelta / 24.0
+          s"$daysDelta days"
+        }
+      }
+    }
+  } catch {
+    case err:Throwable=>
+      s"Could not convert ${destMeta.get('lastModified)} vs ${sourceMeta.get('lastModified)}: ${err.getMessage}"
+  }
+
   def validateExistingBackups(sourceFile:FileEntry, potentialBackups:Seq[FileEntry], p:ProjectEntry, storageDrivers:Map[Int, StorageDriver]): Try[Either[String, Boolean]] = {
     storageDrivers.get(sourceFile.storageId) match {
       case None=>
@@ -69,6 +95,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup is version ${mostRecent.map(_.version)} with metadata $mostRecentMeta")
         mostRecentMeta match {
           case Some(meta)=>
+            logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup lags source file by ${getTimeDifference(sourceMeta, meta)}")
             if(meta('size)==sourceMeta('size)) {
               logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${mostRecent.map(_.version)} matches source, no backup required")
               Success(Right(true))
