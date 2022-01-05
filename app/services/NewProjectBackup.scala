@@ -96,7 +96,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
       }
       val sourceFile = nonBackupFiles.head
 
-      validateExistingBackups(sourceFile, projectAndFiles._2.filter(_.backupOf.isDefined), p, storageDrivers) match {
+      validateExistingBackups(sourceFile, projectAndFiles._2.filter(_.backupOf.isDefined).sortBy(_.version)(Ordering.Int.reverse), p, storageDrivers) match {
         case Failure(err)=>Future.failed(err)
         case Success(Left(err))=>
           logger.error(s"Could not back up Project ${p.projectTitle} (${p.id}): $err")
