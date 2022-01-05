@@ -284,7 +284,8 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
       case (storageEntry, Some(destStorageEntry))=>
         logger.debug(s"Source storage is ${storageEntry.storageType} with ID ${storageEntry.id}, dest storage is ${storageEntry.storageType} with ID ${storageEntry.id}")
         //FileEntry.scanAllFiles(Some(forStorageId))
-        ProjectEntry.scanProjectsForStatus(EntryStatus.InProduction)
+        ProjectEntry
+          .scanProjectsForStatus(EntryStatus.InProduction)
           .mapAsync(parallelCopies)(_.associatedFiles(allVersions=false).map(_.headOption))
           .mapAsync(parallelCopies)({
             case None=>

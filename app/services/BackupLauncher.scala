@@ -10,12 +10,11 @@ object BackupLauncher {
   def main(args:Array[String]):Unit = {
     val app = new GuiceApplicationBuilder().build()
     implicit val injector = app.injector
-    val projectBackup = injector.instanceOf(classOf[ProjectBackup])
+    val projectBackup = injector.instanceOf(classOf[NewProjectBackup])
 
     projectBackup.backupProjects.onComplete({
-      case Success(backupResults)=>
-        println(s"${backupResults.length} backups were performed.")
-        backupResults.foreach(r=>println(s"\tStorage ${r.storageId}: Out of ${r.totalCount} total, ${r.successCount} were backed up, ${r.failedCount} failed and ${r.notNeededCount} did not need backup"))
+      case Success(r)=>
+          println(s"Out of ${r.totalCount} total, ${r.successCount} were backed up, ${r.failedCount} failed and ${r.notNeededCount} did not need backup")
         System.exit(0)
       case Failure(exception)=>
         println(s"ERROR - Could not complete backup: ${exception.getMessage}")
