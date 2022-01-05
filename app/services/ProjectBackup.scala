@@ -128,6 +128,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     */
   def checkNeedsBackup(maybeSourceEntry:Option[FileEntry], maybePrevDestEntry:Option[FileEntry], sourceStorageDriver:StorageDriver, destStorageDriver:StorageDriver) = {
     import cats.implicits._
+    logger.info(s"checkNeedsBackup: maybeSourceEntry is ${maybeSourceEntry.map(_.filepath)} maybePrevDestEntry is ${maybePrevDestEntry.map(_.filepath)}")
     maybeSourceEntry
       .map(_.validatePathExistsDirect(db, sourceStorageDriver))
       .sequence
@@ -135,7 +136,8 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
         (maybeSourceEntry, maybePrevDestEntry) match {
           case (None, _)=>  //if there is no source we can't continue
             Future.failed(new RuntimeException("There was no source file to back up"))
-          case (_, None)=>  //if there is no destination, then we definitely need backup
+          case (Some(sourceEntry), None)=>  //if there is no destination, then we definitely need backup
+            logger.warn(s"There was no previous backup for ${sourceEntry.filepath}")
             Future(true)
           case (Some(sourceEntry), Some(destEntry))=>
             val sourceMeta = sourceStorageDriver.getMetadata(sourceEntry.filepath, sourceEntry.version)
@@ -227,23 +229,23 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
                 updatedDestEntry <- Future.fromTry(updatedEntryTry) //make sure that we get the updated database id of the file
               } yield updatedDestEntry
 
-              //logger.warn(s"Test, not backing up ${sourceEntry.filepath}")
-              targetFileEntry.flatMap(updatedDestEntry=>{
-                storageHelper.copyFile(sourceEntry, updatedDestEntry)
-                  .flatMap(fileEntry=>{
-                    //ensure that we save the record with `b_has_content` set to true
-                    fileEntry.saveSimple.map(finalEntry=>Right(Some(finalEntry, sourceEntry)))
-                  })
-                  .recoverWith({
-                    case err:Throwable=>
-                      logger.error(s"Could not copy ${updatedDestEntry.filepath} on ${updatedDestEntry.storageId} from ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${err.getMessage}",err)
-                      updatedDestEntry
-                        .deleteFromDisk
-                        .andThen(_=>updatedDestEntry.deleteSelf)
-                        .map(_=>Left(err.toString))
-                  })
-              })
-              //Future(Right(None))
+              logger.warn(s"Test, not backing up ${sourceEntry.filepath}")
+//              targetFileEntry.flatMap(updatedDestEntry=>{
+//                storageHelper.copyFile(sourceEntry, updatedDestEntry)
+//                  .flatMap(fileEntry=>{
+//                    //ensure that we save the record with `b_has_content` set to true
+//                    fileEntry.saveSimple.map(finalEntry=>Right(Some(finalEntry, sourceEntry)))
+//                  })
+//                  .recoverWith({
+//                    case err:Throwable=>
+//                      logger.error(s"Could not copy ${updatedDestEntry.filepath} on ${updatedDestEntry.storageId} from ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${err.getMessage}",err)
+//                      updatedDestEntry
+//                        .deleteFromDisk
+//                        .andThen(_=>updatedDestEntry.deleteSelf)
+//                        .map(_=>Left(err.toString))
+//                  })
+//              })
+              Future(Right(None))
             } else {
               logger.debug(s"Backup of ${sourceEntry.filepath} not needed because it has not changed.")
               Future(Right(None))

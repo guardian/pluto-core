@@ -8,6 +8,7 @@ import java.sql.Timestamp
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import drivers.StorageDriver
+import org.slf4j.LoggerFactory
 import play.api.Logger
 import play.api.inject.Injector
 import play.api.libs.functional.syntax._
@@ -34,6 +35,7 @@ import scala.concurrent.{Await, Future}
   */
 case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String, version:Int,
                      ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean, backupOf:Option[Int]) extends PlutoModel {
+  private lazy val logger = LoggerFactory.getLogger(getClass)
 
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
@@ -256,6 +258,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     case None=>
       Future.failed(new RuntimeException("A record must be saved before you can query for backups"))
     case Some(fileId)=>
+      logger.info(s"Looking for backups of file with id $fileId on storage $forStorage")
       db.run {
           makeQuery(fileId, forStorage)
           .sortBy(_.version.desc.nullsLast)
