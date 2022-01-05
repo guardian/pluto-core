@@ -1,5 +1,3 @@
-package services.guice
-
 import com.google.inject.AbstractModule
 import drivers.MXSConnectionManager
 import play.api.Logger

@@ -1,7 +1,6 @@
 package services
-import services.guice.Module
 import com.google.inject.Guice
-
+import _root_.Module
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
