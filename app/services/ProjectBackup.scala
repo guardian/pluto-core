@@ -4,7 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
 import drivers.StorageDriver
 import helpers.StorageHelper
-import models.{FileAssociation, FileAssociationRow, FileEntry, StorageEntry, StorageEntryHelper, StorageEntryRow}
+import models.{EntryStatus, FileAssociation, FileAssociationRow, FileEntry, ProjectEntry, StorageEntry, StorageEntryHelper, StorageEntryRow}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
@@ -227,6 +227,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
                 updatedDestEntry <- Future.fromTry(updatedEntryTry) //make sure that we get the updated database id of the file
               } yield updatedDestEntry
 
+              //logger.warn(s"Test, not backing up ${sourceEntry.filepath}")
               targetFileEntry.flatMap(updatedDestEntry=>{
                 storageHelper.copyFile(sourceEntry, updatedDestEntry)
                   .flatMap(fileEntry=>{
@@ -242,6 +243,7 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
                         .map(_=>Left(err.toString))
                   })
               })
+              //Future(Right(None))
             } else {
               logger.debug(s"Backup of ${sourceEntry.filepath} not needed because it has not changed.")
               Future(Right(None))
@@ -279,8 +281,16 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
     getSourceAndDestStorages(forStorageId).flatMap({
       case (storageEntry, Some(destStorageEntry))=>
         logger.debug(s"Source storage is ${storageEntry.storageType} with ID ${storageEntry.id}, dest storage is ${storageEntry.storageType} with ID ${storageEntry.id}")
-        FileEntry.scanAllFiles(Some(forStorageId))
-          .mapAsync(parallelCopies)(entry=>performBackup(entry, storageEntry, destStorageEntry))
+        //FileEntry.scanAllFiles(Some(forStorageId))
+        ProjectEntry.scanProjectsForStatus(EntryStatus.InProduction)
+          .mapAsync(parallelCopies)(_.associatedFiles(allVersions=false).map(_.headOption))
+          .mapAsync(parallelCopies)({
+            case None=>
+              logger.info("Project had no current version")
+              Future(Right(None))
+            case Some(entry)=>
+              performBackup(entry, storageEntry, destStorageEntry)
+          })
           .mapAsync(parallelCopies)({
             case err@Left(_)=>Future(err)
             case Right(None)=>Future(Right(None))
