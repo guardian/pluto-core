@@ -1,7 +1,9 @@
 package services
+import akka.actor.ActorSystem
 import play.api.inject.guice.GuiceApplicationBuilder
 import scopt.OptionParser
-
+import services.guice.{BackupLauncherInjectionConfig, InjectionConfig}
+import play.api.inject.bind
 import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -14,7 +16,10 @@ object BackupLauncher {
   }
 
   def main(args:Array[String]):Unit = {
-    val app = new GuiceApplicationBuilder().build()
+    val app = new GuiceApplicationBuilder()
+      .overrides(new BackupLauncherInjectionConfig)
+      .disable(classOf[InjectionConfig])
+      .build()
     implicit val injector = app.injector
     val projectBackup = injector.instanceOf(classOf[NewProjectBackup])
 
