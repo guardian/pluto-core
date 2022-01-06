@@ -113,6 +113,10 @@ interface PlutoDefault {
   value: string;
 }
 
+interface ProjectFilesResponse {
+  status: string;
+  files: FileEntry[];
+}
 declare module "*.svg" {
   const content: any;
   export default content;

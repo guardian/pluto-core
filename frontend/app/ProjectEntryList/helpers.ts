@@ -63,6 +63,22 @@ export const getProject = async (id: number): Promise<Project> => {
   }
 };
 
+export const getProjectFiles = async (id: number): Promise<FileEntry[]> => {
+  const response = await Axios.get<ProjectFilesResponse>(
+    `${API_PROJECTS}/${id}/files`,
+    { validateStatus: (s) => s == 200 || s == 404 }
+  );
+  switch (response.status) {
+    case 200:
+      return response.data.files;
+    case 404:
+      throw `The project with id ${id} does not exist`;
+    default:
+      //this should not happen
+      throw `axios returned an unexpected response code ${response.status}`;
+  }
+};
+
 export const getProjectType = async (id: number): Promise<ProjectType> => {
   const response = await Axios.get<PlutoApiResponse<ProjectType>>(
     `/api/projecttype/${id}`

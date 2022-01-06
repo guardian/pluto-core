@@ -7,9 +7,11 @@ import {
   DialogContent,
   DialogContentText,
   Grid,
+  IconButton,
   makeStyles,
   Paper,
   TextField,
+  Tooltip,
 } from "@material-ui/core";
 import { getProject, getProjectByVsid, updateProject } from "./helpers";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
@@ -23,6 +25,7 @@ import ProductionOfficeSelector from "../common/ProductionOfficeSelector";
 import StatusSelector from "../common/StatusSelector";
 import { Helmet } from "react-helmet";
 import ProjectEntryVaultComponent from "./ProjectEntryVaultComponent";
+import { FileCopy, PermMedia } from "@material-ui/icons";
 
 const useStyles = makeStyles({
   root: {
@@ -194,12 +197,38 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           <title>[{project.title}] Details</title>
         </Helmet>
       ) : null}
-      <div style={{ marginBottom: "0.8em" }}>
-        <Breadcrumb
-          projectId={project.id}
-          plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
-        />
-      </div>
+      <Grid container justify="space-between" style={{ marginBottom: "0.8em" }}>
+        <Grid item>
+          <Breadcrumb
+            projectId={project.id}
+            plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
+          />
+        </Grid>
+        <Grid item>
+          <Grid container spacing={2}>
+            <Grid item>
+              <Tooltip title="View backups">
+                <IconButton
+                  onClick={() => history.push(`/project/${project.id}/backups`)}
+                >
+                  <FileCopy />
+                </IconButton>
+              </Tooltip>
+            </Grid>
+            <Grid item>
+              <Tooltip title="See project's media">
+                <IconButton
+                  onClick={() =>
+                    window.location.assign(`/vs/project/${project.id}`)
+                  }
+                >
+                  <PermMedia />
+                </IconButton>
+              </Tooltip>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
       <Paper className={classes.root} elevation={3}>
         <form onSubmit={onProjectSubmit}>
           <Grid container xs={12} direction="row" spacing={3}>
