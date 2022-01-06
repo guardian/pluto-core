@@ -60,7 +60,6 @@
     <logger name="services.ValidateProject" level="INFO"/>
     <logger name="streamcomponents.ProjectSearchSource" level="INFO"/>
     <logger name="helpers.AllowCORSFilter" level="WARN"/>
-    <logger name="services.DataMigration" level="INFO"/>
     <logger name="services.migrationcomponents" level="INFO"/>
     <logger name="services.PeriodicScanReceiver" level="INFO"/>
     <logger name="postrun" level="INFO"/>

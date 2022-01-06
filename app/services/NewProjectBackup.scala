@@ -2,7 +2,7 @@ package services
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
-import drivers.StorageDriver
+import drivers.{StorageDriver, StorageMetadata}
 import helpers.StorageHelper
 import models.{EntryStatus, FileEntry, ProjectEntry, StorageEntry, StorageEntryHelper}
 import org.slf4j.LoggerFactory
@@ -16,6 +16,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.PostgresProfile.api._
 
+import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 
@@ -43,30 +44,29 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
   }
 
   val timeSuffixes = Seq("seconds","minutes","hours","days")
-  def getTimeDifference(sourceMeta:Map[Symbol, String], destMeta:Map[Symbol, String]) = try {
-    val millisecondDelta = destMeta('lastModified).toLong - sourceMeta('lastModified).toLong
-
-    val secondsDelta = millisecondDelta / 1000.0
-    if(secondsDelta < 60) {
-      s"$secondsDelta seconds"
-    } else {
-      val minsDelta = secondsDelta / 60.0
-      if(minsDelta < 60) {
-        s"$minsDelta minutes"
-      } else {
-        val hoursDelta = minsDelta / 60
-        if(hoursDelta < 24) {
-          s"$hoursDelta hours"
+  def getTimeDifference(maybeSourceMeta:Option[StorageMetadata], destMeta:StorageMetadata) =
+    maybeSourceMeta match {
+      case Some(sourceMeta) =>
+        val secondsDelta = Duration.between(sourceMeta.lastModified, destMeta.lastModified).getSeconds
+        if (secondsDelta < 60) {
+          s"$secondsDelta seconds"
         } else {
-          val daysDelta = hoursDelta / 24.0
-          s"$daysDelta days"
+          val minsDelta = secondsDelta / 60.0
+          if (minsDelta < 60) {
+            s"$minsDelta minutes"
+          } else {
+            val hoursDelta = minsDelta / 60
+            if (hoursDelta < 24) {
+              s"$hoursDelta hours"
+            } else {
+              val daysDelta = hoursDelta / 24.0
+              s"$daysDelta days"
+            }
+          }
         }
-      }
+      case None=>
+        "Can't get time difference, no source metadata present"
     }
-  } catch {
-    case err:Throwable=>
-      s"Could not convert ${destMeta.get('lastModified)} vs ${sourceMeta.get('lastModified)}: ${err.getMessage}"
-  }
 
   def validateExistingBackups(sourceFile:FileEntry, potentialBackups:Seq[FileEntry], p:ProjectEntry, storageDrivers:Map[Int, StorageDriver]): Try[Either[String, Boolean]] = {
     storageDrivers.get(sourceFile.storageId) match {
@@ -82,7 +82,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
             case Some(destDriver)=>
               val bMeta = destDriver.getMetadata(backup.filepath, backup.version)
               logger.info(s"Project ${p.projectTitle} (${p.id}) backup file ${backup.filepath} v${backup.version} metadata: $bMeta")
-              Some( (backup.id.get, bMeta) )
+              bMeta.map(m=>(backup.id.get, m) )
             case None=>
               logger.error(s"Project ${p.projectTitle} (${p.id}) Could not get a destination driver for storage ${backup.storageId} on file ${backup.filepath} v${backup.version}")
               None
@@ -96,11 +96,11 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         mostRecentMeta match {
           case Some(meta)=>
             logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup lags source file by ${getTimeDifference(sourceMeta, meta)}")
-            if(meta('size)==sourceMeta('size)) {
+            if(meta.size==sourceMeta.size) {
               logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${mostRecent.map(_.version)} matches source, no backup required")
               Success(Right(true))
             } else {
-              logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${mostRecent.map(_.version)} size mismatch ${sourceMeta('size)} vs ${meta('size)}, backup needed")
+              logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${mostRecent.map(_.version)} size mismatch ${sourceMeta.size} vs ${meta.size}, backup needed")
               Success(Right(false))
             }
           case None=>
@@ -110,7 +110,6 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
   }
 
   def conditionalBackup(projectAndFiles:(ProjectEntry, Seq[FileEntry]), storageDrivers:Map[Int, StorageDriver]):Future[Either[String, Option[FileEntry]]] = {
-    import cats.implicits._
     val p = projectAndFiles._1
     val nonBackupFiles = projectAndFiles._2.filter(_.backupOf.isEmpty)
     if(nonBackupFiles.isEmpty) {

@@ -225,23 +225,19 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
     * @param path [[String]] Absolute path to open
     * @return [[Map]] of [[Symbol]] -> [[String]] containing metadata about the given file.
     */
-  def getMetadata(path:String, version:Int):Map[Symbol,String] = withVault { vault=>
+  def getMetadata(path:String, version:Int):Option[MatrixStoreMetadata] = withVault { vault=>
     lookupPath(vault, path, version).map(oid=>Try {
       val mxsObj = vault.getObject(oid)
       val attrView = mxsObj.getAttributeView
       val fileAttrs = mxsObj.getMXFSFileAttributeView.readAttributes()
 
-      Map(
-        Symbol("size")->fileAttrs.size().toString,
-        Symbol("lastModified")->fileAttrs.lastModifiedTime().toString,
-        Symbol("version")->attrView.readInt("PROJECTLOCKER_VERSION").toString
-      )
+      MatrixStoreMetadata(fileAttrs.size(), fileAttrs.lastModifiedTime(), attrView.readInt("PROJECTLOCKER_VERSION"), oid)
     }).getOrElse(Failure(new RuntimeException(s"File $path at version $version does not exist on this storage")))
   } match {
-    case Success(map)=>map
+    case Success(map)=>Some(map)
     case Failure(err)=>
       logger.error(s"Could not get metadata for $path at version $version: ", err)
-      Map()
+      None
   }
 
   /**

@@ -50,12 +50,13 @@ trait StorageDriver {
   def getWriteStream(path:String, versionNumber: Int):Try[OutputStream]
 
   /**
-    * Get a Map of metadata relevant to the specified file.  The contents can vary between implementations, but should always
-    * have 'size (Long converted to String) and 'lastModified (Long converted to String) members
+    * Get metadata relevant to the specified file.  The contents can vary between implementations, but should always
+    * have size and lastModified (Long converted to String) members
     * @param path [[String]] Absolute path to open
-    * @return [[Map]] of [[Symbol]] -> [[String]] containing metadata about the given file.
+    * @return A subclass of StorageMetadata containing metadata about the given file. You can access more fields by casting
+    *         this to the relevant subclass. None if the file did not exist
     */
-  def getMetadata(path:String, versionNumber: Int):Map[Symbol,String]
+  def getMetadata(path:String, versionNumber: Int):Option[StorageMetadata]
 
   /**
     * Does the given path exist on this storage?

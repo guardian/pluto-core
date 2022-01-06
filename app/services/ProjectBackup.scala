@@ -142,10 +142,10 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
           case (Some(sourceEntry), Some(destEntry))=>
             val sourceMeta = sourceStorageDriver.getMetadata(sourceEntry.filepath, sourceEntry.version)
             val destMeta = destStorageDriver.getMetadata(destEntry.filepath, destEntry.version)
-            val sourceSizeStr = sourceMeta.get(Symbol("size"))
-            val sourceMod = extractModTime(sourceMeta, sourceEntry)
-            val destSizeStr = destMeta.get(Symbol("size"))
-            val destMod = extractModTime(destMeta, destEntry)
+            val sourceSizeStr = sourceMeta.get.size
+            val sourceMod = sourceMeta.get.lastModified.toInstant.toEpochMilli
+            val destSizeStr = destMeta.get.size
+            val destMod = destMeta.get.lastModified.toInstant.toEpochMilli
 
             logger.debug(s"${sourceEntry.filepath} version ${sourceEntry.version} on ${sourceEntry.storageId} has size $sourceSizeStr and last modified $sourceMod")
             logger.debug(s"${destEntry.filepath} version ${destEntry.version} on ${destEntry.storageId} has size $destSizeStr and last modified $destMod")
@@ -156,11 +156,11 @@ class ProjectBackup @Inject()(config:Configuration, dbConfigProvider: DatabaseCo
             } else if(sourceSizeStr.isEmpty || sourceMod.isEmpty) {
               Future.failed(new RuntimeException(s"Could not get one or both of file size and mod time from source storage for ${sourceEntry.filepath} on storage id ${sourceEntry.storageId}"))
             } else if(destSizeStr.isEmpty || destMod.isEmpty) {
-              logger.warn(s"Got destination size ${destSizeStr} and destination modtime ${destMod} which is not correct. Forcing backup.")
+              logger.warn(s"Got destination size $destSizeStr and destination modtime $destMod which is not correct. Forcing backup.")
               Future(true)
             } else if(sourceSizeStr!=destSizeStr) { //file size mismatch - always backup
               Future(true)
-            } else if(sourceMod.get > destMod.get) { //file sizes do match, but if the source has been modified since the backup copy it anyway
+            } else if(sourceMod > destMod) { //file sizes do match, but if the source has been modified since the backup copy it anyway
               Future(true)
             } else {                                //if we get here, then the sizes match and the source modtime is equal or earlier than the backup modtime
               Future(false)
