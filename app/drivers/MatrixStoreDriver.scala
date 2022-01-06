@@ -171,6 +171,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
         Success(false)
       case Some(oid) =>
         withObject(vault, oid) { mxsObject =>
+          logger.info(s"Deleting MXS file $oid (path $path, version $version)...")
           mxsObject.delete()
           Success(true)
         }

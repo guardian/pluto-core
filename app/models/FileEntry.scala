@@ -111,22 +111,22 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
 
   /**
     * attempt to delete the underlying record from the database
-    * @param db
-    * @return
+    * @param db implicitly provided database object
+    * @return a Future with no value on success. On failure, the future fails; pick this up with .recover() or .onComplete
     */
-  def deleteSelf(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Either[Throwable, Unit]] =
+  def deleteSelf(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Unit] =
     id match {
       case Some(databaseId)=>
         val logger = Logger(getClass)
         logger.info(s"Deleting database record for file $databaseId ($filepath on storage $storageId)")
         db.run(
-          TableQuery[FileEntryRow].filter(_.id===databaseId).delete.asTry
-        ).map({
-          case Success(_)=>Right( () )
-          case Failure(error)=>Left(error)
-        })
+          DBIO.seq(
+            TableQuery[FileAssociationRow].filter(_.fileEntry===databaseId).delete,
+            TableQuery[FileEntryRow].filter(_.id===databaseId).delete
+          )
+        )
       case None=>
-        Future(Left(new RuntimeException("Cannot delete a record that has not been saved to the database")))
+        Future.failed(new RuntimeException("Cannot delete a record that has not been saved to the database"))
     }
 
   /**

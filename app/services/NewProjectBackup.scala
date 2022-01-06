@@ -174,12 +174,10 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
               logger.info(s"Deleting zero-length backup ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
               if (driver.deleteFileAtPath(fileEntry.filepath, fileEntry.version)) {
                 logger.info(s"Deleting zero-length backup entry ${fileEntry.id}")
-                fileEntry.deleteSelf.flatMap({
-                  case Right(v) =>
-                    logger.info(s"Pausing 30s so the process can be aborted...")
-                    Thread.sleep(30000)
-                    Future(v)
-                  case Left(err) => Future.failed(err)
+                fileEntry.deleteSelf.flatMap(v=> {
+                  logger.info(s"Pausing 30s so the process can be aborted...")
+                  Thread.sleep(30000)
+                  Future(v)
                 })
               } else {
                 Future.failed(new RuntimeException(s"Could not delete file ${fileEntry.filepath} on storage id ${fileEntry.storageId}"))
