@@ -137,6 +137,79 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     }
   }
 
+  def fixInvalidBackupsFor(projectAndFiles:(ProjectEntry, Seq[FileEntry]), storageDrivers:Map[Int, StorageDriver]):Future[Seq[Unit]] = {
+    val p = projectAndFiles._1
+    val backupFiles = projectAndFiles._2.filter(_.backupOf.isDefined)
+
+    val zeroLengthBackups = backupFiles.filter(fileEntry=>{
+      storageDrivers.get(fileEntry.storageId) match {
+        case None=>
+          logger.error(s"Could not get a storage driver for ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
+          false
+        case Some(driver)=>
+          driver.getMetadata(fileEntry.filepath, fileEntry.version) match {
+            case None=>
+              logger.error(s"Could not get metadata for ${fileEntry.filepath} v ${fileEntry.version} on storage id ${fileEntry.storageId} with driver ${driver.getClass.getCanonicalName}")
+              false
+            case Some(meta)=>
+              if(meta.size==0) {
+                logger.info(s"Found dodgy backup: $meta")
+              }
+              meta.size==0
+          }
+      }
+    })
+
+    logger.info(s"Project ${p.projectTitle} (${p.id}) has ${zeroLengthBackups.length} zero-length backups")
+
+    Future.sequence(
+      zeroLengthBackups.map(fileEntry=>{
+        storageDrivers.get(fileEntry.storageId) match {
+          case None=>
+            logger.error(s"Could not get a storage driver for ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
+            Future.failed(new RuntimeException("Could not get a storage driver on the second pass, this should not happen!"))
+          case Some(driver)=>
+            logger.info(s"I would be Deleting zero-length backup ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
+            Future( () )
+//            if(driver.deleteFileAtPath(fileEntry.filepath, fileEntry.version)) {
+//              logger.info(s"Deleting zero-length backup entry ${fileEntry.id}")
+//              fileEntry.deleteSelf.flatMap({
+//                case Right(v)=>Future(v)
+//                case Left(err)=>Future.failed(err)
+//              })
+//            } else {
+//              Future.failed(s"Could not delete file ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
+//            }
+        }
+      })
+    )
+  }
+
+  def nukeInvalidBackups:Future[BackupResults] = {
+    val parallelCopies = config.getOptional[Int]("backup.parallelCopies").getOrElse(1)
+    loadStorageDrivers().flatMap(drivers=>
+      ProjectEntry
+        .scanAllProjects
+        .map(p=>{
+          logger.info(s"Checking project ${p.projectTitle} for invalid backups")
+          p
+        })
+        .mapAsync(1)(p=>p.associatedFiles(allVersions = true).map((p, _)))
+        .map(projectAndFiles=>{
+          val p = projectAndFiles._1
+          val f = projectAndFiles._2
+          val backupsCount = f.count(_.backupOf.isDefined)
+          logger.info(s"Project ${p.projectTitle} has ${f.length} files of which $backupsCount are backups")
+          projectAndFiles
+        })
+        .mapAsync(1)(projectAndFiles=>fixInvalidBackupsFor(projectAndFiles, drivers))
+        .toMat(Sink.fold(BackupResults.empty(0))((acc, results)=>{
+          acc.copy(successCount = acc.successCount+results.length)
+        }))(Keep.right)
+        .run()
+    )
+  }
+
   def backupProjects:Future[BackupResults] = {
     val parallelCopies = config.getOptional[Int]("backup.parallelCopies").getOrElse(1)
 
@@ -167,6 +240,5 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         }))(Keep.right)
         .run()
     )
-
   }
 }

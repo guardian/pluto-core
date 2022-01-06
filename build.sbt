@@ -65,6 +65,7 @@ libraryDependencies ++= Seq(
   // https://mvnrepository.com/artifact/com.typesafe.play/play-json-joda
   "com.typesafe.play" %% "play-json-joda" % "2.7.4",
   "commons-codec" % "commons-codec" % "1.13",
+  "com.github.scopt" %% "scopt" % "4.0.1"
 )
 // https://mvnrepository.com/artifact/com.typesafe.slick/slick
 libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"

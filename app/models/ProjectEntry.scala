@@ -284,6 +284,10 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
    */
   def scanProjectsForStatus(status:EntryStatus.Value)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
     import EntryStatusMapper._
-    Source.fromPublisher(db.stream(TableQuery[ProjectEntryRow].filter(_.status===status).result))
+    Source.fromPublisher(db.stream(TableQuery[ProjectEntryRow].filter(_.status===status).sortBy(_.id.desc).result))
+  }
+
+  def scanAllProjects(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    Source.fromPublisher(db.stream(TableQuery[ProjectEntryRow].sortBy(_.id.desc).result))
   }
 }
