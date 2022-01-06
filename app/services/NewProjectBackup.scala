@@ -213,11 +213,11 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         mostRecentMeta match {
           case Some(meta)=>
             logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup lags source file by ${getTimeDifference(sourceMeta, meta)}")
-            if(meta.size==sourceMeta.size) {
+            if(meta.size==sourceMeta.get.size) {
               logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${mostRecent.map(_.version)} matches source, no backup required")
               Success(Left("No backup required"))
             } else {
-              logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${mostRecent.map(_.version)} size mismatch ${sourceMeta.size} vs ${meta.size}, backup needed")
+              logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${mostRecent.map(_.version)} size mismatch ${sourceMeta.get.size} vs ${meta.size}, backup needed")
               Success(Right(mostRecent))
             }
           case None=>
