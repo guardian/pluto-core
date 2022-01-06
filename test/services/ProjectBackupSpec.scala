@@ -1,7 +1,7 @@
 package services
 
 import akka.stream.Materializer
-import drivers.StorageDriver
+import drivers.{PathMetadata, StorageDriver}
 import helpers.StorageHelper
 import models.{FileEntry, StorageEntry}
 import org.specs2.mock.Mockito
@@ -17,7 +17,6 @@ import java.time.Instant
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.util.Try
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito {
@@ -189,11 +188,11 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
     "return false if metadata shows no difference between files" in new WithApplication(buildApp) {
       val toTest = app.injector.instanceOf(classOf[ProjectBackup])
 
-      val nowTime = Instant.now().toEpochMilli.toString
+      val nowTime = Instant.now().toEpochMilli
       val sourceStorageDriver = mock[StorageDriver]
-      sourceStorageDriver.getMetadata(any, any) returns Map(Symbol("size")->"12345", Symbol("lastModified")->nowTime)
+      sourceStorageDriver.getMetadata(any, any) returns Some(PathMetadata(12345L, nowTime))
       val destStorageDriver = mock[StorageDriver]
-      destStorageDriver.getMetadata(any, any) returns Map(Symbol("size")->"12345", Symbol("lastModified")->nowTime)
+      destStorageDriver.getMetadata(any, any) returns Some(PathMetadata(12345L, nowTime))
 
       val sourceFile = FileEntry(
         Some(123),
@@ -233,12 +232,12 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
     "return true if metadata shows a size difference" in new WithApplication(buildApp) {
       val toTest = app.injector.instanceOf(classOf[ProjectBackup])
 
-      val nowTime = Instant.now().toEpochMilli.toString
+      val nowTime = Instant.now().toEpochMilli
       val sourceStorageDriver = mock[StorageDriver]
-      sourceStorageDriver.getMetadata(any, any) returns Map(Symbol("size")->"23456", Symbol("lastModified")->nowTime)
+      sourceStorageDriver.getMetadata(any, any) returns Some(PathMetadata(23456L, nowTime))
       sourceStorageDriver.pathExists(any,any) returns true
       val destStorageDriver = mock[StorageDriver]
-      destStorageDriver.getMetadata(any, any) returns Map(Symbol("size")->"12345", Symbol("lastModified")->nowTime)
+      destStorageDriver.getMetadata(any, any) returns Some(PathMetadata(12345L, nowTime))
 
       val sourceFile = FileEntry(
         Some(123),
@@ -280,9 +279,9 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
 
       val nowTime = Instant.now().toEpochMilli
       val sourceStorageDriver = mock[StorageDriver]
-      sourceStorageDriver.getMetadata(any, any) returns Map(Symbol("size")->"12345", Symbol("lastModified")->(nowTime-150000).toString)
+      sourceStorageDriver.getMetadata(any, any) returns Some(PathMetadata(12345L, nowTime-150000))
       val destStorageDriver = mock[StorageDriver]
-      destStorageDriver.getMetadata(any, any) returns Map(Symbol("size")->"12345", Symbol("lastModified")->nowTime.toString)
+      destStorageDriver.getMetadata(any, any) returns Some(PathMetadata(12345L, nowTime))
 
       val sourceFile = FileEntry(
         Some(123),
@@ -323,10 +322,10 @@ class ProjectBackupSpec extends Specification with utils.BuildMyApp with Mockito
 
       val nowTime = Instant.now().toEpochMilli
       val sourceStorageDriver = mock[StorageDriver]
-      sourceStorageDriver.getMetadata(any, any) returns Map(Symbol("size")->"12345", Symbol("lastModified")->nowTime.toString)
+      sourceStorageDriver.getMetadata(any, any) returns Some(PathMetadata(12345L, nowTime))
       sourceStorageDriver.pathExists(any,any) returns true
       val destStorageDriver = mock[StorageDriver]
-      destStorageDriver.getMetadata(any, any) returns Map(Symbol("size")->"12345", Symbol("lastModified")->(nowTime-150000).toString)
+      destStorageDriver.getMetadata(any, any) returns Some(PathMetadata(12345L, nowTime-150000))
 
       val sourceFile = FileEntry(
         Some(123),
