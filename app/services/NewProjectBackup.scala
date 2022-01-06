@@ -170,18 +170,22 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
             logger.error(s"Could not get a storage driver for ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
             Future.failed(new RuntimeException("Could not get a storage driver on the second pass, this should not happen!"))
           case Some(driver)=>
-            logger.info(s"Deleting zero-length backup ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
-            if(driver.deleteFileAtPath(fileEntry.filepath, fileEntry.version)) {
-              logger.info(s"Deleting zero-length backup entry ${fileEntry.id}")
-              fileEntry.deleteSelf.flatMap({
-                case Right(v)=>
-                  logger.info(s"Pausing 30s so the process can be aborted...")
-                  Thread.sleep(30000)
-                  Future(v)
-                case Left(err)=>Future.failed(err)
-              })
+            if(fileEntry.storageId!=2) { //TEMPORARY HACK
+              logger.info(s"Deleting zero-length backup ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
+              if (driver.deleteFileAtPath(fileEntry.filepath, fileEntry.version)) {
+                logger.info(s"Deleting zero-length backup entry ${fileEntry.id}")
+                fileEntry.deleteSelf.flatMap({
+                  case Right(v) =>
+                    logger.info(s"Pausing 30s so the process can be aborted...")
+                    Thread.sleep(30000)
+                    Future(v)
+                  case Left(err) => Future.failed(err)
+                })
+              } else {
+                Future.failed(new RuntimeException(s"Could not delete file ${fileEntry.filepath} on storage id ${fileEntry.storageId}"))
+              }
             } else {
-              Future.failed(new RuntimeException(s"Could not delete file ${fileEntry.filepath} on storage id ${fileEntry.storageId}"))
+              Future( () )
             }
         }
       })
