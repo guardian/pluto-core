@@ -67,20 +67,8 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
           mxsFile.newOutputStream()
         case Some(oid) =>
           logger.debug(s"Object for $path $version already exists at $oid")
-//          try {
             val mxsFile = vault.getObject(oid)
             mxsFile.newOutputStream()
-//          } catch {
-//            case err:java.io.IOException=>
-//              if(err.getMessage.contains("error 321")) {
-//                logger.warn(s"Object $oid for $path at $version is marked as 'offline', so creating a new one.")
-//                val fileMeta = newFileMeta(path, version, None)
-//                val mxsFile = vault.createObject(fileMeta.toAttributes.toArray)
-//                mxsFile.newOutputStream()
-//              } else {
-//                throw err
-//              }
-//          }
       }
     }
 

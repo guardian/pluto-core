@@ -17,7 +17,7 @@ scalacOptions ++= Seq("-deprecation", "-feature")
 val circeVersion = "0.12.3"
 
 lazy val `pluto-core` = (project in file("."))
-  .enablePlugins(PlayScala)
+  .enablePlugins(PlayScala) //NOTE don't enable AshScriptPlugin because that breaks the backup_launcher script
     .settings(
       version := sys.props.getOrElse("build.number","DEV"),
       dockerExposedPorts := Seq(9000),

@@ -246,6 +246,19 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     })
   }
 
+  /**
+    * Checks whether the given project file needs backing up
+    * @param sourceFile FileEntry representing the file to potentially be backed up
+    * @param potentialBackups **sorted** list of FileEntry representing the existing backups of the given sourceFile.
+    *                         It is assumed that this is sorted in descending time order, i.e. most recent first and oldest
+    *                         last.
+    * @param p the ProjectEntry representing the project that the files belong to (for logging purposes)
+    * @param storageDrivers cached Map of StorageDrivers, so we don't initialise a new one on every file
+    * @return Success with a Right if a backup is required or a Left if no backup is required.
+    *         In the "Backup Required" case, the Right could contain a FileEntry or None. If it's a FileEntry, that is
+    *         representing the _most recent_ backup (which is now out-dated).
+    *         If there is an error, a Failure is returned.
+    */
   def validateExistingBackups(sourceFile:FileEntry, potentialBackups:Seq[FileEntry], p:ProjectEntry, storageDrivers:Map[Int, StorageDriver]): Try[Either[String, Option[FileEntry]]] = {
     storageDrivers.get(sourceFile.storageId) match {
       case None=>
@@ -293,10 +306,10 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     * @param projectAndFiles tuple consisiting of the ProjectEntry and a list of all its files
     * @param storageDrivers internal, immutable StorageDrivers cache
     * @return a Future containing:
-    *         - a Left if there was a problem and the file could not be backed up
+    *         - a Left if there was a problem and the file could not be backed up but the backup job should continue
     *         - a Right with `true` if the file was backed up
     *         - a Right with `false` if the file did not need backing up
-    *         The returned future fails on a permanent error, this should be picked up with .recover
+    *         The returned future fails on a permanent error, this should be picked up with .recover and the backup job terminated
     */
   def conditionalBackup(projectAndFiles:(ProjectEntry, Seq[FileEntry]), storageDrivers:Map[Int, StorageDriver], storages:Map[Int, StorageEntry]):Future[Either[String, Boolean]] = {
     val p = projectAndFiles._1
@@ -311,7 +324,12 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
       }
       val sourceFile = nonBackupFiles.head
 
-      validateExistingBackups(sourceFile, projectAndFiles._2.filter(_.backupOf.isDefined).sortBy(_.version)(Ordering.Int.reverse), p, storageDrivers) match {
+      validateExistingBackups(
+        sourceFile,
+        projectAndFiles._2.filter(_.backupOf.isDefined).sortBy(_.version)(Ordering.Int.reverse),
+        p,
+        storageDrivers
+      ) match {
         case Failure(err)=>
           Future.failed(err)
         case Success(Left(msg))=>
@@ -350,6 +368,15 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     }
   }
 
+  /**
+    * Deletes all zero-length backups for the given project.  This deletes the files from disk via the storage driver,
+    * deletes the ProjectFileAssociation and the FileEntry associated with the dodgy backup file.
+    * @param projectAndFiles a 2-tuple consisting of the ProjectEntry representing the project and a list of all the
+    *                        FileEntry objects associated with it
+    * @param storageDrivers cached map of StorageDrivers, so we don't have to initialise a new one every time
+    * @return a successful Future if all the invalid backups are removed or there were none to remove. A Failed future if
+    *         there is a problem.
+    */
   def fixInvalidBackupsFor(projectAndFiles:(ProjectEntry, Seq[FileEntry]), storageDrivers:Map[Int, StorageDriver]):Future[Seq[Unit]] = {
     val p = projectAndFiles._1
     val backupFiles = projectAndFiles._2.filter(_.backupOf.isDefined)
