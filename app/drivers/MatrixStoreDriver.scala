@@ -279,7 +279,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
   def lookupPath(vault:Vault, fileName:String, version:Int)  = {
     logger.debug(s"Lookup $fileName at version $version on OM vault ${vault.getId}")
 
-    val searchTerm = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\" AND PROJECTLOCKER_VERSION:$version" AND MXFS_INTRASH:0""")
+    val searchTerm = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\" AND PROJECTLOCKER_VERSION:$version AND MXFS_INTRASH:0""")
     //val searchTerm = SearchTerm.createSimpleTerm("PROJECTLOCKER_VERSION", version)
     val results = vault.searchObjects(searchTerm, 1).asScala.toSeq
 

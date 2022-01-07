@@ -311,6 +311,20 @@ object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Tim
       TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).filter(_.version===version).result.asTry
     )
 
+  /**
+    * improved version of entryFor that returns either one or no entries in a more composable way.
+    * This should be all that is needed because of table constraints
+    * @param fileName the file name to search for (exact match)
+    * @param storageId storage ID to search for
+    * @param version version number to search for
+    * @param db implicitly provided database object
+    * @return a Future containing either a FileEntry or None. The future fails if there is a problem.
+    */
+  def singleEntryFor(fileName: String, storageId:Int, version:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[FileEntry]] =
+    db.run(
+      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).filter(_.version===version).result
+    ).map(_.headOption)
+
   def allVersionsFor(fileName: String, storageId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[FileEntry]]] =
     db.run(
       TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).sortBy(_.version.desc.nullsLast).result.asTry

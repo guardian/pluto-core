@@ -4,7 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
 import drivers.{StorageDriver, StorageMetadata}
 import helpers.StorageHelper
-import models.{EntryStatus, FileEntry, ProjectEntry, StorageEntry, StorageEntryHelper}
+import models.{EntryStatus, FileAssociationRow, FileEntry, ProjectEntry, StorageEntry, StorageEntryHelper}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
@@ -160,14 +160,74 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     }
   }
 
-  def performBackup(sourceEntry:FileEntry, maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry) = {
-    val targetFileEntry = for {
-      targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)  //if our destStorage supports versioning, then we get a new entry here
-      updatedEntryTry <- targetDestEntry.save
-      updatedDestEntry <- Future.fromTry(updatedEntryTry) //make sure that we get the updated database id of the file
-    } yield updatedDestEntry
+  /**
+    * adds a row to the FileAssociationRow table to associate the new backup with the same project as
+    * the source file.
+    * the `destEntry` MUST have been saved, so it has an `id` attribute set. If not the Future will fail.
+    * if the `sourceEntry` does not have an existing project association nothing will be done.
+    * @param sourceEntry FileEntry instance that is being copied from
+    * @param destEntry FileEntry instance that has just been copied to
+    * @return a Future, with an Option contianing the number of changed rows if an action was taken.
+    */
+  def makeProjectLink(sourceEntry:FileEntry, destEntry:FileEntry) = {
+    import slick.jdbc.PostgresProfile.api._
+    import cats.implicits._
 
-    targetFileEntry.flatMap(updatedDestEntry=>{
+    def addRow(forProjectId:Int) = db.run {
+      TableQuery[FileAssociationRow] += (forProjectId, destEntry.id.get)
+    }
+
+    sourceEntry.id match {
+      case Some(sourceId) =>
+        for {
+          existingLink <- db.run(TableQuery[FileAssociationRow].filter(_.fileEntry === sourceId).result)
+          result <- existingLink
+            .headOption
+            .map(existingAssociation=>addRow(existingAssociation._1))
+            .sequence //convert Option[Future[A]] into Future[Option[A]] via cats
+        } yield result
+      case None=>
+        logger.debug(s"File $sourceEntry is not linked to any project")
+        Future(None)
+    }
+  }
+
+  private def getTargetFileEntry(sourceEntry:FileEntry, maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = {
+    for {
+      targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)  //if our destStorage supports versioning, then we get a new entry here
+      updatedEntryTry <- targetDestEntry.save //make sure that we get the updated database id of the file
+      updatedDestEntry <- Future
+        .fromTry(updatedEntryTry)
+        .recoverWith({
+          case err:org.postgresql.util.PSQLException=>
+            logger.warn(s"While trying to make the target entry, caught exception of type ${err.getClass.getCanonicalName} with message ${err.getMessage}")
+            if(err.getMessage.contains("duplicate key value violates unique constraint")) {
+              logger.warn(s"Pre-existing file entry detected for ${targetDestEntry.filepath} v${targetDestEntry.version} on storage ${targetDestEntry.storageId}, recovering it")
+              FileEntry
+                .singleEntryFor(targetDestEntry.filepath, targetDestEntry.storageId, targetDestEntry.version)
+                .map({
+                  case Some(entry)=>entry
+                  case None=>
+                    logger.error(s"Got a conflict exception when trying to create a new record for ${targetDestEntry.filepath} v${targetDestEntry.version} on storage ${targetDestEntry.storageId} but no previous record existed?")
+                    throw new RuntimeException("Database conflict problem, see logs")
+                })
+            } else {
+              Future.failed(err)
+            }
+        })
+    } yield updatedDestEntry
+  }
+
+  /**
+    * performs the backup operation
+    * @param sourceEntry FileEntry representing the file to back up
+    * @param maybePrevDestEntry an optional FileEntry representing the _previous_ incremental backup (if there was one).
+    * @param destStorage storage to back up onto
+    * @return a Future, containing a tuple of two FileEntries. The first is the "written" file, the second is the "source" file. The future
+    *         fails on error.
+    */
+  def performBackup(sourceEntry:FileEntry, maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry) = {
+    getTargetFileEntry(sourceEntry, maybePrevDestEntry, destStorage).flatMap(updatedDestEntry=>{
       logger.warn(s"Backing up ${sourceEntry.filepath} on storage ${sourceEntry.storageId} to ${updatedDestEntry.filepath} v${updatedDestEntry.version} on storage ${updatedDestEntry.storageId}")
       storageHelper.copyFile(sourceEntry, updatedDestEntry)
         .flatMap(fileEntry=>{
@@ -271,11 +331,13 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
               )
             case Some(destStorage)=>
               performBackup(sourceFile, maybeMostRecentBackup, destStorage)
-              .map(results => {
+              .flatMap(results => {
                 val copiedDest = results._1
                 val copiedSource = results._2
-                  logger.info(s"Copied ${copiedSource.filepath} v${copiedSource.version} on storage ${copiedSource.storageId} to ${copiedDest.filepath} v${copiedDest.version} on storage ${copiedDest.storageId}")
-                  Right(true)
+                  makeProjectLink(copiedSource, copiedDest).map(maybeUpdatedRows=>{
+                    logger.info(s"Copied ${copiedSource.filepath} v${copiedSource.version} on storage ${copiedSource.storageId} to ${copiedDest.filepath} v${copiedDest.version} on storage ${copiedDest.storageId}. Updated $maybeUpdatedRows file association entries")
+                    Right(true)
+                  })
               })
               .recover({
                 case err:Throwable=>
