@@ -30,6 +30,8 @@ import { getProject, getProjectFiles } from "./helpers";
 import { Alert } from "@material-ui/lab";
 import { format, parseISO } from "date-fns";
 import clsx from "clsx";
+import { DEFAULT_DATE_FORMAT } from "../../types/constants";
+import BackupEntry from "./BackupEntry";
 
 declare var deploymentRootPath: string;
 
@@ -44,6 +46,7 @@ const useStyles = makeStyles((theme) => ({
   centeredDiv: {
     paddingTop: "2em",
     paddingBottom: "2em",
+    justifyContent: "space-around",
   },
   emphasised: {
     fontWeight: theme.typography.fontWeightBold,
@@ -59,7 +62,7 @@ const PrimaryFilesIndicator: React.FC<{ primaryFiles: FileEntry[] }> = (
     if (props.primaryFiles.length >= 1) {
       try {
         const date = parseISO(props.primaryFiles[0].mtime);
-        setTimeString(format(date, "HH:mm EEE, do MMM yyyy"));
+        setTimeString(format(date, DEFAULT_DATE_FORMAT));
       } catch (err) {
         console.error(
           "Could not format date ",
@@ -185,15 +188,13 @@ const ProjectBackups: React.FC<RouteComponentProps<{ itemid: string }>> = (
             <PrimaryFilesIndicator primaryFiles={primaryFiles} />
           </div>
           <List>
-            {backupFiles.map((f) => (
-              <ListItem>
-                <ListItemIcon>
-                  <FileCopy />
-                </ListItemIcon>
-                <ListItemText
-                  primary={`${f.filepath} version ${f.version} modified at ${f.mtime}`}
-                />
-              </ListItem>
+            {backupFiles.map((f, idx) => (
+              <BackupEntry
+                key={idx}
+                fileId={f.id}
+                filepath={f.filepath}
+                version={f.version}
+              />
             ))}
           </List>
           <Grid
@@ -205,7 +206,7 @@ const ProjectBackups: React.FC<RouteComponentProps<{ itemid: string }>> = (
               {backupFiles.length == 0 ? (
                 project.status == "New" || project.status == "Killed" ? (
                   <Typography className={classes.emphasised}>
-                    There are no backups of this project file because it is $
+                    There are no backups of this project file because it is{" "}
                     {project.status}
                   </Typography>
                 ) : (

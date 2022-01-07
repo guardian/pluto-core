@@ -117,6 +117,12 @@ interface ProjectFilesResponse {
   status: string;
   files: FileEntry[];
 }
+
+interface FileMetadataResponse {
+  status: string;
+  metadata: Map<string, string>;
+}
+
 declare module "*.svg" {
   const content: any;
   export default content;
