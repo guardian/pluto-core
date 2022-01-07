@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
-import services.ProjectBackup.BackupResults
 import slick.jdbc.PostgresProfile
 
 import javax.inject.{Inject, Singleton}
@@ -25,6 +24,8 @@ import scala.util.{Failure, Success, Try}
 class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: DatabaseConfigProvider, storageHelper:StorageHelper)(implicit mat:Materializer, injector:Injector){
   private val logger = LoggerFactory.getLogger(getClass)
   private implicit lazy val db = dbConfigProvider.get[PostgresProfile].db
+
+  import NewProjectBackup._
 
   /**
     * initiates a StorageDriver for every storage in the system
@@ -454,5 +455,12 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         }))(Keep.right)
         .run()
     } yield result
+  }
+}
+
+object NewProjectBackup {
+  case class BackupResults(storageId:Int, totalCount:Long, failedCount:Long, successCount:Long, notNeededCount:Long)
+  object BackupResults {
+    def empty(storageId:Int) = new BackupResults(storageId, 0,0,0,0)
   }
 }
