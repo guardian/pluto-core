@@ -26,12 +26,13 @@ import {
   PermMedia,
   WarningRounded,
 } from "@material-ui/icons";
-import { getProject, getProjectFiles } from "./helpers";
+import { getFileStorageMetadata, getProject, getProjectFiles } from "./helpers";
 import { Alert } from "@material-ui/lab";
 import { format, parseISO } from "date-fns";
 import clsx from "clsx";
 import { DEFAULT_DATE_FORMAT } from "../../types/constants";
 import BackupEntry from "./BackupEntry";
+import SizeFormatter from "../common/SizeFormatter";
 
 declare var deploymentRootPath: string;
 
@@ -53,9 +54,10 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const PrimaryFilesIndicator: React.FC<{ primaryFiles: FileEntry[] }> = (
-  props
-) => {
+const PrimaryFilesIndicator: React.FC<{
+  primaryFiles: FileEntry[];
+  meta: Map<string, string>;
+}> = (props) => {
   const [timeString, setTimeString] = useState("");
 
   useEffect(() => {
@@ -82,8 +84,28 @@ const PrimaryFilesIndicator: React.FC<{ primaryFiles: FileEntry[] }> = (
   } else if (props.primaryFiles.length == 1) {
     return (
       <Alert severity="info">
-        The main file is {props.primaryFiles[0].filepath} which was created at{" "}
-        {timeString}
+        <ul style={{ listStyle: "none" }}>
+          <li>
+            The main file is {props.primaryFiles[0].filepath} which was created
+            at {timeString}
+          </li>
+          <li>
+            <>
+              {props.meta.get("'size") ? (
+                <span>
+                  The file size is{" "}
+                  {<SizeFormatter bytes={props.meta.get("'size")} />}
+                </span>
+              ) : undefined}
+              {props.meta.get("'lastModified") ? (
+                <span>
+                  {" "}
+                  and it was last modified at {props.meta.get("'lastModified")}
+                </span>
+              ) : undefined}
+            </>
+          </li>
+        </ul>
       </Alert>
     );
   } else {
@@ -106,9 +128,27 @@ const ProjectBackups: React.FC<RouteComponentProps<{ itemid: string }>> = (
 
   const [primaryFiles, setPrimaryFiles] = useState<FileEntry[]>([]);
   const [backupFiles, setBackupFiles] = useState<FileEntry[]>([]);
+  const [primaryFileMetadata, setPrimaryFileMetadata] = useState<
+    Map<string, string>
+  >(new Map());
 
   const history = useHistory();
   const classes = useStyles();
+
+  useEffect(() => {
+    if (primaryFiles.length > 0) {
+      getFileStorageMetadata(primaryFiles[0].id)
+        .then((info) => setPrimaryFileMetadata(info))
+        .catch((err) => {
+          console.error(
+            "Can't get metadata for file id ",
+            primaryFiles[0].id,
+            ": ",
+            err
+          );
+        });
+    }
+  }, [primaryFiles]);
 
   useEffect(() => {
     const loadProject = async () => {
@@ -185,7 +225,10 @@ const ProjectBackups: React.FC<RouteComponentProps<{ itemid: string }>> = (
       {project ? (
         <Paper elevation={3}>
           <div>
-            <PrimaryFilesIndicator primaryFiles={primaryFiles} />
+            <PrimaryFilesIndicator
+              primaryFiles={primaryFiles}
+              meta={primaryFileMetadata}
+            />
           </div>
           <List>
             {backupFiles.map((f, idx) => (
