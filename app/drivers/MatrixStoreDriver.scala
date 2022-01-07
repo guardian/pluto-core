@@ -58,17 +58,33 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
     * @param dataStream [[java.io.FileInputStream]] to write from
     */
   def writeDataToPath(path:String, version:Int, dataStream:InputStream):Try[Unit] = withVault { vault=>
-    val mxsFile = lookupPath(vault, path, version) match {
-      case None=>
-        logger.debug(s"Object for $path $version does not exist, creating new...")
-        val fileMeta = newFileMeta(path, version, None)
-        vault.createObject(fileMeta.toAttributes.toArray)
-      case Some(oid)=>
-        logger.debug(s"Object for $path $version already exists at $oid")
-        vault.getObject(oid)
+    def getStream() = {
+      lookupPath(vault, path, version) match {
+        case None =>
+          logger.debug(s"Object for $path $version does not exist, creating new...")
+          val fileMeta = newFileMeta(path, version, None)
+          val mxsFile = vault.createObject(fileMeta.toAttributes.toArray)
+          mxsFile.newOutputStream()
+        case Some(oid) =>
+          logger.debug(s"Object for $path $version already exists at $oid")
+          try {
+            val mxsFile = vault.getObject(oid)
+            mxsFile.newOutputStream()
+          } catch {
+            case err:java.io.IOException=>
+              if(err.getMessage.contains("error 321")) {
+                logger.warn(s"Object $oid for $path at $version is marked as 'offline', so creating a new one.")
+                val fileMeta = newFileMeta(path, version, None)
+                val mxsFile = vault.createObject(fileMeta.toAttributes.toArray)
+                mxsFile.newOutputStream()
+              } else {
+                throw err
+              }
+          }
+      }
     }
 
-    val stream = mxsFile.newOutputStream()
+    val stream = getStream()
 
     val result = for {
       copiedSize <- Try { StorageHelper.copyStream(dataStream, stream) }
