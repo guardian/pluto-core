@@ -63,7 +63,7 @@
     <logger name="services.migrationcomponents" level="INFO"/>
     <logger name="services.PeriodicScanReceiver" level="INFO"/>
     <logger name="postrun" level="INFO"/>
-    <logger name="services.ProjectBackup" level="DEBUG"/>
+    <logger name="services.NewProjectBackup" level="DEBUG"/>
 
     <logger name="services.actors.Auditor" level="DEBUG"/>
 

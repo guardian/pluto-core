@@ -18,7 +18,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class PeriodicScanReceiver @Inject() (config:Configuration,
-                                      projectBackup: ProjectBackup,
                                       @Named("postrun-action-scanner") postrunActionScanner:ActorRef,
                                       @Named("storage-scanner") storageScanner: ActorRef,
                                       @Named("commission-status-propagator") commissionStatusPropagator: ActorRef
