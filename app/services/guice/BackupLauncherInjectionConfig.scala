@@ -18,6 +18,7 @@ class BackupLauncherInjectionConfig extends AbstractModule with AkkaGuiceSupport
     bindActor[ValidateProject]("validate-project-actor")
     bindActor[ProjectCreationActor]("project-creation-actor")
     bindActor[PostrunActionScanner]("postrun-action-scanner")
+    bindActor[RabbitMqPropagator]("rabbitmq-propagator")
     bindActor[CommissionStatusPropagator]("commission-status-propagator")
     bindActor[Auditor]("auditor")
 
