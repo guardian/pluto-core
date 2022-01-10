@@ -2,7 +2,7 @@ package helpers
 
 import java.io.{EOFException, InputStream, OutputStream}
 import akka.stream.Materializer
-import drivers.StorageDriver
+import drivers.{StorageDriver, StorageMetadata}
 import helpers.StorageHelper.{defaultBufferSize, getClass}
 
 import javax.inject.Inject
@@ -116,7 +116,7 @@ class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector) {
         })
     }
 
-    def withReadStream[A](sourceFile:FileEntry)(cb:(Map[Symbol, String], InputStream)=>Try[A]) = {
+    def withReadStream[A](sourceFile:FileEntry)(cb:(Option[StorageMetadata], InputStream)=>Try[A]) = {
       val readStreamFut = for {
         driver <- getStorageDriverForFile(sourceFile)
         fullPath <- sourceFile.getFullPath
@@ -148,18 +148,15 @@ class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector) {
             .writeDataToPath(destFilePath, destFile.version, readStream)
             .flatMap(_=> {
               //now that the copy completed successfully, we need to check that the file sizes actually match
-              val destMeta = destDriver.getMetadata(destFilePath, destFile.version)
-              (destMeta.get(Symbol("size")), sourceMeta.get(Symbol("size"))) match {
-                case (None, _) =>
-                  Failure(new RuntimeException(s"${sourceFile.filepath}: Could not get destination file size"))
-                case (_, None)=>
-                  Failure(new RuntimeException(s"${sourceFile.filepath}: Could not get source file size"))
-                case (Some(destSizeString), Some(sourceSizeString))=>
-                  logger.debug(s"${sourceFile.filepath}: Destination size is $destSizeString and source size is $sourceSizeString")
-                  if(destSizeString==sourceSizeString) {
+              destDriver.getMetadata(destFilePath, destFile.version) match {
+                case None =>
+                  Failure(new RuntimeException(s"${sourceFile.filepath}: Could not get destination file metadata"))
+                case Some(meta)=>
+                  logger.debug(s"${sourceFile.filepath}: Destination size is ${meta.size} and source size is ${sourceMeta.get.size}")
+                  if(meta.size==sourceMeta.get.size) {
                     Success( () )
                   } else {
-                    Failure(new RuntimeException(s"${sourceFile.filepath}: Copied file size $destSizeString did not match source size of $sourceSizeString"))
+                    Failure(new RuntimeException(s"${sourceFile.filepath}: Copied file size ${meta.size} did not match source size of ${sourceMeta.get.size}"))
                   }
               }
             })

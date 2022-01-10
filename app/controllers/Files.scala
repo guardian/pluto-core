@@ -19,6 +19,7 @@ import play.api.cache.SyncCacheApi
 import play.api.inject.Injector
 import slick.lifted.TableQuery
 
+import java.time.format.DateTimeFormatter
 import scala.concurrent.{CanAwait, Future}
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.Await
@@ -237,7 +238,15 @@ class Files @Inject() (override val controllerComponents:ControllerComponents,
         if(rows.isEmpty){
           Future(NotFound(Json.obj("status"->"notfound")))
         } else {
-          storageHelper.onStorageMetadata(rows.head).map(result=>Ok(Json.obj("status"->"ok","metadata"->result.map(tpl=>tpl._1.toString->tpl._2))))
+          storageHelper
+            .onStorageMetadata(rows.head)
+            .map(result=>Ok(Json.obj(
+              "status"->"ok",
+              "metadata"->Json.obj(
+                "size"->result.map(_.size),
+                "lastModified"->result.map(_.lastModified.format(DateTimeFormatter.ISO_DATE_TIME))
+              )
+            )))
         }
       case Failure(err)=>
         Future(InternalServerError(Json.obj("status"->"error", "detail"->err.getMessage)))

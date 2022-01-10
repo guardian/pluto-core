@@ -17,8 +17,7 @@ scalacOptions ++= Seq("-deprecation", "-feature")
 val circeVersion = "0.12.3"
 
 lazy val `pluto-core` = (project in file("."))
-  .enablePlugins(PlayScala)
-  .enablePlugins(AshScriptPlugin) //needed for alpine-based images
+  .enablePlugins(PlayScala) //NOTE don't enable AshScriptPlugin because that breaks the backup_launcher script
     .settings(
       version := sys.props.getOrElse("build.number","DEV"),
       dockerExposedPorts := Seq(9000),
@@ -66,6 +65,7 @@ libraryDependencies ++= Seq(
   // https://mvnrepository.com/artifact/com.typesafe.play/play-json-joda
   "com.typesafe.play" %% "play-json-joda" % "2.7.4",
   "commons-codec" % "commons-codec" % "1.13",
+  "com.github.scopt" %% "scopt" % "4.0.1"
 )
 // https://mvnrepository.com/artifact/com.typesafe.slick/slick
 libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"

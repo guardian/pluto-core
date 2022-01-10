@@ -2,9 +2,9 @@ package helpers
 
 import java.io._
 import java.sql.Timestamp
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDateTime}
 import akka.stream.Materializer
-import drivers.{MatrixStoreDriver, PathStorage, StorageDriver}
+import drivers.{MatrixStoreDriver, PathMetadata, PathStorage, StorageDriver}
 import models.{FileEntry, StorageEntry}
 import org.apache.commons.io.input.NullInputStream
 import org.specs2.mock.Mockito
@@ -104,7 +104,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       val mockedStorageDriver = mock[PathStorage]
       mockedStorageDriver.getReadStream(any[String],any)
       mockedStorageDriver.getReadStream(any[String],any) answers((_,_)=>Success(new NullInputStream(60*1024L)))
-      mockedStorageDriver.getMetadata(any[String],any) answers((_,_)=>Map(Symbol("size")->"1234"))
+      mockedStorageDriver.getMetadata(any[String],any) answers((_,_)=>Some(PathMetadata(1234L, Instant.now().toEpochMilli)))
 
       val mockedStorage = mock[StorageEntry]
       mockedStorage.getStorageDriver answers((_,_)=>{println("in mockedStorage"); Some(mockedStorageDriver)})

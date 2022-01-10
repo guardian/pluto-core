@@ -1,5 +1,6 @@
 package models
 
+import akka.stream.scaladsl.Source
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
@@ -277,4 +278,16 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
   def forCommission(commissionId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run(
     TableQuery[ProjectEntryRow].filter(_.commission===commissionId).result
   )
+
+  /*
+  Returns an Akka source that yields ProjectEntry objects for every project in the given statuses
+   */
+  def scanProjectsForStatus(status:EntryStatus.Value)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    import EntryStatusMapper._
+    Source.fromPublisher(db.stream(TableQuery[ProjectEntryRow].filter(_.status===status).sortBy(_.created.desc).result))
+  }
+
+  def scanAllProjects(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    Source.fromPublisher(db.stream(TableQuery[ProjectEntryRow].sortBy(_.created.desc).result))
+  }
 }

@@ -58,17 +58,21 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
     * @param dataStream [[java.io.FileInputStream]] to write from
     */
   def writeDataToPath(path:String, version:Int, dataStream:InputStream):Try[Unit] = withVault { vault=>
-    val mxsFile = lookupPath(vault, path, version) match {
-      case None=>
-        logger.debug(s"Object for $path $version does not exist, creating new...")
-        val fileMeta = newFileMeta(path, version, None)
-        vault.createObject(fileMeta.toAttributes.toArray)
-      case Some(oid)=>
-        logger.debug(s"Object for $path $version already exists at $oid")
-        vault.getObject(oid)
+    def getStream() = {
+      lookupPath(vault, path, version) match {
+        case None =>
+          logger.debug(s"Object for $path $version does not exist, creating new...")
+          val fileMeta = newFileMeta(path, version, None)
+          val mxsFile = vault.createObject(fileMeta.toAttributes.toArray)
+          mxsFile.newOutputStream()
+        case Some(oid) =>
+          logger.debug(s"Object for $path $version already exists at $oid")
+            val mxsFile = vault.getObject(oid)
+            mxsFile.newOutputStream()
+      }
     }
 
-    val stream = mxsFile.newOutputStream()
+    val stream = getStream()
 
     val result = for {
       copiedSize <- Try { StorageHelper.copyStream(dataStream, stream) }
@@ -171,6 +175,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
         Success(false)
       case Some(oid) =>
         withObject(vault, oid) { mxsObject =>
+          logger.info(s"Deleting MXS file $oid (path $path, version $version)...")
           mxsObject.delete()
           Success(true)
         }
@@ -225,23 +230,19 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
     * @param path [[String]] Absolute path to open
     * @return [[Map]] of [[Symbol]] -> [[String]] containing metadata about the given file.
     */
-  def getMetadata(path:String, version:Int):Map[Symbol,String] = withVault { vault=>
+  def getMetadata(path:String, version:Int):Option[MatrixStoreMetadata] = withVault { vault=>
     lookupPath(vault, path, version).map(oid=>Try {
       val mxsObj = vault.getObject(oid)
       val attrView = mxsObj.getAttributeView
       val fileAttrs = mxsObj.getMXFSFileAttributeView.readAttributes()
 
-      Map(
-        Symbol("size")->fileAttrs.size().toString,
-        Symbol("lastModified")->fileAttrs.lastModifiedTime().toString,
-        Symbol("version")->attrView.readInt("PROJECTLOCKER_VERSION").toString
-      )
+      MatrixStoreMetadata(fileAttrs.size(), fileAttrs.lastModifiedTime(), attrView.readInt("PROJECTLOCKER_VERSION"), oid)
     }).getOrElse(Failure(new RuntimeException(s"File $path at version $version does not exist on this storage")))
   } match {
-    case Success(map)=>map
+    case Success(map)=>Some(map)
     case Failure(err)=>
       logger.error(s"Could not get metadata for $path at version $version: ", err)
-      Map()
+      None
   }
 
   /**
@@ -257,16 +258,16 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
   }
 
   /**
-    * look up a given (unique) path on the storage.
-    * @param vault
-    * @param fileName
-    * @param version
-    * @return
+    * look up a given (unique) path on the storage that is not in the trash.
+    * @param vault Vault reference to perform search on
+    * @param fileName filename to look for (in MXFS_FILENAME)
+    * @param version version number to look for (in PROJECTLOCKER_VERSION)
+    * @return either the OID of the matching file or None.
     */
   def lookupPath(vault:Vault, fileName:String, version:Int)  = {
     logger.debug(s"Lookup $fileName at version $version on OM vault ${vault.getId}")
 
-    val searchTerm = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\" AND PROJECTLOCKER_VERSION:$version""")
+    val searchTerm = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\" AND PROJECTLOCKER_VERSION:$version AND MXFS_INTRASH:0""")
     //val searchTerm = SearchTerm.createSimpleTerm("PROJECTLOCKER_VERSION", version)
     val results = vault.searchObjects(searchTerm, 1).asScala.toSeq
 
@@ -275,7 +276,7 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
         logger.debug(s"Got $entry as the OID for $fileName at version $version")
       case None=>
         logger.info(s"Could not find anything for $fileName at version $version")
-        val allVersionsQuery = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\"""")
+        val allVersionsQuery = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\" AND MXFS_INTRASH:0""")
         val allVersions = vault.searchObjects(allVersionsQuery, 10).asScala.toSeq
         logger.info(s"Found ${allVersions.length} hits for filename $fileName")
         allVersions.foreach(oid=>logger.info(s"\t$fileName: $oid"))

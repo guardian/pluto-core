@@ -87,14 +87,14 @@ class PathStorage(override val storageRef:StorageEntry) extends StorageDriver{
       Failure(new RuntimeException(s"Path $path does not exist"))
   }
 
-  override def getMetadata(path: String, version:Int): Map[Symbol, String] = {
+  override def getMetadata(path: String, version:Int): Option[PathMetadata] = {
     val f = getAbsolutePath(path).toFile
-    val result = Map(
-      Symbol("size")->f.length().toString,
-      Symbol("lastModified")->f.lastModified().toString
-    )
-    logger.debug(s"$path: $result")
-    result
+
+    if(f.exists()) {
+      Some(PathMetadata(f.length(), f.lastModified()))
+    } else {
+      None
+    }
   }
 
   override def supportsVersions: Boolean = false

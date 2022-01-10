@@ -1,13 +1,13 @@
 package helpers
 
 import java.io.{File, FileInputStream}
-
 import drivers.PathStorage
 import models.{StorageEntry, StorageStatus}
 import org.junit.runner._
 import org.specs2.mutable._
 import org.specs2.runner._
 
+import java.time.{Duration, ZonedDateTime}
 import scala.io.Source
 import scala.sys.process._
 
@@ -70,10 +70,10 @@ class PathStorageDriverSpec extends Specification with org.specs2.mock.Mockito {
       //this method is blocking
       s.writeDataToPath("/tmp/testfile5", 123, testbuffer.toCharArray.map(_.toByte))
 
-      val metaDict = s.getMetadata("/tmp/testfile5", 123)
-      metaDict.get(Symbol("size")) must beSome("20")
-      metaDict.get(Symbol("lastModified")) must beSome[String]
-      metaDict.get(Symbol("zzzzz")) must beNone
+      val meta = s.getMetadata("/tmp/testfile5", 123)
+      meta must beSome
+      meta.get.size mustEqual 20
+      Duration.between(ZonedDateTime.now(), meta.get.lastModified).toMillis must beLessThan(30000L)
     }
 
     "not support version numbers" in {

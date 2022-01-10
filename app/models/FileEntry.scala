@@ -8,6 +8,7 @@ import java.sql.Timestamp
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import drivers.StorageDriver
+import org.slf4j.LoggerFactory
 import play.api.Logger
 import play.api.inject.Injector
 import play.api.libs.functional.syntax._
@@ -34,6 +35,7 @@ import scala.concurrent.{Await, Future}
   */
 case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String, version:Int,
                      ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean, backupOf:Option[Int]) extends PlutoModel {
+  private lazy val logger = LoggerFactory.getLogger(getClass)
 
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
@@ -109,22 +111,22 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
 
   /**
     * attempt to delete the underlying record from the database
-    * @param db
-    * @return
+    * @param db implicitly provided database object
+    * @return a Future with no value on success. On failure, the future fails; pick this up with .recover() or .onComplete
     */
-  def deleteSelf(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Either[Throwable, Unit]] =
+  def deleteSelf(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Unit] =
     id match {
       case Some(databaseId)=>
         val logger = Logger(getClass)
         logger.info(s"Deleting database record for file $databaseId ($filepath on storage $storageId)")
         db.run(
-          TableQuery[FileEntryRow].filter(_.id===databaseId).delete.asTry
-        ).map({
-          case Success(_)=>Right( () )
-          case Failure(error)=>Left(error)
-        })
+          DBIO.seq(
+            TableQuery[FileAssociationRow].filter(_.fileEntry===databaseId).delete,
+            TableQuery[FileEntryRow].filter(_.id===databaseId).delete
+          )
+        )
       case None=>
-        Future(Left(new RuntimeException("Cannot delete a record that has not been saved to the database")))
+        Future.failed(new RuntimeException("Cannot delete a record that has not been saved to the database"))
     }
 
   /**
@@ -256,6 +258,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     case None=>
       Future.failed(new RuntimeException("A record must be saved before you can query for backups"))
     case Some(fileId)=>
+      logger.info(s"Looking for backups of file with id $fileId on storage $forStorage")
       db.run {
           makeQuery(fileId, forStorage)
           .sortBy(_.version.desc.nullsLast)
@@ -307,6 +310,20 @@ object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Tim
     db.run(
       TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).filter(_.version===version).result.asTry
     )
+
+  /**
+    * improved version of entryFor that returns either one or no entries in a more composable way.
+    * This should be all that is needed because of table constraints
+    * @param fileName the file name to search for (exact match)
+    * @param storageId storage ID to search for
+    * @param version version number to search for
+    * @param db implicitly provided database object
+    * @return a Future containing either a FileEntry or None. The future fails if there is a problem.
+    */
+  def singleEntryFor(fileName: String, storageId:Int, version:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[FileEntry]] =
+    db.run(
+      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).filter(_.version===version).result
+    ).map(_.headOption)
 
   def allVersionsFor(fileName: String, storageId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[FileEntry]]] =
     db.run(

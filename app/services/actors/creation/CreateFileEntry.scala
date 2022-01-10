@@ -86,9 +86,12 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
                 Future(Success(false))
               case Some(file) =>
                 logger.info(s"Found file $file to delete")
-                file.deleteSelf.map({
-                  case Left(error) => Failure(error)
-                  case Right(_) => Success(true)
+                file.deleteSelf
+                  .map(_=>Success(true))
+                .recover({
+                  case err:Throwable=>
+                    logger.error(s"Could not remove invalid dastination file: ${err.getMessage}")
+                    Failure(err)
                 })
             }
           case Failure(err) =>

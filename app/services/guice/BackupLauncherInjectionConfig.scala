@@ -1,26 +1,26 @@
-import com.google.inject.{AbstractModule, Provides}
-import com.newmotion.akka.rabbitmq.ConnectionActor
+package services.guice
+
+import com.google.inject.AbstractModule
 import drivers.MXSConnectionManager
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import services.actors.{Auditor, ProjectCreationActor}
 import services._
+import services.actors.{Auditor, ProjectCreationActor}
 
-class Module extends AbstractModule with AkkaGuiceSupport {
+class BackupLauncherInjectionConfig extends AbstractModule with AkkaGuiceSupport {
   private val logger = Logger(getClass)
 
   override def configure(): Unit = {
-    bind(classOf[TestModeWarning]).asEagerSingleton()
+    logger.warn(s"Running guice module ${getClass.getCanonicalName}")
 
     //this makes the actor instance accessible via injection
     bindActor[StorageScanner]("storage-scanner")
     bindActor[ValidateProject]("validate-project-actor")
     bindActor[ProjectCreationActor]("project-creation-actor")
     bindActor[PostrunActionScanner]("postrun-action-scanner")
-    bindActor[CommissionStatusPropagator]("commission-status-propagator")
     bindActor[RabbitMqPropagator]("rabbitmq-propagator")
+    bindActor[CommissionStatusPropagator]("commission-status-propagator")
     bindActor[Auditor]("auditor")
-    bind(classOf[PeriodicScanReceiver]).asEagerSingleton()
 
     bind(classOf[MXSConnectionManager]).asEagerSingleton()
   }

@@ -105,14 +105,6 @@ GET     /api/isAdmin                       @controllers.Application.checkIsAdmin
 
 GET     /api/system/plutoconfig            @controllers.System.plutoconfig
 
-POST    /api/migration/commissionFields         @controllers.DataMigrationController.updateNewCommissionFields
-POST    /api/migration/projects                 @controllers.DataMigrationController.updateProjects
-POST    /api/migration/projectFileTest          @controllers.DataMigrationController.projectsWithNofiles
-POST    /api/migration/projectRelink            @controllers.DataMigrationController.relinkOldProjects
-POST    /api/migration/vsCommission             @controllers.DataMigrationController.checkVidispineCommissions
-POST    /api/migration/fixNullProjects          @controllers.DataMigrationController.fixNullCommissionProjects
-POST    /api/migration/importProblematicProject @controllers.DataMigrationController.importProblematicProject(vsid:String,filename:String,storage:Int, modtime:String)
-
 GET     /api/history/my/actions           @controllers.AuditController.myLastActions(actionType:Option[String], startAt:Int ?=0, length:Int ?=100)
 
 POST    /api/validation                    @controllers.ValidationsController.startValidation
