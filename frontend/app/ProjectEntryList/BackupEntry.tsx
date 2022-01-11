@@ -9,7 +9,7 @@ import {
 } from "@material-ui/core";
 import { FileCopy } from "@material-ui/icons";
 import { getFileStorageMetadata } from "./helpers";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { DEFAULT_DATE_FORMAT } from "../../types/constants";
 import SizeFormatter from "../common/SizeFormatter";
 
@@ -33,19 +33,24 @@ const BackupEntry: React.FC<BackupEntryProps> = (props) => {
   useEffect(() => {
     getFileStorageMetadata(props.fileId)
       .then((info) => {
-        const maybeEpochMillis = info.get("'lastModified");
-        if (maybeEpochMillis) {
+        const maybeISOTime = info.get("lastModified");
+        if (maybeISOTime) {
+          // try {
+          //   const epochMillis = parseInt(maybeEpochMillis);
+          //   const d = new Date(epochMillis);
+          //   info.set("lastModified", format(d, DEFAULT_DATE_FORMAT));
+          // } catch (err) {
+          //   console.log(
+          //     "Could not convert date value ",
+          //     maybeEpochMillis,
+          //     ": ",
+          //     err
+          //   );
           try {
-            const epochMillis = parseInt(maybeEpochMillis);
-            const d = new Date(epochMillis);
-            info.set("'lastModified", format(d, DEFAULT_DATE_FORMAT));
+            const d = parseISO(maybeISOTime);
+            info.set("lastModified", format(d, DEFAULT_DATE_FORMAT));
           } catch (err) {
-            console.log(
-              "Could not convert date value ",
-              maybeEpochMillis,
-              ": ",
-              err
-            );
+            console.log(`Could not parse date value ${maybeISOTime}: ${err}`);
           }
         }
         setFileMeta(info);
@@ -71,8 +76,8 @@ const BackupEntry: React.FC<BackupEntryProps> = (props) => {
             </Typography>
           ) : (
             <Typography variant="caption">
-              File size is <SizeFormatter bytes={fileMeta.get("'size")} /> and
-              was backed up at {fileMeta.get("'lastModified")}
+              File size is <SizeFormatter bytes={fileMeta.get("size")} /> and
+              was backed up at {fileMeta.get("lastModified")}
             </Typography>
           )}
         </>
