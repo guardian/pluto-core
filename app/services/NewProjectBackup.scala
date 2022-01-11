@@ -246,6 +246,23 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     })
   }
 
+  private def findMostRecentByFilesystem(potentialBackups:Seq[FileEntry], p:ProjectEntry, storageDrivers:Map[Int, StorageDriver]) = {
+    //get a list of metadata in order of most recent file modification
+    potentialBackups.map(backup=>{
+      storageDrivers.get(backup.storageId) match {
+        case Some(destDriver)=>
+          val bMeta = destDriver.getMetadata(backup.filepath, backup.version)
+          logger.info(s"Project ${p.projectTitle} (${p.id}) backup file ${backup.filepath} v${backup.version} metadata: $bMeta")
+          bMeta.map(m=>(backup, m) )
+        case None=>
+          logger.error(s"Project ${p.projectTitle} (${p.id}) Could not get a destination driver for storage ${backup.storageId} on file ${backup.filepath} v${backup.version}")
+          None
+      }
+    })
+      .collect({case Some(result)=>result})
+      .sortBy(_._2.lastModified.toInstant.toEpochMilli)(Ordering.Long.reverse)
+      .headOption
+  }
   /**
     * Checks whether the given project file needs backing up
     * @param sourceFile FileEntry representing the file to potentially be backed up
@@ -268,35 +285,19 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         val sourceMeta = sourceDriver.getMetadata(sourceFile.filepath, sourceFile.version)
         logger.info(s"Project ${p.projectTitle} (${p.id}) source file ${sourceFile.filepath} v${sourceFile.version} metadata: $sourceMeta")
 
-        val backupFilesMetadata = potentialBackups.map(backup=>{
-          storageDrivers.get(backup.storageId) match {
-            case Some(destDriver)=>
-              val bMeta = destDriver.getMetadata(backup.filepath, backup.version)
-              logger.info(s"Project ${p.projectTitle} (${p.id}) backup file ${backup.filepath} v${backup.version} metadata: $bMeta")
-              bMeta.map(m=>(backup.id.get, m) )
-            case None=>
-              logger.error(s"Project ${p.projectTitle} (${p.id}) Could not get a destination driver for storage ${backup.storageId} on file ${backup.filepath} v${backup.version}")
-              None
-          }
-        }).collect({case Some(result)=>result}).toMap
-
-        val mostRecent = potentialBackups.headOption
-        val mostRecentMeta = mostRecent.flatMap(f=>backupFilesMetadata.get(f.id.get))
-
-        logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup is version ${mostRecent.map(_.version)} with metadata $mostRecentMeta")
-        mostRecentMeta match {
-          case Some(meta)=>
-            logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup lags source file by ${getTimeDifference(sourceMeta, meta)}")
-            if(meta.size==sourceMeta.get.size) {
-              logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${mostRecent.map(_.version)} matches source, no backup required")
-              Success(Left("No backup required"))
-            } else {
-              logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${mostRecent.map(_.version)} size mismatch ${sourceMeta.get.size} vs ${meta.size}, backup needed")
-              Success(Right(mostRecent))
-            }
+        findMostRecentByFilesystem(potentialBackups, p, storageDrivers) match {
           case None=>
             logger.info(s"Project ${p.projectTitle} (${p.id})  most recent metadata was empty, could not check sizes. Assuming that the file is not present and needs backup")
             Success(Right(None)) //signal needs backup
+          case Some( (fileEntry, meta) )=>
+            logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup lags source file by ${getTimeDifference(sourceMeta, meta)}")
+            if(meta.size==sourceMeta.get.size) {
+              logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${fileEntry.version} matches source, no backup required")
+              Success(Left("No backup required"))
+            } else {
+              logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${fileEntry.version} size mismatch ${sourceMeta.get.size} vs ${meta.size}, backup needed")
+              Success(Right(Some(fileEntry)))
+            }
         }
     }
   }
