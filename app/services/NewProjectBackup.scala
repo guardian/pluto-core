@@ -261,6 +261,10 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     })
       .collect({case Some(result)=>result})
       .sortBy(_._2.lastModified.toInstant.toEpochMilli)(Ordering.Long)
+      .map(entries=>{
+          logger.debug(s"Ordered entry: ${entries._1.filepath} ${entries._1.version} ${entries._2.lastModified} ${entries._2.size}")
+          entries
+        })
       .headOption
   }
   /**
