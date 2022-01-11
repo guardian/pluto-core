@@ -260,7 +260,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
       }
     })
       .collect({case Some(result)=>result})
-      .sortBy(_._2.lastModified.toInstant.toEpochMilli)(Ordering.Long.reverse)
+      .sortBy(_._2.lastModified.toInstant.toEpochMilli)(Ordering.Long)
       .headOption
   }
   /**
