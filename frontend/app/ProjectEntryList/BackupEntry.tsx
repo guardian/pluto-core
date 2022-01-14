@@ -35,17 +35,6 @@ const BackupEntry: React.FC<BackupEntryProps> = (props) => {
       .then((info) => {
         const maybeISOTime = info.get("lastModified");
         if (maybeISOTime) {
-          // try {
-          //   const epochMillis = parseInt(maybeEpochMillis);
-          //   const d = new Date(epochMillis);
-          //   info.set("lastModified", format(d, DEFAULT_DATE_FORMAT));
-          // } catch (err) {
-          //   console.log(
-          //     "Could not convert date value ",
-          //     maybeEpochMillis,
-          //     ": ",
-          //     err
-          //   );
           try {
             const d = parseISO(maybeISOTime);
             info.set("lastModified", format(d, DEFAULT_DATE_FORMAT));
