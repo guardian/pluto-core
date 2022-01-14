@@ -227,8 +227,8 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
   /**
     * Get a Map of metadata relevant to the specified file.  The contents can vary between implementations, but should always
     * have Symbol("size") (Long converted to String) and Symbol("lastModified") (Long converted to String) members
-    * @param path [[String]] Absolute path to open
-    * @return [[Map]] of [[Symbol]] -> [[String]] containing metadata about the given file.
+    * @param path String Absolute path to open
+    * @return either a [[MatrixStoreMetadata]] object with the requested information or None if the file does not exist.
     */
   def getMetadata(path:String, version:Int):Option[MatrixStoreMetadata] = withVault { vault=>
     lookupPath(vault, path, version).map(oid=>Try {
