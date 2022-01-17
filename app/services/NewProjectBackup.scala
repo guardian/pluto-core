@@ -134,7 +134,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
             hasLink = true)
           findAvailableVersion(destStorage, intendedTarget)
             .map(correctedTarget=>{
-              logger.info(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${correctedTarget.version+1}")
+              logger.debug(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${correctedTarget.version+1}")
               correctedTarget
             })
         } else {
@@ -246,6 +246,27 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     })
   }
 
+  private def findMostRecentByFilesystem(potentialBackups:Seq[FileEntry], p:ProjectEntry, storageDrivers:Map[Int, StorageDriver]) = {
+    //get a list of metadata in order of most recent file modification
+    potentialBackups.map(backup=>{
+      storageDrivers.get(backup.storageId) match {
+        case Some(destDriver)=>
+          val bMeta = destDriver.getMetadata(backup.filepath, backup.version)
+          logger.debug(s"Project ${p.projectTitle} (${p.id}) backup file ${backup.filepath} v${backup.version} metadata: $bMeta")
+          bMeta.map(m=>(backup, m) )
+        case None=>
+          logger.error(s"Project ${p.projectTitle} (${p.id}) Could not get a destination driver for storage ${backup.storageId} on file ${backup.filepath} v${backup.version}")
+          None
+      }
+    })
+      .collect({case Some(result)=>result})
+      .sortBy(_._2.lastModified.toInstant.toEpochMilli)(Ordering.Long.reverse)
+      .map(entries=>{
+          logger.debug(s"Ordered entry: ${entries._1.filepath} ${entries._1.version} ${entries._2.lastModified} ${entries._2.size}")
+          entries
+        })
+      .headOption
+  }
   /**
     * Checks whether the given project file needs backing up
     * @param sourceFile FileEntry representing the file to potentially be backed up
@@ -266,37 +287,21 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         Failure(new RuntimeException(s"Could not get a storage driver for storage ${sourceFile.storageId} on file ${sourceFile.filepath}"))
       case Some(sourceDriver)=>
         val sourceMeta = sourceDriver.getMetadata(sourceFile.filepath, sourceFile.version)
-        logger.info(s"Project ${p.projectTitle} (${p.id}) source file ${sourceFile.filepath} v${sourceFile.version} metadata: $sourceMeta")
+        logger.debug(s"Project ${p.projectTitle} (${p.id}) source file ${sourceFile.filepath} v${sourceFile.version} metadata: $sourceMeta")
 
-        val backupFilesMetadata = potentialBackups.map(backup=>{
-          storageDrivers.get(backup.storageId) match {
-            case Some(destDriver)=>
-              val bMeta = destDriver.getMetadata(backup.filepath, backup.version)
-              logger.info(s"Project ${p.projectTitle} (${p.id}) backup file ${backup.filepath} v${backup.version} metadata: $bMeta")
-              bMeta.map(m=>(backup.id.get, m) )
-            case None=>
-              logger.error(s"Project ${p.projectTitle} (${p.id}) Could not get a destination driver for storage ${backup.storageId} on file ${backup.filepath} v${backup.version}")
-              None
-          }
-        }).collect({case Some(result)=>result}).toMap
-
-        val mostRecent = potentialBackups.headOption
-        val mostRecentMeta = mostRecent.flatMap(f=>backupFilesMetadata.get(f.id.get))
-
-        logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup is version ${mostRecent.map(_.version)} with metadata $mostRecentMeta")
-        mostRecentMeta match {
-          case Some(meta)=>
-            logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup lags source file by ${getTimeDifference(sourceMeta, meta)}")
-            if(meta.size==sourceMeta.get.size) {
-              logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${mostRecent.map(_.version)} matches source, no backup required")
-              Success(Left("No backup required"))
-            } else {
-              logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${mostRecent.map(_.version)} size mismatch ${sourceMeta.get.size} vs ${meta.size}, backup needed")
-              Success(Right(mostRecent))
-            }
+        findMostRecentByFilesystem(potentialBackups, p, storageDrivers) match {
           case None=>
             logger.info(s"Project ${p.projectTitle} (${p.id})  most recent metadata was empty, could not check sizes. Assuming that the file is not present and needs backup")
             Success(Right(None)) //signal needs backup
+          case Some( (fileEntry, meta) )=>
+            logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup leads source file by ${getTimeDifference(sourceMeta, meta)}")
+            if(meta.size==sourceMeta.get.size) {
+              logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${fileEntry.version} matches source, no backup required")
+              Success(Left("No backup required"))
+            } else {
+              logger.info(s"Project ${p.projectTitle} (${p.id}) Most recent backup version ${fileEntry.version} size mismatch ${sourceMeta.get.size} vs ${meta.size}, backup needed")
+              Success(Right(Some(fileEntry)))
+            }
         }
     }
   }
@@ -333,10 +338,10 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         case Failure(err)=>
           Future.failed(err)
         case Success(Left(msg))=>
-          logger.debug(s"Project ${p.projectTitle} (${p.id}): $msg")
+          logger.info(s"Project ${p.projectTitle} (${p.id}): $msg")
           Future(Right(false))
         case Success(Right(maybeMostRecentBackup))=>
-          logger.info(s"I will back up project ${p.projectTitle} (${p.id})")
+          logger.debug(s"I will back up project ${p.projectTitle} (${p.id})")
           val maybeDestStorage = for {
             sourceStorage <- storages.get(sourceFile.storageId)
             destStorageId <- sourceStorage.backsUpTo
@@ -450,16 +455,21 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     )
   }
 
-  def backupProjects:Future[BackupResults] = {
+  def backupProjects(onlyInProgress:Boolean):Future[BackupResults] = {
     val parallelCopies = config.getOptional[Int]("backup.parallelCopies").getOrElse(1)
+
+    def getScanSource() = if(onlyInProgress) {
+      ProjectEntry.scanProjectsForStatus(EntryStatus.InProduction)
+    } else {
+      ProjectEntry.scanAllProjects
+    }
 
     for {
       drivers <- loadStorageDrivers()
       storages <- loadAllStorages()
-      result <- ProjectEntry
-        .scanProjectsForStatus(EntryStatus.InProduction)
+      result <- getScanSource()
         .map(p => {
-          logger.info(s"Checking project ${p.projectTitle} for backup")
+          logger.debug(s"Checking project ${p.projectTitle} for backup")
           p
         })
         .mapAsync(parallelCopies)(p => p.associatedFiles(allVersions = true).map((p, _)))
@@ -467,7 +477,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
           val p = projectAndFiles._1
           val f = projectAndFiles._2
           val backupsCount = f.count(_.backupOf.isDefined)
-          logger.info(s"Project ${p.projectTitle} has ${f.length} files of which $backupsCount are backups")
+          logger.debug(s"Project ${p.projectTitle} has ${f.length} files of which $backupsCount are backups")
           projectAndFiles
         })
         .mapAsync(parallelCopies)(projectAndFiles => conditionalBackup(projectAndFiles, drivers, storages))
