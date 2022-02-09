@@ -124,3 +124,23 @@ export const setProjectStatusToKilled = async (id: number): Promise<void> => {
     throw error;
   }
 };
+
+export const getFileData = async (id: number): Promise<FileEntry[]> => {
+  try {
+    const {
+      status,
+      data: { result },
+    } = await Axios.get<PlutoApiResponse<FileEntry[]>>(
+      `${API_PROJECTS}/${id}/files`
+    );
+
+    if (status === 200) {
+      return result;
+    }
+
+    throw new Error(`Could not get project path for project ${id}. ${status}`);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};

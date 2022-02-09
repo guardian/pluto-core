@@ -23,7 +23,12 @@ import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
 import moment from "moment";
 import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView";
-import { updateProjectOpenedStatus, setProjectStatusToKilled } from "./helpers";
+import {
+  updateProjectOpenedStatus,
+  setProjectStatusToKilled,
+  getProjectsOnPage,
+  getFileData,
+} from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
@@ -89,6 +94,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   const classes = useStyles();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [updatingProject, setUpdatingProject] = useState<number>(0);
+  const [projectPath, setProjectPath] = useState<string>("");
 
   useEffect(() => {
     console.log("filter terms or search changed, updating...");
@@ -143,6 +149,12 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   };
 
   const customCellStyle = { width: "200px" };
+
+  const fetchProjectPath = async (id: number) => {
+    const pathResult = await getFileData(id);
+
+    setProjectPath(pathResult[0].filepath);
+  };
 
   return (
     <>
@@ -219,7 +231,11 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                       variant="contained"
                       color="primary"
                       onClick={async () => {
-                        window.open(`pluto:openproject:${id}`, "_blank");
+                        await fetchProjectPath(id);
+                        window.open(
+                          `pluto:openproject:${projectPath}`,
+                          "_blank"
+                        );
 
                         try {
                           await updateProjectOpenedStatus(id);
