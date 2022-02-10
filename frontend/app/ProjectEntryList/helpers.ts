@@ -1,4 +1,4 @@
-import Axios from "axios";
+import Axios, { AxiosResponse } from "axios";
 
 const API = "/api";
 const API_PROJECTS = `${API}/project`;
@@ -8,6 +8,10 @@ interface ProjectsOnPage {
   page?: number;
   pageSize?: number;
   filterTerms?: FilterTerms;
+}
+
+interface PlutoFilesAPIResponse<T> {
+  files: T;
 }
 
 export const getProjectsOnPage = async ({
@@ -129,16 +133,34 @@ export const getFileData = async (id: number): Promise<FileEntry[]> => {
   try {
     const {
       status,
-      data: { result },
-    } = await Axios.get<PlutoApiResponse<FileEntry[]>>(
+      data: { files },
+    } = await Axios.get<PlutoFilesAPIResponse<FileEntry[]>>(
       `${API_PROJECTS}/${id}/files`
     );
+
+    if (status === 200) {
+      return files;
+    }
+
+    throw new Error(`Could not get project data for project ${id}. ${status}`);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const getStorageData = async (id: number): Promise<StorageEntry> => {
+  try {
+    const {
+      status,
+      data: { result },
+    } = await Axios.get<PlutoApiResponse<StorageEntry>>(`${API}/storage/${id}`);
 
     if (status === 200) {
       return result;
     }
 
-    throw new Error(`Could not get project path for project ${id}. ${status}`);
+    throw new Error(`Could not get storage data for storage ${id}. ${status}`);
   } catch (error) {
     console.error(error);
     throw error;

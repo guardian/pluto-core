@@ -28,6 +28,7 @@ import {
   setProjectStatusToKilled,
   getProjectsOnPage,
   getFileData,
+  getStorageData,
 } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
@@ -150,10 +151,25 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
 
   const customCellStyle = { width: "200px" };
 
-  const fetchProjectPath = async (id: number) => {
-    const pathResult = await getFileData(id);
+  const openProject = async (id: number) => {
+    const fileResult = await getFileData(id);
+    const storageResult = await getStorageData(fileResult[0].storage);
 
-    setProjectPath(pathResult[0].filepath);
+    let pathToUse: string | undefined;
+    if (storageResult.clientpath == undefined) {
+      pathToUse = storageResult.rootpath;
+    } else {
+      pathToUse = storageResult.clientpath;
+    }
+
+    console.log("About to access a project with this path: " + pathToUse);
+    console.log(
+      "About to access a project with this file name: " + fileResult[0].filepath
+    );
+    window.open(
+      `pluto:openproject:${pathToUse}/${fileResult[0].filepath}`,
+      "_blank"
+    );
   };
 
   return (
@@ -231,11 +247,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                       variant="contained"
                       color="primary"
                       onClick={async () => {
-                        await fetchProjectPath(id);
-                        window.open(
-                          `pluto:openproject:${projectPath}`,
-                          "_blank"
-                        );
+                        await openProject(id);
 
                         try {
                           await updateProjectOpenedStatus(id);
