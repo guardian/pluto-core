@@ -27,7 +27,7 @@ import {
   updateProjectOpenedStatus,
   setProjectStatusToKilled,
   getProjectsOnPage,
-  openProject
+  openProject,
 } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
@@ -94,7 +94,6 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   const classes = useStyles();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [updatingProject, setUpdatingProject] = useState<number>(0);
-  const [projectPath, setProjectPath] = useState<string>("");
 
   useEffect(() => {
     console.log("filter terms or search changed, updating...");
@@ -225,7 +224,15 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                       variant="contained"
                       color="primary"
                       onClick={async () => {
-                        await openProject(id);
+                        try {
+                          await openProject(id);
+                        } catch (error) {
+                          SystemNotification.open(
+                            SystemNotifcationKind.Error,
+                            `An error occurred when attempting to open the project. `
+                          );
+                          console.error(error);
+                        }
 
                         try {
                           await updateProjectOpenedStatus(id);
