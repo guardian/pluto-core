@@ -170,13 +170,15 @@ export const getStorageData = async (id: number): Promise<StorageEntry> => {
 export const openProject = async (id: number) => {
   const fileResult = await getFileData(id);
   const storageResult = await getStorageData(fileResult[0].storage);
-  const pathToUse = storageResult.clientpath ? storageResult.clientpath : storageResult.rootpath;
+  const pathToUse = storageResult.clientpath
+    ? storageResult.clientpath
+    : storageResult.rootpath;
   console.log("About to access a project with this path: " + pathToUse);
   console.log(
-      "About to access a project with this file name: " + fileResult[0].filepath
+    "About to access a project with this file name: " + fileResult[0].filepath
   );
   window.open(
-      `pluto:openproject:${pathToUse}/${fileResult[0].filepath}`,
-      "_blank"
+    `pluto:openproject:${pathToUse}/${fileResult[0].filepath}`,
+    "_blank"
   );
 };
