@@ -129,6 +129,7 @@ export const setProjectStatusToKilled = async (id: number): Promise<void> => {
   }
 };
 
+//Calls the backend to retrieve files associated with the given project id. that are not backups.
 export const getFileData = async (id: number): Promise<FileEntry[]> => {
   try {
     const {
@@ -167,16 +168,13 @@ export const getStorageData = async (id: number): Promise<StorageEntry> => {
   }
 };
 
+//Sends a custom URL to PlutoHelperAgent which runs on the user's local machine. The URL contains the path of the project to open.
 export const openProject = async (id: number) => {
   const fileResult = await getFileData(id);
   const storageResult = await getStorageData(fileResult[0].storage);
   const pathToUse = storageResult.clientpath
     ? storageResult.clientpath
     : storageResult.rootpath;
-  console.log("About to access a project with this path: " + pathToUse);
-  console.log(
-    "About to access a project with this file name: " + fileResult[0].filepath
-  );
   window.open(
     `pluto:openproject:${pathToUse}/${fileResult[0].filepath}`,
     "_blank"
