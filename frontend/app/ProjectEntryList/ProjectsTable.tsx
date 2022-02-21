@@ -26,7 +26,6 @@ import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView";
 import {
   updateProjectOpenedStatus,
   setProjectStatusToKilled,
-  getProjectsOnPage,
   openProject,
 } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
