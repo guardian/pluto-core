@@ -1,4 +1,4 @@
-import Axios, { AxiosResponse } from "axios";
+import Axios from "axios";
 
 const API = "/api";
 const API_PROJECTS = `${API}/project`;
