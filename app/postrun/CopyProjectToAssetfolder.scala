@@ -69,10 +69,10 @@ class CopyProjectToAssetfolder extends PojoPostrun {
 //        Future(doCopyFile(projectFileOriginalPath, targetFilePath))
 //          .map(_.map(_=>dataCache)) //we don't modify the data cache here.
 
-        Future(for {
+        Future.fromTry(for {
           _ <- doCopyFile(projectFileOriginalPath, targetFilePath)
           _ <- preservePermissionsAndOwnership(projectFileOriginalPath, targetFilePath)
-          result <- Success(dataCache)
+          result <- Success(Success(dataCache))
         } yield result)
     }
   }
