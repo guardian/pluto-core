@@ -14,7 +14,10 @@ import scala.jdk.CollectionConverters._
 class CopyProjectToAssetfolder extends PojoPostrun {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  protected def doCopyFile(from:Path, to:Path) = Try { copyFile(from.toFile, to.toFile) }
+  protected def doCopyFile(from:Path, to:Path) = Try {
+    copyFile(from.toFile, to.toFile)
+    logger.info(s"copyFile has been run")
+  }
 
   def attributeViewFor(path:Path) = Files.getFileAttributeView(path, classOf[PosixFileAttributeView])
 
