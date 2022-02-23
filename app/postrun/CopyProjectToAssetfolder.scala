@@ -19,6 +19,7 @@ class CopyProjectToAssetfolder extends PojoPostrun {
   def attributeViewFor(path:Path) = Files.getFileAttributeView(path, classOf[PosixFileAttributeView])
 
   protected def preservePermissionsAndOwnership(from:Path, to:Path) = Try {
+    logger.info(s"Running preservePermissionsAndOwnership")
     val sourceView = attributeViewFor(from)
     val destView = attributeViewFor(to)
 
