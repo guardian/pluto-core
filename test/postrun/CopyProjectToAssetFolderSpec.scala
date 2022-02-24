@@ -31,7 +31,7 @@ class CopyProjectToAssetFolderSpec extends Specification with Mockito {
       mockDataCache.get("created_asset_folder") returns Some("/other/path/to/assets")
 
       val toTest = new CopyProjectToAssetfolder {
-        override protected def doCopyFile(from: Path, to: Path): Future[IOResult] = mockCopy(from, to)
+        override protected def doCopyFile(from: Path, to: Path)(implicit mat:Materializer): Future[IOResult] = mockCopy(from, to)
 
         override protected def preservePermissionsAndOwnership(from: Path, to: Path): Try[Unit] = mockSetPerms(from, to)
       }
@@ -61,7 +61,7 @@ class CopyProjectToAssetFolderSpec extends Specification with Mockito {
       mockDataCache.get("created_asset_folder") returns None
 
       val toTest = new CopyProjectToAssetfolder {
-        override protected def doCopyFile(from: Path, to: Path): Future[IOResult] = mockCopy(from, to)
+        override protected def doCopyFile(from: Path, to: Path)(implicit mat:Materializer): Future[IOResult] = mockCopy(from, to)
       }
 
       val result = Await.result(
@@ -110,7 +110,7 @@ class CopyProjectToAssetFolderSpec extends Specification with Mockito {
       destView.setPermissions(targetPerms)
 
       val toTestTwo = new CopyProjectToAssetfolder {
-        override protected def doCopyFile(from: Path, to: Path): Future[IOResult] = mockCopy(from, to)
+        override protected def doCopyFile(from: Path, to: Path)(implicit mat:Materializer): Future[IOResult] = mockCopy(from, to)
       }
 
       val resultTwo = Await.result(
