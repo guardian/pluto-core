@@ -1,5 +1,6 @@
 package postrun
 
+import akka.stream.{IOResult, Materializer}
 import helpers.PostrunDataCache
 import models.{ProjectEntry, ProjectType}
 import org.specs2.mock.Mockito
@@ -7,25 +8,30 @@ import org.specs2.mutable.Specification
 
 import java.nio.file.attribute.{PosixFileAttributeView, PosixFilePermission, PosixFilePermissions}
 import java.nio.file.{Files, Path, Paths}
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Success, Try}
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 import org.apache.commons.io.FileUtils
+import utils.AkkaTestkitSpecs2Support
+
 import java.io.File
 
 class CopyProjectToAssetFolderSpec extends Specification with Mockito {
   "CopyProjectToAssetFolder" should {
-    "request a file copy from the original project path to the asset folder location" in {
-      val mockCopy = mock[(Path,Path)=>Try[Unit]]
-      mockCopy.apply(any, any) returns Success( () )
+    "request a file copy from the original project path to the asset folder location" in new AkkaTestkitSpecs2Support {
+      implicit val ec: ExecutionContext = ExecutionContext.global
+      implicit val mat:Materializer = Materializer(system)
+      val mockCopy = mock[(Path,Path)=>Future[IOResult]]
+      val mockResult = mock[IOResult]
+      mockCopy.apply(any, any) returns Future[IOResult]((mockResult))
       val mockSetPerms = mock[(Path,Path)=>Try[Unit]]
       mockSetPerms.apply(any, any) returns Success( () )
       val mockDataCache = mock[PostrunDataCache]
       mockDataCache.get("created_asset_folder") returns Some("/other/path/to/assets")
 
       val toTest = new CopyProjectToAssetfolder {
-        override protected def doCopyFile(from: Path, to: Path): Try[Unit] = mockCopy(from, to)
+        override protected def doCopyFile(from: Path, to: Path): Future[IOResult] = mockCopy(from, to)
 
         override protected def preservePermissionsAndOwnership(from: Path, to: Path): Try[Unit] = mockSetPerms(from, to)
       }
@@ -45,14 +51,17 @@ class CopyProjectToAssetFolderSpec extends Specification with Mockito {
       )
     }
 
-    "return a Failure if the created_asset_folder is not set" in {
-      val mockCopy = mock[(Path,Path)=>Try[Unit]]
-      mockCopy.apply(any, any) returns Success( () )
+    "return a Failure if the created_asset_folder is not set" in new AkkaTestkitSpecs2Support {
+      implicit val ec: ExecutionContext = ExecutionContext.global
+      implicit val mat:Materializer = Materializer(system)
+      val mockCopy = mock[(Path,Path)=>Future[IOResult]]
+      val mockResult = mock[IOResult]
+      mockCopy.apply(any, any) returns Future[IOResult]((mockResult))
       val mockDataCache = mock[PostrunDataCache]
       mockDataCache.get("created_asset_folder") returns None
 
       val toTest = new CopyProjectToAssetfolder {
-        override protected def doCopyFile(from: Path, to: Path): Try[Unit] = mockCopy(from, to)
+        override protected def doCopyFile(from: Path, to: Path): Future[IOResult] = mockCopy(from, to)
       }
 
       val result = Await.result(
@@ -66,10 +75,13 @@ class CopyProjectToAssetFolderSpec extends Specification with Mockito {
       )
     }
 
-    "check permissions are set correctly if the file has a cpr extension" in {
+    "check permissions are set correctly if the file has a cpr extension" in new AkkaTestkitSpecs2Support {
       FileUtils.deleteQuietly(new File("/tmp/test.cpr"))
-      val mockCopy = mock[(Path,Path)=>Try[Unit]]
-      mockCopy.apply(any, any) returns Success( () )
+      implicit val ec: ExecutionContext = ExecutionContext.global
+      implicit val mat:Materializer = Materializer(system)
+      val mockCopy = mock[(Path,Path)=>Future[IOResult]]
+      val mockResult = mock[IOResult]
+      mockCopy.apply(any, any) returns Future[IOResult]((mockResult))
       val mockSetPerms = mock[(Path,Path)=>Try[Unit]]
       mockSetPerms.apply(any, any) returns Success( () )
       val mockDataCache = mock[PostrunDataCache]
@@ -98,7 +110,7 @@ class CopyProjectToAssetFolderSpec extends Specification with Mockito {
       destView.setPermissions(targetPerms)
 
       val toTestTwo = new CopyProjectToAssetfolder {
-        override protected def doCopyFile(from: Path, to: Path): Try[Unit] = mockCopy(from, to)
+        override protected def doCopyFile(from: Path, to: Path): Future[IOResult] = mockCopy(from, to)
       }
 
       val resultTwo = Await.result(

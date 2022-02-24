@@ -1,4 +1,6 @@
 package postrun
+import akka.stream.Materializer
+import akka.stream.scaladsl.FileIO
 import helpers.PostrunDataCache
 import models.{PlutoCommission, PlutoWorkingGroup, ProjectEntry, ProjectType}
 import org.slf4j.LoggerFactory
@@ -11,18 +13,17 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.jdk.CollectionConverters._
 
-class CopyProjectToAssetfolder extends PojoPostrun {
+class CopyProjectToAssetfolder(implicit mat:Materializer) extends PojoPostrun {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  protected def doCopyFile(from:Path, to:Path) = Try {
-    copyFile(from.toFile, to.toFile)
-    logger.info(s"copyFile has been run")
+  //protected def doCopyFile(from:Path, to:Path) = Try { copyFile(from.toFile, to.toFile) }
+  protected def doCopyFile(from:Path, to:Path) = {
+    FileIO.fromPath(from)
+      .runWith(FileIO.toPath(to))
   }
-
   def attributeViewFor(path:Path) = Files.getFileAttributeView(path, classOf[PosixFileAttributeView])
 
   protected def preservePermissionsAndOwnership(from:Path, to:Path) = Try {
-    logger.info(s"Running preservePermissionsAndOwnership")
     val sourceView = attributeViewFor(from)
     val destView = attributeViewFor(to)
 
@@ -73,11 +74,11 @@ class CopyProjectToAssetfolder extends PojoPostrun {
 //        Future(doCopyFile(projectFileOriginalPath, targetFilePath))
 //          .map(_.map(_=>dataCache)) //we don't modify the data cache here.
 
-        Future.fromTry(for {
+        for {
           _ <- doCopyFile(projectFileOriginalPath, targetFilePath)
-          _ <- preservePermissionsAndOwnership(projectFileOriginalPath, targetFilePath)
-          result <- Success(Success(dataCache))
-        } yield result)
+          _ <- Future.fromTry(preservePermissionsAndOwnership(projectFileOriginalPath, targetFilePath))
+          result <- Future(Success(dataCache))
+        } yield result
     }
   }
 }
