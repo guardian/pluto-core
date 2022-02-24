@@ -1,4 +1,5 @@
 package postrun
+import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import helpers.PostrunDataCache
@@ -13,11 +14,11 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.jdk.CollectionConverters._
 
-class CopyProjectToAssetfolder(implicit mat:Materializer) extends PojoPostrun {
+class CopyProjectToAssetfolder extends PojoPostrun {
   private val logger = LoggerFactory.getLogger(getClass)
 
   //protected def doCopyFile(from:Path, to:Path) = Try { copyFile(from.toFile, to.toFile) }
-  protected def doCopyFile(from:Path, to:Path) = {
+  protected def doCopyFile(from:Path, to:Path)(implicit mat:Materializer) = {
     FileIO.fromPath(from)
       .runWith(FileIO.toPath(to))
   }
@@ -67,17 +68,17 @@ class CopyProjectToAssetfolder(implicit mat:Materializer) extends PojoPostrun {
       case None=>
         Future(Failure(new RuntimeException("No created_asset_folder value in data cache. This action must depend on make_asset_folder.")))
       case Some(assetFolderPath)=>
+        implicit val tempActorSystem = ActorSystem()
+        implicit val mat = Materializer.matFromSystem
         logger.info(s"Will copy project file $projectFileName to $assetFolderPath")
         val projectFileOriginalPath = Paths.get(projectFileName)
         val projectFileNameOnly = projectFileOriginalPath.getFileName
         val targetFilePath = assetFolderPath.resolve(projectFileNameOnly)
-//        Future(doCopyFile(projectFileOriginalPath, targetFilePath))
-//          .map(_.map(_=>dataCache)) //we don't modify the data cache here.
 
         for {
           _ <- doCopyFile(projectFileOriginalPath, targetFilePath)
           _ <- Future.fromTry(preservePermissionsAndOwnership(projectFileOriginalPath, targetFilePath))
-          result <- Future(Success(dataCache))
+          result <- tempActorSystem.terminate().map((_)=>Success(dataCache))
         } yield result
     }
   }
