@@ -13,11 +13,12 @@ import scala.util.{Success, Try}
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 import org.apache.commons.io.FileUtils
+import org.specs2.specification.AfterAll
 import utils.AkkaTestkitSpecs2Support
 
 import java.io.File
 
-class CopyProjectToAssetFolderSpec extends Specification with Mockito {
+class CopyProjectToAssetFolderSpec extends Specification with Mockito with AfterAll {
   "CopyProjectToAssetFolder" should {
     "request a file copy from the original project path to the asset folder location" in new AkkaTestkitSpecs2Support {
       implicit val ec: ExecutionContext = ExecutionContext.global
@@ -107,12 +108,14 @@ class CopyProjectToAssetFolderSpec extends Specification with Mockito {
           PosixFilePermission.OWNER_WRITE
         ).toSet.asJava
 
+      //Set permissions of the file to 0664 before the test, we expect the postrun to change this to 0666.
       destView.setPermissions(targetPerms)
 
       val toTestTwo = new CopyProjectToAssetfolder {
         override protected def doCopyFile(from: Path, to: Path)(implicit mat:Materializer): Future[IOResult] = mockCopy(from, to)
       }
 
+      //The permissions should be set correctly at this point.
       val resultTwo = Await.result(
         toTestTwo.postrun("postrun/tests/data/test.cpr",mock[ProjectEntry],mock[ProjectType], mockDataCache, None,None),
         1.second)
@@ -128,9 +131,12 @@ class CopyProjectToAssetFolderSpec extends Specification with Mockito {
         PosixFilePermission.OWNER_WRITE
       ).toSet.asJava
 
+      //At this point we check if the correct permissions where set.
       destViewTwo.readAttributes().permissions() mustEqual targetPermsTwo
-
-      FileUtils.deleteQuietly(new File("/tmp/test.cpr"))
     }
+  }
+
+  def afterAll(): Unit = {
+    FileUtils.deleteQuietly(new File("/tmp/test.cpr"))
   }
 }
