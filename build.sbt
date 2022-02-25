@@ -117,6 +117,8 @@ libraryDependencies += "org.reflections" % "reflections" % "0.9.11"
 
 libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.1.2"
 
+libraryDependencies += "org.mockito" % "mockito-inline" % "2.8.9"
+
 enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)

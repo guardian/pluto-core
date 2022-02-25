@@ -1,4 +1,7 @@
 package postrun
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+import akka.stream.scaladsl.FileIO
 import helpers.PostrunDataCache
 import models.{PlutoCommission, PlutoWorkingGroup, ProjectEntry, ProjectType}
 import org.slf4j.LoggerFactory
@@ -14,8 +17,10 @@ import scala.jdk.CollectionConverters._
 class CopyProjectToAssetfolder extends PojoPostrun {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  protected def doCopyFile(from:Path, to:Path) = Try { copyFile(from.toFile, to.toFile) }
-
+  protected def doCopyFile(from:Path, to:Path)(implicit mat:Materializer) = {
+    FileIO.fromPath(from)
+      .runWith(FileIO.toPath(to))
+  }
   def attributeViewFor(path:Path) = Files.getFileAttributeView(path, classOf[PosixFileAttributeView])
 
   protected def preservePermissionsAndOwnership(from:Path, to:Path) = Try {
@@ -62,18 +67,18 @@ class CopyProjectToAssetfolder extends PojoPostrun {
       case None=>
         Future(Failure(new RuntimeException("No created_asset_folder value in data cache. This action must depend on make_asset_folder.")))
       case Some(assetFolderPath)=>
+        implicit val tempActorSystem = ActorSystem()
+        implicit val mat = Materializer.matFromSystem
         logger.info(s"Will copy project file $projectFileName to $assetFolderPath")
         val projectFileOriginalPath = Paths.get(projectFileName)
         val projectFileNameOnly = projectFileOriginalPath.getFileName
         val targetFilePath = assetFolderPath.resolve(projectFileNameOnly)
-//        Future(doCopyFile(projectFileOriginalPath, targetFilePath))
-//          .map(_.map(_=>dataCache)) //we don't modify the data cache here.
 
-        Future(for {
+        for {
           _ <- doCopyFile(projectFileOriginalPath, targetFilePath)
-          _ <- preservePermissionsAndOwnership(projectFileOriginalPath, targetFilePath)
-          result <- Success(dataCache)
-        } yield result)
+          _ <- Future.fromTry(preservePermissionsAndOwnership(projectFileOriginalPath, targetFilePath))
+          result <- tempActorSystem.terminate().map((_)=>Success(dataCache))
+        } yield result
     }
   }
 }
