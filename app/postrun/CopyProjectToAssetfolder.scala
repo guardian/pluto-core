@@ -17,7 +17,6 @@ import scala.jdk.CollectionConverters._
 class CopyProjectToAssetfolder extends PojoPostrun {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  //protected def doCopyFile(from:Path, to:Path) = Try { copyFile(from.toFile, to.toFile) }
   protected def doCopyFile(from:Path, to:Path)(implicit mat:Materializer) = {
     FileIO.fromPath(from)
       .runWith(FileIO.toPath(to))
