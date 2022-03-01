@@ -76,7 +76,7 @@ export const createProjectDeliverable = async (
 
   try {
     const response = await axios.post<Deliverable>(
-      `${API_DELIVERABLES}/bundle/new?retry=true`,
+      `${API_DELIVERABLES}/bundle/new?autoname=true`,
       {
         pluto_core_project_id: projectId,
         commission_id: commissionId,
