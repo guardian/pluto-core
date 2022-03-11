@@ -311,7 +311,7 @@ interface ValidationRequestDoc {
 interface FileEntry {
   id: number;
   filepath: string;
-  storageid: number;
+  storage: number;
   user: string;
   version: number;
   ctime: string;

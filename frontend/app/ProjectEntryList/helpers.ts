@@ -10,6 +10,10 @@ interface ProjectsOnPage {
   filterTerms?: FilterTerms;
 }
 
+interface PlutoFilesAPIResponse<T> {
+  files: T;
+}
+
 export const getProjectsOnPage = async ({
   page = 0,
   pageSize = 25,
@@ -123,4 +127,56 @@ export const setProjectStatusToKilled = async (id: number): Promise<void> => {
     console.error(error);
     throw error;
   }
+};
+
+//Calls the backend to retrieve files associated with the given project id. that are not backups.
+export const getFileData = async (id: number): Promise<FileEntry[]> => {
+  try {
+    const {
+      status,
+      data: { files },
+    } = await Axios.get<PlutoFilesAPIResponse<FileEntry[]>>(
+      `${API_PROJECTS}/${id}/files`
+    );
+
+    if (status === 200) {
+      return files;
+    }
+
+    throw new Error(`Could not get project data for project ${id}. ${status}`);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const getStorageData = async (id: number): Promise<StorageEntry> => {
+  try {
+    const {
+      status,
+      data: { result },
+    } = await Axios.get<PlutoApiResponse<StorageEntry>>(`${API}/storage/${id}`);
+
+    if (status === 200) {
+      return result;
+    }
+
+    throw new Error(`Could not get storage data for storage ${id}. ${status}`);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+//Sends a custom URL to PlutoHelperAgent which runs on the user's local machine. The URL contains the path of the project to open.
+export const openProject = async (id: number) => {
+  const fileResult = await getFileData(id);
+  const storageResult = await getStorageData(fileResult[0].storage);
+  const pathToUse = storageResult.clientpath
+    ? storageResult.clientpath
+    : storageResult.rootpath;
+  window.open(
+    `pluto:openproject:${pathToUse}/${fileResult[0].filepath}`,
+    "_blank"
+  );
 };

@@ -3,7 +3,10 @@ import { CheckCircle } from "@material-ui/icons";
 import { makeStyles } from "@material-ui/core/styles";
 import { Button, TableCell, Typography } from "@material-ui/core";
 import AssetFolderLink from "../../ProjectEntryList/AssetFolderLink";
-import { updateProjectOpenedStatus } from "../../ProjectEntryList/helpers";
+import {
+  openProject,
+  updateProjectOpenedStatus,
+} from "../../ProjectEntryList/helpers";
 import { createProjectDeliverable } from "../../utils/api";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import { Helmet } from "react-helmet";
@@ -89,7 +92,15 @@ const ProjectCreatedComponent: React.FC<ProjectCreatedComponentProps> = (
                 variant="contained"
                 color="primary"
                 onClick={async () => {
-                  window.open(`pluto:openproject:${props.projectId}`, "_blank");
+                  try {
+                    await openProject(props.projectId);
+                  } catch (error) {
+                    SystemNotification.open(
+                      SystemNotifcationKind.Error,
+                      `An error occurred when attempting to open the project. `
+                    );
+                    console.error(error);
+                  }
                   try {
                     await updateProjectOpenedStatus(props.projectId);
                   } catch (error) {

@@ -85,7 +85,7 @@ const ValidationTableRow: React.FC<ValidationTableRowProps> = (props) => {
         getFile(props.data.entityId)
           .then((fileInfo) => {
             setProjectTitle(
-              `${fileInfo.filepath} on ${fileInfo.storageid}, hasContent?: ${fileInfo.hasContent}`
+              `${fileInfo.filepath} on ${fileInfo.storage}, hasContent?: ${fileInfo.hasContent}`
             );
             setLoading(false);
           })

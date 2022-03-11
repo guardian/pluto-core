@@ -23,7 +23,11 @@ import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
 import moment from "moment";
 import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView";
-import { updateProjectOpenedStatus, setProjectStatusToKilled } from "./helpers";
+import {
+  updateProjectOpenedStatus,
+  setProjectStatusToKilled,
+  openProject,
+} from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
@@ -219,7 +223,15 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                       variant="contained"
                       color="primary"
                       onClick={async () => {
-                        window.open(`pluto:openproject:${id}`, "_blank");
+                        try {
+                          await openProject(id);
+                        } catch (error) {
+                          SystemNotification.open(
+                            SystemNotifcationKind.Error,
+                            `An error occurred when attempting to open the project. `
+                          );
+                          console.error(error);
+                        }
 
                         try {
                           await updateProjectOpenedStatus(id);
