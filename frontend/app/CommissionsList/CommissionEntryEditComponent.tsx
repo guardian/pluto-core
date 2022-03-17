@@ -484,7 +484,24 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
         ) : null}
       </Paper>
       {/*will repace this with an icon*/}
-      <Typography variant="h4">Projects</Typography>
+      <Grid container direction="row" justifyContent="space-between">
+        <Grid item>
+          <Typography variant="h4">Projects</Typography>
+        </Grid>
+        <Grid item>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() =>
+              history.push(
+                `/project/new?commissionId=${commissionId}&workingGroupId=${commissionData?.workingGroupId}`
+              )
+            }
+          >
+            New Project
+          </Button>
+        </Grid>
+      </Grid>
       <Paper elevation={3}>
         {projectList ? (
           <ProjectsTable
