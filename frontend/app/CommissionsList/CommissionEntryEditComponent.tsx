@@ -200,7 +200,9 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
             valueDidChange={(evt, newValue) =>
               fieldValueChanged(newValue ?? "", "owner")
             }
+            label="Owner"
             value={props.commission.owner}
+            shouldValidate={true}
           />
           <TextField
             id="created"
