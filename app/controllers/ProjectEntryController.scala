@@ -456,4 +456,15 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
           InternalServerError(Json.obj("status"->"db_error", "detail"->"Database error, see logs for details"))
       })
   }
+
+  def isUserKnown(uname:String) = IsAuthenticatedAsync { uid=> request=>
+    implicit val db = dbConfig.db
+
+    ProjectEntry.isUserKnown(uname)
+      .map(result=>Ok(Json.obj("status"->"ok", "known"->result)))
+      .recover(err=>{
+        logger.error(s"Could not check if '$uname' is known: ${err.getMessage}", err)
+        InternalServerError(Json.obj("status"->"error", "detail"->"db_error"))
+      })
+  }
 }

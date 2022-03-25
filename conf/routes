@@ -51,6 +51,7 @@ PUT     /api/project/:id                    @controllers.ProjectEntryController.
 PUT     /api/project/:id/status             @controllers.ProjectEntryController.updateStatus(id:Int)
 
 GET     /api/valid-users                    @controllers.ProjectEntryController.queryUsersForAutocomplete(prefix:String ?= "", limit:Option[Int])
+GET     /api/known-user                     @controllers.ProjectEntryController.isUserKnown(uname:String ?= "")
 GET     /api/projecttype                   @controllers.ProjectTypeController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/projecttype                   @controllers.ProjectTypeController.create
 GET     /api/projecttype/:id               @controllers.ProjectTypeController.getitem(id: Int)

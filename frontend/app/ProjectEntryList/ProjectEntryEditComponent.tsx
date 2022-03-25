@@ -248,6 +248,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
               />
               <UsersAutoComplete
                 label="Owner"
+                shouldValidate={true}
                 value={project.user}
                 valueDidChange={(evt, newValue) =>
                   fieldChangedValue(newValue, "user")

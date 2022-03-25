@@ -305,4 +305,20 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
       .take(limit)
       .result
   }
+
+  /**
+    * Checks if the provided "uname" string is an exact, case-insensitive match for one that already exists in the database
+    * @param uname username to test
+    * @param db implicitly provided database object
+    * @return a Future, containing True if at least one user matches and False otherwise
+    */
+  def isUserKnown(uname:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run {
+    val testValue = uname.toLowerCase
+    TableQuery[ProjectEntryRow]
+      .distinctOn(_.user)
+      .filter(_.user.toLowerCase === testValue)
+      .groupBy(_.user).map(_._1)
+      .length
+      .result
+  }.map(count=>count>0)
 }

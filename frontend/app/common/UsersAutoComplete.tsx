@@ -7,6 +7,7 @@ interface UsersAutoCompleteProps {
   valueDidChange: (event: ChangeEvent<{}>, newValue: string | null) => void;
   value: string;
   label?: string;
+  shouldValidate?: boolean;
 }
 
 /**
@@ -15,6 +16,7 @@ interface UsersAutoCompleteProps {
 const UsersAutoComplete: React.FC<UsersAutoCompleteProps> = (props) => {
   const [userOptions, setUserOptions] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const [validationFailed, setValidationFailed] = useState(false);
 
   /**
    * useMemo remembers a value for a given input and will not-recalculate it if the dependency does not change
@@ -42,6 +44,24 @@ const UsersAutoComplete: React.FC<UsersAutoCompleteProps> = (props) => {
       });
   }, [inputValue, props.value, searchUsers]);
 
+  const validateEntry = async (newValue: string) => {
+    try {
+      const response = await axios.get<{ known: boolean }>(
+        `/api/known-user?uname=${encodeURIComponent(newValue)}`
+      );
+      setValidationFailed(!response.data.known);
+    } catch (err) {
+      console.error(`Could not validate user ${newValue}: `, err);
+    }
+  };
+
+  const inputDidChange = (evt: ChangeEvent<{}>, newValue: string | null) => {
+    if (props.shouldValidate) {
+      if (newValue) validateEntry(newValue);
+    }
+    setInputValue(newValue ?? "");
+  };
+
   return (
     <Autocomplete
       freeSolo
@@ -51,9 +71,20 @@ const UsersAutoComplete: React.FC<UsersAutoCompleteProps> = (props) => {
       //onChange is fired when an option is selected
       onChange={props.valueDidChange}
       //onInputChange is fired when the user types
-      onInputChange={(evt, newInputValue) => setInputValue(newInputValue)}
+      onInputChange={inputDidChange}
       options={userOptions}
-      renderInput={(params) => <TextField {...params} label={props.label} />}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          error={validationFailed}
+          helperText={
+            validationFailed
+              ? "This name is not recognised, please check your typing. If you press the 'ENTER' key this value will be saved and recognised next time"
+              : ""
+          }
+          label={props.label}
+        />
+      )}
     />
   );
 };
