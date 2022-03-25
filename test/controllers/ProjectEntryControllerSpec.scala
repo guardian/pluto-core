@@ -225,4 +225,17 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
       status(response) must equalTo(BAD_REQUEST)
     }
   }
+
+  "ProjectEntryController.queryUsersForAutocomplete" should {
+    "return all users up to a limit if prefix is empty" in new WithApplication(buildApp) {
+      val response = route(app, FakeRequest(GET,"/api/valid-users").withSession("uid"->"testuser")).get
+
+      status(response) mustEqual OK
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds)
+      val resultList = (jsondata \ "users").as[Seq[String]]
+      resultList.length mustEqual 2
+      resultList.contains("you") must beTrue
+      resultList.contains("me") must beTrue
+    }
+  }
 }

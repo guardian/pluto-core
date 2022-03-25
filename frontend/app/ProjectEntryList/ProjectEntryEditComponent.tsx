@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { ChangeEvent, useEffect, useState } from "react";
 import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
 import {
   Button,
@@ -6,6 +6,8 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
+  FormControl,
+  FormControlLabel,
   Grid,
   IconButton,
   makeStyles,
@@ -26,6 +28,7 @@ import StatusSelector from "../common/StatusSelector";
 import { Helmet } from "react-helmet";
 import ProjectEntryVaultComponent from "./ProjectEntryVaultComponent";
 import { FileCopy, PermMedia } from "@material-ui/icons";
+import UsersAutoComplete from "../common/UsersAutoComplete";
 
 const useStyles = makeStyles({
   root: {
@@ -142,6 +145,10 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     };
   }, []);
 
+  const fieldChangedValue = (value: unknown, field: keyof Project): void => {
+    setProject({ ...project, [field]: value });
+  };
+
   const fieldChanged = (
     event: React.ChangeEvent<
       | HTMLTextAreaElement
@@ -151,7 +158,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     >,
     field: keyof Project
   ): void => {
-    setProject({ ...project, [field]: event.target.value });
+    fieldChangedValue(event.target.value, field);
   };
 
   const checkboxChanged = (field: keyof Project, checked: boolean): void => {
@@ -239,10 +246,12 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 autoFocus
                 onChange={(event) => fieldChanged(event, "title")}
               />
-              <TextField
+              <UsersAutoComplete
                 label="Owner"
                 value={project.user}
-                onChange={(event) => fieldChanged(event, "user")}
+                valueDidChange={(evt, newValue) =>
+                  fieldChangedValue(newValue, "user")
+                }
               />
               <StatusSelector
                 value={project.status}
