@@ -1,6 +1,5 @@
 package services
 
-import java.lang.annotation.Annotation
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
@@ -9,7 +8,6 @@ import com.google.inject.Inject
 import com.rabbitmq.client.AMQP.Exchange
 import javax.inject.Singleton
 import org.slf4j.LoggerFactory
-import play.api.inject.Injector
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsValue, Json, Writes}
 import play.api.{Configuration, Logger}
