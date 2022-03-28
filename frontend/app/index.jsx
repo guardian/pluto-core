@@ -51,6 +51,7 @@ import StorageMultistepNew from "./multistep/StorageMultistepNew";
 import { CssBaseline } from "@material-ui/core";
 import ProjectValidationMain from "./ProjectRecordValidation/ProjectValidationMain";
 import ValidationJobResults from "./ProjectRecordValidation/ValidationJobResults";
+import ProjectBackups from "./ProjectEntryList/ProjectBackups";
 
 library.add(faSearch);
 
@@ -242,6 +243,10 @@ class App extends React.Component {
                       {...props}
                     />
                   )}
+                />
+                <Route
+                  path="/project/:itemid/backups"
+                  component={ProjectBackups}
                 />
                 <Route
                   path="/project/:itemid/delete"

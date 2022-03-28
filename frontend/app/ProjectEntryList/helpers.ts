@@ -3,6 +3,7 @@ import Axios from "axios";
 const API = "/api";
 const API_PROJECTS = `${API}/project`;
 const API_PROJECTS_FILTER = `${API_PROJECTS}/list`;
+const API_FILES = `${API}/file`;
 
 interface ProjectsOnPage {
   page?: number;
@@ -60,6 +61,41 @@ export const getProject = async (id: number): Promise<Project> => {
   } catch (error) {
     console.error(error);
     throw error;
+  }
+};
+
+export const getFileStorageMetadata = async (
+  fileId: number
+): Promise<Map<string, string>> => {
+  const response = await Axios.get<FileMetadataResponse>(
+    `${API_FILES}/${fileId}/storageMetadata`,
+    { validateStatus: (s) => s == 200 || s == 404 }
+  );
+
+  switch (response.status) {
+    case 200:
+      return new Map(Object.entries(response.data.metadata));
+    case 404:
+      throw `There is no file with id ${fileId}`;
+    default:
+      //this should not happen
+      throw `axios returned an unexpected response code ${response.status}`;
+  }
+};
+
+export const getProjectFiles = async (id: number): Promise<FileEntry[]> => {
+  const response = await Axios.get<ProjectFilesResponse>(
+    `${API_PROJECTS}/${id}/files?allVersions=true`,
+    { validateStatus: (s) => s == 200 || s == 404 }
+  );
+  switch (response.status) {
+    case 200:
+      return response.data.files;
+    case 404:
+      throw `The project with id ${id} does not exist`;
+    default:
+      //this should not happen
+      throw `axios returned an unexpected response code ${response.status}`;
   }
 };
 
