@@ -1,6 +1,6 @@
 package models
 
-import java.io.FileInputStream
+import java.io.{File, FileInputStream}
 import java.nio.file.{Path, Paths}
 import slick.jdbc.PostgresProfile.api._
 
@@ -76,14 +76,25 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @param db implicitly provided [[slick.jdbc.PostgresProfile#Backend#Database]]
     * @return Future containing a string
     */
-  def getFullPath(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[String] = {
-    this.storage.map({
+  def getFullPath(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[String] =
+    storage.map({
       case Some(storage)=>
         Paths.get(storage.rootpath.getOrElse(""), filepath).toString
       case None=>
         filepath
     })
-  }
+
+  /**
+    * Gets a java.io.File pointing to the given file
+    * @param db
+    * @return
+    */
+  def getJavaFile(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[File] = storage.map({
+    case Some(storage) =>
+      Paths.get(storage.rootpath.getOrElse(""), filepath).toFile
+    case None =>
+      new File(filepath)
+  })
 
   /**
     * this attempts to delete the file from disk, using the configured storage driver

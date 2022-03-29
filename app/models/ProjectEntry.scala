@@ -228,6 +228,11 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
     ).map(_.map(_.head))
   }
 
+  def entryForIdNew(requestedId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[ProjectEntry] =
+    db.run(
+      TableQuery[ProjectEntryRow].filter(_.id===requestedId).result
+    ).map(_.head)
+
   def lookupByVidispineId(vsid: String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[ProjectEntry]]] =
     db.run(
       TableQuery[ProjectEntryRow].filter(_.vidispineProjectId===vsid).result.asTry
