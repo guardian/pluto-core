@@ -330,4 +330,5 @@ interface FileEntry {
   hasContent: boolean;
   hasLink: boolean;
   backupOf?: number;
+  premiereVersion?: number;
 }
