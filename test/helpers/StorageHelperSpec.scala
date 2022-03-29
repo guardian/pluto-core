@@ -75,8 +75,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
 
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None)
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, None)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None, None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, None,None )
 
         val realStorageHelper = new StorageHelper
 
@@ -117,14 +117,14 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = new FileEntry(Some(1234), FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None){
+        val testSourceEntry = new FileEntry(Some(1234), FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None, None){
           override def storage(implicit db: JdbcBackend#DatabaseDef):Future[Option[StorageEntry]] = {
             println("testSourceEntry.storage")
             Future(Some(mockedStorage))
           }
         }
 
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false,None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false,None, None)
 
         val realStorageHelper = new StorageHelper
 
@@ -159,8 +159,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 2, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None)
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, None)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 2, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None, None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, None, None)
 
         val realStorageHelper = new StorageHelper
 
@@ -192,8 +192,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         Seq("/bin/dd", "if=/dev/urandom", s"of=$testFileNameSrc", "bs=1k", "count=600").!
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
-        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None)
-        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 2, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, None)
+        val testSourceEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None,None)
+        val testDestEntry = FileEntry(None, FilenameUtils.getBaseName(testFileNameDest), 2, "testuser", 1, ts, ts, ts, hasContent = false, hasLink = false, None,None)
 
         val realStorageHelper = new StorageHelper
 

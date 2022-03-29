@@ -46,7 +46,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
       val ts = Timestamp.valueOf(LocalDateTime.now())
-      val testFileEntryBefore = FileEntry(None,"notexistingtestfile",1,"test-user",1,ts,ts,ts,false,false, None)
+      val testFileEntryBefore = FileEntry(None,"notexistingtestfile",1,"test-user",1,ts,ts,ts,false,false, None, None)
 
       val resultFuture = testFileEntryBefore.updateFileHasContent
       val finalResult = Await.result(resultFuture, 10.seconds)
@@ -63,7 +63,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
 
       val ts = Timestamp.valueOf(LocalDateTime.now())
-      val testFileEntry = FileEntry(None,"/path/to/nonexisting",1,"test-user",1,ts,ts,ts,false,false, None)
+      val testFileEntry = FileEntry(None,"/path/to/nonexisting",1,"test-user",1,ts,ts,ts,false,false, None, None)
 
       val result = Await.result(testFileEntry.save, 10.seconds)
       result must beSuccessfulTry

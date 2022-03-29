@@ -34,7 +34,7 @@ import scala.concurrent.{Await, Future}
   * @param hasLink - boolean flag representing whether this entitiy is linked to anything (i.e. a project) yet.
   */
 case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:String, version:Int,
-                     ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean, backupOf:Option[Int]) extends PlutoModel {
+                     ctime: Timestamp, mtime: Timestamp, atime: Timestamp, hasContent:Boolean, hasLink:Boolean, backupOf:Option[Int], maybePremiereVersion:Option[Int]) extends PlutoModel {
   private lazy val logger = LoggerFactory.getLogger(getClass)
 
   /**
@@ -283,7 +283,7 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
 /**
   * Companion object for the [[FileEntry]] case class
   */
-object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Timestamp, Timestamp, Boolean, Boolean, Option[Int])=>FileEntry) {
+object FileEntry extends ((Option[Int], String, Int, String, Int, Timestamp, Timestamp, Timestamp, Boolean, Boolean, Option[Int], Option[Int])=>FileEntry) {
   /**
     * Get a [[FileEntry]] instance for the given database ID
     * @param entryId database ID to look up
@@ -386,12 +386,14 @@ class FileEntryRow(tag:Tag) extends Table[FileEntry](tag, "FileEntry") {
 
   def hasContent = column[Boolean]("b_has_content")
   def hasLink = column[Boolean]("b_has_link")
-
   def backupOf = column[Option[Int]]("k_backup_of")
+
+  def maybePremiereVersion = column[Option[Int]]("i_premiere_version")
+
   def storageFk = foreignKey("fk_storage",storage,TableQuery[StorageEntryRow])(_.id)
   def backupFk = foreignKey("fk_backup_of", backupOf, TableQuery[FileEntryRow])(_.id)
 
-  def * = (id.?,filepath,storage,user,version,ctime,mtime,atime, hasContent, hasLink, backupOf) <> (FileEntry.tupled, FileEntry.unapply)
+  def * = (id.?,filepath,storage,user,version,ctime,mtime,atime, hasContent, hasLink, backupOf, maybePremiereVersion) <> (FileEntry.tupled, FileEntry.unapply)
 }
 
 
@@ -412,7 +414,8 @@ trait FileEntrySerializer extends TimestampSerialization {
       (JsPath \ "atime").write[Timestamp] and
       (JsPath \ "hasContent").write[Boolean] and
       (JsPath \ "hasLink").write[Boolean] and
-      (JsPath \ "backupOf").writeNullable[Int]
+      (JsPath \ "backupOf").writeNullable[Int] and
+      (JsPath \ "premiereVersion").writeNullable[Int]
     )(unlift(FileEntry.unapply))
 
   implicit val fileReads: Reads[FileEntry] = (
@@ -426,6 +429,7 @@ trait FileEntrySerializer extends TimestampSerialization {
       (JsPath \ "atime").read[Timestamp] and
       (JsPath \ "hasContent").read[Boolean] and
       (JsPath \ "hasLink").read[Boolean] and
-      (JsPath \ "backupOf").readNullable[Int]
+      (JsPath \ "backupOf").readNullable[Int] and
+      (JsPath \ "premiereVersion").readNullable[Int]
     )(FileEntry.apply _)
 }

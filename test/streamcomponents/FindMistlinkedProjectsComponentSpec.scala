@@ -12,7 +12,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class FindMistlinkedProjectsComponentSpec extends Specification with Mockito {
-  def genFileEntry(filePath:String, storageId:Int) = FileEntry(None,filePath, storageId,"test",1,Timestamp.from(Instant.now()), Timestamp.from(Instant.now()), Timestamp.from(Instant.now()), true, true, None)
+  def genFileEntry(filePath:String, storageId:Int) = FileEntry(None,filePath, storageId,"test",1,Timestamp.from(Instant.now()), Timestamp.from(Instant.now()), Timestamp.from(Instant.now()), true, true, None, None)
   val fakeProject = ProjectEntry(
     Some(4567),
     1,
