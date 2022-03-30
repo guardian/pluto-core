@@ -1,5 +1,6 @@
 package models
 
+import akka.stream.scaladsl.Source
 import drivers.StorageDriver
 import org.slf4j.LoggerFactory
 import play.api.Logger
@@ -10,7 +11,7 @@ import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 
 import java.io.{File, FileInputStream}
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -254,5 +255,86 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
           .length
           .result
       }
+  }
+
+  /* ------- Constructors and such ------- */
+  /**
+    * Get a [[FileEntry]] instance for the given database ID
+    * @param entryId database ID to look up
+    * @return a Future, containing an Option that may contain a [[FileEntry]] instance
+    */
+  def entryFor(entryId: Int):Future[Option[FileEntry]] =
+    db.run(
+      TableQuery[FileEntryRow].filter(_.id===entryId).result.asTry
+    ).map({
+      case Success(result)=>
+        result.headOption
+      case Failure(error)=>throw error
+    })
+
+  /**
+    * Get a FileEntry instance for the given filename and storage
+    * @param fileName file name to search for (exact match to file path)
+    * @param storageId storage ID to search for
+    * @return a Future, containing a Try that contains a sequnce of zero or more FileEntry instances
+    */
+  def entryFor(fileName: String, storageId: Int, version:Int):Future[Try[Seq[FileEntry]]] =
+    db.run(
+      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).filter(_.version===version).result.asTry
+    )
+
+  /**
+    * improved version of entryFor that returns either one or no entries in a more composable way.
+    * This should be all that is needed because of table constraints
+    * @param fileName the file name to search for (exact match)
+    * @param storageId storage ID to search for
+    * @param version version number to search for
+    * @return a Future containing either a FileEntry or None. The future fails if there is a problem.
+    */
+  def singleEntryFor(fileName: String, storageId:Int, version:Int):Future[Option[FileEntry]] =
+    db.run(
+      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).filter(_.version===version).result
+    ).map(_.headOption)
+
+  def allVersionsFor(fileName: String, storageId: Int):Future[Try[Seq[FileEntry]]] =
+    db.run(
+      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).sortBy(_.version.desc.nullsLast).result.asTry
+    )
+
+
+  /**
+    * returns a list of matching records for the given file name, ordered by most recent first (if versioning is enabled)
+    * @param target file path to query. this should be a relative filepath for the given storage.
+    * @param forStorageId limit results to this storage only
+    * @return a Future containing a sequence of results
+    */
+  def findByFilename(target:Path, forStorageId:Option[Int], drop:Int=0, take:Int=100) = {
+    val baseQuery = TableQuery[FileEntryRow].filter(_.filepath===target.toString)
+    val finalQuery = forStorageId match {
+      case Some(storageId)=> baseQuery.filter(_.storage===storageId)
+      case None=>baseQuery
+    }
+
+    db.run {
+      finalQuery.sortBy(_.version.desc.nullsLast).drop(drop).take(take).result
+    }
+  }
+
+  /**
+    * returns a streaming source that lists out all files in the database, optionally limiting to a given storage ID
+    * @param forStorageId if provided, limit to this storage ID only
+    * @param onlyWithContent if true, then limit to only returning files that have the 'haveContent' field set. Defaults to True.
+    * @return an Akka Source, that yields FileEntry objects
+    */
+  def scanAllFiles(forStorageId:Option[Int], onlyWithContent:Boolean=true) = {
+    val baseQuery = TableQuery[FileEntryRow]
+    val storageQuery = forStorageId match {
+      case Some(storageId)=>baseQuery.filter(_.storage===storageId)
+      case None=>baseQuery
+    }
+
+    val finalQuery = if(onlyWithContent) storageQuery else storageQuery.filter(_.hasContent===true)
+
+    Source.fromPublisher(db.stream(finalQuery.sortBy(_.mtime.asc).result))
   }
 }

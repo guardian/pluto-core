@@ -1,6 +1,7 @@
 package models
 
 import org.slf4j.LoggerFactory
+import play.api.libs.json.{JsError, JsPath, JsResult, JsString, JsSuccess, JsValue, Reads, Writes}
 import slick.lifted.Tag
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
@@ -75,6 +76,34 @@ case class PremiereVersionTranslation(internalVersionNumber:Int, name:String, di
   */
 object PremiereVersionTranslationMappers {
   implicit val DisplayedVersionConverter = MappedColumnType.base[DisplayedVersion, String](_.toString, DisplayedVersion.apply(_).get)
+}
+
+object PremiereVersionTranslationCodec {
+  import play.api.libs.functional.syntax._
+  import play.api.libs.functional._
+
+  implicit val displayedVersionReads:Reads[DisplayedVersion] = new Reads[DisplayedVersion] {
+    override def reads(json: JsValue): JsResult[DisplayedVersion] = DisplayedVersion.apply(json.as[String]) match {
+      case Some(v)=>JsSuccess(v)
+      case None=>JsError("version number is not valid, should be in the form x.y.z")
+    }
+  }
+
+  implicit val displayedVersionWrites:Writes[DisplayedVersion] = new Writes[DisplayedVersion] {
+    override def writes(o: DisplayedVersion): JsValue = JsString(o.toString)
+  }
+
+  implicit val premVersionTranslationReads:Reads[PremiereVersionTranslation] = (
+    (JsPath \ "internalVersionNumber").read[Int] and
+      (JsPath \ "name").read[String] and
+      (JsPath \ "displayedVersion").read[DisplayedVersion]
+  )(PremiereVersionTranslation.apply _)
+
+  implicit val premVersionTranslationWrites:Writes[PremiereVersionTranslation] = (
+    (JsPath \ "internalVersionNumber").write[Int] and
+      (JsPath \ "name").write[String] and
+      (JsPath \ "displayedVersion").write[DisplayedVersion]
+  )(unlift(PremiereVersionTranslation.unapply))
 }
 
 class PremiereVersionTranslationRow(tag:Tag) extends Table[PremiereVersionTranslation](tag, "PremiereVersionTranslation") {

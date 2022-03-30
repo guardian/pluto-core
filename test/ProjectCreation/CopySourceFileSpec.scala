@@ -34,11 +34,11 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
-      val fileEntrySource = Await.result(FileEntry.entryFor("/path/to/a/file.project",1,1), 2 seconds)
+      val fileEntrySource = Await.result(fileEntryDAO.entryFor("/path/to/a/file.project",1,1), 2 seconds)
       fileEntrySource must beSuccessfulTry
       fileEntrySource.get.length mustEqual 1
 
-      val fileEntryDest = Await.result(FileEntry.entryFor("testprojectfile",1,1), 2 seconds)
+      val fileEntryDest = Await.result(fileEntryDAO.entryFor("testprojectfile",1,1), 2 seconds)
       fileEntryDest must beSuccessfulTry
       fileEntryDest.get.length mustEqual 1
       protected val storageHelper = mock[StorageHelper]
@@ -65,11 +65,11 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
-      val fileEntrySource = Await.result(FileEntry.entryFor("/path/to/a/file.project",1,1), 2 seconds)
+      val fileEntrySource = Await.result(fileEntryDAO.entryFor("/path/to/a/file.project",1,1), 2 seconds)
       fileEntrySource must beSuccessfulTry
       fileEntrySource.get.length mustEqual 1
 
-      val fileEntryDest = Await.result(FileEntry.entryFor("testprojectfile",1,1), 2 seconds)
+      val fileEntryDest = Await.result(fileEntryDAO.entryFor("testprojectfile",1,1), 2 seconds)
       fileEntryDest must beSuccessfulTry
       fileEntryDest.get.length mustEqual 1
       protected val storageHelper = mock[StorageHelper]
@@ -98,11 +98,11 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
-      val fileEntrySource = Await.result(FileEntry.entryFor("/path/to/a/file.project",1,1), 2 seconds)
+      val fileEntrySource = Await.result(fileEntryDAO.entryFor("/path/to/a/file.project",1,1), 2 seconds)
       fileEntrySource must beSuccessfulTry
       fileEntrySource.get.length mustEqual 1
 
-      val fileEntryDest = Await.result(FileEntry.entryFor("testprojectfile",1,1 ), 2 seconds)
+      val fileEntryDest = Await.result(fileEntryDAO.entryFor("testprojectfile",1,1 ), 2 seconds)
       fileEntryDest must beSuccessfulTry
       fileEntryDest.get.length mustEqual 1
 

@@ -108,7 +108,7 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
       }
   })
 
-  def changeVersion(projectId:Int, requiredDisplayVersion:String) = IsAuthenticatedAsync { uid=> request=>
+  def changeVersion(projectFileId:Int, requiredDisplayVersion:String) = IsAuthenticatedAsync { uid=> request=>
     DisplayedVersion(requiredDisplayVersion) match {
       case None=>
         Future(BadRequest(Json.obj("status"->"bad_request","detail"->"invalid version number")))
@@ -124,14 +124,10 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
                 Future(results.head)
               }
             })
-          projectRecord <- ProjectEntry.entryForIdNew(projectId)
-          projectFile <- projectRecord
-            .associatedFiles(allVersions = false) //this is set up to only query the default storage and return most recent first
-            .map(_.headOption)
-            .flatMap({
-              case Some(f)=>Future(f)
-              case None=>Future.failed(new RuntimeException("There is no current file for this project"))
-            })
+          projectFile <- fileEntryDAO.entryFor(projectFileId).flatMap({
+            case None=>Future.failed(new RuntimeException(s"project id $projectFileId does not exist"))
+            case Some(f)=>Future(f)
+          })
           projectFileJavaIO <- fileEntryDAO.getJavaFile(projectFile)
           _ <- checkExistingVersion(projectFile, targetVersion) //breaks the chain if the versions are both the same
           backupFile <- backupFile(projectFile)
@@ -150,6 +146,21 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
             logger.error(s"Could not update project file to version $newVersion: ${err.getClass.getCanonicalName} ${err.getMessage}", err)
             BadRequest(Json.obj("status"->"error", "detail"->err.getMessage))
         })
+    }
+  }
+
+  def lookupClientVersion(clientVersionString:String) = IsAuthenticatedAsync { uid=> request=>
+    import models.PremiereVersionTranslationCodec._
+
+    DisplayedVersion(clientVersionString) match {
+      case Some(clientVersion) =>
+        premiereVersionTranslationDAO
+          .findDisplayedVersion(clientVersion)
+          .map(results=>{
+            Ok(Json.obj("status"->"ok", "count"->results.length, "result"->results))
+          })
+      case None =>
+        Future(BadRequest(Json.obj("status" -> "error", "detail" -> "Invalid version string, should be of the form x.y.z")))
     }
   }
 }

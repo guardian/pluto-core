@@ -78,7 +78,7 @@ class Files @Inject() (override val controllerComponents:ControllerComponents,
 
   override def insert(entry: FileEntry,uid:String):Future[Try[Int]] = {
     /* only allow a record to be created if no files already exist with that path on that storage */
-    FileEntry.allVersionsFor(entry.filepath,entry.storageId)(dbConfig.db).flatMap({
+    fileEntryDAO.allVersionsFor(entry.filepath,entry.storageId).flatMap({
       case Success(fileList)=>
         entry.storage.flatMap({
           case None=>

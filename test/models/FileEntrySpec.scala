@@ -27,7 +27,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
       private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
-      val testFileEntryBeforeFuture = FileEntry.entryFor(1, db).map(_.get)
+      val testFileEntryBeforeFuture = fileEntryDAO.entryFor(1).map(_.get)
       val fileEntryBefore = Await.result(testFileEntryBeforeFuture, 10.seconds)
       fileEntryBefore.hasContent mustEqual false
 
@@ -35,7 +35,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       val finalResult = Await.result(resultFuture, 10.seconds)
 
       finalResult must beSuccessfulTry(1) //expect 1 row updated
-      val testFileEntryAfterFuture = FileEntry.entryFor(1, db).map(_.get)
+      val testFileEntryAfterFuture = fileEntryDAO.entryFor(1).map(_.get)
 
       val fileEntryAfter = Await.result(testFileEntryAfterFuture, 10.seconds)
       fileEntryAfter.hasContent mustEqual true
@@ -72,7 +72,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       result must beSuccessfulTry
       result.get.id must beSome //ensure that the ID has been set
 
-      val testEntryRead = Await.result(FileEntry.entryFor(result.get.id.get,db),10.seconds)
+      val testEntryRead = Await.result(fileEntryDAO.entryFor(result.get.id.get),10.seconds)
       testEntryRead must beSome
       testEntryRead.get.filepath mustEqual "/path/to/nonexisting"
       testEntryRead.get.storageId mustEqual 1
@@ -86,7 +86,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
       private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
-      val testFileEntry = Await.result(FileEntry.entryFor(4,db),10.seconds)
+      val testFileEntry = Await.result(fileEntryDAO.entryFor(4),10.seconds)
       val ts = Timestamp.valueOf(LocalDateTime.now())
       testFileEntry must beSome
       testFileEntry.get.id must beSome(4)
@@ -98,7 +98,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       val updateResult = Await.result(fileEntryUpdated.save,10.seconds)
       updateResult must beSuccessfulTry
 
-      val testEntryRead = Await.result(FileEntry.entryFor(4,db),10.seconds)
+      val testEntryRead = Await.result(fileEntryDAO.entryFor(4),10.seconds)
 
       testEntryRead must beSome
       testEntryRead.get.id must beSome(4)
@@ -111,10 +111,9 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
   "FileEntry.entryFor" should {
     "return None if the record does not exist" in new WithApplication(buildApp) {
       val injector = app.injector
-      val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-      implicit val db = dbConfigProvider.get[JdbcProfile].db
+      val fileEntryDAO = app.injector.instanceOf[FileEntryDAO]
 
-      val testFileEntryBeforeFuture = FileEntry.entryFor(9999, db)
+      val testFileEntryBeforeFuture = fileEntryDAO.entryFor(9999)
       val result = Await.result(testFileEntryBeforeFuture, 10.seconds)
       result must beNone
 
@@ -123,9 +122,8 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
 
   "FileEntry.findByFilename" should {
     "return a list of matching files" in new WithApplication(buildApp) {
-      implicit val db = app.injector.instanceOf(classOf[DatabaseConfigProvider]).get[JdbcProfile].db
-
-      val result = Await.result(FileEntry.findByFilename(Paths.get("/path/to/a/file.project"), None), 2.seconds)
+      val fileEntryDAO = app.injector.instanceOf[FileEntryDAO]
+      val result = Await.result(fileEntryDAO.findByFilename(Paths.get("/path/to/a/file.project"), None), 2.seconds)
       result.length mustEqual 1
       result.head.id must beSome(2)
     }
@@ -135,9 +133,9 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
     "return a source suitable for iterating all files" in new WithApplication(buildApp) {
       implicit val actorSystem = app.injector.instanceOf(classOf[ActorSystem])
       implicit val mat = app.injector.instanceOf(classOf[Materializer])
-      implicit val db = app.injector.instanceOf(classOf[DatabaseConfigProvider]).get[JdbcProfile].db
+      val fileEntryDAO = app.injector.instanceOf[FileEntryDAO]
 
-      val future = FileEntry.scanAllFiles(None)
+      val future = fileEntryDAO.scanAllFiles(None)
         .toMat(Sink.seq[FileEntry])(Keep.right)
         .run()
 

@@ -205,7 +205,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
             logger.warn(s"While trying to make the target entry, caught exception of type ${err.getClass.getCanonicalName} with message ${err.getMessage}")
             if(err.getMessage.contains("duplicate key value violates unique constraint")) {
               logger.warn(s"Pre-existing file entry detected for ${targetDestEntry.filepath} v${targetDestEntry.version} on storage ${targetDestEntry.storageId}, recovering it")
-              FileEntry
+              fileEntryDAO
                 .singleEntryFor(targetDestEntry.filepath, targetDestEntry.storageId, targetDestEntry.version)
                 .map({
                   case Some(entry)=>entry
