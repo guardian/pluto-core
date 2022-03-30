@@ -6,7 +6,7 @@ import drivers.{StorageDriver, StorageMetadata}
 import helpers.StorageHelper.{defaultBufferSize, getClass}
 
 import javax.inject.Inject
-import models.{FileEntry, StorageEntry}
+import models.{FileEntry, FileEntryDAO, StorageEntry}
 import play.api.Logger
 import org.slf4j.{LoggerFactory, MDC}
 import play.api.inject.Injector
@@ -53,7 +53,7 @@ object StorageHelper {
   }
 }
 
-class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector) {
+class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector, fileEntryDAO: FileEntryDAO) {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /**

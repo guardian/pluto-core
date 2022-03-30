@@ -16,7 +16,7 @@ import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class PostrunExecutor @Inject() (dbConfigProvider:DatabaseConfigProvider, config:Configuration) extends GenericCreationActor {
+class PostrunExecutor @Inject() (dbConfigProvider:DatabaseConfigProvider, config:Configuration)(implicit fileEntryDAO: FileEntryDAO) extends GenericCreationActor {
   override val persistenceId = "postrun-executor-actor-" + self.path.name
   implicit val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("30 seconds"))
 

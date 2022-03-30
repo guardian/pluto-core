@@ -5,7 +5,7 @@ import akka.stream.{ActorMaterializer, ClosedShape, Materializer}
 import akka.stream.scaladsl.{Balance, Flow, GraphDSL, Merge, RunnableGraph, Sink}
 
 import javax.inject.{Inject, Singleton}
-import models.{FileEntryRow, ProjectEntry, ProjectEntryRow, ValidationJob, ValidationJobDAO, ValidationJobStatus, ValidationJobType, ValidationProblem, ValidationProblemDAO}
+import models.{FileEntryDAO, FileEntryRow, ProjectEntry, ProjectEntryRow, ValidationJob, ValidationJobDAO, ValidationJobStatus, ValidationJobType, ValidationProblem, ValidationProblemDAO}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
@@ -36,7 +36,7 @@ object ValidateProject {
 class ValidateProject @Inject()(config:Configuration,
                                 dbConfigProvider:DatabaseConfigProvider,
                                 validationJobDAO:ValidationJobDAO,
-                                validationProblemDAO:ValidationProblemDAO)(implicit mat:Materializer, injector:Injector) extends Actor {
+                                validationProblemDAO:ValidationProblemDAO)(implicit mat:Materializer, injector:Injector, fileEntryDAO:FileEntryDAO) extends Actor {
   import ValidateProject._
   private val logger = LoggerFactory.getLogger(getClass)
 

@@ -8,7 +8,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.test.WithApplication
 import akka.pattern.ask
 import drivers.StorageDriver
-import models.{FileEntry, ProjectRequestFull, ProjectTemplate, StorageEntry}
+import models.{FileEntry, FileEntryDAO, ProjectRequestFull, ProjectTemplate, StorageEntry}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, StepSucceded}
 import slick.jdbc.PostgresProfile
 
@@ -24,12 +24,13 @@ class CopySourceFileSpec extends Specification with Mockito with utils.BuildMyAp
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private val system:ActorSystem = injector.instanceOf(classOf[ActorSystem])
       implicit val ec:ExecutionContext = injector.instanceOf(classOf[ExecutionContext])
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val mockUpdatedFileEntry = mock[FileEntry]
       mockUpdatedFileEntry.saveSimple(any) returns Future(mock[FileEntry])
       val mockedStorageHelper = mock[StorageHelper]
       mockedStorageHelper.copyFile(any,any)(any) returns Future(mockUpdatedFileEntry)
-      val testRef = system.actorOf(Props(new CopySourceFile(dbConfigProvider, mockedStorageHelper)(injector)))
+      val testRef = system.actorOf(Props(new CopySourceFile(dbConfigProvider, mockedStorageHelper)(injector, fileEntryDAO)))
 
       val mockStorageDriver = mock[StorageDriver]
       val mockStorage = mock[StorageEntry]

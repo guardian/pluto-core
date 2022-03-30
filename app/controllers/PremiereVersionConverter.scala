@@ -1,7 +1,7 @@
 package controllers
 
 import auth.{BearerTokenAuth, Security}
-import models.{DisplayedVersion, FileEntry, FileEntrySerializer, PremiereVersionTranslation, PremiereVersionTranslationDAO, ProjectEntry}
+import models.{DisplayedVersion, FileEntry, FileEntryDAO, FileEntrySerializer, PremiereVersionTranslation, PremiereVersionTranslationDAO, ProjectEntry}
 import org.apache.commons.io.FileUtils
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
@@ -24,7 +24,9 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
                                          override val bearerTokenAuth:BearerTokenAuth,
                                          override implicit val config: Configuration,
                                          override val cache:SyncCacheApi,
-                                         premiereVersionTranslationDAO: PremiereVersionTranslationDAO, dbConfigProvider:DatabaseConfigProvider)
+                                         fileEntryDAO:FileEntryDAO,
+                                         premiereVersionTranslationDAO: PremiereVersionTranslationDAO,
+                                         dbConfigProvider:DatabaseConfigProvider)
                                         (implicit ec:ExecutionContext) extends AbstractController(controllerComponents) with Security with AdobeXml with FileEntrySerializer
 {
   private implicit val db = dbConfigProvider.get[PostgresProfile].db
@@ -35,7 +37,7 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
     * @return a Future, containing a File pointing to the backed-up location
     */
   def backupFile(fileEntry:FileEntry) = for {
-    sourceFile <- fileEntry.getJavaFile
+    sourceFile <- fileEntryDAO.getJavaFile(fileEntry)
     result <- Future.fromTry({
       val p = Paths.get(fileEntry.filepath)
       val tempFile = File.createTempFile(p.getFileName.toString, ".bak")
@@ -130,12 +132,12 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
               case Some(f)=>Future(f)
               case None=>Future.failed(new RuntimeException("There is no current file for this project"))
             })
-          projectFileJavaIO <- projectFile.getJavaFile
+          projectFileJavaIO <- fileEntryDAO.getJavaFile(projectFile)
           _ <- checkExistingVersion(projectFile, targetVersion) //breaks the chain if the versions are both the same
           backupFile <- backupFile(projectFile)
           //.get is safe here because if it is None then `checkExistingVersion` will have failed the job
           _ <- tweakProjectVersion(projectFileJavaIO, backupFile, projectFile.maybePremiereVersion.get, targetVersion)
-          updatedProjectFile <- projectFile.copy(maybePremiereVersion = Some(targetVersion.internalVersionNumber)).saveSimple
+          updatedProjectFile <- fileEntryDAO.saveSimple(projectFile.copy(maybePremiereVersion = Some(targetVersion.internalVersionNumber)))
         } yield (updatedProjectFile, projectFile)
 
         resultFut

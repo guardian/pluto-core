@@ -25,7 +25,7 @@ class ProjectTemplateController @Inject() (override val controllerComponents:Con
                                            override implicit val config: Configuration,
                                            dbConfigProvider: DatabaseConfigProvider,
                                            cacheImpl:SyncCacheApi)
-                                          (implicit mat:Materializer, injector:Injector)
+                                          (implicit mat:Materializer, fileEntryDAO:FileEntryDAO)
   extends GenericDatabaseObjectController[ProjectTemplate] with ProjectTemplateSerializer with StorageSerializer{
 
   implicit val cache:SyncCacheApi = cacheImpl
@@ -96,7 +96,7 @@ class ProjectTemplateController @Inject() (override val controllerComponents:Con
       })
 
       /* step two - actually try to delete the file from disk */
-      val fileDeleteFuture = fileFuture.flatMap(_.deleteFromDisk)
+      val fileDeleteFuture = fileFuture.flatMap(fileEntryDAO.deleteFromDisk)
 
       /* step three - delete the file object representing it */
       val fileObjectDeleteFuture = fileDeleteFuture.map({

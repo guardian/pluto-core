@@ -25,6 +25,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testFileEntryBeforeFuture = FileEntry.entryFor(1, db).map(_.get)
       val fileEntryBefore = Await.result(testFileEntryBeforeFuture, 10.seconds)
@@ -44,6 +45,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val ts = Timestamp.valueOf(LocalDateTime.now())
       val testFileEntryBefore = FileEntry(None,"notexistingtestfile",1,"test-user",1,ts,ts,ts,false,false, None, None)
@@ -61,6 +63,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val ts = Timestamp.valueOf(LocalDateTime.now())
       val testFileEntry = FileEntry(None,"/path/to/nonexisting",1,"test-user",1,ts,ts,ts,false,false, None, None)
@@ -81,6 +84,7 @@ class FileEntrySpec extends Specification with utils.BuildMyApp {
       val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testFileEntry = Await.result(FileEntry.entryFor(4,db),10.seconds)
       val ts = Timestamp.valueOf(LocalDateTime.now())

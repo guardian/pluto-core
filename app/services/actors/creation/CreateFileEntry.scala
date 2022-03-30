@@ -3,12 +3,11 @@ package services.actors.creation
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import javax.inject.Inject
-
 import akka.actor.Props
 import drivers.StorageDriver
 import akka.pattern.ask
 import exceptions.ProjectCreationError
-import models.{FileEntry, ProjectRequestFull, ProjectType}
+import models.{FileEntry, FileEntryDAO, ProjectRequestFull, ProjectType}
 import org.slf4j.MDC
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -22,7 +21,7 @@ object CreateFileEntry {
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extends GenericCreationActor {
+class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) (implicit fileEntryDAO:FileEntryDAO) extends GenericCreationActor {
   override val persistenceId = "create-file-entry-" + self.path.name
 
   import GenericCreationActor._

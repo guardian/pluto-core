@@ -40,61 +40,32 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
   /**
     *  writes this model into the database, inserting if id is None and returning a fresh object with id set. If an id
     * was set, then returns the same object. */
-  def save(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Try[FileEntry]] = id match {
-    case None=>
-      val insertQuery = TableQuery[FileEntryRow] returning TableQuery[FileEntryRow].map(_.id) into ((item,id)=>item.copy(id=Some(id)))
-      db.run(
-        (insertQuery+=this).asTry
-      ).map({
-        case Success(insertResult)=>Success(insertResult)
-        case Failure(error)=>Failure(error)
-      })
-    case Some(realEntityId)=>
-      db.run(
-        TableQuery[FileEntryRow].filter(_.id===realEntityId).update(this).asTry
-      ).map({
-        case Success(_)=>Success(this)
-        case Failure(error)=>Failure(error)
-      })
-  }
+  @deprecated("Use FileEntryDAO.save()")
+  def save(implicit dao:FileEntryDAO):Future[Try[FileEntry]] = dao.save(this)
 
-  def saveSimple(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[FileEntry] = save.flatMap({
-    case Success(e)=>Future(e)
-    case Failure(err)=>Future.failed(err)
-  })
+  @deprecated("Use FileEntryDAO.saveSimple")
+  def saveSimple(implicit dao:FileEntryDAO):Future[FileEntry] = dao.saveSimple(this)
 
   /**
     *  returns a StorageEntry object for the id of the storage of this FileEntry */
-  def storage(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Option[StorageEntry]] = {
-    db.run(
-      TableQuery[StorageEntryRow].filter(_.id===storageId).result
-    ).map(_.headOption)
-  }
+  @deprecated("Use FileEntryDAO.storage")
+  def storage(implicit dao:FileEntryDAO):Future[Option[StorageEntry]] = dao.storage(this)
 
   /**
     * Get a full path of the file, including the root path of the storage
-    * @param db implicitly provided [[slick.jdbc.PostgresProfile#Backend#Database]]
+    * @param dao implicitly provided FileEntryDAO instance
     * @return Future containing a string
     */
-  def getFullPath(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[String] =
-    storage.map({
-      case Some(storage)=>
-        Paths.get(storage.rootpath.getOrElse(""), filepath).toString
-      case None=>
-        filepath
-    })
+  @deprecated("Use FileEntryDAO.getFullPath")
+  def getFullPath(implicit dao:FileEntryDAO):Future[String] = dao.getFullPath(this)
 
   /**
     * Gets a java.io.File pointing to the given file
     * @param db
     * @return
     */
-  def getJavaFile(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[File] = storage.map({
-    case Some(storage) =>
-      Paths.get(storage.rootpath.getOrElse(""), filepath).toFile
-    case None =>
-      new File(filepath)
-  })
+  @deprecated("Use FileEntryDAO.getJavaFile")
+  def getJavaFile(implicit dao:FileEntryDAO):Future[File] = dao.getJavaFile(this)
 
   /**
     * this attempts to delete the file from disk, using the configured storage driver
@@ -102,116 +73,34 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @param db implicitly provided [[slick.jdbc.PostgresProfile#Backend#Database]]
     * @return A future containing either a Right() containing a Boolean indicating whether the delete happened,  or a Left with an error string
     */
-  def deleteFromDisk(implicit db:slick.jdbc.PostgresProfile#Backend#Database, injector:Injector):Future[Either[String,Boolean]] = {
-    /**/
-    /*it either returns a Right(), with a boolean indicating whether the delete happened or not, or a Left() with an error string*/
-    val maybeStorageDriverFuture = this.storage.map({
-      case Some(storage)=>
-        storage.getStorageDriver
-      case None=>
-        None
-    })
-
-    maybeStorageDriverFuture.flatMap({
-      case Some(storagedriver)=>
-        this.getFullPath.map(fullpath=>Right(storagedriver.deleteFileAtPath(fullpath, version)))
-      case None=>
-        Future(Left("No storage driver configured for storage"))
-    })
-  }
+  @deprecated("Use FileEntryDAO.deleteFromDisk")
+  def deleteFromDisk(implicit dao:FileEntryDAO, injector:Injector):Future[Either[String,Boolean]] = dao.deleteFromDisk(this)
 
   /**
     * attempt to delete the underlying record from the database
     * @param db implicitly provided database object
     * @return a Future with no value on success. On failure, the future fails; pick this up with .recover() or .onComplete
     */
-  def deleteSelf(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Unit] =
-    id match {
-      case Some(databaseId)=>
-        val logger = Logger(getClass)
-        logger.info(s"Deleting database record for file $databaseId ($filepath on storage $storageId)")
-        db.run(
-          DBIO.seq(
-            TableQuery[FileAssociationRow].filter(_.fileEntry===databaseId).delete,
-            TableQuery[FileEntryRow].filter(_.id===databaseId).delete
-          )
-        )
-      case None=>
-        Future.failed(new RuntimeException("Cannot delete a record that has not been saved to the database"))
-    }
-
-  /**
-    * private method to (synchronously) write a buffer of content to the underlying file. Called by the public method writeToFile().
-    * @param buffer [[play.api.mvc.RawBuffer]] containing content to write
-    * @param outputPath String, absolute path to write content to.
-    * @param storageDriver [[StorageDriver]] instance to do the actual writing
-    * @return a Try containing the unit value
-    */
-  private def writeContent(buffer: RawBuffer, outputPath:java.nio.file.Path, storageDriver:StorageDriver):Try[Unit] =
-    buffer.asBytes() match {
-      case Some(bytes) => //the buffer is held in memory
-        val logger = Logger(getClass)
-        logger.debug("uploadContent: writing memory buffer")
-        storageDriver.writeDataToPath(outputPath.toString, version, bytes.toArray)
-      case None => //the buffer is on-disk
-        val logger = Logger(getClass)
-        logger.debug("uploadContent: writing disk buffer")
-        val fileInputStream = new FileInputStream(buffer.asFile)
-        val result=storageDriver.writeDataToPath(outputPath.toString, version, fileInputStream)
-        fileInputStream.close()
-        result
-    }
+  @deprecated("Use FileEntryDAO.deleteSelf")
+  def deleteSelf(implicit dao:FileEntryDAO):Future[Unit] = dao.deleteRecord(this)
 
   /**
     * Update the hasContent flag
     * @param db implicitly provided [[slick.jdbc.PostgresProfile#Backend#Database]]
     * @return a Future containing a Try, which contains an updated [[models.FileEntry]] instance
     */
-  def updateFileHasContent(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
-    id match {
-      case Some(recordId)=>
-        val updateFileref = this.copy (hasContent = true)
-
-        db.run (
-          TableQuery[FileEntryRow].filter (_.id === recordId).update (updateFileref).asTry
-        )
-      case None=>
-        Future(Failure(new RuntimeException("Can't update a file record that has not been saved")))
-    }
-  }
+  @deprecated("Use FileEntryDAO.updateFileHasContent")
+  def updateFileHasContent(implicit dao:FileEntryDAO) = dao.updateFileHasContent(this)
 
   /* Asynchronously writes the given buffer to this file*/
-  def writeToFile(buffer: RawBuffer)(implicit db:slick.jdbc.PostgresProfile#Backend#Database, injector:Injector):Future[Try[Unit]] = {
-    val storageResult = this.storage
-
-    storageResult.map({
-      case Some(storage) =>
-        storage.getStorageDriver match {
-          case Some(storageDriver) =>
-            try {
-              val logger = Logger(getClass)
-              val outputPath = Paths.get(this.filepath)
-              logger.info(s"Writing to $outputPath with $storageDriver")
-              val response = this.writeContent(buffer, outputPath, storageDriver)
-              this.updateFileHasContent
-              response
-            } catch {
-              case ex: Exception =>
-                val logger = Logger(getClass)
-                logger.error("Unable to write file: ", ex)
-                Failure(ex)
-            }
-          case None =>
-            val logger = Logger(getClass)
-            logger.error(s"No storage driver available for storage ${this.storageId}")
-            Failure(new RuntimeException(s"No storage driver available for storage ${this.storageId}"))
-        }
-      case None =>
-        val logger = Logger(getClass)
-        logger.error(s"No storage could be found for ID ${this.storageId}")
-        Failure(new RuntimeException(s"No storage could be found for ID ${this.storageId}"))
+  @deprecated("Use FileEntryDAO.writeToFile")
+  def writeToFile(buffer: RawBuffer)(implicit dao:FileEntryDAO, injector:Injector):Future[Try[Unit]] = dao
+    .writeToFile(this, buffer)
+    .map(_=>Success( () ))
+    .recover({
+      case err:Throwable=>
+        Failure(err)
     })
-  }
 
   /**
     * check if this FileEntry points to something real on disk
@@ -219,19 +108,8 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @return a Future, containing a Left with a string if there was an error, or a Right with a Boolean flag indicating if the
     *         pointed object exists on the storage
     */
-  def validatePathExists(implicit db:slick.jdbc.PostgresProfile#Backend#Database, injector:Injector) = {
-    val preReqs = for {
-      filePath <- getFullPath
-      maybeStorage <- storage
-    } yield (filePath,maybeStorage)
-
-    preReqs.map(pathAndMaybeStorage=>{
-      pathAndMaybeStorage._2.map(_.validatePathExists(pathAndMaybeStorage._1, version))
-    }).map({
-      case Some(result)=>result
-      case None=>Left(s"No storage could be found for ID $storageId on file $id")
-    })
-  }
+  @deprecated("Use FileEntryDAO.validateFileExists")
+  def validatePathExists(implicit dao:FileEntryDAO) = dao.validatePathExists(this)
 
   /**
     * check if this FileEntry points to something real on disk.
@@ -242,18 +120,8 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @param driver
     * @return
     */
-  def validatePathExistsDirect(implicit db:slick.jdbc.PostgresProfile#Backend#Database, driver:StorageDriver) = {
-    getFullPath.map(path=>driver.pathExists(path, version))
-  }
-
-  private def makeQuery(forId:Int, forStorage:Option[Int]) = {
-    val baseQuery = TableQuery[FileEntryRow].filter(_.backupOf===forId)
-
-    forStorage match {
-      case Some(storageId) => baseQuery.filter(_.storage===storageId)
-      case None=> baseQuery
-    }
-  }
+  @deprecated("Use FileEntryDAO.validateFileExistsDirect")
+  def validatePathExistsDirect(implicit dao:FileEntryDAO, driver:StorageDriver) = dao.validatePathExistsDirect(this)
 
   /**
     * returns some of the backups for this file.  Results are sorted by most recent version first.
@@ -265,30 +133,11 @@ case class FileEntry(id: Option[Int], filepath: String, storageId: Int, user:Str
     * @param db implicitly provided database object
     * @return a Future containing a sequence of FileEntry objects. This fails if there is a problem.
     */
-  def backups(forStorage:Option[Int]=None, drop:Int=0, take:Int=100)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = this.id match {
-    case None=>
-      Future.failed(new RuntimeException("A record must be saved before you can query for backups"))
-    case Some(fileId)=>
-      logger.info(s"Looking for backups of file with id $fileId on storage $forStorage")
-      db.run {
-          makeQuery(fileId, forStorage)
-          .sortBy(_.version.desc.nullsLast)
-          .drop(drop)
-          .take(take)
-          .result
-      }
-  }
+  @deprecated("Use FileEntryDAO.backups")
+  def backups(forStorage:Option[Int]=None, drop:Int=0, take:Int=100)(implicit dao:FileEntryDAO) = dao.backups(this, forStorage, drop, take)
 
-  def backupsCount(forStorage:Option[Int]=None)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = this.id match {
-    case None=>
-      Future.failed(new RuntimeException("A record must be saved before you can query for backups"))
-    case Some(fileId)=>
-      db.run {
-        makeQuery(fileId, forStorage)
-          .length
-          .result
-      }
-  }
+  @deprecated("Use FileEntryDAO.backupsCount")
+  def backupsCount(forStorage:Option[Int]=None)(implicit dao:FileEntryDAO) = dao.backupsCount(this, forStorage)
 }
 
 /**

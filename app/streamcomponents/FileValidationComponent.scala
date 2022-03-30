@@ -2,7 +2,7 @@ package streamcomponents
 
 import akka.stream.stage.{AbstractInHandler, AbstractOutHandler, GraphStageLogic}
 import akka.stream.{Attributes, FlowShape, Inlet, Outlet}
-import models.{FileEntry, FileEntryRow, ValidationJob, ValidationProblem}
+import models.{FileEntry, FileEntryDAO, FileEntryRow, ValidationJob, ValidationProblem}
 import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
@@ -10,7 +10,7 @@ import slick.jdbc.PostgresProfile
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class FileValidationComponent(dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit ec:ExecutionContext, injector:Injector) extends GeneralValidationComponent[FileEntryRow](dbConfigProvider) {
+class FileValidationComponent(dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit ec:ExecutionContext, injector:Injector, fileEntryDAO: FileEntryDAO) extends GeneralValidationComponent[FileEntryRow](dbConfigProvider) {
   private val logger = LoggerFactory.getLogger(getClass)
   override protected final val in:Inlet[FileEntry] = Inlet.create("FileValidationComponent.in")
   override protected final val out:Outlet[ValidationProblem] = Outlet.create("FileValidationComponent.out")

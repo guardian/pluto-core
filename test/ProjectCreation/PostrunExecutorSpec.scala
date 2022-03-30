@@ -32,6 +32,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val mockedFileEntry = mock[FileEntry]
       mockedFileEntry.getFullPath(any) returns Future("/tmp/someproject.prj")
@@ -75,6 +76,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testMessageProcessor = TestProbe()
 
@@ -122,6 +124,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testMessageProcessor = TestProbe()
 
@@ -162,6 +165,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testMessageProcessor = TestProbe()
 
@@ -208,6 +212,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testMessageProcessor = TestProbe()
 
@@ -254,6 +259,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testMessageProcessor = TestProbe()
 
@@ -302,6 +308,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testMessageProcessor = TestProbe()
 

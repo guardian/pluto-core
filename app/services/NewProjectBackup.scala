@@ -4,7 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
 import drivers.{StorageDriver, StorageMetadata}
 import helpers.StorageHelper
-import models.{EntryStatus, FileAssociationRow, FileEntry, ProjectEntry, StorageEntry, StorageEntryHelper}
+import models.{EntryStatus, FileAssociationRow, FileEntry, FileEntryDAO, ProjectEntry, StorageEntry, StorageEntryHelper}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
@@ -21,7 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: DatabaseConfigProvider, storageHelper:StorageHelper)(implicit mat:Materializer, injector:Injector){
+class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: DatabaseConfigProvider, storageHelper:StorageHelper)
+                                 (implicit mat:Materializer, fileEntryDAO:FileEntryDAO, injector: Injector){
   private val logger = LoggerFactory.getLogger(getClass)
   private implicit lazy val db = dbConfigProvider.get[PostgresProfile].db
 

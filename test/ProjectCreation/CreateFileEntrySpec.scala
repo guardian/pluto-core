@@ -1,9 +1,8 @@
 import java.sql.Timestamp
 import java.time.LocalDateTime
-
 import akka.actor.{ActorSystem, Props}
 import akka.pattern.ask
-import models.{FileEntry, ProductionOffice, ProjectRequest, ProjectRequestFull}
+import models.{FileEntry, FileEntryDAO, ProductionOffice, ProjectRequest, ProjectRequestFull}
 import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.test.WithApplication
@@ -27,6 +26,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val ac = system.actorOf(Props(new CreateFileEntry(dbConfigProvider)))
 
@@ -58,6 +58,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val ex=new RuntimeException("My hovercraft is full of eels")
       val ac = system.actorOf(Props(new CreateFileEntry(dbConfigProvider) {
@@ -94,6 +95,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val ac = system.actorOf(Props(new CreateFileEntry(dbConfigProvider)))
 

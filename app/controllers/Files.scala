@@ -29,7 +29,7 @@ import scala.concurrent.duration._
 class Files @Inject() (override val controllerComponents:ControllerComponents,
                        override val bearerTokenAuth:BearerTokenAuth,
                        override implicit val config: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi, storageHelper:StorageHelper)
-                      (implicit mat:Materializer, injector:Injector)
+                      (implicit mat:Materializer, fileEntryDAO:FileEntryDAO)
   extends GenericDatabaseObjectControllerWithFilter[FileEntry,FileEntryFilterTerms]
     with FileEntrySerializer with FileEntryFilterTermsSerializer
     with ProjectEntrySerializer with ProjectTemplateSerializer {
@@ -138,12 +138,12 @@ class Files @Inject() (override val controllerComponents:ControllerComponents,
               if(fileRef.hasContent)
                 Future(BadRequest(Json.obj("status"->"error","detail"->"This file already has content.")))
               else
-                fileRef.writeToFile(buffer).map({
-                  case Success(x) =>
-                    Ok(Json.obj("status" -> "ok", "detail" -> "File has been written."))
-                  case Failure(error) =>
-                    InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString))
-                })
+                fileEntryDAO.writeToFile(fileRef,buffer)
+                  .map(_=>Ok(Json.obj("status" -> "ok", "detail" -> "File has been written.")))
+                  .recover({
+                    case error:Throwable =>
+                      InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString))
+                 })
             }
           case Failure(error) =>
             logger.error(s"Could not get file to write: ${error.toString}")

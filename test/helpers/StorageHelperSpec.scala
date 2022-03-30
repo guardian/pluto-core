@@ -5,7 +5,7 @@ import java.sql.Timestamp
 import java.time.{Instant, LocalDateTime}
 import akka.stream.Materializer
 import drivers.{MatrixStoreDriver, PathMetadata, PathStorage, StorageDriver}
-import models.{FileEntry, StorageEntry}
+import models.{FileEntry, FileEntryDAO, StorageEntry}
 import org.apache.commons.io.input.NullInputStream
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -64,6 +64,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       private implicit val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-2" // shouldn't have spaces!
       val testFileNameDest = "/tmp/storageHelperSpecTest-dst-2" // shouldn't have spaces!
@@ -100,6 +101,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       private implicit val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val mockedStorageDriver = mock[PathStorage]
       mockedStorageDriver.getReadStream(any[String],any)
@@ -118,7 +120,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
         val ts = Timestamp.valueOf(LocalDateTime.now())
 
         val testSourceEntry = new FileEntry(Some(1234), FilenameUtils.getBaseName(testFileNameSrc), 1, "testuser", 1, ts, ts, ts, hasContent = true, hasLink = false, None, None){
-          override def storage(implicit db: JdbcBackend#DatabaseDef):Future[Option[StorageEntry]] = {
+          override def storage(implicit dao:FileEntryDAO):Future[Option[StorageEntry]] = {
             println("testSourceEntry.storage")
             Future(Some(mockedStorage))
           }
@@ -151,6 +153,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       private implicit val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       // create a test file
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-3" // shouldn't have spaces!
@@ -185,6 +188,8 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       private implicit val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
+
       // create a test file
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-5" // shouldn't have spaces!
       val testFileNameDest = "/tmp/storageHelperSpecTest-dst-5" // shouldn't have spaces!
