@@ -52,6 +52,7 @@ import { CssBaseline } from "@material-ui/core";
 import ProjectValidationMain from "./ProjectRecordValidation/ProjectValidationMain";
 import ValidationJobResults from "./ProjectRecordValidation/ValidationJobResults";
 import ProjectBackups from "./ProjectEntryList/ProjectBackups";
+import PremiereVersionChange from "./PremiereVersionChange/PremiereVersionChange";
 
 library.add(faSearch);
 
@@ -224,6 +225,10 @@ class App extends React.Component {
                 />
                 <Route path="/template/" component={ProjectTemplateIndex} />
                 <Route
+                  path="/file/changePremiereVersion"
+                  component={PremiereVersionChange}
+                />
+                <Route
                   path="/file/:itemid/delete"
                   component={FileDeleteComponent}
                 />
@@ -290,6 +295,7 @@ class App extends React.Component {
                 <Route path="/postrun/:itemid" component={PostrunMultistep} />
                 <Route path="/postrun/" component={PostrunList} />
                 <Route path="/defaults/" component={ServerDefaults} />
+
                 <Route
                   exact
                   path="/"

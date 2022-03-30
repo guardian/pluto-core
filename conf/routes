@@ -21,6 +21,8 @@ PUT     /api/file/:id                      @controllers.Files.update(id: Int)
 DELETE  /api/file/:id                      @controllers.Files.delete(id: Int,deleteReferenced:Boolean ?=false)
 GET     /api/file/:id/checkOnDisk          @controllers.Files.checkOnDisk(id: Int)
 GET     /api/file/:id/storageMetadata      @controllers.Files.fileMetadata(id:Int)
+POST    /api/file/:projectFileId/changePremiereVersion  @controllers.PremiereVersionConverter.changeVersion(projectFileId:Int, requiredDisplayVersion:String ?= "")
+
 GET     /api/storage                       @controllers.StoragesController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/storage                       @controllers.StoragesController.create
 GET     /api/storage/knowntypes            @controllers.StoragesController.types
@@ -49,7 +51,6 @@ PUT     /api/project/:id/wasopened          @controllers.ProjectEntryController.
 PUT     /api/project/:id                    @controllers.ProjectEntryController.updateByAnyone(id: Int)
 #DELETE  /api/project/:id                   @controllers.ProjectEntryController.delete(id: Int)
 PUT     /api/project/:id/status             @controllers.ProjectEntryController.updateStatus(id:Int)
-POST    /api/project/:projectId/changePremiereVersion  @controllers.PremiereVersionConverter.changeVersion(projectId:Int, requiredDisplayVersion:String ?= "")
 
 GET     /api/valid-users                    @controllers.ProjectEntryController.queryUsersForAutocomplete(prefix:String ?= "", limit:Option[Int])
 GET     /api/known-user                     @controllers.ProjectEntryController.isUserKnown(uname:String ?= "")
@@ -114,6 +115,8 @@ POST    /api/validation                    @controllers.ValidationsController.st
 GET     /api/validation                     @controllers.ValidationsController.getJobs(userName:Option[String], status:Option[String], limit:Option[Int])
 GET     /api/validation/:jobId/faults       @controllers.ValidationsController.faultsForJobId(jobId:String, from:Int ?= 0, limit:Int ?=100, sortColumn:Option[String], sortOrder:Option[String])
 GET     /api/validation/:jobId              @controllers.ValidationsController.jobDetails(jobId:String)
+
+GET     /api/premiereVersion/:clientVersionString                @controllers.PremiereVersionConverter.lookupClientVersion(clientVersionString:String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

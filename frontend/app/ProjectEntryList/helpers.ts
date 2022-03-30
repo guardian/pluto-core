@@ -205,19 +205,19 @@ export const getStorageData = async (id: number): Promise<StorageEntry> => {
   }
 };
 
-/**
- * Sends a custom URL to PlutoHelperAgent which runs on the user's local machine. The URL contains the path of the project to open.
- * @param id - numeric file ID representing the project to be opened. This will derive the most recent suitable FileEntry and use that
- *            to open the project.
- * @returns - nothing; runs window.open which interrupts the running javascript and opens a new tab
- */
-
-export const openProject = async (id: number) => {
-  const fileResult = await getFileData(id);
-  const storageResult = await getStorageData(fileResult[0].storage);
+export const getOpenUrl = async (entry: FileEntry) => {
+  const storageResult = await getStorageData(entry.storage);
   const pathToUse = storageResult.clientpath
     ? storageResult.clientpath
     : storageResult.rootpath;
+  const versionPart = entry.premiereVersion
+    ? `?premiereVersion=${entry.premiereVersion}`
+    : "";
+  return `pluto:openproject:${pathToUse}/${entry.filepath}${versionPart}`;
+};
+
+export const getOpenUrlForId = async (id: number) => {
+  const fileResult = await getFileData(id);
 
   if (fileResult.length == 0) {
     SystemNotification.open(
@@ -227,13 +227,16 @@ export const openProject = async (id: number) => {
     return;
   }
 
-  const fileToOpen = fileResult[0];
-  const versionPart = fileToOpen.premiereVersion
-    ? `?premiereVersion=${fileToOpen.premiereVersion}`
-    : "";
+  return getOpenUrl(fileResult[0]);
+};
 
-  window.open(
-    `pluto:openproject:${pathToUse}/${fileToOpen.filepath}${versionPart}`,
-    "_blank"
-  );
+/**
+ * Sends a custom URL to PlutoHelperAgent which runs on the user's local machine. The URL contains the path of the project to open.
+ * @param id - numeric file ID representing the project to be opened. This will derive the most recent suitable FileEntry and use that
+ *            to open the project.
+ * @returns - nothing; runs window.open which interrupts the running javascript and opens a new tab
+ */
+export const openProject = async (id: number) => {
+  const url = await getOpenUrlForId(id);
+  window.open(url, "_blank");
 };

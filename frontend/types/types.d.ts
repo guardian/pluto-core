@@ -332,3 +332,19 @@ interface FileEntry {
   backupOf?: number;
   premiereVersion?: number;
 }
+
+interface PremiereVersionTranslation {
+  internalVersionNumber: number;
+  name: string;
+  displayedVersion: string;
+}
+
+type PremiereVersionTranslationResponse = ObjectListResponse<
+  PremiereVersionTranslation
+>;
+
+interface ConversionResponse {
+  status: string;
+  detail: string;
+  entry: FileEntry;
+}
