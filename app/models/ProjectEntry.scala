@@ -10,8 +10,6 @@ import org.joda.time.DateTime
 import org.joda.time.DateTimeZone.UTC
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import slick.jdbc.JdbcBackend
-
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -290,4 +288,37 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
   def scanAllProjects(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
     Source.fromPublisher(db.stream(TableQuery[ProjectEntryRow].sortBy(_.created.desc).result))
   }
+
+  /**
+    * Returns a list of distinct known users starting with the given prefix
+    * @param prefix restricts results to only users starting with this string
+    * @param limit only return up to this many results
+    * @param db implicitly provided database object
+    * @return a Future, containing a sequence of matching usernames
+    */
+  def listUsers(prefix:String, limit:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run {
+    val lowerCasePrefix = prefix.toLowerCase
+    TableQuery[ProjectEntryRow]
+      .distinctOn(_.user)
+      .filter(_.user.toLowerCase.startsWith(lowerCasePrefix))
+      .groupBy(_.user).map(_._1)
+      .take(limit)
+      .result
+  }
+
+  /**
+    * Checks if the provided "uname" string is an exact, case-insensitive match for one that already exists in the database
+    * @param uname username to test
+    * @param db implicitly provided database object
+    * @return a Future, containing True if at least one user matches and False otherwise
+    */
+  def isUserKnown(uname:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run {
+    val testValue = uname.toLowerCase
+    TableQuery[ProjectEntryRow]
+      .distinctOn(_.user)
+      .filter(_.user.toLowerCase === testValue)
+      .groupBy(_.user).map(_._1)
+      .length
+      .result
+  }.map(count=>count>0)
 }

@@ -43,6 +43,7 @@ import { Helmet } from "react-helmet";
 import HelpIcon from "@material-ui/icons/Help";
 import CommissionEntryDeliverablesComponent from "./CommissionEntryDeliverablesComponent";
 import ChipsWithWarning from "./ChipsWithWarning";
+import UsersAutoComplete from "../common/UsersAutoComplete";
 declare var deploymentRootPath: string;
 
 const useStyles = makeStyles({
@@ -111,6 +112,13 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
   const history = useHistory();
   const classes = useStyles();
 
+  const fieldValueChanged = (
+    value: string | null,
+    field: keyof CommissionFullRecord
+  ): void => {
+    props.onChange({ ...props.commission, [field]: value });
+  };
+
   const fieldChanged = (
     event: React.ChangeEvent<
       | HTMLTextAreaElement
@@ -120,7 +128,7 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
     >,
     field: keyof CommissionFullRecord
   ): void => {
-    props.onChange({ ...props.commission, [field]: event.target.value });
+    fieldValueChanged(event.target.value, field);
   };
 
   let createdTime: string | undefined = undefined;
@@ -188,11 +196,13 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
         </Grid>
         {/*right-hand column*/}
         <Grid item xs={6}>
-          <ChipsWithWarning
-            classes={classes}
+          <UsersAutoComplete
+            valueDidChange={(evt, newValue) =>
+              fieldValueChanged(newValue ?? "", "owner")
+            }
             label="Owner"
-            onChange={props.onChange}
-            commission={props.commission}
+            value={props.commission.owner}
+            shouldValidate={true}
           />
           <TextField
             id="created"

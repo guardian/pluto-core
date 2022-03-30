@@ -442,4 +442,29 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         })
     )
   }
+
+  def queryUsersForAutocomplete(prefix:String, limit:Option[Int]) = IsAuthenticatedAsync { uid=> request=>
+    implicit val db = dbConfig.db
+    implicit val ordering = Ordering.String
+    ProjectEntry.listUsers(prefix, limit.getOrElse(10))
+      .map(results=>{
+        Ok(Json.obj("status"->"ok","users"->results.sorted))
+      })
+      .recover({
+        case err:Throwable=>
+          logger.error(s"Could not look up users with prefix $prefix and limit ${limit.getOrElse(10)}: ${err.getMessage}", err)
+          InternalServerError(Json.obj("status"->"db_error", "detail"->"Database error, see logs for details"))
+      })
+  }
+
+  def isUserKnown(uname:String) = IsAuthenticatedAsync { uid=> request=>
+    implicit val db = dbConfig.db
+
+    ProjectEntry.isUserKnown(uname)
+      .map(result=>Ok(Json.obj("status"->"ok", "known"->result)))
+      .recover(err=>{
+        logger.error(s"Could not check if '$uname' is known: ${err.getMessage}", err)
+        InternalServerError(Json.obj("status"->"error", "detail"->"db_error"))
+      })
+  }
 }
