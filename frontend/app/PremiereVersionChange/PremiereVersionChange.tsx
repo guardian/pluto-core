@@ -117,14 +117,14 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
     }
   };
 
+  const forceOpenUrl = () =>
+    `pluto:openproject:${projectName}?premiereVersion=${requiredVersion}&force=true`;
+
   /**
    * User wants to open the project anyway. Ask plutohelperagent to do so.
    */
   const forceOpen = () => {
-    window.open(
-      `pluto:openproject:${projectName}?premiereVersion=${requiredVersion}&force=true`,
-      "_blank"
-    );
+    window.open(forceOpenUrl(), "_blank");
   };
 
   /**
@@ -138,8 +138,19 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
         const openUrl = await getOpenUrl(updatedFile);
         setNewOpenUrl(openUrl);
       } catch (err) {
-        console.error(err);
-        setLastError(err.toString);
+        if (err == "The target file is already at the requested version") {
+          setLastError("No update was required");
+          setNewOpenUrl(forceOpenUrl);
+          setConversionInProgress(false);
+        } else {
+          console.error(err);
+          if (typeof err == "string") {
+            setLastError(err);
+          } else {
+            setLastError(err.toString());
+          }
+          setConversionInProgress(false);
+        }
       }
     } else {
       console.error(
@@ -190,7 +201,7 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
           <Grid
             container
             spacing={3}
-            justify="space-around"
+            justifyContent="space-around"
             className={classes.buttonContainer}
           >
             <Grid item>
@@ -225,9 +236,20 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
         ) : undefined}
         {newOpenUrl ? (
           <Typography className={classes.centered}>
-            The new project should open automatically in a few moments. If it
-            does not, try clicking <Link href={newOpenUrl}>here</Link> to open
-            it manually
+            The project should open automatically in a few moments. If it does
+            not, try clicking{" "}
+            <Link
+              onClick={() => window.open(newOpenUrl)}
+              style={{ cursor: "pointer" }}
+            >
+              here
+            </Link>{" "}
+            to open it manually
+          </Typography>
+        ) : undefined}
+        {newOpenUrl || lastError ? (
+          <Typography className={classes.centered}>
+            You can now close this tab, or press the reload button to try again
           </Typography>
         ) : undefined}
       </Paper>
