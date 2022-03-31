@@ -3,14 +3,14 @@ package services
 import models.{FileEntry, FileEntryDAO, PremiereVersionTranslation}
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
-import postrun.AdobeXml
+import postrun.{AdobeXml, RunXmlLint}
 
 import java.io.File
 import java.nio.file.Paths
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import scala.xml.transform.RewriteRule
+import scala.xml.transform.{RewriteRule, RuleTransformer}
 import scala.xml.{Elem, MetaData, Node, UnprefixedAttribute}
 
 class PremiereVersionConverter @Inject() (implicit fileEntryDAO:FileEntryDAO, ec:ExecutionContext) extends AdobeXml {
@@ -50,6 +50,31 @@ class PremiereVersionConverter @Inject() (implicit fileEntryDAO:FileEntryDAO, ec
         }
     }
 
+  /**
+    * Changes the internal version number for the given Premiere project `targetFile` to the new value given in `newVersion`.
+    * Returns a failed future on error, or an empty Future on success.
+   */
+  def tweakProjectVersion(targetFile:File, backupFile:File, currentVersion:Int, newVersion:PremiereVersionTranslation) = Future.fromTry({
+    for {
+      xmlContent <- getXmlFromGzippedFile(targetFile.getAbsolutePath)
+      updatedXml <- Try { new RuleTransformer(new PremiereVersionConverter.ProjectVersionTweaker(newVersion, currentVersion)).transform(xmlContent).head }
+      _ <- putXmlToGzippedFile(targetFile.getAbsolutePath,Elem.apply(updatedXml.prefix, updatedXml.label, updatedXml.attributes, updatedXml.scope, false, updatedXml.child :_*))
+      formattedResult <- RunXmlLint.runXmlLint(targetFile.getAbsolutePath)
+    } yield formattedResult
+  }).recoverWith({
+    case err:Throwable=>
+      logger.error(s"Could not update project version for ${targetFile.getAbsolutePath} to $newVersion: ${err.getClass.getCanonicalName} ${err.getMessage}", err)
+      logger.info(s"Restoring backup from $backupFile...")
+      Try { FileUtils.copyFile(backupFile, targetFile) } match {
+        case Success(_) => Future.failed(err)           //if the copy-back succeeds pass on the original error
+        case Failure(copyErr)=> Future.failed(copyErr)  //if the copy-back fails pass on that error
+      }
+  })
+}
+
+object PremiereVersionConverter {
+  private final val logger = LoggerFactory.getLogger(getClass)
+
   class ProjectVersionTweaker(newVersion:PremiereVersionTranslation, oldVersion:Int) extends RewriteRule {
     def canFindAttribute(attribs: MetaData, key: String): Boolean ={
       if(attribs.key==key){
@@ -73,28 +98,8 @@ class PremiereVersionConverter @Inject() (implicit fileEntryDAO:FileEntryDAO, ec
             attributes
           }
 
-        Elem.apply(prefix,"Project", updatedAttributes, scope, true,children:_*)  //pass it on unchanged
+        Elem.apply(prefix,"Project", updatedAttributes, scope, true,children:_*)
       case other=>other
     }
   }
-
-  /**
-    * Changes the internal version number for the given Premiere project `targetFile` to the new value given in `newVersion`.
-    * Returns a failed future on error, or an empty Future on success.
-   */
-  def tweakProjectVersion(targetFile:File, backupFile:File, currentVersion:Int, newVersion:PremiereVersionTranslation) = Future.fromTry({
-    for {
-      xmlContent <- getXmlFromGzippedFile(targetFile.getAbsolutePath)
-      updatedXml <- Try { new ProjectVersionTweaker(newVersion, currentVersion).transform(xmlContent).head }
-      writeResult <- putXmlToGzippedFile(targetFile.getAbsolutePath,Elem.apply(updatedXml.prefix, updatedXml.label, updatedXml.attributes, updatedXml.scope, false, updatedXml.child :_*))
-    } yield writeResult
-  }).recoverWith({
-    case err:Throwable=>
-      logger.error(s"Could not update project version for ${targetFile.getAbsolutePath} to $newVersion: ${err.getClass.getCanonicalName} ${err.getMessage}", err)
-      logger.info(s"Restoring backup from $backupFile...")
-      Try { FileUtils.copyFile(backupFile, targetFile) } match {
-        case Success(_) => Future.failed(err)           //if the copy-back succeeds pass on the original error
-        case Failure(copyErr)=> Future.failed(copyErr)  //if the copy-back fails pass on that error
-      }
-  })
 }
