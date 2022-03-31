@@ -206,8 +206,9 @@ export const getStorageData = async (id: number): Promise<StorageEntry> => {
   }
 };
 
-const translatePremiereVersion = async (
-  internalVersion: number
+export const translatePremiereVersion = async (
+  internalVersion: number,
+  silenceNotifications: boolean
 ): Promise<string | undefined> => {
   try {
     const response = await axios.get(
@@ -227,10 +228,13 @@ const translatePremiereVersion = async (
         console.warn(
           `Premiere version ${internalVersion} is not known to us, going to attempt to open blind`
         );
-        SystemNotification.open(
-          SystemNotifcationKind.Warning,
-          "Did not recognise Premiere version, will attempt to open anyway"
-        );
+        if (!silenceNotifications) {
+          //set when testing, as this borks if SystemNotificationComponent is not intialised/rendered
+          SystemNotification.open(
+            SystemNotifcationKind.Warning,
+            "Did not recognise Premiere version, will attempt to open anyway"
+          );
+        }
         return undefined;
     }
   } catch (err) {
@@ -238,10 +242,12 @@ const translatePremiereVersion = async (
       `Could not look up premiere version ${internalVersion}: `,
       err
     );
-    SystemNotification.open(
-      SystemNotifcationKind.Error,
-      "Could not look up premiere version, will attempt to open anyway"
-    );
+    if (!silenceNotifications) {
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        "Could not look up premiere version, will attempt to open anyway"
+      );
+    }
     return undefined;
   }
 };
@@ -253,7 +259,7 @@ export const getOpenUrl = async (entry: FileEntry) => {
     : storageResult.rootpath;
 
   const premiereDisplayVersion = entry.premiereVersion
-    ? await translatePremiereVersion(entry.premiereVersion)
+    ? await translatePremiereVersion(entry.premiereVersion, false)
     : undefined;
 
   const versionPart = premiereDisplayVersion
