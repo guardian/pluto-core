@@ -163,4 +163,20 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
         Future(BadRequest(Json.obj("status" -> "error", "detail" -> "Invalid version string, should be of the form x.y.z")))
     }
   }
+
+  def lookupInternalVersion(internalVersion:Int) = IsAuthenticatedAsync { uid=> request=>
+    import models.PremiereVersionTranslationCodec._
+
+    premiereVersionTranslationDAO
+      .findInternalVersion(internalVersion)
+      .map({
+        case Some(v)=>Ok(Json.obj("status"->"ok","version"->v))
+        case None=>NotFound(Json.obj("status"->"error","detail"->"unknown version number"))
+      })
+      .recover({
+        case err:Throwable=>
+          logger.error(s"Could not look up internal premiere version number $internalVersion: ${err.getClass.getCanonicalName} ${err.getMessage}", err)
+          InternalServerError(Json.obj("status"->"db_error", "detail"->"Database error, see server logs"))
+      })
+  }
 }

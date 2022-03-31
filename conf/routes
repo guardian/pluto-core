@@ -117,6 +117,7 @@ GET     /api/validation/:jobId/faults       @controllers.ValidationsController.f
 GET     /api/validation/:jobId              @controllers.ValidationsController.jobDetails(jobId:String)
 
 GET     /api/premiereVersion/:clientVersionString                @controllers.PremiereVersionConverter.lookupClientVersion(clientVersionString:String)
+GET     /api/premiereVersion/internal/:internalVersion           @controllers.PremiereVersionConverter.lookupInternalVersion(internalVersion:Int)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

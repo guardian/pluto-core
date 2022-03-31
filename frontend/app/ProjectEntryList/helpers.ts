@@ -1,4 +1,5 @@
 import Axios from "axios";
+import axios from "axios";
 import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
 
 const API = "/api";
@@ -205,13 +206,58 @@ export const getStorageData = async (id: number): Promise<StorageEntry> => {
   }
 };
 
+const translatePremiereVersion = async (
+  internalVersion: number
+): Promise<string | undefined> => {
+  try {
+    const response = await axios.get(
+      `/api/premiereVersion/internal/${internalVersion}`,
+      { validateStatus: (status) => status === 200 || status === 404 }
+    );
+    switch (response.status) {
+      case 200:
+        const content = response.data as {
+          version: PremiereVersionTranslation;
+        };
+        console.log(
+          `Premiere version ${internalVersion} corresponds to ${content.version.name} ${content.version.displayedVersion}`
+        );
+        return content.version.displayedVersion;
+      case 404:
+        console.warn(
+          `Premiere version ${internalVersion} is not known to us, going to attempt to open blind`
+        );
+        SystemNotification.open(
+          SystemNotifcationKind.Warning,
+          "Did not recognise Premiere version, will attempt to open anyway"
+        );
+        return undefined;
+    }
+  } catch (err) {
+    console.error(
+      `Could not look up premiere version ${internalVersion}: `,
+      err
+    );
+    SystemNotification.open(
+      SystemNotifcationKind.Error,
+      "Could not look up premiere version, will attempt to open anyway"
+    );
+    return undefined;
+  }
+};
+
 export const getOpenUrl = async (entry: FileEntry) => {
   const storageResult = await getStorageData(entry.storage);
   const pathToUse = storageResult.clientpath
     ? storageResult.clientpath
     : storageResult.rootpath;
-  const versionPart = entry.premiereVersion
-    ? `?premiereVersion=${entry.premiereVersion}`
+
+  const premiereDisplayVersion = entry.premiereVersion
+    ? await translatePremiereVersion(entry.premiereVersion)
+    : undefined;
+
+  const versionPart = premiereDisplayVersion
+    ? `?premiereVersion=${premiereDisplayVersion}`
     : "";
   return `pluto:openproject:${pathToUse}/${entry.filepath}${versionPart}`;
 };
