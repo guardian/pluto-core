@@ -326,4 +326,10 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
       .length
       .result
   }.map(count=>count>0)
+
+  def scanProjectsForType(typeId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    Source.fromPublisher(
+      db.stream(TableQuery[ProjectEntryRow].filter(_.projectType===typeId).result)
+    )
+  }
 }

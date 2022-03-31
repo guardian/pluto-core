@@ -1,6 +1,9 @@
 package controllers
 
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Keep, Sink}
 import auth.{BearerTokenAuth, Security}
+import helpers.PostrunDataCache
 import models.{DisplayedVersion, FileEntry, FileEntryDAO, FileEntrySerializer, PremiereVersionTranslation, PremiereVersionTranslationDAO, ProjectEntry}
 import org.apache.commons.io.FileUtils
 import play.api.Configuration
@@ -8,7 +11,7 @@ import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
-import postrun.AdobeXml
+import postrun.{AdobeXml, ExtractPremiereVersion}
 import slick.jdbc.PostgresProfile
 
 import java.io.File
@@ -28,7 +31,7 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
                                          converter:services.PremiereVersionConverter,
                                          premiereVersionTranslationDAO: PremiereVersionTranslationDAO,
                                          dbConfigProvider:DatabaseConfigProvider)
-                                        (implicit ec:ExecutionContext) extends AbstractController(controllerComponents) with Security with AdobeXml with FileEntrySerializer
+                                        (implicit ec:ExecutionContext, mat:Materializer) extends AbstractController(controllerComponents) with Security with AdobeXml with FileEntrySerializer
 {
   private implicit val db = dbConfigProvider.get[PostgresProfile].db
 
@@ -102,5 +105,60 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
           logger.error(s"Could not look up internal premiere version number $internalVersion: ${err.getClass.getCanonicalName} ${err.getMessage}", err)
           InternalServerError(Json.obj("status"->"db_error", "detail"->"Database error, see server logs"))
       })
+  }
+
+  def runVersionScanner(projectTypeId:Int) = {
+    val xtractor = new ExtractPremiereVersion
+
+    ProjectEntry
+      .scanProjectsForType(projectTypeId)
+      .mapAsync(2)(p=>p.associatedFiles(allVersions=false).map(files=>(p, files)))
+      .mapAsync(1)(content=>{
+        val project = content._1
+        val files = content._2
+        Future
+          .sequence(files.map(f=>fileEntryDAO.getFullPath(f)))
+          .map(filePaths=>(project, filePaths zip files))
+      })
+      .mapAsync(1)(content=>{
+        val project = content._1
+        val filePaths = content._2
+        for {
+          extractedInfo <- Future.sequence(filePaths.map(filePair =>
+            xtractor.postrun(filePair._1, project, null, PostrunDataCache(), None, None)
+          )).map(_ zip filePaths)
+          results <- Future(extractedInfo.map(info=>info._1 match {
+            case Success(updatedCache)=>
+              updatedCache.get("premiere_version") match {
+                case Some(updatedVersion)=>Some(info._2._2.copy(maybePremiereVersion = Some(updatedVersion.toInt)))
+                case None=>
+                  throw new RuntimeException(s"${info._2._1}: ExtractPremiereVersion completed successfully but did not return any info, this should not happen")
+              }
+            case Failure(err)=>
+              logger.warn(s"Could not get premiere version from ${info._2._1}: ${err.getClass.getCanonicalName} ${err.getMessage}", err)
+              None
+          }))
+        } yield results
+      })
+      .map(_.collect({case Some(fileEntry)=>fileEntry}))
+      .mapAsync(4)(files=>{
+        Future.sequence(
+          files.map(fileEntryDAO.saveSimple)
+        )
+      })
+      .toMat(Sink.ignore)(Keep.right)
+      .run()
+      .map(_=>{
+        logger.info("Premiere version scan is now complete")
+      })
+      .recover({
+        case err:Throwable=>
+          logger.error(s"Premiere version scan failed: ${err.getClass.getCanonicalName} ${err.getMessage}", err)
+      })
+  }
+
+  def scanAllVersions(projectTypeId:Int) = IsAdmin { uid=> request=>
+    runVersionScanner(projectTypeId)
+    Ok(Json.obj("status"->"ok","detail"->"run started"))
   }
 }

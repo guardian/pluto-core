@@ -118,6 +118,7 @@ GET     /api/validation/:jobId              @controllers.ValidationsController.j
 
 GET     /api/premiereVersion/:clientVersionString                @controllers.PremiereVersionConverter.lookupClientVersion(clientVersionString:String)
 GET     /api/premiereVersion/internal/:internalVersion           @controllers.PremiereVersionConverter.lookupInternalVersion(internalVersion:Int)
+POST    /api/premiereVersion/scanExistingProjects                @controllers.PremiereVersionConverter.scanAllVersions(projectTypeId:Int ?= 0)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

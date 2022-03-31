@@ -1,6 +1,6 @@
 package models
 
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink, Source}
 import drivers.StorageDriver
 import org.slf4j.LoggerFactory
 import play.api.Logger
@@ -98,8 +98,6 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
     * @return A future containing either a Right() containing a Boolean indicating whether the delete happened,  or a Left with an error string
     */
   def deleteFromDisk(entry:FileEntry):Future[Either[String,Boolean]] = {
-    /**/
-    /*it either returns a Right(), with a boolean indicating whether the delete happened or not, or a Left() with an error string*/
     val maybeStorageDriverFuture = storage(entry).map({
       case Some(storageRef)=>
         storageRef.getStorageDriver
