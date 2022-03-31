@@ -11,7 +11,7 @@ import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 
 import java.io.{File, FileInputStream}
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Files, Path, Paths}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -74,12 +74,23 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
     * @param entry FileEntry to query
     * @return
     */
-  def getJavaFile(entry:FileEntry):Future[File] = storage(entry).map({
-    case Some(storage) =>
-      Paths.get(storage.rootpath.getOrElse(""), entry.filepath).toFile
-    case None =>
-      new File(entry.filepath)
-  })
+  def getJavaFile(entry:FileEntry):Future[File] = storage(entry)
+    .map({
+      case Some(storage) =>
+        val p = Paths.get(storage.rootpath.getOrElse(""), entry.filepath)
+        if(Files.exists(p)){
+          p.toFile
+        } else {
+          throw new RuntimeException(s"${p.toString} does not exist")
+        }
+      case None =>
+        val f = new File(entry.filepath)
+        if(f.exists()) {
+          f
+        } else {
+          throw new RuntimeException(s"${f.toString} does not exist")
+        }
+    })
 
   /**
     * this attempts to delete the file from disk, using the configured storage driver
