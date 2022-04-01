@@ -270,65 +270,63 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
               />
             </Grid>
 
-                <Grid item xs={6}>
-                  <TextField
-                    disabled={true}
-                    value={moment(project.created).format(
-                      "MMM Do, YYYY, hh:mm a"
-                    )}
-                    label="Created"
-                  />
-                  {projectType ? (
-                    <TextField
-                      disabled={true}
-                      value={`${projectType.name} v${projectType.targetVersion}`}
-                      label="Project type"
-                    />
-                  ) : null}
+            <Grid item xs={6}>
+              <TextField
+                disabled={true}
+                value={moment(project.created).format("MMM Do, YYYY, hh:mm a")}
+                label="Created"
+              />
+              {projectType ? (
+                <TextField
+                  disabled={true}
+                  value={`${projectType.name} v${projectType.targetVersion}`}
+                  label="Project type"
+                />
+              ) : null}
 
-                  <ApplicableRulesSelector
-                    deletable={project.deletable}
-                    deep_archive={project.deep_archive}
-                    sensitive={project.sensitive}
-                    onChange={checkboxChanged}
-                  />
-                </Grid>
-              </Grid>
-              <div className={classes.formButtons}>
-                <Button
-                  className="cancel"
-                  variant="outlined"
-                  onClick={() => history.goBack()}
-                >
-                  Back
-                </Button>
-                <Button type="submit" variant="outlined">
-                  Update
-                </Button>
-              </div>
-            </form>
-          </Paper>
-        {project === EMPTY_PROJECT ? null : (
-          <Grid item className={classes.projectPane}>
-            <ProjectEntryDeliverablesComponent
-              project={project}
-              onError={subComponentErrored}
-            />
+              <ApplicableRulesSelector
+                deletable={project.deletable}
+                deep_archive={project.deep_archive}
+                sensitive={project.sensitive}
+                onChange={checkboxChanged}
+              />
+            </Grid>
           </Grid>
-        )}
-        {project === EMPTY_PROJECT ? null : (
-          <Grid item className={classes.projectPane}>
-            <ProjectAssetsComponent projectid={project.id} />
-          </Grid>
-        )}
-        {project === EMPTY_PROJECT ? null : (
-          <Grid item className={classes.projectPane}>
-            <ProjectEntryVaultComponent
-              project={project}
-              onError={subComponentErrored}
-            />
-          </Grid>
-        )}
+          <div className={classes.formButtons}>
+            <Button
+              className="cancel"
+              variant="outlined"
+              onClick={() => history.goBack()}
+            >
+              Back
+            </Button>
+            <Button type="submit" variant="outlined">
+              Update
+            </Button>
+          </div>
+        </form>
+      </Paper>
+      {project === EMPTY_PROJECT ? null : (
+        <Grid item className={classes.projectPane}>
+          <ProjectEntryDeliverablesComponent
+            project={project}
+            onError={subComponentErrored}
+          />
+        </Grid>
+      )}
+      {project === EMPTY_PROJECT ? null : (
+        <Grid item className={classes.projectPane}>
+          <ProjectAssetsComponent projectid={project.id} />
+        </Grid>
+      )}
+      {project === EMPTY_PROJECT ? null : (
+        <Grid item className={classes.projectPane}>
+          <ProjectEntryVaultComponent
+            project={project}
+            onError={subComponentErrored}
+          />
+        </Grid>
+      )}
 
       <Dialog
         open={errorDialog}
