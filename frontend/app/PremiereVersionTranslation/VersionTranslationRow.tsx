@@ -6,6 +6,7 @@ import {
   makeStyles,
   TableCell,
   TableRow,
+  TextField,
   Typography,
 } from "@material-ui/core";
 import { Close, DeleteForever, Edit, SaveAlt } from "@material-ui/icons";
@@ -26,16 +27,19 @@ interface EditableFieldProps {
   value: string;
   onChange: (newValue: string) => void;
   canEdit: boolean;
+  errorMessage?: string;
 }
 
 const EditableField: React.FC<EditableFieldProps> = (props) => {
   const classes = useStyles();
 
   return props.canEdit ? (
-    <Input
+    <TextField
       className={classes.editField}
       value={props.value}
       onChange={(evt) => props.onChange(evt.target.value)}
+      error={!!props.errorMessage}
+      helperText={props.errorMessage}
     />
   ) : (
     <Typography>{props.value}</Typography>
@@ -45,17 +49,47 @@ const EditableField: React.FC<EditableFieldProps> = (props) => {
 const VersionTranslationRow: React.FC<VersionTranslationRowProps> = (props) => {
   const [isEditing, setIsEditing] = useState(false);
 
-  const [internalVersion, setInternalVersion] = useState(0);
+  const [internalVersionString, setInternalVersionString] = useState("0");
+  const [internalVersionValid, setInternalVersionValid] = useState(false);
   const [name, setName] = useState("");
+  const [nameValid, setNameValid] = useState(false);
   const [displayedVersion, setDisplayedVersion] = useState("");
+  const [displayedVersionValid, setDisplayedVersionValid] = useState(false);
 
   useEffect(() => {
     resetValues();
     if (props.entry.internalVersionNumber == 0) setIsEditing(true); //this is a blank row that has just been inserted
   }, [props.entry]);
 
+  useEffect(() => {
+    try {
+      const intValue = parseInt(internalVersionString);
+      if (intValue > 0) {
+        setInternalVersionValid(true);
+      } else {
+        setInternalVersionValid(false);
+      }
+    } catch (err) {
+      setInternalVersionValid(false);
+    }
+  }, [internalVersionString]);
+
+  useEffect(() => {
+    if (name == "") {
+      setNameValid(false);
+    } else {
+      setNameValid(true);
+    }
+  }, [name]);
+
+  const displayVersionValidator = /^\d+\.\d+\.\d+$/;
+
+  useEffect(() => {
+    setDisplayedVersionValid(displayVersionValidator.test(displayedVersion));
+  }, [displayedVersion]);
+
   const resetValues = () => {
-    setInternalVersion(props.entry.internalVersionNumber);
+    setInternalVersionString(props.entry.internalVersionNumber.toString());
     setName(props.entry.name);
     setDisplayedVersion(props.entry.displayedVersion);
   };
@@ -66,6 +100,7 @@ const VersionTranslationRow: React.FC<VersionTranslationRowProps> = (props) => {
   };
 
   const saveEntry = () => {
+    const internalVersion = parseInt(internalVersionString);
     if (internalVersion != 0 && name != "" && displayedVersion != "") {
       props.requestUpdate({
         internalVersionNumber: internalVersion,
@@ -80,8 +115,13 @@ const VersionTranslationRow: React.FC<VersionTranslationRowProps> = (props) => {
     <TableRow>
       <TableCell>
         <EditableField
-          value={internalVersion.toString()}
-          onChange={(newValue) => setInternalVersion(parseInt(newValue))}
+          value={internalVersionString}
+          errorMessage={
+            internalVersionValid
+              ? undefined
+              : "This must be a whole number greater than zero"
+          }
+          onChange={(newValue) => setInternalVersionString(newValue)}
           canEdit={isEditing}
         />
       </TableCell>
@@ -89,6 +129,9 @@ const VersionTranslationRow: React.FC<VersionTranslationRowProps> = (props) => {
         <EditableField
           value={name}
           onChange={(newValue) => setName(newValue)}
+          errorMessage={
+            nameValid ? undefined : "You need to put in a descriptive name"
+          }
           canEdit={isEditing}
         />
       </TableCell>
@@ -96,6 +139,11 @@ const VersionTranslationRow: React.FC<VersionTranslationRowProps> = (props) => {
         <EditableField
           value={displayedVersion}
           onChange={(newValue) => setDisplayedVersion(newValue)}
+          errorMessage={
+            displayedVersionValid
+              ? undefined
+              : "You need to put in the Mac version number in the form n.n.n. If less than three numbers are shown pad it out with .0"
+          }
           canEdit={isEditing}
         />
       </TableCell>
