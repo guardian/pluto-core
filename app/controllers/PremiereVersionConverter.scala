@@ -5,7 +5,6 @@ import akka.stream.scaladsl.{Keep, Sink}
 import auth.{BearerTokenAuth, Security}
 import helpers.PostrunDataCache
 import models.{DisplayedVersion, FileEntry, FileEntryDAO, FileEntrySerializer, PremiereVersionTranslation, PremiereVersionTranslationDAO, ProjectEntry}
-import org.apache.commons.io.FileUtils
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -14,13 +13,12 @@ import play.api.mvc.{AbstractController, ControllerComponents}
 import postrun.{AdobeXml, ExtractPremiereVersion}
 import slick.jdbc.PostgresProfile
 
-import java.io.File
-import java.nio.file.Paths
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import scala.xml.{Elem, MetaData, Node, Null, PrefixedAttribute, UnprefixedAttribute}
-import scala.xml.transform.RewriteRule
+import models.PremiereVersionTranslationCodec._
+
+import scala.annotation.switch
 
 @Singleton
 class PremiereVersionConverter @Inject()(override val controllerComponents:ControllerComponents,
@@ -77,8 +75,6 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
   }
 
   def lookupClientVersion(clientVersionString:String) = IsAuthenticatedAsync { uid=> request=>
-    import models.PremiereVersionTranslationCodec._
-
     DisplayedVersion(clientVersionString) match {
       case Some(clientVersion) =>
         premiereVersionTranslationDAO
@@ -92,8 +88,6 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
   }
 
   def lookupInternalVersion(internalVersion:Int) = IsAuthenticatedAsync { uid=> request=>
-    import models.PremiereVersionTranslationCodec._
-
     premiereVersionTranslationDAO
       .findInternalVersion(internalVersion)
       .map({
@@ -171,5 +165,45 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
   def scanAllVersions(projectTypeId:Int) = IsAdmin { uid=> request=>
     runVersionScanner(projectTypeId)
     Ok(Json.obj("status"->"ok","detail"->"run started"))
+  }
+
+  def createOrUpdate = IsAdminAsync(parse.json[PremiereVersionTranslation]) { uid => request=>
+    premiereVersionTranslationDAO
+      .save(request.body)
+      .map(count=>{
+        (count: @switch) match {
+          case 0=>
+            logger.error(s"Could not create db record for version translation ${request.body}, success but no rows returned")
+            InternalServerError(Json.obj("status"->"db_error","detail"->"nothing was written"))
+          case 1=>
+            Ok(Json.obj("status"->"ok"))
+          case _=>
+            logger.error(s"Got unexpected return code $count from the database, expected 1 row")
+            Ok(Json.obj("status"->"warning"))
+        }
+      })
+      .recover({
+        case err:Throwable=>
+          logger.error(s"Could not create db record for version translation ${request.body}: ${err.getClass.getCanonicalName} ${err.getMessage}", err)
+          InternalServerError(Json.obj("status"->"error", "detail"->"db error, see server logs"))
+      })
+  }
+
+  def delete(internalVersion:Int) = IsAdminAsync { uid=> request=>
+    logger.info(s"Request from $uid to delete premiere version mapping for $internalVersion")
+    premiereVersionTranslationDAO
+      .remove(internalVersion)
+      .map(count=>{
+        if(count==0) {
+          NotFound(Json.obj("status"->"not_found", "recordId"->internalVersion))
+        } else {
+          Ok(Json.obj("status"->"ok"))
+        }
+      })
+      .recover({
+        case err:Throwable=>
+          logger.error(s"Could not delete db record for version translation ${request.body}: ${err.getClass.getCanonicalName} ${err.getMessage}", err)
+          InternalServerError(Json.obj("status"->"error", "detail"->"db error, see server logs"))
+      })
   }
 }

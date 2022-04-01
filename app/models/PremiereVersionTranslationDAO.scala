@@ -33,4 +33,28 @@ class PremiereVersionTranslationDAO @Inject() (dbConfigProvider:DatabaseConfigPr
   def findDisplayedVersion(displayedVersion: DisplayedVersion) = db.run {
     TableQuery[PremiereVersionTranslationRow].filter(_.displayedVersion===displayedVersion).result
   }
+
+  /**
+    * Writes the given record into the table, updating an existing record if there is one or creating a new one otherwise
+    * @param record PremiereVersionTranslation to write
+    * @return a Future with the number of records affected
+    */
+  def save(record:PremiereVersionTranslation) = db.run {
+    TableQuery[PremiereVersionTranslationRow].filter(_.internalVersionNumber===record.internalVersionNumber).length.result
+  }.flatMap(count=>{
+    if(count==0) {
+      db.run { TableQuery[PremiereVersionTranslationRow] += record }
+    } else {
+      db.run { TableQuery[PremiereVersionTranslationRow].filter(_.internalVersionNumber===record.internalVersionNumber).update(record) }
+    }
+  })
+
+  /**
+    * Removes the given internal id from the table.
+    * @param internalId id to remove
+    * @return a Future with the number of records affected
+    */
+  def remove(internalId:Int) = db.run {
+    TableQuery[PremiereVersionTranslationRow].filter(_.internalVersionNumber===internalId).delete
+  }
 }
