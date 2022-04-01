@@ -17,7 +17,7 @@ import {
   lookupVersion,
   performConversion,
 } from "./VersionChangeService";
-import { Error } from "@material-ui/icons";
+import { CheckCircle, Error } from "@material-ui/icons";
 import { useHistory } from "react-router";
 import {
   getOpenUrl,
@@ -29,6 +29,11 @@ const useStyles = makeStyles((theme) => ({
   centered: {
     marginTop: "0.4em",
     textAlign: "center",
+  },
+  success: {
+    color: theme.palette.success.dark,
+    width: "100px",
+    height: "100px",
   },
   error: {
     color: theme.palette.error.main,
@@ -186,8 +191,8 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
         {!lastError && projectName && requiredVersion && targetVersionName ? (
           <Typography className={classes.centered}>
             In order to successfully open this project on your workstation, it
-            must be updated to Premiere version {targetVersionName} (
-            {requiredVersion}).
+            must be updated to the Premiere version {targetVersionName} (
+            {requiredVersion}) format.
             <br />
             Click 'Update it' below to automatically complete this process. The
             existing project will be backed up in the system and the new version
@@ -235,17 +240,31 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
           </Grid>
         ) : undefined}
         {newOpenUrl ? (
-          <Typography className={classes.centered}>
-            The project should open automatically in a few moments. If it does
-            not, try clicking{" "}
-            <Link
-              onClick={() => window.open(newOpenUrl)}
-              style={{ cursor: "pointer" }}
+          <Grid container direction="column" spacing={2}>
+            <Grid
+              item
+              style={{
+                marginLeft: "auto",
+                marginRight: "auto",
+                width: "100px",
+              }}
             >
-              here
-            </Link>{" "}
-            to open it manually
-          </Typography>
+              <CheckCircle className={classes.success} />
+            </Grid>
+            <Grid item>
+              <Typography className={classes.centered}>
+                Ready to go! The project should open automatically in a few
+                moments. If it does not, try clicking{" "}
+                <Link
+                  onClick={() => window.open(newOpenUrl)}
+                  style={{ cursor: "pointer" }}
+                >
+                  here
+                </Link>{" "}
+                to open it manually
+              </Typography>
+            </Grid>
+          </Grid>
         ) : undefined}
         {newOpenUrl || lastError ? (
           <Typography className={classes.centered}>
