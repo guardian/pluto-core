@@ -17,6 +17,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import models.PremiereVersionTranslationCodec._
+import services.NewProjectBackup
 
 import scala.annotation.switch
 

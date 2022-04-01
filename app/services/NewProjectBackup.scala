@@ -197,7 +197,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
   private def getTargetFileEntry(sourceEntry:FileEntry, maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = {
     for {
       targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)  //if our destStorage supports versioning, then we get a new entry here
-      updatedEntryTry <- targetDestEntry.save //make sure that we get the updated database id of the file
+      updatedEntryTry <- fileEntryDAO.save(targetDestEntry) //make sure that we get the updated database id of the file
       updatedDestEntry <- Future
         .fromTry(updatedEntryTry)
         .recoverWith({
@@ -234,14 +234,14 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
       storageHelper.copyFile(sourceEntry, updatedDestEntry)
         .flatMap(fileEntry=>{
           //ensure that we save the record with `b_has_content` set to true
-          fileEntry.saveSimple.map(finalEntry=>(finalEntry, sourceEntry))
+          fileEntryDAO.saveSimple(fileEntry).map(finalEntry=>(finalEntry, sourceEntry))
         })
         .recoverWith({
           case err:Throwable=>
             logger.error(s"Could not copy ${updatedDestEntry.filepath} on ${updatedDestEntry.storageId} from ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${err.getMessage}",err)
-            updatedDestEntry
-              .deleteFromDisk
-              .andThen(_=>updatedDestEntry.deleteSelf)
+            fileEntryDAO
+              .deleteFromDisk(updatedDestEntry)
+              .andThen(_=>fileEntryDAO.deleteRecord(updatedDestEntry))
               .flatMap(_=>Future.failed(new RuntimeException(err.toString)))
         })
     })

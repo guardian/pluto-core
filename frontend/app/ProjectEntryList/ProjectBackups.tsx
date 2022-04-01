@@ -237,6 +237,7 @@ const ProjectBackups: React.FC<RouteComponentProps<{ itemid: string }>> = (
                 fileId={f.id}
                 filepath={f.filepath}
                 version={f.version}
+                premiereVersion={f.premiereVersion}
               />
             ))}
           </List>

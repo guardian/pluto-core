@@ -1,9 +1,12 @@
 package services
 
-import models.{FileEntry, FileEntryDAO, PremiereVersionTranslation}
+import akka.stream.Materializer
+import models.{FileEntry, FileEntryDAO, PremiereVersionTranslation, ProjectEntry, StorageEntry, StorageEntryHelper}
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
+import play.api.db.slick.DatabaseConfigProvider
 import postrun.{AdobeXml, RunXmlLint}
+import slick.jdbc.PostgresProfile
 
 import java.io.File
 import java.nio.file.Paths
@@ -13,15 +16,38 @@ import scala.util.{Failure, Success, Try}
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 import scala.xml.{Elem, MetaData, Node, UnprefixedAttribute}
 
-class PremiereVersionConverter @Inject() (implicit fileEntryDAO:FileEntryDAO, ec:ExecutionContext) extends AdobeXml {
+class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implicit fileEntryDAO:FileEntryDAO, ec:ExecutionContext, dbConfigProvider:DatabaseConfigProvider, mat:Materializer) extends AdobeXml {
   private final val logger = LoggerFactory.getLogger(getClass)
 
+  def backupFile(fileEntry:FileEntry) = Future.sequence(Seq(
+    backupFileToTemp(fileEntry),
+    backupFileToStorage(fileEntry)
+  )).map(_.head.asInstanceOf[File])
+
+  def backupFileToStorage(fileEntry: FileEntry) = {
+    implicit val db = dbConfigProvider.get[PostgresProfile].db
+
+    StorageEntryHelper
+      .entryFor(fileEntry.storageId)
+      .flatMap({
+        case Some(backupStorage) =>
+          logger.info(s"Creating an incremental backup for ${fileEntry.filepath} on storage ${backupStorage.storageType} ${backupStorage.id}")
+          for {
+            maybeProjectEntry <- ProjectEntry.projectForFileEntry(fileEntry)
+            mostRecentBackup <- if (maybeProjectEntry.isDefined) maybeProjectEntry.get.mostRecentBackup else Future(None)
+            result <- backupService.performBackup(fileEntry, mostRecentBackup, backupStorage).map(Some.apply)
+          } yield result
+        case None =>
+          logger.warn(s"Project for ${fileEntry.filepath} is on a storage which has no backup configured. Cannot make an incremental backup for it.")
+          Future(None)
+      })
+  }
   /**
     * Makes a backup copy of the file pointed to by the given FileEntry in the system default temporary location
     * @param fileEntry FileEntry to back up
     * @return a Future, containing a File pointing to the backed-up location
     */
-  def backupFile(fileEntry:FileEntry) = for {
+  def backupFileToTemp(fileEntry:FileEntry) = for {
     sourceFile <- fileEntryDAO.getJavaFile(fileEntry)
     result <- Future.fromTry({
       val p = Paths.get(fileEntry.filepath)
