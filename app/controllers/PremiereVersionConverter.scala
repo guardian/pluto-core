@@ -206,4 +206,17 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
           InternalServerError(Json.obj("status"->"error", "detail"->"db error, see server logs"))
       })
   }
+
+  def allVersions = IsAdminAsync { uid=> request=>
+    premiereVersionTranslationDAO
+      .listAll
+      .map(results=>{
+        Ok(Json.obj("status"->"ok", "count"->results.length, "result"->results))
+      })
+      .recover({
+        case err:Throwable=>
+          logger.error(s"Could not list all premiere version translations: ${err.getClass.getCanonicalName} ${err.getMessage}", err)
+          InternalServerError(Json.obj("status"->"error", "detail"->"db error, see server logs"))
+      })
+  }
 }

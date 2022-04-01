@@ -57,4 +57,8 @@ class PremiereVersionTranslationDAO @Inject() (dbConfigProvider:DatabaseConfigPr
   def remove(internalId:Int) = db.run {
     TableQuery[PremiereVersionTranslationRow].filter(_.internalVersionNumber===internalId).delete
   }
+
+  def listAll = db.run {
+    TableQuery[PremiereVersionTranslationRow].result
+  }
 }

@@ -53,6 +53,7 @@ import ProjectValidationMain from "./ProjectRecordValidation/ProjectValidationMa
 import ValidationJobResults from "./ProjectRecordValidation/ValidationJobResults";
 import ProjectBackups from "./ProjectEntryList/ProjectBackups";
 import PremiereVersionChange from "./PremiereVersionChange/PremiereVersionChange";
+import VersionTranslationsList from "./PremiereVersionTranslation/VersionTranslationsList";
 
 library.add(faSearch);
 
@@ -206,6 +207,10 @@ class App extends React.Component {
 
             <div id="mainbody" className="mainbody">
               <Switch>
+                <Route
+                  path="/premversion"
+                  component={VersionTranslationsList}
+                />
                 <Route
                   path="/storage/:itemid/delete"
                   component={StorageContextComponent}

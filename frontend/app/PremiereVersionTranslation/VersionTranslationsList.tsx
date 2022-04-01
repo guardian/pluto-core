@@ -1,15 +1,117 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RouteComponentProps } from "react-router";
 import { Helmet } from "react-helmet";
-import { Grid, IconButton, Paper, Tooltip } from "@material-ui/core";
+import {
+  CircularProgress,
+  Grid,
+  IconButton,
+  makeStyles,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TableSortLabel,
+  Tooltip,
+} from "@material-ui/core";
 import { Add } from "@material-ui/icons";
+import { sortListByOrder } from "../utils/lists";
+import VersionTranslationRow from "./VersionTranslationRow";
+import axios from "axios";
+import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
+
+const useStyles = makeStyles((theme) => ({
+  iconBanner: {
+    width: "100px",
+    marginLeft: "auto",
+  },
+  table: {},
+}));
 
 const VersionTranslationsList: React.FC<RouteComponentProps> = (props) => {
   const [knownTranslations, setKnownTranslations] = useState<
     PremiereVersionTranslation[]
   >([]);
+  const [loading, setLoading] = useState(false);
 
-  const addNew = () => {};
+  const [sortDescending, setSortDescending] = useState(true);
+
+  const classes = useStyles();
+
+  const addNew = () => {
+    setKnownTranslations((prev) =>
+      prev.concat({
+        internalVersionNumber: 0,
+        name: "",
+        displayedVersion: "",
+      })
+    );
+  };
+
+  const deleteEntry = async (id: number) => {
+    try {
+      const response = await axios.delete(`/api/premiereVersion/${id}`);
+      SystemNotification.open(
+        SystemNotifcationKind.Success,
+        `Deleted premeire version translation ${id}`
+      );
+      reloadData();
+    } catch (err) {
+      console.error(
+        `Could not delete premiere version translation ${id}: `,
+        err
+      );
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        `Could not delete version translation - see browser console log`
+      );
+    }
+  };
+
+  const updateEntry = async (newValue: PremiereVersionTranslation) => {
+    try {
+      const response = await axios.post(`/api/premiereVersion`, newValue);
+      SystemNotification.open(
+        SystemNotifcationKind.Success,
+        `Updated premiere version translation ${newValue.internalVersionNumber}`
+      );
+      reloadData();
+    } catch (err) {
+      console.error(
+        `Could not update premiere version translation`,
+        newValue,
+        err
+      );
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        "Could not update version translation - see browser console log"
+      );
+    }
+  };
+
+  const reloadData = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get<
+        ObjectListResponse<PremiereVersionTranslation>
+      >("/api/premiereVersion");
+      setKnownTranslations(response.data.result);
+      setLoading(false);
+    } catch (err) {
+      console.error("Could not load data: ", err);
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        "Could not load version translations due to a server error"
+      );
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    reloadData();
+  }, []);
 
   return (
     <>
@@ -19,9 +121,11 @@ const VersionTranslationsList: React.FC<RouteComponentProps> = (props) => {
       <Grid
         container
         spacing={3}
-        justifyContent="space-around"
+        justifyContent="space-evenly"
         alignContent="flex-end"
+        className={classes.iconBanner}
       >
+        <Grid item>{loading ? <CircularProgress /> : undefined}</Grid>
         <Grid item>
           <Tooltip title="Add a new version translation">
             <IconButton onClick={addNew}>
@@ -30,7 +134,43 @@ const VersionTranslationsList: React.FC<RouteComponentProps> = (props) => {
           </Tooltip>
         </Grid>
       </Grid>
-      <Paper elevation={3}></Paper>
+      <Paper elevation={3}>
+        <TableContainer>
+          <Table className={classes.table}>
+            <TableHead>
+              <TableRow>
+                <TableCell sortDirection={sortDescending ? "desc" : "asc"}>
+                  <TableSortLabel
+                    direction={sortDescending ? "desc" : "asc"}
+                    active={true}
+                    onClick={() => setSortDescending((prev) => !prev)}
+                  >
+                    Internal version number
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>App name</TableCell>
+                <TableCell>Display version</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {sortListByOrder(
+                knownTranslations,
+                "internalVersionNumber",
+                sortDescending ? "desc" : "asc"
+              ).map((entry, idx) => (
+                <VersionTranslationRow
+                  entry={entry}
+                  key={idx}
+                  requestDelete={deleteEntry}
+                  requestUpdate={updateEntry}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
     </>
   );
 };
+
+export default VersionTranslationsList;
