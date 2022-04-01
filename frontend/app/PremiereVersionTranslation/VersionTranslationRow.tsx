@@ -14,7 +14,7 @@ import { Close, DeleteForever, Edit, SaveAlt } from "@material-ui/icons";
 interface VersionTranslationRowProps {
   entry: PremiereVersionTranslation;
   requestDelete: (id: number) => void;
-  requestUpdate: (newValue: PremiereVersionTranslation) => void;
+  requestUpdate: (newValue: PremiereVersionTranslation) => Promise<void>;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -102,12 +102,14 @@ const VersionTranslationRow: React.FC<VersionTranslationRowProps> = (props) => {
   const saveEntry = () => {
     const internalVersion = parseInt(internalVersionString);
     if (internalVersion != 0 && name != "" && displayedVersion != "") {
-      props.requestUpdate({
-        internalVersionNumber: internalVersion,
-        name: name,
-        displayedVersion: displayedVersion,
-      });
-      setIsEditing(false);
+      //on error. props.requestUpdate will reject and so then we don't clear the "editing" status
+      props
+        .requestUpdate({
+          internalVersionNumber: internalVersion,
+          name: name,
+          displayedVersion: displayedVersion,
+        })
+        .then(() => setIsEditing(false));
     }
   };
 

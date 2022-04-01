@@ -88,6 +88,7 @@ const VersionTranslationsList: React.FC<RouteComponentProps> = (props) => {
         SystemNotifcationKind.Error,
         "Could not update version translation - see browser console log"
       );
+      return Promise.reject("server error");
     }
   };
 
