@@ -33,6 +33,7 @@ import clsx from "clsx";
 import { DEFAULT_DATE_FORMAT } from "../../types/constants";
 import BackupEntry from "./BackupEntry";
 import SizeFormatter from "../common/SizeFormatter";
+import PremiereVersionTranslationView from "../EntryViews/PremiereVersionTranslationView";
 
 declare var deploymentRootPath: string;
 
@@ -97,8 +98,10 @@ const PrimaryFilesIndicator: React.FC<{
           <li className={classes.noSpacing}>
             {props.primaryFiles[0].premiereVersion ? (
               <span>
-                This is a Premiere project with internal version{" "}
-                {props.primaryFiles[0].premiereVersion}
+                This is a Premiere project;{" "}
+                <PremiereVersionTranslationView
+                  internalVersion={props.primaryFiles[0].premiereVersion}
+                />
               </span>
             ) : (
               <span>
