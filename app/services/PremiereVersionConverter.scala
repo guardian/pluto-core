@@ -27,20 +27,22 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
   def backupFileToStorage(fileEntry: FileEntry) = {
     implicit val db = dbConfigProvider.get[PostgresProfile].db
 
-    StorageEntryHelper
-      .entryFor(fileEntry.storageId)
-      .flatMap({
-        case Some(backupStorage) =>
-          logger.info(s"Creating an incremental backup for ${fileEntry.filepath} on storage ${backupStorage.storageType} ${backupStorage.id}")
+    for {
+      projectStorage <- StorageEntryHelper.entryFor(fileEntry.storageId)
+      backupStorage <- projectStorage.flatMap(_.backsUpTo).map(StorageEntryHelper.entryFor).getOrElse(Future(None))
+        result <- backupStorage match {
+        case Some(actualBackupStorage)=>
+          logger.info(s"Creating an incremental backup for ${fileEntry.filepath} on storage ${actualBackupStorage.storageType} ${actualBackupStorage.id}")
           for {
             maybeProjectEntry <- ProjectEntry.projectForFileEntry(fileEntry)
             mostRecentBackup <- if (maybeProjectEntry.isDefined) maybeProjectEntry.get.mostRecentBackup else Future(None)
-            result <- backupService.performBackup(fileEntry, mostRecentBackup, backupStorage).map(Some.apply)
+            result <- backupService.performBackup(fileEntry, mostRecentBackup, actualBackupStorage).map(Some.apply)
           } yield result
-        case None =>
+        case None=>
           logger.warn(s"Project for ${fileEntry.filepath} is on a storage which has no backup configured. Cannot make an incremental backup for it.")
           Future(None)
-      })
+      }
+    } yield result
   }
   /**
     * Makes a backup copy of the file pointed to by the given FileEntry in the system default temporary location

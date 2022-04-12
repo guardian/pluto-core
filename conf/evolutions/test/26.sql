@@ -1,7 +1,7 @@
 # -- !Ups
 INSERT INTO "StorageEntry" (id, S_ROOT_PATH, S_CLIENT_PATH, S_STORAGE_TYPE, S_USER, S_PASSWORD, S_HOST, I_PORT) VALUES (1, '/tmp', NULL, 'Local', 'me', NULL, NULL, NULL);
 INSERT INTO "StorageEntry" (id, S_ROOT_PATH, S_CLIENT_PATH, S_STORAGE_TYPE, S_USER, S_PASSWORD, S_HOST, I_PORT) VALUES (2, '/backups/projectfiles', NULL, 'ftp', 'me', '123456abcde', 'ftp.mysite.com', 21);
-INSERT INTO "StorageEntry" (id, S_ROOT_PATH, S_CLIENT_PATH, S_STORAGE_TYPE, S_USER, S_PASSWORD, S_HOST, I_PORT) VALUES (3, '/backups/projectfiles', NULL, 'ftp', 'me', '123456abcde', 'ftp.othermysite.com', 21);
+INSERT INTO "StorageEntry" (id, S_ROOT_PATH, S_CLIENT_PATH, S_STORAGE_TYPE, S_USER, S_PASSWORD, S_HOST, I_PORT, K_BACKS_UP_TO) VALUES (3, '/backups/projectfiles', NULL, 'ftp', 'me', '123456abcde', 'ftp.othermysite.com', 21, 1);
 
 INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIME, T_MTIME, T_ATIME, B_HAS_CONTENT) VALUES (1, '/path/to/a/video.mxf', 2, 'me', 1, '2017-01-17 16:55:00.123', '2017-01-17 16:55:00.123', '2017-01-17 16:55:00.123', false);
 INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIME, T_MTIME, T_ATIME, B_HAS_CONTENT) VALUES (2, '/path/to/a/file.project', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', true);
@@ -10,6 +10,7 @@ INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIM
 INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIME, T_MTIME, T_ATIME, B_HAS_CONTENT) VALUES (5, '/path/to/thattestproject', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', true);
 INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIME, T_MTIME, T_ATIME, B_HAS_CONTENT) VALUES (6, 'project_to_delete.prproj', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', false);
 INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIME, T_MTIME, T_ATIME, B_HAS_CONTENT) VALUES (57, 'anothertestprojectfile', 1, 'you', 1, '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', '2016-12-11 12:21:11.021', false);
+INSERT INTO "FileEntry" (id, S_FILEPATH, K_STORAGE_ID, S_USER, I_VERSION, T_CTIME, T_MTIME, T_ATIME, B_HAS_CONTENT) VALUES (58, '/path/to/a/test.mxf', 3, 'me', 1, '2017-01-17 16:55:00.123', '2017-01-17 16:55:00.123', '2017-01-17 16:55:00.123', false);
 
 INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (1, 'Premiere 2014 test', 'AdobePremierePro.app', '14.0', '.prproj');
 INSERT INTO "ProjectType" (id, S_NAME, S_OPENS_WITH, S_TARGET_VERSION, S_FILE_EXTENSION) VALUES (2, 'Prelude 2014 test', 'AdobePrelude.app', '14.0', '.plproj');
