@@ -309,7 +309,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
 
   /**
     * Checks whether we should back up the given file
-    * @param projectAndFiles tuple consisiting of the ProjectEntry and a list of all its files
+    * @param projectAndFiles tuple consisting of the ProjectEntry and a list of all its files
     * @param storageDrivers internal, immutable StorageDrivers cache
     * @return a Future containing:
     *         - a Left if there was a problem and the file could not be backed up but the backup job should continue
@@ -355,19 +355,23 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
                 Left(s"Cannot back up ${p.projectTitle} (${p.id}) because either the source file id ${sourceFile.storageId} is not valid or there is no backup storage configured for it")
               )
             case Some(destStorage)=>
-              performBackup(sourceFile, maybeMostRecentBackup, destStorage)
-              .flatMap(results => {
-                val copiedDest = results._1
-                val copiedSource = results._2
-                  makeProjectLink(copiedSource, copiedDest).map(maybeUpdatedRows=>{
-                    logger.info(s"Copied ${copiedSource.filepath} v${copiedSource.version} on storage ${copiedSource.storageId} to ${copiedDest.filepath} v${copiedDest.version} on storage ${copiedDest.storageId}. Updated $maybeUpdatedRows file association entries")
-                    Right(true)
+              if(sourceFile.storageId==destStorage.id.get) {
+                Future.failed(new RuntimeException(s"Cannot back up ${p.projectTitle} (${p.id}) because storage ${sourceFile.storageId} is configured to back up to itself. This is not supported and can lead to data loss, please fix."))
+              } else {
+                performBackup(sourceFile, maybeMostRecentBackup, destStorage)
+                  .flatMap(results => {
+                    val copiedDest = results._1
+                    val copiedSource = results._2
+                    makeProjectLink(copiedSource, copiedDest).map(maybeUpdatedRows => {
+                      logger.info(s"Copied ${copiedSource.filepath} v${copiedSource.version} on storage ${copiedSource.storageId} to ${copiedDest.filepath} v${copiedDest.version} on storage ${copiedDest.storageId}. Updated $maybeUpdatedRows file association entries")
+                      Right(true)
+                    })
                   })
-              })
-              .recover({
-                case err:Throwable=>
-                  Left(s"Cannot back up ${p.projectTitle} (${p.id}) because ${err.getMessage} occurred while copying ${sourceFile.filepath} v${sourceFile.version} from storage ${sourceFile.storageId}")
-              })
+                  .recover({
+                    case err: Throwable =>
+                      Left(s"Cannot back up ${p.projectTitle} (${p.id}) because ${err.getMessage} occurred while copying ${sourceFile.filepath} v${sourceFile.version} from storage ${sourceFile.storageId}")
+                  })
+              }
           }
 
       }
