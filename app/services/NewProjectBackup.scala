@@ -4,7 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
 import drivers.{StorageDriver, StorageMetadata}
 import helpers.StorageHelper
-import models.{EntryStatus, FileAssociationRow, FileEntry, ProjectEntry, StorageEntry, StorageEntryHelper}
+import models.{EntryStatus, FileAssociationRow, FileEntry, FileEntryDAO, ProjectEntry, StorageEntry, StorageEntryHelper}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
@@ -21,7 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: DatabaseConfigProvider, storageHelper:StorageHelper)(implicit mat:Materializer, injector:Injector){
+class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: DatabaseConfigProvider, storageHelper:StorageHelper)
+                                 (implicit mat:Materializer, fileEntryDAO:FileEntryDAO, injector: Injector){
   private val logger = LoggerFactory.getLogger(getClass)
   private implicit lazy val db = dbConfigProvider.get[PostgresProfile].db
 
@@ -127,6 +128,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         logger.debug(s"${sourceEntry.filepath}: prevDestEntry is $prevDestEntry")
         if(destStorage.supportsVersions) {
           val intendedTarget = prevDestEntry.copy(id=None,
+            storageId=destStorage.id.get,
             version = prevDestEntry.version+1,
             mtime=Timestamp.from(Instant.now()),
             atime=Timestamp.from(Instant.now()),
@@ -196,7 +198,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
   private def getTargetFileEntry(sourceEntry:FileEntry, maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = {
     for {
       targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)  //if our destStorage supports versioning, then we get a new entry here
-      updatedEntryTry <- targetDestEntry.save //make sure that we get the updated database id of the file
+      updatedEntryTry <- fileEntryDAO.save(targetDestEntry) //make sure that we get the updated database id of the file
       updatedDestEntry <- Future
         .fromTry(updatedEntryTry)
         .recoverWith({
@@ -204,7 +206,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
             logger.warn(s"While trying to make the target entry, caught exception of type ${err.getClass.getCanonicalName} with message ${err.getMessage}")
             if(err.getMessage.contains("duplicate key value violates unique constraint")) {
               logger.warn(s"Pre-existing file entry detected for ${targetDestEntry.filepath} v${targetDestEntry.version} on storage ${targetDestEntry.storageId}, recovering it")
-              FileEntry
+              fileEntryDAO
                 .singleEntryFor(targetDestEntry.filepath, targetDestEntry.storageId, targetDestEntry.version)
                 .map({
                   case Some(entry)=>entry
@@ -233,14 +235,14 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
       storageHelper.copyFile(sourceEntry, updatedDestEntry)
         .flatMap(fileEntry=>{
           //ensure that we save the record with `b_has_content` set to true
-          fileEntry.saveSimple.map(finalEntry=>(finalEntry, sourceEntry))
+          fileEntryDAO.saveSimple(fileEntry).map(finalEntry=>(finalEntry, sourceEntry))
         })
         .recoverWith({
           case err:Throwable=>
             logger.error(s"Could not copy ${updatedDestEntry.filepath} on ${updatedDestEntry.storageId} from ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${err.getMessage}",err)
-            updatedDestEntry
-              .deleteFromDisk
-              .andThen(_=>updatedDestEntry.deleteSelf)
+            fileEntryDAO
+              .deleteFromDisk(updatedDestEntry)
+              .andThen(_=>fileEntryDAO.deleteRecord(updatedDestEntry))
               .flatMap(_=>Future.failed(new RuntimeException(err.toString)))
         })
     })
@@ -308,7 +310,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
 
   /**
     * Checks whether we should back up the given file
-    * @param projectAndFiles tuple consisiting of the ProjectEntry and a list of all its files
+    * @param projectAndFiles tuple consisting of the ProjectEntry and a list of all its files
     * @param storageDrivers internal, immutable StorageDrivers cache
     * @return a Future containing:
     *         - a Left if there was a problem and the file could not be backed up but the backup job should continue
@@ -354,19 +356,23 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
                 Left(s"Cannot back up ${p.projectTitle} (${p.id}) because either the source file id ${sourceFile.storageId} is not valid or there is no backup storage configured for it")
               )
             case Some(destStorage)=>
-              performBackup(sourceFile, maybeMostRecentBackup, destStorage)
-              .flatMap(results => {
-                val copiedDest = results._1
-                val copiedSource = results._2
-                  makeProjectLink(copiedSource, copiedDest).map(maybeUpdatedRows=>{
-                    logger.info(s"Copied ${copiedSource.filepath} v${copiedSource.version} on storage ${copiedSource.storageId} to ${copiedDest.filepath} v${copiedDest.version} on storage ${copiedDest.storageId}. Updated $maybeUpdatedRows file association entries")
-                    Right(true)
+              if(sourceFile.storageId==destStorage.id.get) {
+                Future.failed(new RuntimeException(s"Cannot back up ${p.projectTitle} (${p.id}) because storage ${sourceFile.storageId} is configured to back up to itself. This is not supported and can lead to data loss, please fix."))
+              } else {
+                performBackup(sourceFile, maybeMostRecentBackup, destStorage)
+                  .flatMap(results => {
+                    val copiedDest = results._1
+                    val copiedSource = results._2
+                    makeProjectLink(copiedSource, copiedDest).map(maybeUpdatedRows => {
+                      logger.info(s"Copied ${copiedSource.filepath} v${copiedSource.version} on storage ${copiedSource.storageId} to ${copiedDest.filepath} v${copiedDest.version} on storage ${copiedDest.storageId}. Updated $maybeUpdatedRows file association entries")
+                      Right(true)
+                    })
                   })
-              })
-              .recover({
-                case err:Throwable=>
-                  Left(s"Cannot back up ${p.projectTitle} (${p.id}) because ${err.getMessage} occurred while copying ${sourceFile.filepath} v${sourceFile.version} from storage ${sourceFile.storageId}")
-              })
+                  .recover({
+                    case err: Throwable =>
+                      Left(s"Cannot back up ${p.projectTitle} (${p.id}) because ${err.getMessage} occurred while copying ${sourceFile.filepath} v${sourceFile.version} from storage ${sourceFile.storageId}")
+                  })
+              }
           }
 
       }

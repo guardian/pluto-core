@@ -1,6 +1,7 @@
 package models
 
-import akka.stream.scaladsl.Source
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Keep, Sink, Source}
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
@@ -10,6 +11,7 @@ import org.joda.time.DateTime
 import org.joda.time.DateTimeZone.UTC
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,6 +36,13 @@ extends PlutoModel{
     } yield entry
   }
 
+  private def projectFilesLookupQuery(maybeLimitStorage:Option[Int]) = TableQuery[FileAssociationRow]
+    .filter(_.projectEntry===id.get)
+    .join(TableQuery[FileEntryRow])
+    .on(_.fileEntry===_.id)
+    .filterOpt(maybeLimitStorage)(_._2.storage===_)
+    .sortBy(_._2.version.desc.nullsLast)
+
   /**
     * looks up the files known to be associated with this projectEntry in the database
     * @param allVersions if `true`, then all versions are returned across all storages with the highest version first and
@@ -44,19 +53,20 @@ extends PlutoModel{
     */
   def associatedFiles(allVersions:Boolean)(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Seq[FileEntry]] = {
     def lookupProjectFiles(maybeLimitStorage:Option[Int]) = db.run {
-      TableQuery[FileAssociationRow]
-        .filter(_.projectEntry===id.get)
-        .join(TableQuery[FileEntryRow])
-        .on(_.fileEntry===_.id)
-        .filterOpt(maybeLimitStorage)(_._2.storage===_)
-        .sortBy(_._2.version.desc.nullsLast)
-        .result
+      projectFilesLookupQuery(maybeLimitStorage).result
     }.map(_.map(_._2))
 
     for {
       defaultStorage <- projectDefaultStorage
       result <- lookupProjectFiles(if(allVersions) None else defaultStorage.flatMap(_.id))
     } yield result
+  }
+
+  def mostRecentBackup(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer) = {
+    Source.fromPublisher(db.stream(projectFilesLookupQuery(None).result))
+      .toMat(Sink.headOption)(Keep.right)
+      .run()
+      .map(_.map(_._2))
   }
 
   /**
@@ -228,6 +238,11 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
     ).map(_.map(_.head))
   }
 
+  def entryForIdNew(requestedId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[ProjectEntry] =
+    db.run(
+      TableQuery[ProjectEntryRow].filter(_.id===requestedId).result
+    ).map(_.head)
+
   def lookupByVidispineId(vsid: String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[ProjectEntry]]] =
     db.run(
       TableQuery[ProjectEntryRow].filter(_.vidispineProjectId===vsid).result.asTry
@@ -238,6 +253,17 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
   )
 
   private def dateTimeToTimestamp(from: LocalDateTime) = Timestamp.valueOf(from)
+
+  def projectForFileEntry(fileEntry:FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    db.run {
+      TableQuery[FileAssociationRow]
+        .filter(_.fileEntry===fileEntry.id)
+        .join(TableQuery[ProjectEntryRow])
+        .on(_.projectEntry===_.id)
+        .map(_._2)
+        .result
+    }.map(_.headOption)
+  }
 
   def createFromFile(sourceFile: FileEntry, projectTypeId: Int, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String],
@@ -321,4 +347,10 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
       .length
       .result
   }.map(count=>count>0)
+
+  def scanProjectsForType(typeId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    Source.fromPublisher(
+      db.stream(TableQuery[ProjectEntryRow].filter(_.projectType===typeId).result)
+    )
+  }
 }

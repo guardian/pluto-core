@@ -1,4 +1,6 @@
 import Axios from "axios";
+import axios from "axios";
+import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
 
 const API = "/api";
 const API_PROJECTS = `${API}/project`;
@@ -204,15 +206,89 @@ export const getStorageData = async (id: number): Promise<StorageEntry> => {
   }
 };
 
-//Sends a custom URL to PlutoHelperAgent which runs on the user's local machine. The URL contains the path of the project to open.
-export const openProject = async (id: number) => {
-  const fileResult = await getFileData(id);
-  const storageResult = await getStorageData(fileResult[0].storage);
+export const translatePremiereVersion = async (
+  internalVersion: number,
+  silenceNotifications: boolean
+): Promise<string | undefined> => {
+  try {
+    const response = await axios.get(
+      `/api/premiereVersion/internal/${internalVersion}`,
+      { validateStatus: (status) => status === 200 || status === 404 }
+    );
+    switch (response.status) {
+      case 200:
+        const content = response.data as {
+          version: PremiereVersionTranslation;
+        };
+        console.log(
+          `Premiere version ${internalVersion} corresponds to ${content.version.name} ${content.version.displayedVersion}`
+        );
+        return content.version.displayedVersion;
+      case 404:
+        console.warn(
+          `Premiere version ${internalVersion} is not known to us, going to attempt to open blind`
+        );
+        if (!silenceNotifications) {
+          //set when testing, as this borks if SystemNotificationComponent is not intialised/rendered
+          SystemNotification.open(
+            SystemNotifcationKind.Warning,
+            "Did not recognise Premiere version, will attempt to open anyway"
+          );
+        }
+        return undefined;
+    }
+  } catch (err) {
+    console.error(
+      `Could not look up premiere version ${internalVersion}: `,
+      err
+    );
+    if (!silenceNotifications) {
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        "Could not look up premiere version, will attempt to open anyway"
+      );
+    }
+    return undefined;
+  }
+};
+
+export const getOpenUrl = async (entry: FileEntry) => {
+  const storageResult = await getStorageData(entry.storage);
   const pathToUse = storageResult.clientpath
     ? storageResult.clientpath
     : storageResult.rootpath;
-  window.open(
-    `pluto:openproject:${pathToUse}/${fileResult[0].filepath}`,
-    "_blank"
-  );
+
+  const premiereDisplayVersion = entry.premiereVersion
+    ? await translatePremiereVersion(entry.premiereVersion, false)
+    : undefined;
+
+  const versionPart = premiereDisplayVersion
+    ? `?premiereVersion=${premiereDisplayVersion}`
+    : "";
+  return `pluto:openproject:${pathToUse}/${entry.filepath}${versionPart}`;
+};
+
+export const getOpenUrlForId = async (id: number) => {
+  const fileResult = await getFileData(id);
+
+  if (fileResult.length == 0) {
+    SystemNotification.open(
+      SystemNotifcationKind.Error,
+      "This project has no suitable files"
+    );
+    return;
+  }
+
+  return getOpenUrl(fileResult[0]);
+};
+
+/**
+ * Sends a custom URL to PlutoHelperAgent which runs on the user's local machine. The URL contains the path of the project to open.
+ * @param id - numeric file ID representing the project to be opened. This will derive the most recent suitable FileEntry and use that
+ *            to open the project.
+ * @returns - nothing; runs window.open which interrupts the running javascript and opens a new tab
+ */
+export const openProject = async (id: number) => {
+  const url = await getOpenUrlForId(id);
+  window.open(url, "_blank");
 };

@@ -8,6 +8,8 @@ import { Link } from "react-router-dom";
 import ErrorViewComponent from "./common/ErrorViewComponent.jsx";
 import { Helmet } from "react-helmet";
 import EnhancedTable from "./MaterialUITable";
+import { Button } from "@material-ui/core";
+import { openProject } from "./ProjectEntryList/helpers";
 
 class ProjectValidationView extends React.Component {
   constructor(props) {
@@ -62,9 +64,9 @@ class ProjectValidationView extends React.Component {
         key: "id",
         headerProps: { className: "dashboardheader" },
         render: (projid) => (
-          <a target="_blank" href={"pluto:openproject:" + projid}>
+          <Button variant="contained" onClick={() => openProject(projid)}>
             Open project
-          </a>
+          </Button>
         ),
       },
     ];

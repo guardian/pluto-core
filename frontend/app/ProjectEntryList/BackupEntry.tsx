@@ -17,6 +17,7 @@ interface BackupEntryProps {
   fileId: number;
   filepath: string;
   version: number;
+  premiereVersion?: number;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -64,10 +65,18 @@ const BackupEntry: React.FC<BackupEntryProps> = (props) => {
               Could not load file information, see console for details
             </Typography>
           ) : (
-            <Typography variant="caption">
-              File size is <SizeFormatter bytes={fileMeta.get("size")} /> and
-              was backed up at {fileMeta.get("lastModified")}
-            </Typography>
+            <>
+              <Typography variant="caption">
+                File size is <SizeFormatter bytes={fileMeta.get("size")} /> and
+                was backed up at {fileMeta.get("lastModified")}
+              </Typography>
+              {props.premiereVersion ? (
+                <Typography variant="caption">
+                  This is a Premiere project at internal version{" "}
+                  {props.premiereVersion}
+                </Typography>
+              ) : undefined}
+            </>
           )}
         </>
       </ListItemText>

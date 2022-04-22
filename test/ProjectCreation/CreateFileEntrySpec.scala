@@ -1,9 +1,8 @@
 import java.sql.Timestamp
 import java.time.LocalDateTime
-
 import akka.actor.{ActorSystem, Props}
 import akka.pattern.ask
-import models.{FileEntry, ProductionOffice, ProjectRequest, ProjectRequestFull}
+import models.{FileEntry, FileEntryDAO, ProductionOffice, ProjectRequest, ProjectRequestFull}
 import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.test.WithApplication
@@ -27,12 +26,13 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val ac = system.actorOf(Props(new CreateFileEntry(dbConfigProvider)))
 
       val initialData = ProjectCreateTransientData(None, None, None)
 
-      val fileEntryBefore = Await.result(FileEntry.entryFor("testfile.prproj",1,1), 2 seconds)
+      val fileEntryBefore = Await.result(fileEntryDAO.entryFor("testfile.prproj",1,1), 2 seconds)
       fileEntryBefore must beSuccessfulTry
       fileEntryBefore.get.length mustEqual 0
 
@@ -45,7 +45,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       val response = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
       response must beAnInstanceOf[StepSucceded]
 
-      val fileEntryAfter = Await.result(FileEntry.entryFor("testfile.prproj",1,1), 2 seconds)
+      val fileEntryAfter = Await.result(fileEntryDAO.entryFor("testfile.prproj",1,1), 2 seconds)
       fileEntryAfter must beSuccessfulTry
       val entrySeq = fileEntryAfter.get
       entrySeq.length mustEqual 1
@@ -58,6 +58,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val ex=new RuntimeException("My hovercraft is full of eels")
       val ac = system.actorOf(Props(new CreateFileEntry(dbConfigProvider) {
@@ -67,7 +68,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
 
       val initialData = ProjectCreateTransientData(None, None, None)
 
-      val fileEntryBefore = Await.result(FileEntry.entryFor("testfile2.prproj",1,1), 2 seconds)
+      val fileEntryBefore = Await.result(fileEntryDAO.entryFor("testfile2.prproj",1,1), 2 seconds)
       fileEntryBefore must beSuccessfulTry
       fileEntryBefore.get.length mustEqual 0
 
@@ -80,7 +81,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       val response = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
       response mustEqual StepFailed(initialData, ex)
 
-      val fileEntryAfter = Await.result(FileEntry.entryFor("testfile2.prproj",1,1), 2 seconds)
+      val fileEntryAfter = Await.result(fileEntryDAO.entryFor("testfile2.prproj",1,1), 2 seconds)
       fileEntryAfter must beSuccessfulTry
       val entrySeq = fileEntryAfter.get
       entrySeq.length mustEqual 0
@@ -94,10 +95,11 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val ac = system.actorOf(Props(new CreateFileEntry(dbConfigProvider)))
 
-      val fileEntryBefore = Await.result(FileEntry.entryFor("project_to_delete.prproj",1,1), 2 seconds)
+      val fileEntryBefore = Await.result(fileEntryDAO.entryFor("project_to_delete.prproj",1,1), 2 seconds)
       fileEntryBefore must beSuccessfulTry
       fileEntryBefore.get.length mustEqual 1
 
@@ -112,7 +114,7 @@ class CreateFileEntrySpec extends Specification with BuildMyApp {
       val response = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
       response must beAnInstanceOf[StepSucceded]
 
-      val fileEntryAfter = Await.result(FileEntry.entryFor("project_to_delete.prproj",1,1), 2 seconds)
+      val fileEntryAfter = Await.result(fileEntryDAO.entryFor("project_to_delete.prproj",1,1), 2 seconds)
       fileEntryAfter must beSuccessfulTry
       val entrySeq = fileEntryAfter.get
       entrySeq.length mustEqual 0

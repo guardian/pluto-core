@@ -7,11 +7,10 @@ import akka.actor.Props
 import akka.stream.Materializer
 import exceptions.PostrunActionError
 import helpers.StorageHelper
-import models.ProjectEntry
+import models.{FileEntry, FileEntryDAO, ProjectEntry}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
-import models.{FileEntry, ProjectEntry}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import slick.jdbc.JdbcProfile
@@ -29,7 +28,7 @@ object CopySourceFile {
   * On rollback, deletes the file given by [[services.actors.creation.GenericCreationActor.ProjectCreateTransientData.destFileEntry]]
   * and updates it to have no content again
   */
-class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider, storageHelper:StorageHelper)(implicit injector:Injector) extends GenericCreationActor {
+class CopySourceFile  @Inject() (dbConfigProvider:DatabaseConfigProvider, storageHelper:StorageHelper)(implicit injector:Injector, fileEntryDAO: FileEntryDAO) extends GenericCreationActor {
   override val persistenceId = "creation-get-storage-actor-" + self.path.name
 
   import CopySourceFile._

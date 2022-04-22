@@ -3,12 +3,11 @@ package services.actors.creation
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import javax.inject.Inject
-
 import akka.actor.Props
 import drivers.StorageDriver
 import akka.pattern.ask
 import exceptions.ProjectCreationError
-import models.{FileEntry, ProjectRequestFull, ProjectType}
+import models.{FileEntry, FileEntryDAO, ProjectRequestFull, ProjectType}
 import org.slf4j.MDC
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -22,7 +21,7 @@ object CreateFileEntry {
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extends GenericCreationActor {
+class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) (implicit fileEntryDAO:FileEntryDAO) extends GenericCreationActor {
   override val persistenceId = "create-file-entry-" + self.path.name
 
   import GenericCreationActor._
@@ -56,12 +55,13 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
     */
   def getDestFileFor(rq:ProjectRequestFull, recordTimestamp:Timestamp)(implicit db: slick.jdbc.PostgresProfile#Backend#Database): Future[FileEntry] =
     ProjectType.entryFor(rq.projectTemplate.projectTypeId).flatMap(projectType=>{
-        FileEntry.entryFor(rq.filename, rq.destinationStorage.id.get, 1).map({
+        fileEntryDAO.entryFor(rq.filename, rq.destinationStorage.id.get, 1).map({
           case Success(filesList) =>
             if (filesList.isEmpty) {
               //no file entries exist already, create one (at version 1) and proceed
+              //note that the premiere version field, if required, is set dynamically by a postrun
               FileEntry(None, makeFileName(rq.filename, projectType.fileExtension), rq.destinationStorage.id.get, "system", 1,
-                recordTimestamp, recordTimestamp, recordTimestamp, hasContent = false, hasLink = false, None)
+                recordTimestamp, recordTimestamp, recordTimestamp, hasContent = false, hasLink = false, backupOf = None, maybePremiereVersion = None)
             } else {
               //a file entry does already exist, but may not have data on it
               if (filesList.length > 1)
@@ -77,7 +77,7 @@ class CreateFileEntry @Inject() (dbConfigProvider:DatabaseConfigProvider) extend
 
   def removeDestFileFor(rq: ProjectRequestFull)(implicit db: slick.jdbc.PostgresProfile#Backend#Database): Future[Try[Boolean]] =
     ProjectType.entryFor(rq.projectTemplate.projectTypeId).flatMap(projectType=>{
-        FileEntry.entryFor(makeFileName(rq.filename, projectType.fileExtension), rq.destinationStorage.id.get, 1).flatMap({
+        fileEntryDAO.entryFor(makeFileName(rq.filename, projectType.fileExtension), rq.destinationStorage.id.get, 1).flatMap({
           case Success(filesList) =>
             filesList.headOption match {
               case None =>

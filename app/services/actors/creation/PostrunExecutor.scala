@@ -16,7 +16,7 @@ import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class PostrunExecutor @Inject() (dbConfigProvider:DatabaseConfigProvider, config:Configuration) extends GenericCreationActor {
+class PostrunExecutor @Inject() (dbConfigProvider:DatabaseConfigProvider, config:Configuration)(implicit fileEntryDAO: FileEntryDAO) extends GenericCreationActor {
   override val persistenceId = "postrun-executor-actor-" + self.path.name
   implicit val timeout:Duration = Duration(config.getOptional[String]("postrun.timeout").getOrElse("30 seconds"))
 
@@ -120,6 +120,42 @@ class PostrunExecutor @Inject() (dbConfigProvider:DatabaseConfigProvider, config
         Future(Right(s"Successfully ran $successfulActions postrun actions for project $writtenPath"))
   }
 
+  /**
+    * If the postruns extracted a premiere version number then store it against the file entry for the project
+    * @param maybeOutput final postrun output with the final state of the data store
+    * @param entry ProjectEntry that was created. This must have the saved project entry on it.
+    * @return a Future, containing a sequence of updated FileEntry results
+    */
+  protected def storePremiereVersionInfo(maybeOutput: Option[JythonOutput], entry: ProjectEntry) = maybeOutput match {
+    case Some(finalResult)=>
+      finalResult.newDataCache.get("premiere_version") match {
+        case Some(premiereVersion) =>
+          Try {
+            premiereVersion.toInt
+          } match {
+            case Success(premiereVersionNumber) =>
+              logger.info(s"${entry.id}: ${entry.projectTitle} - got premiere version $premiereVersion")
+              for {
+                files <- entry.associatedFiles(allVersions = false)
+                updates <- Future.sequence(files.map(f => {
+                  val updatedFile = f.copy(maybePremiereVersion = Some(premiereVersionNumber))
+                  updatedFile.save
+                }))
+              } yield updates
+
+            case Failure(err) =>
+              logger.error(s"${entry.id}: ${entry.projectTitle} - got premiere version '$premiereVersion' which does not convert to a number. This should not happen.  Error was '${err.getMessage}'", err)
+              Future.failed(new RuntimeException("Could not get a valid premiere version, possibly a corrupted template"))
+          }
+        case None =>
+          logger.debug(s"${entry.projectTitle} (${entry.id.get} is not a premiere project")
+          Future(Seq())
+      }
+    case None=>
+      logger.warn(s"No postruns ran for ${entry.projectTitle} (${entry.id.get} so no metadata")
+      Future(Seq())
+  }
+
   override def receive: Receive = {
     case createRequest:NewProjectRequest=>
       //FIXME: should validate createRequest here, before entering persistence block
@@ -173,11 +209,20 @@ class PostrunExecutor @Inject() (dbConfigProvider:DatabaseConfigProvider, config
                 } else {
                   val msg = s"Successfully ran ${results.length} postrun actions for project $writtenPath"
                   logger.info(s"Successfully ran ${results.length} postrun actions for project $writtenPath")
-                  originalSender ! StepSucceded(createRequest.data)
 
                   val reversedResults = results.reverse
+                  val result = for {
+                    _ <- persistMetadataToDatabase(reversedResults.headOption, createdProjectEntry, results.length, writtenPath)
+                    result <- storePremiereVersionInfo(reversedResults.headOption, createdProjectEntry)
+                  } yield result
 
-                  persistMetadataToDatabase(reversedResults.headOption, createdProjectEntry, results.length, writtenPath)
+                  result.onComplete({
+                    case Success(_)=>
+                      originalSender ! StepSucceded(createRequest.data)
+                    case Failure(err)=>
+                      logger.error(s"Could not persist metadata: ${err.getMessage}", err)
+                      originalSender ! StepFailed(createRequest.data, err)
+                  })
                   Success(msg)
                 }
             }

@@ -33,6 +33,7 @@ import clsx from "clsx";
 import { DEFAULT_DATE_FORMAT } from "../../types/constants";
 import BackupEntry from "./BackupEntry";
 import SizeFormatter from "../common/SizeFormatter";
+import PremiereVersionTranslationView from "../EntryViews/PremiereVersionTranslationView";
 
 declare var deploymentRootPath: string;
 
@@ -52,6 +53,9 @@ const useStyles = makeStyles((theme) => ({
   emphasised: {
     fontWeight: theme.typography.fontWeightBold,
   },
+  noSpacing: {
+    marginBottom: "0",
+  },
 }));
 
 const PrimaryFilesIndicator: React.FC<{
@@ -59,6 +63,8 @@ const PrimaryFilesIndicator: React.FC<{
   meta: Map<string, string>;
 }> = (props) => {
   const [timeString, setTimeString] = useState("");
+
+  const classes = useStyles();
 
   useEffect(() => {
     if (props.primaryFiles.length >= 1) {
@@ -85,22 +91,37 @@ const PrimaryFilesIndicator: React.FC<{
     return (
       <Alert severity="info">
         <ul style={{ listStyle: "none" }}>
-          <li>
+          <li className={classes.noSpacing}>
             The main file is {props.primaryFiles[0].filepath} which was created
             at {timeString}
           </li>
+          <li className={classes.noSpacing}>
+            {props.primaryFiles[0].premiereVersion ? (
+              <span>
+                This is a Premiere project;{" "}
+                <PremiereVersionTranslationView
+                  internalVersion={props.primaryFiles[0].premiereVersion}
+                />
+              </span>
+            ) : (
+              <span>
+                This is no Premiere version information on this project, maybe
+                it's not Premiere
+              </span>
+            )}
+          </li>
           <li>
             <>
-              {props.meta.get("'size") ? (
+              {props.meta.get("size") ? (
                 <span>
                   The file size is{" "}
-                  {<SizeFormatter bytes={props.meta.get("'size")} />}
+                  {<SizeFormatter bytes={props.meta.get("size")} />}
                 </span>
               ) : undefined}
-              {props.meta.get("'lastModified") ? (
+              {props.meta.get("lastModified") ? (
                 <span>
                   {" "}
-                  and it was last modified at {props.meta.get("'lastModified")}
+                  and it was last modified at {props.meta.get("lastModified")}
                 </span>
               ) : undefined}
             </>
@@ -237,6 +258,7 @@ const ProjectBackups: React.FC<RouteComponentProps<{ itemid: string }>> = (
                 fileId={f.id}
                 filepath={f.filepath}
                 version={f.version}
+                premiereVersion={f.premiereVersion}
               />
             ))}
           </List>

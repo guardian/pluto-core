@@ -32,6 +32,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val mockedFileEntry = mock[FileEntry]
       mockedFileEntry.getFullPath(any) returns Future("/tmp/someproject.prj")
@@ -45,6 +46,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       mockedProjectEntry.vidispineProjectId returns None
 
       val mockedDataCache = mock[PostrunDataCache]
+      mockedDataCache.get(any) returns None
       mockedDataCache.asScala returns Map("created_asset_folder"->"/path/to/my/assetfolder","new_adobe_uuid"->"b8254566-0c69-4000-b990-8082b4b2dd32")
 
       val mockedPostrunSeq = Seq(
@@ -74,6 +76,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testMessageProcessor = TestProbe()
 
@@ -89,6 +92,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       mockedProjectEntry.vidispineProjectId returns None
 
       val mockedDataCache = mock[PostrunDataCache]
+      mockedDataCache.get(any) returns None
       mockedDataCache.asScala returns Map()
 
       val mockedPostrunSeq = Seq(
@@ -120,6 +124,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testMessageProcessor = TestProbe()
 
@@ -160,6 +165,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testMessageProcessor = TestProbe()
 
@@ -206,6 +212,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testMessageProcessor = TestProbe()
 
@@ -252,6 +259,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
       implicit val config = app.configuration //needed for mocking PostrunAction.run
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testMessageProcessor = TestProbe()
 
@@ -300,6 +308,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       private val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       private implicit val system = injector.instanceOf(classOf[ActorSystem])
       private implicit val db = dbConfigProvider.get[JdbcProfile].db
+      private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
 
       val testMessageProcessor = TestProbe()
 
@@ -312,7 +321,8 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
       val msg = NewProjectRollback(maybeRq.get,initialData)
       val result = Await.result((ac ? msg).mapTo[CreationMessage], 10 seconds)
       result must beAnInstanceOf[StepSucceded]
-
     }
   }
+
+
 }

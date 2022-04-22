@@ -2,7 +2,7 @@ package streamcomponents
 
 import akka.stream.{Attributes, FlowShape, Inlet, Materializer, Outlet, UniformFanOutShape}
 import akka.stream.stage.{AbstractInHandler, AbstractOutHandler, GraphStage, GraphStageLogic}
-import models.{ProjectEntry, ProjectEntryRow, ValidationJob, ValidationProblem}
+import models.{FileEntryDAO, ProjectEntry, ProjectEntryRow, ValidationJob, ValidationProblem}
 import org.slf4j.{LoggerFactory, MDC}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
@@ -15,7 +15,7 @@ import scala.concurrent.Future
   * checks if the given ProjectEntry exists in the expected location(s) or not.
   * If it validates then grabs the next input from the stream, if it does not validate then outputs a ValidationProblem
   */
-class ProjectValidationComponent(dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit mat:Materializer, injector:Injector) extends GeneralValidationComponent[ProjectEntryRow](dbConfigProvider){
+class ProjectValidationComponent(dbConfigProvider:DatabaseConfigProvider, currentJob:ValidationJob)(implicit mat:Materializer, injector:Injector, fileEntryDAO:FileEntryDAO) extends GeneralValidationComponent[ProjectEntryRow](dbConfigProvider){
   override protected val in:Inlet[ProjectEntry] = Inlet.create("ValidateProjectSwitch.in")
   override protected  val out:Outlet[ValidationProblem] = Outlet.create("ValidateProject.out")
 
