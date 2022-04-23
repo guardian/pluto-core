@@ -142,6 +142,7 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
         const updatedFile = await performConversion(fileId, requiredVersion);
         const openUrl = await getOpenUrl(updatedFile);
         setNewOpenUrl(openUrl);
+        setConversionInProgress(false);
       } catch (err) {
         if (err == "The target file is already at the requested version") {
           setLastError("No update was required");
