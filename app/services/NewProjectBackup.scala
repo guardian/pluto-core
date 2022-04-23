@@ -230,22 +230,26 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     *         fails on error.
     */
   def performBackup(sourceEntry:FileEntry, maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry) = {
-    getTargetFileEntry(sourceEntry, maybePrevDestEntry, destStorage).flatMap(updatedDestEntry=>{
-      logger.warn(s"Backing up ${sourceEntry.filepath} on storage ${sourceEntry.storageId} to ${updatedDestEntry.filepath} v${updatedDestEntry.version} on storage ${updatedDestEntry.storageId}")
-      storageHelper.copyFile(sourceEntry, updatedDestEntry)
-        .flatMap(fileEntry=>{
-          //ensure that we save the record with `b_has_content` set to true
-          fileEntryDAO.saveSimple(fileEntry).map(finalEntry=>(finalEntry, sourceEntry))
-        })
-        .recoverWith({
-          case err:Throwable=>
-            logger.error(s"Could not copy ${updatedDestEntry.filepath} on ${updatedDestEntry.storageId} from ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${err.getMessage}",err)
-            fileEntryDAO
-              .deleteFromDisk(updatedDestEntry)
-              .andThen(_=>fileEntryDAO.deleteRecord(updatedDestEntry))
-              .flatMap(_=>Future.failed(new RuntimeException(err.toString)))
-        })
-    })
+    for {
+      updatedDestEntry <- getTargetFileEntry(sourceEntry, maybePrevDestEntry, destStorage)
+      results <- {
+        logger.warn(s"Backing up ${sourceEntry.filepath} on storage ${sourceEntry.storageId} to ${updatedDestEntry.filepath} v${updatedDestEntry.version} on storage ${updatedDestEntry.storageId}")
+        storageHelper.copyFile(sourceEntry, updatedDestEntry)
+          .flatMap(fileEntry=>{
+            //ensure that we save the record with `b_has_content` set to true
+            fileEntryDAO.saveSimple(fileEntry).map(finalEntry=>(finalEntry, sourceEntry))
+          })
+          .recoverWith({
+            case err:Throwable=>
+              logger.error(s"Could not copy ${updatedDestEntry.filepath} on ${updatedDestEntry.storageId} from ${sourceEntry.filepath} on ${sourceEntry.storageId}: ${err.getMessage}",err)
+              fileEntryDAO
+                .deleteFromDisk(updatedDestEntry)
+                .andThen(_=>fileEntryDAO.deleteRecord(updatedDestEntry))
+                .flatMap(_=>Future.failed(new RuntimeException(err.toString)))
+          })
+      }
+      _ <- makeProjectLink(results._2, results._1)
+    } yield results
   }
 
   private def findMostRecentByFilesystem(potentialBackups:Seq[FileEntry], p:ProjectEntry, storageDrivers:Map[Int, StorageDriver]) = {
@@ -360,14 +364,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
                 Future.failed(new RuntimeException(s"Cannot back up ${p.projectTitle} (${p.id}) because storage ${sourceFile.storageId} is configured to back up to itself. This is not supported and can lead to data loss, please fix."))
               } else {
                 performBackup(sourceFile, maybeMostRecentBackup, destStorage)
-                  .flatMap(results => {
-                    val copiedDest = results._1
-                    val copiedSource = results._2
-                    makeProjectLink(copiedSource, copiedDest).map(maybeUpdatedRows => {
-                      logger.info(s"Copied ${copiedSource.filepath} v${copiedSource.version} on storage ${copiedSource.storageId} to ${copiedDest.filepath} v${copiedDest.version} on storage ${copiedDest.storageId}. Updated $maybeUpdatedRows file association entries")
-                      Right(true)
-                    })
-                  })
+                  .map(_=>Right(true))
                   .recover({
                     case err: Throwable =>
                       Left(s"Cannot back up ${p.projectTitle} (${p.id}) because ${err.getMessage} occurred while copying ${sourceFile.filepath} v${sourceFile.version} from storage ${sourceFile.storageId}")
