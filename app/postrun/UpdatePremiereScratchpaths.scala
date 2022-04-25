@@ -17,6 +17,8 @@ class UpdatePremiereScratchpaths extends PojoPostrun with AdobeXml {
         <CapturedVideoLocation0>{newLocation}</CapturedVideoLocation0>
       case Elem(prefix,"CapturedAudioLocation0",attributes,scope,_*)=>
         Seq(Elem.apply(prefix,"CapturedAudioLocation0",attributes,scope,false,Text(newLocation)))
+      case Elem(prefix,"CCLibrariesLocation0",attributes,scope,_*)=>
+        Seq(Elem.apply(prefix,"CCLibrariesLocation0",attributes,scope,false,Text(newLocation)))
       case Elem(prefix,"CapsuleMediaLocation0",attributes,scope,_*)=>
         Seq(Elem.apply(prefix,"CapsuleMediaLocation0",attributes,scope,false,Text(newLocation)))
       case Elem(prefix,"TransferMediaLocation0",attributes,scope,child@_*)=>
