@@ -27,7 +27,8 @@ class FindMistlinkedProjectsComponentSpec extends Specification with Mockito {
     None,
     None,
     EntryStatus.InProduction,
-    ProductionOffice.US
+    ProductionOffice.US,
+    None
   )
   val fakeProjectType = ProjectType(
     None,

@@ -46,7 +46,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, storageHelper)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus, None).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None,None)
@@ -77,7 +77,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, storageHelper)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus, None).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None, None)
@@ -111,7 +111,7 @@ class CopySourceFileSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new CopySourceFile(dbConfigProvider, mockedStorageHelper)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None, false, false, false, ProductionOffice.Aus, None).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(fileEntryDest.get.head), None, None)

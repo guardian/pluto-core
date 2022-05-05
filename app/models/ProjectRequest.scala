@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 case class ProjectRequest(filename:String,destinationStorageId:Int,title:String, projectTemplateId:Int,
                           user:String, workingGroupId: Option[Int], commissionId: Option[Int],
-                          deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value) {
+                          deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value, obitProject:Option[String]) {
   /* looks up the ids of destination storage and project template, and returns a new object with references to them or None */
   def hydrate(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[ProjectRequestFull]] = {
     val storageFuture = StorageEntryHelper.entryFor(this.destinationStorageId)
@@ -21,7 +21,7 @@ case class ProjectRequest(filename:String,destinationStorageId:Int,title:String,
           successfulResults.head.asInstanceOf[StorageEntry],
           this.title,
           successfulResults(1).asInstanceOf[ProjectTemplate],
-          user, workingGroupId, commissionId, existingVidispineId = None, shouldNotify = true, deletable, deep_archive, sensitive, productionOffice))
+          user, workingGroupId, commissionId, existingVidispineId = None, shouldNotify = true, deletable, deep_archive, sensitive, productionOffice, obitProject))
       } else None
     })
   }
@@ -30,7 +30,7 @@ case class ProjectRequest(filename:String,destinationStorageId:Int,title:String,
 case class ProjectRequestFull(filename:String,destinationStorage:StorageEntry,title:String,projectTemplate:ProjectTemplate,
                               user:String, workingGroupId: Option[Int], commissionId:Option[Int], existingVidispineId: Option[String],
                               shouldNotify: Boolean, deletable: Boolean, deep_archive: Boolean, sensitive: Boolean,
-                              productionOffice: ProductionOffice.Value) {
+                              productionOffice: ProductionOffice.Value, obitProject:Option[String]) {
 
 }
 
@@ -47,6 +47,7 @@ trait ProjectRequestSerializer {
       (JsPath \ "deletable").read[Boolean] and
       (JsPath \ "deepArchive").read[Boolean] and
       (JsPath \ "sensitive").read[Boolean] and
-      (JsPath \ "productionOffice").read[ProductionOffice.Value]
+      (JsPath \ "productionOffice").read[ProductionOffice.Value] and
+      (JsPath \ "obitProject").readNullable[String]
   )(ProjectRequest.apply _)
 }
