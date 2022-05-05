@@ -130,11 +130,17 @@ const CommissionsList: React.FC = () => {
     };
 
     fetchWhoIsLoggedIn();
-
-    const currentURL = new URLSearchParams(search).toString();
-    const newFilters = buildFilterTerms(currentURL);
-    setFilterTerms(newFilters);
   }, []);
+
+  useEffect(() => {
+    const currentURL = new URLSearchParams(search).toString();
+    let newFilters = buildFilterTerms(currentURL);
+    if (newFilters.user === "Mine" && user) {
+      newFilters.user = user.uid;
+    }
+    console.log("Filter terms set: ", newFilters);
+    setFilterTerms(newFilters);
+  }, [user?.uid]);
 
   return (
     <>
