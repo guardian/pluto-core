@@ -53,6 +53,8 @@ PUT     /api/project/:id                    @controllers.ProjectEntryController.
 PUT     /api/project/:id/status             @controllers.ProjectEntryController.updateStatus(id:Int)
 GET     /api/project/obits                  @controllers.ProjectEntryController.obitFor(name:Option[String], startAt:Int ?= 0, limit:Int ?=50)
 
+GET     /api/obits/names                    @controllers.ProjectEntryController.findAvailableObits(prefix:Option[String], limit:Int ?=5)
+
 GET     /api/valid-users                    @controllers.ProjectEntryController.queryUsersForAutocomplete(prefix:String ?= "", limit:Option[Int])
 GET     /api/known-user                     @controllers.ProjectEntryController.isUserKnown(uname:String ?= "")
 GET     /api/projecttype                   @controllers.ProjectTypeController.list(startAt:Int ?=0,length:Int ?=100)

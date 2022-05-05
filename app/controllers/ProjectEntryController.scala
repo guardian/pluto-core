@@ -464,7 +464,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       .map(result=>Ok(Json.obj("status"->"ok", "known"->result)))
       .recover(err=>{
         logger.error(s"Could not check if '$uname' is known: ${err.getMessage}", err)
-        InternalServerError(Json.obj("status"->"error", "detail"->"db_error"))
+        InternalServerError(Json.obj("status"->"error", "detail"->"Database error, see logs for details"))
       })
   }
 
@@ -488,7 +488,28 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       .recover({
         case err:Throwable=>
           logger.error(s"Could not query database for obituaries: ${err.getMessage}", err)
-          InternalServerError(Json.obj("status"->"error", "detail"->"db error"))
+          InternalServerError(Json.obj("status"->"error", "detail"->"Database error, see logs for details"))
+      })
+  }
+
+  /**
+    * Returns a JSON object containing a list of strings for names of valid obituaries startig with the given prefix.
+    * If no prefix is supplied, then everything is returned (up to the given limit)
+    * @param prefix optional prefix to limit the search to
+    * @param limit don't return more than this number of results
+    * @return
+    */
+  def findAvailableObits(prefix:Option[String], limit:Int) = IsAuthenticatedAsync { uid=> request=>
+    implicit val db = dbConfig.db
+    implicit val ordering = Ordering.String
+    ProjectEntry.listObits(prefix.getOrElse(""), limit)
+      .map(results=>{
+        Ok(Json.obj("status"->"ok","users"->results.sorted))
+      })
+      .recover({
+        case err:Throwable=>
+          logger.error(s"Could not look up obituaries with prefix $prefix and limit ${limit}: ${err.getMessage}", err)
+          InternalServerError(Json.obj("status"->"db_error", "detail"->"Database error, see logs for details"))
       })
   }
 }

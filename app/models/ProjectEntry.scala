@@ -336,6 +336,25 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
       .result
   }
 
+
+  /**
+    * Returns a list of distinct obituaries starting with the given prefix
+    * @param prefix restricts results to only obits starting with this string
+    * @param limit only return up to this many results
+    * @param db implicitly provided database object
+    * @return a Future, containing a sequence of matching usernames
+    */
+  def listObits(prefix:String, limit:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run {
+    val lowerCasePrefix = prefix.toLowerCase
+    TableQuery[ProjectEntryRow]
+      .filter(_.isObitProject.isDefined)
+      .distinctOn(_.isObitProject)
+      .filter(_.isObitProject.toLowerCase.startsWith(lowerCasePrefix))
+      .groupBy(_.isObitProject).map(_._1)
+      .take(limit)
+      .result
+  }
+
   /**
     * Checks if the provided "uname" string is an exact, case-insensitive match for one that already exists in the database
     * @param uname username to test
