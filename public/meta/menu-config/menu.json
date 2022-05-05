@@ -11,6 +11,11 @@
     },
     {
         "type": "link",
+        "text": "Obituaries",
+        "href": "/obituaries/"
+    },
+    {
+        "type": "link",
         "text": "Working Groups",
         "href": "/working-group/"
     },

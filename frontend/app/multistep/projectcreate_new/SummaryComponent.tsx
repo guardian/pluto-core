@@ -84,7 +84,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
           <tr>
             <td>Storage</td>
             <td>
-              {props.workingGroupId ? (
+              {props.destinationStorageId ? (
                 <StorageEntryView entryId={props.destinationStorageId} />
               ) : (
                 <Typography className={classes.error}>

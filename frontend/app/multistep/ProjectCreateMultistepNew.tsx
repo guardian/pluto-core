@@ -25,6 +25,7 @@ import { Link } from "react-router-dom";
 import CommonMultistepContainer, {
   multistepStyles,
 } from "./common/CommonMultistepContainer";
+import ObituaryComponent from "./projectcreate_new/ObituaryComponent";
 
 const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   const context = useContext(UserContext);
@@ -72,6 +73,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   const steps = [
     "Select project template",
     "Name your project",
+    "Obituary",
     "Working Group & Commission",
     "Production Office",
     "Media Rules",
@@ -101,7 +103,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   }, [location]);
 
   const createClicked = async () => {
-    setActiveStep(6);
+    setActiveStep(7);
     setCreationInProgress(true);
     setCreationFailed(undefined);
 
@@ -197,7 +199,8 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             storageIdDidChange={(newValue) => setSelectedStorageId(newValue)}
           />
         ) : null}
-        {activeStep == 2 ? (
+        {activeStep == 2 ? <ObituaryComponent /> : null}
+        {activeStep == 3 ? (
           <PlutoLinkageComponent
             commissionIdDidChange={(newValue) => setCommissionId(newValue)}
             workingGroupIdDidChange={(newValue) => setWorkingGroupId(newValue)}
@@ -205,13 +208,14 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             workingGroupId={workingGroupId}
           />
         ) : null}
-        {activeStep == 3 ? (
+
+        {activeStep == 4 ? (
           <ProductionOfficeComponent
             valueWasSet={(newValue) => setProductionOffice(newValue)}
             value={productionOffice}
           />
         ) : null}
-        {activeStep == 4 ? (
+        {activeStep == 5 ? (
           <MediaRulesComponent
             deletable={deletable}
             deepArchive={deepArchive}
@@ -223,7 +227,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             sensitiveChanged={(newValue) => setSensitive(newValue)}
           />
         ) : null}
-        {activeStep == 5 ? (
+        {activeStep == 6 ? (
           <SummaryComponent
             projectName={projectName}
             fileName={filename}
@@ -237,21 +241,21 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             sensitive={sensitive}
           />
         ) : null}
-        {activeStep == 6 ? (
+        {activeStep == 7 ? (
           <InProgressComponent
             didFail={creationFailed !== undefined}
             errorMessage={creationFailed}
             description="Creating your project, please wait..."
           />
         ) : null}
-        {activeStep == 7 && createdProjectId && commissionId ? (
+        {activeStep == 8 && createdProjectId && commissionId ? (
           <ProjectCreatedComponent
             projectId={createdProjectId}
             commissionId={commissionId}
             title={projectName}
           />
         ) : null}
-        {activeStep == 7 && (!createdProjectId || !commissionId) ? (
+        {activeStep == 8 && (!createdProjectId || !commissionId) ? (
           <div>
             <Typography className={classes.warning} variant="h3">
               Well this is strange

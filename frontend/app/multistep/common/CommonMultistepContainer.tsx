@@ -122,7 +122,7 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
           <Grid item>
             <Button
               variant="outlined"
-              disabled={activeStep == 0 || creationInProgress || activeStep > 5}
+              disabled={activeStep == 0 || creationInProgress || activeStep > 6}
               onClick={handleBack}
             >
               Back

@@ -37,6 +37,7 @@ import { UserContextProvider } from "./UserContext";
 import Raven from "raven-js";
 import ProjectValidationView from "./ProjectValidationView.jsx";
 import CommissionsList from "./CommissionsList/CommissionsList.tsx";
+import ObituariesList from "./ObituariesList/ObituariesList.tsx";
 import CommissionMultistepNew from "./multistep/CommissionMultistepNew";
 
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
@@ -204,8 +205,8 @@ class App extends React.Component {
           <div className="app">
             <Header />
             <AppSwitcher onLoginValid={this.onLoginValid} />
-
             <div id="mainbody" className="mainbody">
+              test
               <Switch>
                 <Route
                   path="/premversion"
@@ -283,6 +284,7 @@ class App extends React.Component {
                   )}
                 />
                 <Route path="/commission/" component={CommissionsList} />
+                <Route path="/obituaries/" component={ObituariesList} />
                 <Route path="/working-group/:itemid" component={WorkingGroup} />
                 <Route path="/working-group/" component={WorkingGroups} />
                 <Route

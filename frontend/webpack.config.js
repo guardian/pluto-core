@@ -11,6 +11,10 @@ var config = {
     path: BUILD_DIR,
     filename: "bundle.js",
   },
+  devServer: {
+    hot: true,
+    port: 8080,
+  },
   resolve: {
     extensions: [".ts", ".tsx", ".js", ".jsx"],
     fallback: {
