@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
 import {
   Button,
@@ -6,11 +6,8 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  FormControl,
-  FormControlLabel,
   Grid,
   IconButton,
-  makeStyles,
   Paper,
   TextField,
   Tooltip,
@@ -29,34 +26,7 @@ import { Helmet } from "react-helmet";
 import ProjectEntryVaultComponent from "./ProjectEntryVaultComponent";
 import { FileCopy, PermMedia } from "@material-ui/icons";
 import UsersAutoComplete from "../common/UsersAutoComplete";
-
-const useStyles = makeStyles({
-  root: {
-    display: "flex",
-    flexDirection: "column",
-    padding: "1rem",
-    "& .MuiTextField-root": {
-      width: "100%",
-      marginBottom: "1rem",
-    },
-    "& .MuiFormControl-root": {
-      width: "100%",
-      marginBottom: "1rem",
-    },
-  },
-  applicableRules: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  formButtons: {
-    display: "flex",
-    marginTop: "2.5rem",
-    justifyContent: "flex-end",
-    "& Button": {
-      marginLeft: "1rem",
-    },
-  },
-});
+import { useGuardianStyles } from "~/misc/utils";
 
 declare var deploymentRootPath: string;
 
@@ -86,7 +56,7 @@ const EMPTY_PROJECT: Project = {
 const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   props
 ) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
   const history = useHistory();
 
   const { state: projectFromList } = useLocation<Project | undefined>();

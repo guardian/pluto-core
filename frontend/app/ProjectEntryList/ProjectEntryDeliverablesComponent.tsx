@@ -1,60 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { Paper, Button, Typography } from "@material-ui/core";
 import {
-  Paper,
-  Button,
-  Typography,
-  makeStyles,
-  TableContainer,
-  Table,
-  TableHead,
-  TableRow,
-  TableBody,
-  TableCell,
-} from "@material-ui/core";
-import {
-  getProjectDeliverables,
   createProjectDeliverable,
   getProjectDeliverableSummary,
 } from "../utils/api";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 import WarningIcon from "@material-ui/icons/Warning";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
-
-const useStyles = makeStyles({
-  projectDeliverable: {
-    display: "flex",
-    flexDirection: "column",
-    padding: "1rem",
-    marginTop: "1rem",
-
-    "& .MuiTypography-subtitle1": {
-      marginTop: "6px",
-      marginBottom: "6px",
-    },
-    "& .error": {
-      backgroundColor: "rgb(211 47 47)",
-      padding: "10px",
-      color: "#FFF",
-      "& .content": {
-        display: "flex",
-        alignItems: "center",
-
-        "& .message": {
-          marginLeft: "6px",
-        },
-      },
-    },
-    "& .button-container": {
-      marginTop: "1rem",
-    },
-  },
-  loading: {
-    display: "flex",
-    flexDirection: "column",
-    width: "100%",
-    alignItems: "center",
-  },
-});
+import { useGuardianStyles } from "~/misc/utils";
 
 const tableHeaderTitles: string[] = ["Filename", "Size", "Status"];
 
@@ -66,7 +19,7 @@ interface ProjectEntryDeliverablesComponentProps {
 const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesComponentProps> = (
   props
 ) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
   const [deliverable, setDeliverables] = useState<Deliverable[]>([]);
   const [
     deliverableCount,

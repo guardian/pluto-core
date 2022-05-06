@@ -7,9 +7,11 @@ import {
 } from "@material-ui/core";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 type Props = {};
+import { useGuardianStyles } from "~/misc/utils";
 
 const ObituaryComponent = (props: Props) => {
   const [isObituary, setObituary] = useState(false);
+  const classes = useGuardianStyles();
   const top100Films = [
     { title: "The Shawshank Redemption", year: 1994 },
     { title: "The Godfather", year: 1972 },
@@ -118,7 +120,7 @@ const ObituaryComponent = (props: Props) => {
   ];
   return (
     <div>
-      <Typography variant={"h3"}>Obituary</Typography>
+      <Typography variant="h3">Obituary</Typography>
       <FormControlLabel
         control={
           <Checkbox
@@ -142,7 +144,12 @@ const ObituaryComponent = (props: Props) => {
             />
           )}
         />
-      ) : null}
+      ) : (
+        <Typography className={classes.secondaryText} style={{ width: 400 }}>
+          Select the check box to select the person for whom the obituary is
+          intended.
+        </Typography>
+      )}
     </div>
   );
 };

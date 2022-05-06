@@ -2,26 +2,19 @@ import React, { useEffect, useState } from "react";
 import {
   Grid,
   IconButton,
-  Input,
-  makeStyles,
   TableCell,
   TableRow,
   TextField,
   Typography,
 } from "@material-ui/core";
 import { Close, DeleteForever, Edit, SaveAlt } from "@material-ui/icons";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface VersionTranslationRowProps {
   entry: PremiereVersionTranslation;
   requestDelete: (id: number) => void;
   requestUpdate: (newValue: PremiereVersionTranslation) => Promise<void>;
 }
-
-const useStyles = makeStyles((theme) => ({
-  editField: {
-    width: "100%",
-  },
-}));
 
 interface EditableFieldProps {
   value: string;
@@ -31,7 +24,7 @@ interface EditableFieldProps {
 }
 
 const EditableField: React.FC<EditableFieldProps> = (props) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   return props.canEdit ? (
     <TextField

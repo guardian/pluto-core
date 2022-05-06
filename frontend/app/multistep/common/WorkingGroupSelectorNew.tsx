@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { makeStyles } from "@material-ui/core/styles";
 import {
   Grid,
   Input,
@@ -9,6 +8,7 @@ import {
 } from "@material-ui/core";
 import { Search } from "@material-ui/icons";
 import { FixedSizeList, ListChildComponentProps } from "react-window";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface WorkingGroupSelectorProps {
   valueWasSet: (newValue: number) => void;
@@ -16,15 +16,9 @@ interface WorkingGroupSelectorProps {
   currentValue: number | undefined;
 }
 
-const useStyles = makeStyles((theme) => ({
-  selectedItem: {
-    backgroundColor: theme.palette.action.selected,
-  },
-}));
-
 const WorkingGroupSelector: React.FC<WorkingGroupSelectorProps> = (props) => {
   const [searchText, setSearchText] = useState("");
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const renderRow = (rowProps: ListChildComponentProps) => {
     if (rowProps.index > props.workingGroupList.length) return null;

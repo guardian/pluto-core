@@ -12,7 +12,7 @@ import {
 } from "@material-ui/core";
 import { Cancel, Search } from "@material-ui/icons";
 import { FixedSizeList, ListChildComponentProps } from "react-window";
-import { makeStyles } from "@material-ui/core/styles";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface CommissionSelectorProps {
   valueWasSet: (newValue: number | undefined) => void;
@@ -21,39 +21,13 @@ interface CommissionSelectorProps {
   showStatus?: ProjectStatus | "all";
 }
 
-const useStyles = makeStyles((theme) => ({
-  selectedItem: {
-    backgroundColor: theme.palette.action.selected,
-  },
-  inlineIcon: {
-    marginRight: theme.spacing(1),
-  },
-  textInput: {
-    verticalAlign: "top",
-    marginRight: theme.spacing(1),
-    width: "70%",
-  },
-  cancelButton: {
-    color: theme.palette.grey.A700,
-  },
-  inlineProgressMeter: {
-    marginRight: theme.spacing(1),
-    marginLeft: theme.spacing(1),
-    height: "1em",
-  },
-  warningText: {
-    color: theme.palette.warning.dark,
-    textAlign: "center",
-  },
-}));
-
 const CommissionSelector: React.FC<CommissionSelectorProps> = (props) => {
   const [searchText, setSearchText] = useState("");
   const [seenCommissions, setSeenCommissions] = useState<Commission[]>([]);
   const [totalResultCount, setTotalResultCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const makeSearchDoc = () => {
     return {
@@ -159,7 +133,7 @@ const CommissionSelector: React.FC<CommissionSelectorProps> = (props) => {
   return (
     <Grid container direction="column">
       <Grid item>
-        <Search className={classes.inlineIcon} />
+        <Search className={classes.commissionSelectorinlineIcon} />
         <Input
           value={searchText}
           className={classes.textInput}

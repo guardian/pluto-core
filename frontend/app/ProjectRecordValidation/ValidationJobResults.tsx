@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import axios from "axios";
 import {
   Grid,
   IconButton,
   LinearProgress,
-  makeStyles,
   Paper,
   Table,
   TableBody,
@@ -23,27 +22,11 @@ import ValidationTableRow from "./ValidationTableRow";
 import { useHistory } from "react-router";
 import { ArrowBackRounded } from "@material-ui/icons";
 import { Helmet } from "react-helmet";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface ValidationJobResultsLocationParams {
   jobId: string;
 }
-
-const useStyles = makeStyles({
-  headerTitle: {
-    fontWeight: "bold",
-    fontSize: "1.1rem",
-  },
-  resultsTable: {
-    maxHeight: "60vh",
-  },
-  infoBanner: {
-    marginTop: "1em",
-    marginBottom: "1em",
-  },
-  fullWidth: {
-    width: "100%",
-  },
-});
 
 type SortColumns = "job-id" | "item-id" | "detection-time";
 type SortOrders = "asc" | "desc";
@@ -66,7 +49,7 @@ const ValidationJobResults: React.FC = () => {
   const routerParams = useParams<ValidationJobResultsLocationParams>();
   const history = useHistory();
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const changeRowsPerPage = (
     evt: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>

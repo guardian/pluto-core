@@ -1,7 +1,7 @@
 import React from "react";
-import { makeStyles } from "@material-ui/core/styles";
 import { CircularProgress, Grid, Typography } from "@material-ui/core";
 import WarningRoundedIcon from "@material-ui/icons/WarningRounded";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface InProgressComponentProps {
   didFail: boolean;
@@ -9,35 +9,8 @@ interface InProgressComponentProps {
   description: string;
 }
 
-const useStyles = makeStyles((theme) => ({
-  centeredContainer: {
-    marginLeft: "auto",
-    marginRight: "auto",
-    width: "400px",
-    marginTop: "auto",
-    marginBottom: "auto",
-    padding: "1em",
-  },
-  errorIcon: {
-    color: theme.palette.warning.dark,
-    width: "100px",
-    height: "100px",
-  },
-  warningText: {
-    color: theme.palette.warning.dark,
-    textAlign: "center",
-  },
-  regularText: {
-    textAlign: "center",
-  },
-  progressSpinner: {
-    width: "100px",
-    height: "100px",
-  },
-}));
-
 const InProgressComponent: React.FC<InProgressComponentProps> = (props) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   return (
     <div className={classes.centeredContainer}>

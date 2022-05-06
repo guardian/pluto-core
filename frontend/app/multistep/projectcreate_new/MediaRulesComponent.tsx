@@ -6,7 +6,7 @@ import {
   Radio,
   Typography,
 } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface MediaRulesComponentProps {
   deletable: boolean;
@@ -15,13 +15,6 @@ interface MediaRulesComponentProps {
   archivalChanged: (deletable: boolean, deepArchive: boolean) => void;
   sensitiveChanged: (newValue: boolean) => void;
 }
-
-const useStyles = makeStyles((theme) => ({
-  secondaryText: {
-    color: theme.palette.text.secondary,
-    fontSize: theme.typography.body2.fontSize,
-  },
-}));
 
 const MediaRulesComponent: React.FC<MediaRulesComponentProps> = (props) => {
   const deepArchiveSelected = () => {
@@ -32,7 +25,7 @@ const MediaRulesComponent: React.FC<MediaRulesComponentProps> = (props) => {
     props.archivalChanged(true, false);
   };
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   return (
     <div>

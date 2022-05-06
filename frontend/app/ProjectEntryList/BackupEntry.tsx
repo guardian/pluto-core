@@ -3,8 +3,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  makeStyles,
-  Size,
   Typography,
 } from "@material-ui/core";
 import { FileCopy } from "@material-ui/icons";
@@ -12,6 +10,7 @@ import { getFileStorageMetadata } from "./helpers";
 import { format, parseISO } from "date-fns";
 import { DEFAULT_DATE_FORMAT } from "../../types/constants";
 import SizeFormatter from "../common/SizeFormatter";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface BackupEntryProps {
   fileId: number;
@@ -20,14 +19,8 @@ interface BackupEntryProps {
   premiereVersion?: number;
 }
 
-const useStyles = makeStyles((theme) => ({
-  emphasis: {
-    fontWeight: theme.typography.fontWeightBold,
-  },
-}));
-
 const BackupEntry: React.FC<BackupEntryProps> = (props) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
   const [fileMeta, setFileMeta] = useState<Map<string, string>>(new Map());
   const [loadError, setLoadError] = useState(false);
 

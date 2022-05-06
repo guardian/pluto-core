@@ -1,6 +1,6 @@
 import React from "react";
 import { TextField, Typography } from "@material-ui/core";
-import { multistepStyles } from "../common/CommonMultistepContainer";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface StorageLoginComponentProps {
   currentStorage: StorageType;
@@ -9,7 +9,7 @@ interface StorageLoginComponentProps {
 }
 
 const StorageLoginComponent: React.FC<StorageLoginComponentProps> = (props) => {
-  const classes = multistepStyles();
+  const classes = useGuardianStyles();
 
   if (!props.currentStorage.needsLogin) {
     return (

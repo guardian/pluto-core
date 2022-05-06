@@ -3,7 +3,6 @@ import { RouteComponentProps, useLocation } from "react-router-dom";
 import {
   Button,
   Grid,
-  makeStyles,
   Paper,
   Step,
   StepLabel,
@@ -22,10 +21,9 @@ import InProgressComponent from "./projectcreate_new/InProgressComponent";
 import { CreateProject } from "./projectcreate_new/CreationAction";
 import ProjectCreatedComponent from "./projectcreate_new/ProjectCreatedComponent";
 import { Link } from "react-router-dom";
-import CommonMultistepContainer, {
-  multistepStyles,
-} from "./common/CommonMultistepContainer";
+import CommonMultistepContainer from "./common/CommonMultistepContainer";
 import ObituaryComponent from "./projectcreate_new/ObituaryComponent";
+import { useGuardianStyles } from "~/misc/utils";
 
 const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   const context = useContext(UserContext);
@@ -68,7 +66,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
 
   const location = useLocation();
   const userContext = useContext(UserContext);
-  const classes = multistepStyles();
+  const classes = useGuardianStyles();
 
   const steps = [
     "Select project template",

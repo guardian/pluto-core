@@ -8,7 +8,6 @@ import {
   TableHead,
   TablePagination,
   TableRow,
-  makeStyles,
   TableSortLabel,
   Grid,
 } from "@material-ui/core";
@@ -20,6 +19,7 @@ import { Helmet } from "react-helmet";
 import ProjectFilterComponent from "../filter/ProjectFilterComponent.jsx";
 import { isLoggedIn } from "../utils/api";
 import { buildFilterTerms, filterTermsToQuerystring } from "../filter/terms";
+import { useGuardianStyles } from "~/misc/utils";
 
 const tableHeaderTitles: HeaderTitle<Commission>[] = [
   { label: "Title", key: "title" },
@@ -30,37 +30,10 @@ const tableHeaderTitles: HeaderTitle<Commission>[] = [
   { label: "Owner", key: "owner" },
 ];
 
-const useStyles = makeStyles({
-  table: {
-    maxWidth: "100%",
-    "& .MuiTableRow-hover": {
-      cursor: "pointer",
-    },
-  },
-  createButton: {
-    display: "flex",
-    marginBottom: "0.625rem",
-  },
-  visuallyHidden: {
-    border: 0,
-    clip: "rect(0 0 0 0)",
-    height: 1,
-    margin: -1,
-    overflow: "hidden",
-    padding: 0,
-    position: "absolute",
-    top: 20,
-    width: 1,
-  },
-  buttonGrid: {
-    marginLeft: "auto",
-  },
-});
-
 const pageSizeOptions = [25, 50, 100];
 
 const CommissionsList: React.FC = () => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [workingGroups, setWorkingGroups] = useState<Map<number, string>>(

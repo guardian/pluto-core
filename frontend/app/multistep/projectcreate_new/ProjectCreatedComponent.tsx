@@ -1,7 +1,6 @@
 import React from "react";
 import { CheckCircle } from "@material-ui/icons";
-import { makeStyles } from "@material-ui/core/styles";
-import { Button, TableCell, Typography } from "@material-ui/core";
+import { Button, Typography } from "@material-ui/core";
 import AssetFolderLink from "../../ProjectEntryList/AssetFolderLink";
 import {
   openProject,
@@ -11,6 +10,7 @@ import { createProjectDeliverable } from "../../utils/api";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import { Helmet } from "react-helmet";
 import { useHistory } from "react-router-dom";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface ProjectCreatedComponentProps {
   projectId: number;
@@ -18,26 +18,10 @@ interface ProjectCreatedComponentProps {
   title: string;
 }
 
-const useStyles = makeStyles((theme) => ({
-  success: {
-    color: theme.palette.success.dark,
-    width: "100px",
-    height: "100px",
-  },
-  container: {
-    padding: "1em",
-  },
-  bannerText: {
-    fontWeight: theme.typography.fontWeightBold,
-    textAlign: "center",
-    marginBottom: "1em",
-  },
-}));
-
 const ProjectCreatedComponent: React.FC<ProjectCreatedComponentProps> = (
   props
 ) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const history = useHistory();
 

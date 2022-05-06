@@ -1,8 +1,8 @@
 import React from "react";
 import ShowPasswordComponent from "../ShowPasswordComponent.jsx";
 import { TextField, Typography } from "@material-ui/core";
-import { multistepStyles } from "../common/CommonMultistepContainer";
 import StorageEntryView from "../../EntryViews/StorageEntryView";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface SummaryComponentProps {
   storageType: StorageType;
@@ -16,7 +16,7 @@ interface SummaryComponentProps {
 }
 
 const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
-  const classes = multistepStyles();
+  const classes = useGuardianStyles();
 
   return (
     <table>

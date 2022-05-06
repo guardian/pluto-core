@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { RouteComponentProps, useHistory } from "react-router";
-import { makeStyles } from "@material-ui/core/styles";
 import { Breadcrumb } from "pluto-headers";
 import {
   Button,
@@ -44,61 +43,8 @@ import HelpIcon from "@material-ui/icons/Help";
 import CommissionEntryDeliverablesComponent from "./CommissionEntryDeliverablesComponent";
 import ChipsWithWarning from "./ChipsWithWarning";
 import UsersAutoComplete from "../common/UsersAutoComplete";
+import { useGuardianStyles } from "~/misc/utils";
 declare var deploymentRootPath: string;
-
-const useStyles = makeStyles({
-  root: {
-    padding: "1rem",
-    "& .MuiTextField-root": {
-      width: "100%",
-      marginBottom: "1rem",
-    },
-    "& .MuiFormControl-root": {
-      width: "100%",
-      marginBottom: "1rem",
-    },
-    "& form": {
-      padding: "0.6em",
-    },
-  },
-  table: {
-    maxWidth: "100%",
-    "& .MuiTableRow-root": {
-      cursor: "pointer",
-    },
-  },
-  inlineThrobber: {
-    marginRight: "0.6em",
-    maxWidth: "28px",
-    maxHeight: "28px",
-  },
-  inlineText: {
-    display: "inline",
-  },
-  invisibleList: {
-    listStyle: "none",
-  },
-  error: {
-    backgroundColor: "rgb(211 47 47)",
-    padding: "10px",
-    color: "#FFF",
-  },
-  formButtons: {
-    display: "flex",
-    marginTop: "2.5rem",
-    justifyContent: "flex-end",
-    "& Button": {
-      marginLeft: "1rem",
-    },
-  },
-  warningIcon: {
-    marginLeft: "10px",
-  },
-  noGoogleText: {
-    float: "left",
-    marginTop: "2px",
-  },
-});
 
 interface CommissionEntryFormProps {
   commission: CommissionFullRecord;
@@ -110,7 +56,7 @@ interface CommissionEntryFormProps {
 
 const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
   const history = useHistory();
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const fieldValueChanged = (
     value: string | null,
@@ -289,7 +235,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   const [lastError, setLastError] = useState<null | string>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
   const history = useHistory();
   const [errorDialog, setErrorDialog] = useState<boolean>(false);
 
@@ -434,7 +380,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
         ) : null}
         {lastError ? (
           <Grid container direction="row" justifyContent="space-around">
-            <Grid item className={classes.error}>
+            <Grid item className={classes.errorBlock}>
               <ErrorIcon className={classes.inlineThrobber} />
               <Typography className={classes.inlineText}>
                 {lastError}

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Typography,
-  makeStyles,
   TableContainer,
   Table,
   TableHead,
@@ -13,15 +12,7 @@ import {
 import axios from "axios";
 import moment from "moment";
 import EditIcon from "@material-ui/icons/Edit";
-
-const useStyles = makeStyles({
-  loading: {
-    display: "flex",
-    flexDirection: "column",
-    width: "100%",
-    alignItems: "center",
-  },
-});
+import { useGuardianStyles } from "~/misc/utils";
 
 interface CommissionEntryDeliverablesComponentProps {
   commission: CommissionFullRecord;
@@ -38,7 +29,7 @@ const ActionIcons: React.FC<{ id: number }> = (props) => (
 const CommissionEntryDeliverablesComponent: React.FC<CommissionEntryDeliverablesComponentProps> = (
   props
 ) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const [loading, setLoading] = useState<boolean>(true);
   const { id } = props.commission;

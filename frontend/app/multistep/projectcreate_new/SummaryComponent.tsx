@@ -1,11 +1,11 @@
 import React, { useContext } from "react";
 import { Grid, Typography } from "@material-ui/core";
 import ProjectTemplateEntryView from "../../EntryViews/ProjectTemplateEntryView";
-import { makeStyles } from "@material-ui/core/styles";
 import StorageEntryView from "../../EntryViews/StorageEntryView";
 import WorkingGroupEntryView from "../../EntryViews/WorkingGroupEntryView";
 import CommissionEntryView from "../../EntryViews/CommissionEntryView";
 import UserContext from "../../UserContext";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface SummaryComponentProps {
   projectName: string;
@@ -20,17 +20,8 @@ interface SummaryComponentProps {
   sensitive: boolean;
 }
 
-const useStyles = makeStyles((theme) => ({
-  warning: {
-    color: theme.palette.warning.dark,
-  },
-  error: {
-    color: theme.palette.error.dark,
-  },
-}));
-
 const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const userContext = useContext(UserContext);
 
