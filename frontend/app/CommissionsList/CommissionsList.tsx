@@ -140,7 +140,7 @@ const CommissionsList: React.FC = () => {
     }
     console.log("Filter terms set: ", newFilters);
     setFilterTerms(newFilters);
-  }, [user?.uid]);
+  }, [user]);
 
   return (
     <>

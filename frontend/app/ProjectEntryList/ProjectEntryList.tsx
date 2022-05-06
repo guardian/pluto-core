@@ -113,7 +113,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
     console.log("filter terms set: ", newFilters);
 
     setFilterTerms(newFilters);
-  }, [user]);
+  }, [user?.uid]);
 
   return (
     <>
