@@ -504,7 +504,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     implicit val ordering = Ordering.String
     ProjectEntry.listObits(prefix.getOrElse(""), limit)
       .map(results=>{
-        Ok(Json.obj("status"->"ok","users"->results.sorted))
+        Ok(Json.obj("status"->"ok","obitNames"->results.sorted))
       })
       .recover({
         case err:Throwable=>

@@ -238,4 +238,17 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
       resultList.contains("me") must beTrue
     }
   }
+
+  "ProjectEntryController.findAvailableObits" should {
+    "list all available obits if prefix is empty" in new WithApplication(buildApp) {
+      val response = route(app, FakeRequest(GET, "/api/obits/names").withSession("uid"->"testuser")).get
+
+      status(response) mustEqual OK
+      val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds)
+      println(jsondata.toString())
+      (jsondata \ "status").as[String] mustEqual "ok"
+      val resultList = (jsondata \ "obitNames").as[Seq[String]]
+      resultList.length mustEqual 0
+    }
+  }
 }

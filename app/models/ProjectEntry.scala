@@ -348,7 +348,7 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
     val lowerCasePrefix = prefix.toLowerCase
     TableQuery[ProjectEntryRow]
       .filter(_.isObitProject.isDefined)
-      .distinctOn(_.isObitProject)
+      .distinctOn(_.isObitProject.get)
       .filter(_.isObitProject.toLowerCase.startsWith(lowerCasePrefix))
       .groupBy(_.isObitProject).map(_._1)
       .take(limit)
