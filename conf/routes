@@ -42,6 +42,9 @@ PUT     /api/project/list                   @controllers.ProjectEntryController.
 OPTIONS /api/project/list                   @controllers.Application.corsOptions
 GET     /api/project/distinctowners         @controllers.ProjectEntryController.distinctOwners
 
+GET     /api/project/obits                  @controllers.ProjectEntryController.listObits(name:Option[String], startAt:Int ?= 0, limit:Int ?=50)
+GET     /api/obits/names                    @controllers.ProjectEntryController.findAvailableObits(prefix:Option[String], limit:Int ?=5)
+
 PUT     /api/project                        @controllers.ProjectEntryController.create
 GET     /api/project/forFilename            @controllers.Files.projectFromFile(filename: String,startAt:Int ?= 0,limit:Int ?=50, includeBackups:Boolean ?=false)
 GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int, allVersions:Boolean ?=false)
@@ -51,9 +54,7 @@ PUT     /api/project/:id/wasopened          @controllers.ProjectEntryController.
 PUT     /api/project/:id                    @controllers.ProjectEntryController.updateByAnyone(id: Int)
 #DELETE  /api/project/:id                   @controllers.ProjectEntryController.delete(id: Int)
 PUT     /api/project/:id/status             @controllers.ProjectEntryController.updateStatus(id:Int)
-GET     /api/project/obits                  @controllers.ProjectEntryController.obitFor(name:Option[String], startAt:Int ?= 0, limit:Int ?=50)
 
-GET     /api/obits/names                    @controllers.ProjectEntryController.findAvailableObits(prefix:Option[String], limit:Int ?=5)
 
 GET     /api/valid-users                    @controllers.ProjectEntryController.queryUsersForAutocomplete(prefix:String ?= "", limit:Option[Int])
 GET     /api/known-user                     @controllers.ProjectEntryController.isUserKnown(uname:String ?= "")
