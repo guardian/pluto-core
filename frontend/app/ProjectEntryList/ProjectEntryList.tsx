@@ -106,6 +106,9 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
     if (newFilters.title) {
       newFilters.match = "W_CONTAINS";
     }
+    if (newFilters.user === "Mine" && user) {
+      newFilters.user = user.uid;
+    }
 
     console.log("filter terms set: ", newFilters);
 
