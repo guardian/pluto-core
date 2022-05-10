@@ -1,6 +1,6 @@
 export type SortDirection = "asc" | "desc";
 
-export const sortListByOrder = <T extends Record<keyof T, any>>(
+export const sortListByOrder = <T>(
   list: T[],
   orderBy: keyof T,
   order: SortDirection = "asc"
