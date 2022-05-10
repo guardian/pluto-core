@@ -369,7 +369,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
             justifyContent="space-around"
             alignContent="center"
           >
-            <Grid item>
+            <Grid item xs>
               <CircularProgress
                 className={classes.inlineThrobber}
                 color="secondary"
@@ -380,7 +380,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
         ) : null}
         {lastError ? (
           <Grid container direction="row" justifyContent="space-around">
-            <Grid item className={classes.errorBlock}>
+            <Grid item xs className={classes.errorBlock}>
               <ErrorIcon className={classes.inlineThrobber} />
               <Typography className={classes.inlineText}>
                 {lastError}
@@ -441,10 +441,10 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
       </Paper>
       {/*will repace this with an icon*/}
       <Grid container direction="row" justifyContent="space-between">
-        <Grid item>
+        <Grid item xs>
           <Typography variant="h4">Projects</Typography>
         </Grid>
-        <Grid item>
+        <Grid item xs>
           <Button
             variant="contained"
             color="primary"

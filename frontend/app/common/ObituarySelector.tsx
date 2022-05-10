@@ -1,5 +1,5 @@
 import React, { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { Grid, TextField } from "@material-ui/core";
+import { Box, Grid, TextField } from "@material-ui/core";
 import { Autocomplete, Alert } from "@material-ui/lab";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -82,24 +82,32 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
   return (
     <Grid container direction="column" alignItems="stretch" spacing={2}>
       <Grid item xs>
-        <Autocomplete
-          freeSolo
-          autoComplete
-          includeInputInList
-          value={props.value}
-          //onChange is fired when an option is selected
-          onChange={props.valueDidChange}
-          //onInputChange is fired when the user types
-          onInputChange={inputDidChange}
-          options={obituaryOptions ?? []}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              error={validationFailed}
-              label={props.label}
-            />
-          )}
-        />
+        <Box
+          minWidth={"400px"}
+          width={"100%"}
+          display="flex"
+          justifyContent={"center"}
+        >
+          <Autocomplete
+            style={{ width: 300 }}
+            freeSolo
+            autoComplete
+            includeInputInList
+            value={props.value}
+            //onChange is fired when an option is selected
+            onChange={props.valueDidChange}
+            //onInputChange is fired when the user types
+            onInputChange={inputDidChange}
+            options={obituaryOptions ?? []}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                error={validationFailed}
+                label={props.label}
+              />
+            )}
+          />
+        </Box>
       </Grid>
       {validationFailed && props.shouldValidate && (
         <Grid item xs>

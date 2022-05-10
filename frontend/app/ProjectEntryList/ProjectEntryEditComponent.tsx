@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
 import {
+  Box,
   Button,
   Dialog,
   DialogActions,
@@ -180,36 +181,33 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         container
         justifyContent="space-between"
         style={{ marginBottom: "0.8em" }}
+        spacing={3}
       >
-        <Grid item xs>
+        <Grid item xs={3}>
           <Breadcrumb
             projectId={project.id}
             plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
           />
         </Grid>
-        <Grid item xs>
-          <Grid container spacing={2}>
-            <Grid item xs>
-              <Tooltip title="View backups">
-                <IconButton
-                  onClick={() => history.push(`/project/${project.id}/backups`)}
-                >
-                  <FileCopy />
-                </IconButton>
-              </Tooltip>
-            </Grid>
-            <Grid item xs>
-              <Tooltip title="See project's media">
-                <IconButton
-                  onClick={() =>
-                    window.location.assign(`/vs/project/${project.id}`)
-                  }
-                >
-                  <PermMedia />
-                </IconButton>
-              </Tooltip>
-            </Grid>
-          </Grid>
+        <Grid item xs={3}>
+          <Box display="flex" justifyContent="flex-end">
+            <Tooltip title="View backups">
+              <IconButton
+                onClick={() => history.push(`/project/${project.id}/backups`)}
+              >
+                <FileCopy />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="See project's media">
+              <IconButton
+                onClick={() =>
+                  window.location.assign(`/vs/project/${project.id}`)
+                }
+              >
+                <PermMedia />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Grid>
       </Grid>
       <Paper className={classes.root} elevation={3}>

@@ -28,7 +28,6 @@ export const useGuardianStyles = makeStyles((theme) => ({
     },
     "& form": {
       padding: "0.6em",
-      width: "400px",
       display: "flex",
       flexDirection: "column",
       alignItems: "flex-start",
@@ -104,6 +103,7 @@ export const useGuardianStyles = makeStyles((theme) => ({
     height: "100px",
   },
   formButtons: {
+    width: "100%",
     display: "flex",
     marginTop: "2.5rem",
     justifyContent: "flex-end",
