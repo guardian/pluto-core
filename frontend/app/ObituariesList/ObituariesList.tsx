@@ -66,7 +66,6 @@ const ObituariesList = () => {
       <Helmet>
         <title>All Obituaries</title>
       </Helmet>
-      <Grid container></Grid>
       {projects?.length ? (
         <TableContainer elevation={3} component={Paper}>
           <Table className={classes.table} aria-label="simple table">
@@ -78,7 +77,7 @@ const ObituariesList = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {projects.map((project) => (
+              {projects.map((project: ObituaryProject) => (
                 <TableRow key={project.id}>
                   <TableCell component="th" scope="row">
                     {project.isObitProject}

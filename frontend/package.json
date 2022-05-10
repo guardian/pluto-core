@@ -25,7 +25,8 @@
     ],
     "verbose": true,
     "moduleNameMapper": {
-      "\\.(css|less)$": "identity-obj-proxy"
+      "\\.(css|less)$": "identity-obj-proxy",
+      "^~/(.*)$": "<rootDir>/app/$1"
     },
     "transform": {
       "^.+\\.[jt]sx?$": "ts-jest",
