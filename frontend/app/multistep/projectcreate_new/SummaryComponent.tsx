@@ -10,6 +10,8 @@ import { useGuardianStyles } from "~/misc/utils";
 interface SummaryComponentProps {
   projectName: string;
   fileName: string;
+  isObituary: boolean;
+  obituaryName?: string | null;
   projectTemplateId?: number;
   destinationStorageId?: number;
   workingGroupId?: number;
@@ -60,6 +62,26 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
             <td>New file name</td>
             <td>{props.fileName}</td>
           </tr>
+          {props.isObituary && (
+            <>
+              {props.obituaryName && (
+                <tr>
+                  <td>Obituary</td>
+                  <td>{props.obituaryName}</td>
+                </tr>
+              )}
+              {!props.obituaryName && (
+                <tr>
+                  <td>Obituary</td>
+                  <td>
+                    <Typography className={classes.warning}>
+                      You need to pick a name for the obituary.
+                    </Typography>
+                  </td>
+                </tr>
+              )}
+            </>
+          )}
           <tr>
             <td>Project template</td>
             <td>

@@ -128,7 +128,7 @@ export default function EnhancedTable(props) {
           rowsPerPage={rowsPerPage}
           page={page}
           onChangePage={handleChangePage}
-          onChangeRowsPerPage={handleChangeRowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
       <FormControlLabel

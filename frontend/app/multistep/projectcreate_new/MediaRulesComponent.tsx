@@ -14,6 +14,7 @@ interface MediaRulesComponentProps {
   sensitive: boolean;
   archivalChanged: (deletable: boolean, deepArchive: boolean) => void;
   sensitiveChanged: (newValue: boolean) => void;
+  isObituary: boolean;
 }
 
 const MediaRulesComponent: React.FC<MediaRulesComponentProps> = (props) => {
@@ -61,6 +62,7 @@ const MediaRulesComponent: React.FC<MediaRulesComponentProps> = (props) => {
         </Grid>
         <Grid item>
           <FormControlLabel
+            disabled={props.isObituary}
             label="Media can be removed once the project has been completed"
             control={
               <Radio

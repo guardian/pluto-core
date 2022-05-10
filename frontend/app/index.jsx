@@ -206,7 +206,6 @@ class App extends React.Component {
             <Header />
             <AppSwitcher onLoginValid={this.onLoginValid} />
             <div id="mainbody" className="mainbody">
-              test
               <Switch>
                 <Route
                   path="/premversion"

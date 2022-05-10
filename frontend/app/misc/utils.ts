@@ -376,4 +376,19 @@ export const useGuardianStyles = makeStyles((theme) => ({
     minWidth: "33vw",
     width: "800px",
   },
+  //UsersAutoComplete.tsx
+  obituaryButton: {
+    margin: 0,
+    padding: 0,
+    border: 0,
+    fontWeight: theme.typography.fontWeightBold,
+    letterSpacing: "initial",
+    textTransform: "none",
+    fontSize: "12px",
+    color: theme.palette.text.primary,
+    textDecoration: "underline",
+    "&::hover": {
+      color: theme.palette.text.secondary,
+    },
+  },
 }));

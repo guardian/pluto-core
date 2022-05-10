@@ -23,6 +23,8 @@ interface CommonMultistepContainerProps {
   canComplete: () => boolean | 0 | undefined;
   createClicked: () => Promise<void>;
   createButtonLabel?: string;
+  isObituary?: boolean;
+  obituaryName?: string | null;
 }
 
 const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
@@ -38,6 +40,8 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
     creationFailed,
     canComplete,
     createClicked,
+    isObituary,
+    obituaryName,
   } = props;
 
   const classes = useGuardianStyles();
@@ -112,7 +116,8 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
                       !canComplete() ||
                       creationInProgress ||
                       creationFailed !== undefined ||
-                      activeStep > 6
+                      activeStep > 6 ||
+                      (isObituary && !obituaryName)
                     }
                     endIcon={<CheckCircle />}
                     onClick={createClicked}

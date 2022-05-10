@@ -111,7 +111,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
             />
           </Grid>
         ) : null}
-        <Grid item className={classes.buttonGrid}>
+        <Grid className={classes.buttonGrid}>
           <Button
             className={classes.createButton}
             variant="contained"

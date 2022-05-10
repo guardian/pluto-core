@@ -250,7 +250,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}
-        onChangeRowsPerPage={handleChangeRowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
         // FIXME: remove when count is correct
         labelDisplayedRows={({ from, to }) => `${from}-${to}`}
       />

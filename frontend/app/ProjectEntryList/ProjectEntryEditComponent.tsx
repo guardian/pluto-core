@@ -27,6 +27,7 @@ import ProjectEntryVaultComponent from "./ProjectEntryVaultComponent";
 import { FileCopy, PermMedia } from "@material-ui/icons";
 import UsersAutoComplete from "../common/UsersAutoComplete";
 import { useGuardianStyles } from "~/misc/utils";
+import ObituarySelector from "~/common/ObituarySelector";
 
 declare var deploymentRootPath: string;
 
@@ -45,6 +46,7 @@ const EMPTY_PROJECT: Project = {
   deletable: false,
   id: 0,
   productionOffice: "UK",
+  isObitProject: null,
   projectTypeId: 0,
   sensitive: false,
   status: "New",
@@ -174,16 +176,20 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           <title>[{project.title}] Details</title>
         </Helmet>
       ) : null}
-      <Grid container justify="space-between" style={{ marginBottom: "0.8em" }}>
-        <Grid item>
+      <Grid
+        container
+        justifyContent="space-between"
+        style={{ marginBottom: "0.8em" }}
+      >
+        <Grid item xs>
           <Breadcrumb
             projectId={project.id}
             plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
           />
         </Grid>
-        <Grid item>
+        <Grid item xs>
           <Grid container spacing={2}>
-            <Grid item>
+            <Grid item xs>
               <Tooltip title="View backups">
                 <IconButton
                   onClick={() => history.push(`/project/${project.id}/backups`)}
@@ -192,7 +198,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 </IconButton>
               </Tooltip>
             </Grid>
-            <Grid item>
+            <Grid item xs>
               <Tooltip title="See project's media">
                 <IconButton
                   onClick={() =>
@@ -215,6 +221,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 value={project.title}
                 autoFocus
                 onChange={(event) => fieldChanged(event, "title")}
+              />
+              <ObituarySelector
+                label="Obituary"
+                value={project.isObitProject ?? ""}
+                valueDidChange={(evt, newValue) =>
+                  fieldChangedValue(newValue, "isObitProject")
+                }
               />
               <UsersAutoComplete
                 label="Owner"

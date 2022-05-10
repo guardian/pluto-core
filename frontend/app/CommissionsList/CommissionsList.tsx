@@ -120,7 +120,7 @@ const CommissionsList: React.FC = () => {
       <Helmet>
         <title>All Commissions</title>
       </Helmet>
-      <Grid container>
+      <Grid container justifyContent="space-between">
         {filterTerms ? (
           <Grid item>
             <ProjectFilterComponent
@@ -140,7 +140,7 @@ const CommissionsList: React.FC = () => {
             />
           </Grid>
         ) : null}
-        <Grid item className={classes.buttonGrid}>
+        <Grid className={classes.buttonGrid} style={{ marginLeft: "auto" }}>
           <Button
             className={classes.createButton}
             variant="contained"

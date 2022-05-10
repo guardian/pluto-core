@@ -8,6 +8,7 @@ interface ProjectCreationDoc {
   filename: string;
   destinationStorageId: number;
   title: string;
+  obitProject: string | null;
   projectTemplateId: number;
   user: string;
   workingGroupId: number;

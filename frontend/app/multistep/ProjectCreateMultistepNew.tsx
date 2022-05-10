@@ -1,15 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { RouteComponentProps, useLocation } from "react-router-dom";
-import {
-  Button,
-  Grid,
-  Paper,
-  Step,
-  StepLabel,
-  Stepper,
-  Tooltip,
-  Typography,
-} from "@material-ui/core";
+import { Typography } from "@material-ui/core";
 import NameComponent from "./projectcreate_new/NameComponent";
 import TemplateComponent from "./projectcreate_new/TemplateComponent";
 import UserContext from "../UserContext";
@@ -32,6 +23,16 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
 
   const [projectName, setProjectName] = useState("");
   const [filename, setFilename] = useState("");
+  const [isObituary, setObituary] = useState(false);
+  const [obituaryName, setObituaryName] = useState<null | string>(null);
+
+  useEffect(() => {
+    // Clear obituary name if the user deselects the *Is this an obituary?*
+
+    if (!isObituary) {
+      setObituaryName(null);
+    }
+  }, [isObituary]);
 
   const [creationInProgress, setCreationInProgress] = useState<
     boolean | undefined
@@ -108,6 +109,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
     const result = await CreateProject({
       filename: filename,
       title: projectName,
+      obitProject: obituaryName ?? null,
       destinationStorageId: selectedStorageId as number,
       projectTemplateId: selectedTemplateId as number,
       user: userContext?.userName ?? "unknown",
@@ -179,6 +181,8 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
       creationFailed={creationFailed}
       canComplete={canComplete}
       createClicked={createClicked}
+      obituaryName={obituaryName}
+      isObituary={isObituary}
     >
       <>
         {activeStep == 0 ? (
@@ -197,7 +201,14 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             storageIdDidChange={(newValue) => setSelectedStorageId(newValue)}
           />
         ) : null}
-        {activeStep == 2 ? <ObituaryComponent /> : null}
+        {activeStep == 2 ? (
+          <ObituaryComponent
+            valueDidChange={(newValue: string) => setObituaryName(newValue)}
+            checkBoxDidChange={(newValue: boolean) => setObituary(newValue)}
+            value={obituaryName ?? ""}
+            isObituary={isObituary}
+          />
+        ) : null}
         {activeStep == 3 ? (
           <PlutoLinkageComponent
             commissionIdDidChange={(newValue) => setCommissionId(newValue)}
@@ -222,6 +233,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
               setDeletable(newDeletable);
               setDeepArchive(newDeepArchive);
             }}
+            isObituary={isObituary}
             sensitiveChanged={(newValue) => setSensitive(newValue)}
           />
         ) : null}
@@ -229,6 +241,8 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
           <SummaryComponent
             projectName={projectName}
             fileName={filename}
+            isObituary={isObituary}
+            obituaryName={obituaryName}
             projectTemplateId={selectedTemplateId}
             destinationStorageId={selectedStorageId}
             workingGroupId={workingGroupId}

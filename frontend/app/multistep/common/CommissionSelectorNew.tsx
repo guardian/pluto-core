@@ -131,7 +131,7 @@ const CommissionSelector: React.FC<CommissionSelectorProps> = (props) => {
     }
   };
   return (
-    <Grid container direction="column">
+    <Grid justifyContent="space-between" container direction="column">
       <Grid item>
         <Search className={classes.commissionSelectorinlineIcon} />
         <Input
