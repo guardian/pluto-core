@@ -183,7 +183,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         style={{ marginBottom: "0.8em" }}
         spacing={3}
       >
-        <Grid item xs={3}>
+        <Grid item>
           <Breadcrumb
             projectId={project.id}
             plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
