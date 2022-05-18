@@ -48,7 +48,8 @@ async function lookupProjectFile(filePath: string): Promise<FileEntry> {
         "Could not find this project file in the system. Please report this error to Multimedia tech, along with the page URL above."
       );
     } else {
-      return response.data.result[0];
+      const liveProjects = response.data.result.filter((f) => !f.backupOf);
+      return liveProjects[0];
     }
   } catch (err) {
     console.error("Could not look up project file information: ", err);
