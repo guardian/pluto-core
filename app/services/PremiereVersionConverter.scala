@@ -88,9 +88,8 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
     }
 
     FileIO.fromPath(backupFile)
-      .via(Compression.gunzip())
-      .via(XmlParsing.parser)
-
+      .via(Compression.gunzip()).async
+      .via(XmlParsing.parser).async
       .map({
         case elem@StartElement("Project", attributesList, prefix, namespace, namespaceCtx)=>
           logger.debug(s"Found projectNode with attributes $attributesList")
@@ -109,7 +108,7 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
 
       })
       .via(XmlWriting.writer(StandardCharsets.UTF_8))
-      .via(Compression.gzip)
+      .via(Compression.gzip).async
       .toMat(FileIO.toPath(targetFile))(Keep.right)
       .run()
       .flatMap(result=>{
