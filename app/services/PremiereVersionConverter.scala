@@ -116,6 +116,7 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
         logger.info(s"Output to ${targetFile.toString} completed. Wrote ${result.count} bytes")
         Future.fromTry(result.status)
       })
+      .flatMap(_=>Future.fromTry(RunXmlLint.runXmlLint(targetFile.toAbsolutePath.toString)))
   }
 
   /**
