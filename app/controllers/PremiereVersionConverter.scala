@@ -54,11 +54,11 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
             case None=>Future.failed(new RuntimeException(s"project id $projectFileId does not exist"))
             case Some(f)=>Future(f)
           })
-          projectFileJavaIO <- fileEntryDAO.getJavaFile(projectFile)
+          projectFileJavaIO <- fileEntryDAO.getJavaPath(projectFile)
           _ <- converter.checkExistingVersion(projectFile, targetVersion) //breaks the chain if the versions are both the same
           backupFile <- converter.backupFile(projectFile)
           //.get is safe here because if it is None then `checkExistingVersion` will have failed the job
-          _ <- converter.tweakProjectVersion(projectFileJavaIO, backupFile, projectFile.maybePremiereVersion.get, targetVersion)
+          _ <- converter.tweakProjectVersionStreaming(projectFileJavaIO, backupFile, projectFile.maybePremiereVersion.get, targetVersion)
           updatedProjectFile <- fileEntryDAO.saveSimple(projectFile.copy(maybePremiereVersion = Some(targetVersion.internalVersionNumber)))
         } yield (updatedProjectFile, projectFile)
 
