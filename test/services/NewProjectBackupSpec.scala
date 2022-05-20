@@ -32,13 +32,8 @@ class NewProjectBackupSpec extends Specification with Mockito {
         Future((mock[FileEntry], sourceFile))
       })
 
-      val mockMakeProjectLink = mock[(FileEntry, FileEntry)=>Future[Option[Int]]]
-      mockMakeProjectLink.apply(any,any) returns Future(Some(1234))
-
       val toTest = new NewProjectBackup(config, mock[DatabaseConfigProvider], mock[StorageHelper]) {
         override def performBackup(sourceEntry: FileEntry, maybePrevDestEntry: Option[FileEntry], destStorage: StorageEntry): Future[(FileEntry, FileEntry)] = mockPerformBackup(sourceEntry, maybePrevDestEntry, destStorage)
-
-        override def makeProjectLink(sourceEntry: FileEntry, destEntry: FileEntry): Future[Option[Int]] = mockMakeProjectLink(sourceEntry, destEntry)
       }
 
       val nowTime = Timestamp.from(Instant.now)
@@ -60,7 +55,7 @@ class NewProjectBackupSpec extends Specification with Mockito {
 
       result must beRight(true)
       there was one(mockPerformBackup).apply(backupRecord._2.head, None, storageMap(2))
-      there was one(mockMakeProjectLink).apply(org.mockito.ArgumentMatchers.eq(backupRecord._2.head), any)
+      //makeProjectLink is now called by performBackup
     }
 
     "abort if source storage==dest storage" in {

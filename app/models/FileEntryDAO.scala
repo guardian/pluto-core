@@ -77,11 +77,16 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
   def getJavaFile(entry:FileEntry):Future[File] = storage(entry)
     .map({
       case Some(storage) =>
-        val p = Paths.get(storage.rootpath.getOrElse(""), entry.filepath)
-        if(Files.exists(p)){
-          p.toFile
+        if(storage.storageType=="Local") {
+          val p = Paths.get(storage.rootpath.getOrElse(""), entry.filepath)
+          if (Files.exists(p)) {
+            p.toFile
+          } else {
+            throw new RuntimeException(s"${p.toString} does not exist")
+          }
         } else {
-          throw new RuntimeException(s"${p.toString} does not exist")
+          logger.error("Cannot getJavaFile for a project that is on a non-local storage")
+          throw new RuntimeException(s"${entry.filepath} with id ${entry.id} is on storage ${storage.id} which is of non-local type ${storage.storageType}")
         }
       case None =>
         val f = new File(entry.filepath)
@@ -289,7 +294,12 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
     */
   def entryFor(fileName: String, storageId: Int, version:Int):Future[Try[Seq[FileEntry]]] =
     db.run(
-      TableQuery[FileEntryRow].filter(_.filepath===fileName).filter(_.storage===storageId).filter(_.version===version).result.asTry
+      TableQuery[FileEntryRow]
+        .filter(_.filepath===fileName)
+        .filter(_.storage===storageId)
+        .filter(_.version===version)
+        .result
+        .asTry
     )
 
   /**

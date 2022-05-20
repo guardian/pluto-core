@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getProjectsDefaultStorageId } from "../multistep/projectcreate_new/ProjectStorageService";
 
 async function lookupVersion(
   clientVersionString: string
@@ -38,7 +39,25 @@ function getBasename(filePath: string): string {
 
 async function lookupProjectFile(filePath: string): Promise<FileEntry> {
   try {
-    const queryData = { filePath: getBasename(filePath), match: "W_EXACT" };
+    let queryData: FileEntryFilterTerms = {
+      filePath: getBasename(filePath),
+      match: "W_EXACT",
+    };
+
+    //limit the storage query to the storage where primary projects should be.
+    try {
+      const defaultStorageId = await getProjectsDefaultStorageId();
+      queryData.storageId = defaultStorageId;
+    } catch (err) {
+      if (err.response && err.response.status == 404) {
+        console.warn(
+          "There is no default storage set, so backups cannot be excluded. Consider setting a default project storage to improve reliability of this operation."
+        );
+      } else {
+        throw err;
+      }
+    }
+
     const response = await axios.put<ObjectListResponse<FileEntry>>(
       "/api/file/list",
       queryData

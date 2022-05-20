@@ -348,3 +348,9 @@ interface ConversionResponse {
   detail: string;
   entry: FileEntry;
 }
+
+interface FileEntryFilterTerms {
+  filePath?: string;
+  match: string;
+  storageId?: number;
+}

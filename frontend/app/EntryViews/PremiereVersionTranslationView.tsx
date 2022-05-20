@@ -52,7 +52,7 @@ const PremiereVersionTranslationView: React.FC<PremiereVersionTranslationViewPro
     };
 
     loadData();
-  });
+  }, [props.internalVersion]);
 
   if (translation) {
     return (
