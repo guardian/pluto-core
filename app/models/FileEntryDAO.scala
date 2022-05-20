@@ -74,13 +74,13 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
     * @param entry FileEntry to query
     * @return
     */
-  def getJavaFile(entry:FileEntry):Future[File] = storage(entry)
+  def getJavaPath(entry:FileEntry):Future[Path] = storage(entry)
     .map({
       case Some(storage) =>
         if(storage.storageType=="Local") {
           val p = Paths.get(storage.rootpath.getOrElse(""), entry.filepath)
           if (Files.exists(p)) {
-            p.toFile
+            p
           } else {
             throw new RuntimeException(s"${p.toString} does not exist")
           }
@@ -91,11 +91,13 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
       case None =>
         val f = new File(entry.filepath)
         if(f.exists()) {
-          f
+          f.toPath
         } else {
           throw new RuntimeException(s"${f.toString} does not exist")
         }
     })
+
+  def getJavaFile(entry:FileEntry):Future[File] = getJavaPath(entry).map(_.toFile)
 
   /**
     * this attempts to delete the file from disk, using the configured storage driver

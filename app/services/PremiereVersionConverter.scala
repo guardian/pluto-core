@@ -1,6 +1,9 @@
 package services
 
 import akka.stream.Materializer
+import akka.stream.alpakka.xml.{Attribute, StartElement}
+import akka.stream.alpakka.xml.scaladsl.{XmlParsing, XmlWriting}
+import akka.stream.scaladsl.{Compression, FileIO, Keep}
 import models.{FileEntry, FileEntryDAO, PremiereVersionTranslation, ProjectEntry, StorageEntry, StorageEntryHelper}
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
@@ -9,7 +12,8 @@ import postrun.{AdobeXml, RunXmlLint}
 import slick.jdbc.PostgresProfile
 
 import java.io.File
-import java.nio.file.Paths
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Path, Paths}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -22,7 +26,7 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
   def backupFile(fileEntry:FileEntry) = Future.sequence(Seq(
     backupFileToTemp(fileEntry),
     backupFileToStorage(fileEntry)
-  )).map(_.head.asInstanceOf[File])
+  )).map(_.head.asInstanceOf[Path])
 
   def backupFileToStorage(fileEntry: FileEntry) = {
     implicit val db = dbConfigProvider.get[PostgresProfile].db
@@ -56,8 +60,8 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
       val tempFile = File.createTempFile(p.getFileName.toString, ".bak")
 
       Try {
-        FileUtils.copyFile(sourceFile, tempFile)
-      }.map(_=>tempFile)
+        FileUtils.copyFile(sourceFile, tempFile)  //this will throw if the copy did not complete successfully
+      }.map(_=>tempFile.toPath)
     })
   } yield result
 
@@ -77,6 +81,42 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
           Future( () )
         }
     }
+
+  def tweakProjectVersionStreaming(targetFile:Path, backupFile:Path, currentVersion:Int, newVersion:PremiereVersionTranslation) = {
+    def canFindAttribute(attribs:List[akka.stream.alpakka.xml.Attribute], key:String): Option[String] = {
+      attribs.find(_.name == key).map(_.value)
+    }
+
+    FileIO.fromPath(backupFile)
+      .via(Compression.gunzip()).async
+      .via(XmlParsing.parser).async
+      .map({
+        case elem@StartElement("Project", attributesList, prefix, namespace, namespaceCtx)=>
+          logger.debug(s"Found projectNode with attributes $attributesList")
+          canFindAttribute(attributesList, "Version") match {
+            case Some(oldVersion)=>
+              if(oldVersion!=currentVersion.toString) {
+                logger.warn(s"${targetFile.toString}: Expected current version of $currentVersion but got $oldVersion")
+              }
+              logger.info(s"Changing version from $oldVersion to ${newVersion.internalVersionNumber} in ${targetFile.toString}")
+              val newAttributes = attributesList.filter(_.name!="Version") :+ Attribute("Version", newVersion.internalVersionNumber.toString)
+              elem.copy(attributesList=newAttributes)
+            case None=>
+              elem
+          }
+        case other@_ => other
+
+      })
+      .via(XmlWriting.writer(StandardCharsets.UTF_8))
+      .via(Compression.gzip).async
+      .toMat(FileIO.toPath(targetFile))(Keep.right)
+      .run()
+      .flatMap(result=>{
+        logger.info(s"Output to ${targetFile.toString} completed. Wrote ${result.count} bytes")
+        Future.fromTry(result.status)
+      })
+      .flatMap(_=>Future.fromTry(RunXmlLint.runXmlLint(targetFile.toAbsolutePath.toString)))
+  }
 
   /**
     * Changes the internal version number for the given Premiere project `targetFile` to the new value given in `newVersion`.

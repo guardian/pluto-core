@@ -15,8 +15,10 @@ import testHelpers.TestDatabase
 import utils.BuildMyApp
 import play.api.test.Helpers._
 import play.api.test._
+
 import scala.concurrent.duration._
 import java.io.File
+import java.nio.file.Path
 import java.sql.Timestamp
 import java.time.Instant
 import scala.concurrent.{Await, Future}
@@ -41,15 +43,15 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
       val now = Timestamp.from(Instant.now())
       val fakeFileEntry = FileEntry(Some(1234), "/path/to/file.ext", 2, "fred", 1, now, now, now, true, true, None, Some(34))
 
-      val mockedBackupFile = mock[File]
-      val mockedSourceFile = mock[File]
+      val mockedBackupFile = mock[Path]
+      val mockedSourceFile = mock[Path]
       val mockedConverter = mock[services.PremiereVersionConverter]
       mockedConverter.backupFile(any) returns Future(mockedBackupFile)
       mockedConverter.checkExistingVersion(any, any) returns Future( () )
 
-      mockedConverter.tweakProjectVersion(any,any,any,any) returns Future( () )
+      mockedConverter.tweakProjectVersionStreaming(any,any,any,any) returns Future( () )
       val mockedDAO = mock[FileEntryDAO]
-      mockedDAO.getJavaFile(any) returns Future(mockedSourceFile)
+      mockedDAO.getJavaPath(any) returns Future(mockedSourceFile)
       mockedDAO.entryFor(any) returns Future(Some(fakeFileEntry))
       mockedDAO.saveSimple(any) answers((args:Array[AnyRef])=>Future(args.head.asInstanceOf[FileEntry]))
 
@@ -77,9 +79,9 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
         there was one(mockedTranslationDAO).findDisplayedVersion(DisplayedVersion(1,2,3))
         there was one(mockedConverter).backupFile(fakeFileEntry)
         there was one(mockedConverter).checkExistingVersion(fakeFileEntry, translation)
-        there was one(mockedConverter).tweakProjectVersion(mockedSourceFile, mockedBackupFile, 34, translation)
+        there was one(mockedConverter).tweakProjectVersionStreaming(mockedSourceFile, mockedBackupFile, 34, translation)
 
-        there was one(mockedDAO).getJavaFile(fakeFileEntry)
+        there was one(mockedDAO).getJavaPath(fakeFileEntry)
         there was one(mockedDAO).entryFor(1234)
         there was one(mockedDAO).saveSimple(org.mockito.ArgumentMatchers.argThat((newFileEntry:FileEntry)=>
           newFileEntry.maybePremiereVersion.contains(36) &&
@@ -93,7 +95,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
       val now = Timestamp.from(Instant.now())
       val fakeFileEntry = FileEntry(Some(1234), "/path/to/file.ext", 2, "fred", 1, now, now, now, true, true, None, Some(34))
 
-      val mockedBackupFile = mock[File]
+      val mockedBackupFile = mock[Path]
       val mockedSourceFile = mock[File]
       val mockedConverter = mock[services.PremiereVersionConverter]
       mockedConverter.backupFile(any) returns Future(mockedBackupFile)
@@ -139,7 +141,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
       val now = Timestamp.from(Instant.now())
       val fakeFileEntry = FileEntry(Some(1234), "/path/to/file.ext", 2, "fred", 1, now, now, now, true, true, None, Some(34))
 
-      val mockedBackupFile = mock[File]
+      val mockedBackupFile = mock[Path]
       val mockedSourceFile = mock[File]
       val mockedConverter = mock[services.PremiereVersionConverter]
       mockedConverter.backupFile(any) returns Future(mockedBackupFile)
@@ -186,15 +188,15 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
       val now = Timestamp.from(Instant.now())
       val fakeFileEntry = FileEntry(Some(1234), "/path/to/file.ext", 2, "fred", 1, now, now, now, true, true, None, Some(34))
 
-      val mockedBackupFile = mock[File]
-      val mockedSourceFile = mock[File]
+      val mockedBackupFile = mock[Path]
+      val mockedSourceFile = mock[Path]
       val mockedConverter = mock[services.PremiereVersionConverter]
       mockedConverter.backupFile(any) returns Future(mockedBackupFile)
       mockedConverter.checkExistingVersion(any, any) returns Future.failed(new RuntimeException("The target file is already at the requested version"))
 
-      mockedConverter.tweakProjectVersion(any,any,any,any) returns Future( () )
+      mockedConverter.tweakProjectVersionStreaming(any,any,any,any) returns Future( () )
       val mockedDAO = mock[FileEntryDAO]
-      mockedDAO.getJavaFile(any) returns Future(mockedSourceFile)
+      mockedDAO.getJavaPath(any) returns Future(mockedSourceFile)
       mockedDAO.entryFor(any) returns Future(Some(fakeFileEntry))
       mockedDAO.saveSimple(any) answers((args:Array[AnyRef])=>Future(args.head.asInstanceOf[FileEntry]))
 
@@ -220,9 +222,9 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
         there was one(mockedTranslationDAO).findDisplayedVersion(DisplayedVersion(1,2,3))
         there was no(mockedConverter).backupFile(any)
         there was one(mockedConverter).checkExistingVersion(fakeFileEntry, translation)
-        there was no(mockedConverter).tweakProjectVersion(any, any, any, any)
+        there was no(mockedConverter).tweakProjectVersionStreaming(any, any, any, any)
 
-        there was one(mockedDAO).getJavaFile(fakeFileEntry)
+        there was one(mockedDAO).getJavaPath(fakeFileEntry)
         there was one(mockedDAO).entryFor(1234)
         there was no(mockedDAO).saveSimple(any)
       }

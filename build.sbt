@@ -90,7 +90,7 @@ libraryDependencies ++= Seq(
 libraryDependencies += "com.google.guava" % "guava" % "30.1-jre"
 
 val akkaManagementVersion = "1.0.8"
-val akkaVersion = "2.6.11"
+val akkaVersion = "2.6.14"
 //messaging persistence and clustering
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
@@ -99,7 +99,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
-  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
+  "com.lightbend.akka" %% "akka-stream-alpakka-xml" % "3.0.4",
 )
 
 //explicit akka upgrades for version fixes
