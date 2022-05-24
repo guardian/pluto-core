@@ -54,13 +54,15 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
     * @return a Future, containing a File pointing to the backed-up location
     */
   def backupFileToTemp(fileEntry:FileEntry) = for {
+    sourceFile <- fileEntryDAO.getJavaFile(fileEntry)
     result <- Future.fromTry({
       val p = Paths.get(fileEntry.filepath)
       val tempFile = File.createTempFile(p.getFileName.toString, ".bak")
+      val inPath = Paths.get(sourceFile.getPath)
       val outPath = Paths.get(tempFile.getPath)
 
       Try {
-        newCopyFile(p, outPath)
+        newCopyFile(inPath, outPath)
       }.map(_=>tempFile.toPath)
     })
   } yield result
