@@ -11,9 +11,10 @@ import play.api.db.slick.DatabaseConfigProvider
 import postrun.{AdobeXml, RunXmlLint}
 import slick.jdbc.PostgresProfile
 import akka.stream.IOResult
+
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Files, Path, Paths}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -48,24 +49,23 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
       }
     } yield result
   }
+
   /**
     * Makes a backup copy of the file pointed to by the given FileEntry in the system default temporary location
     * @param fileEntry FileEntry to back up
     * @return a Future, containing a File pointing to the backed-up location
     */
-  def backupFileToTemp(fileEntry:FileEntry) = for {
-    sourceFile <- fileEntryDAO.getJavaFile(fileEntry)
-    result <- Future.fromTry({
-      val p = Paths.get(fileEntry.filepath)
-      val tempFile = File.createTempFile(p.getFileName.toString, ".bak")
-      val inPath = Paths.get(sourceFile.getPath)
-      val outPath = Paths.get(tempFile.getPath)
-
-      Try {
-        newCopyFile(inPath, outPath)
-      }.map(_=>tempFile.toPath)
+  def backupFileToTemp(fileEntry:FileEntry):Future[Path] = for {
+    inPath <- fileEntryDAO.getJavaPath(fileEntry)
+    outPath <- Future({
+      val tempFile = File.createTempFile(fileEntry.filepath, ".bak")
+      Paths.get(tempFile.getPath)
     })
-  } yield result
+    result <- newCopyFile(inPath, outPath)
+    _ <- Future.fromTry(result.status)
+    rtn <- if(Files.size(inPath) != result.count) Future.failed(new RuntimeException(s"Local cache copy failed, expected length ${Files.size(inPath)} but got ${result.count}")) else Future(outPath)
+  } yield rtn
+
 
   /**
     * Returns a failed future indicating that no update is necessary if the current file and the target version are equal
