@@ -63,7 +63,7 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
     })
     result <- newCopyFile(inPath, outPath)
     _ <- Future.fromTry(result.status)
-    rtn <- if(Files.size(inPath) != result.count) Future.failed(new RuntimeException(s"Local cache copy failed, expected length ${Files.size(inPath)} but got ${result.count}")) else Future(outPath)
+    rtn <- if(Files.size(inPath) != Files.size(outPath)) Future.failed(new RuntimeException(s"Local cache copy failed, expected length ${Files.size(inPath)} but got ${Files.size(outPath)}")) else Future(outPath)
   } yield rtn
 
 
@@ -142,7 +142,8 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
   })
 
   def newCopyFile(fromFile:Path, toFile:Path)(implicit mat:Materializer) : Future[IOResult] = {
-    FileIO.fromPath(fromFile).runWith(FileIO.toPath(toFile))
+    import java.nio.file.StandardOpenOption._
+    FileIO.fromPath(fromFile).runWith(FileIO.toPath(toFile, Set(WRITE, TRUNCATE_EXISTING, SYNC)))
   }
 }
 
