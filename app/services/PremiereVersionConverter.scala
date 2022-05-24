@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
 import postrun.{AdobeXml, RunXmlLint}
 import slick.jdbc.PostgresProfile
-
+import akka.stream.IOResult
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Path, Paths}
@@ -54,13 +54,13 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
     * @return a Future, containing a File pointing to the backed-up location
     */
   def backupFileToTemp(fileEntry:FileEntry) = for {
-    sourceFile <- fileEntryDAO.getJavaFile(fileEntry)
     result <- Future.fromTry({
       val p = Paths.get(fileEntry.filepath)
       val tempFile = File.createTempFile(p.getFileName.toString, ".bak")
+      val outPath = Paths.get(tempFile.getPath)
 
       Try {
-        FileUtils.copyFile(sourceFile, tempFile)  //this will throw if the copy did not complete successfully
+        newCopyFile(p, outPath)
       }.map(_=>tempFile.toPath)
     })
   } yield result
@@ -138,6 +138,10 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
         case Failure(copyErr)=> Future.failed(copyErr)  //if the copy-back fails pass on that error
       }
   })
+
+  def newCopyFile(fromFile:Path, toFile:Path)(implicit mat:Materializer) : Future[IOResult] = {
+    FileIO.fromPath(fromFile).runWith(FileIO.toPath(toFile))
+  }
 }
 
 object PremiereVersionConverter {
