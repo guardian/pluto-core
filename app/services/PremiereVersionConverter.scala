@@ -24,14 +24,22 @@ import scala.xml.{Elem, MetaData, Node, UnprefixedAttribute}
 class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implicit fileEntryDAO:FileEntryDAO, ec:ExecutionContext, dbConfigProvider:DatabaseConfigProvider, mat:Materializer) extends AdobeXml {
   private final val logger = LoggerFactory.getLogger(getClass)
 
-  def backupFile(fileEntry:FileEntry) = Future.sequence(Seq(
-    backupFileToTemp(fileEntry),
-    backupFileToStorage(fileEntry)
-  )).map(_.head.asInstanceOf[Path])
+  def backupFile(fileEntry:FileEntry) = {
+    logger.warn("starting backupFile")
+    Future.sequence(Seq(
+      backupFileToTemp(fileEntry),
+      backupFileToStorage(fileEntry)
+    ))
+      .map(results=>{
+        logger.warn(s"backupFile completed, results were $results")
+        results
+      })
+      .map(_.head.asInstanceOf[Path])
+  }
 
   def backupFileToStorage(fileEntry: FileEntry) = {
     implicit val db = dbConfigProvider.get[PostgresProfile].db
-
+    logger.warn("in backupFileToStorage")
     for {
       projectStorage <- StorageEntryHelper.entryFor(fileEntry.storageId)
       backupStorage <- projectStorage.flatMap(_.backsUpTo).map(StorageEntryHelper.entryFor).getOrElse(Future(None))
@@ -48,23 +56,36 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
           Future(None)
       }
     } yield result
-  }
+  }.map(result=>{
+    logger.warn(s"completed backupFileToStorage, result was $result")
+    result
+  })
 
   /**
     * Makes a backup copy of the file pointed to by the given FileEntry in the system default temporary location
     * @param fileEntry FileEntry to back up
     * @return a Future, containing a File pointing to the backed-up location
     */
-  def backupFileToTemp(fileEntry:FileEntry):Future[Path] = for {
-    inPath <- fileEntryDAO.getJavaPath(fileEntry)
-    outPath <- Future({
-      val tempFile = File.createTempFile(fileEntry.filepath, ".bak")
-      Paths.get(tempFile.getPath)
-    })
-    result <- newCopyFile(inPath, outPath)
-    _ <- Future.fromTry(result.status)
-    rtn <- if(Files.size(inPath) != Files.size(outPath)) Future.failed(new RuntimeException(s"Local cache copy failed, expected length ${Files.size(inPath)} but got ${Files.size(outPath)}")) else Future(outPath)
-  } yield rtn
+  def backupFileToTemp(fileEntry:FileEntry):Future[Path] = {
+    logger.warn("in backupFileToTemp")
+    for {
+      inPath <- fileEntryDAO.getJavaPath(fileEntry)
+      outPath <- Future({
+        val tempFile = File.createTempFile(fileEntry.filepath, ".bak")
+        Paths.get(tempFile.getPath)
+      })
+      result <- {
+        logger.warn(s"about to run newCopyFile from $inPath to $outPath")
+        newCopyFile(inPath, outPath)
+          .map(result=>{
+            logger.warn(s"newCopyFile completed with result $result")
+            result
+          })
+      }
+      _ <- Future.fromTry(result.status)
+      rtn <- if(Files.size(inPath) != Files.size(outPath)) Future.failed(new RuntimeException(s"Local cache copy failed, expected length ${Files.size(inPath)} but got ${Files.size(outPath)}")) else Future(outPath)
+    } yield rtn
+  }
 
 
   /**
@@ -88,6 +109,7 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
     def canFindAttribute(attribs:List[akka.stream.alpakka.xml.Attribute], key:String): Option[String] = {
       attribs.find(_.name == key).map(_.value)
     }
+    logger.warn("in tweakProjectVersionStreaming")
 
     FileIO.fromPath(backupFile)
       .via(Compression.gunzip()).async

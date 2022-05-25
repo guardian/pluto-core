@@ -101,7 +101,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
       mockedConverter.backupFile(any) returns Future(mockedBackupFile)
       mockedConverter.checkExistingVersion(any, any) returns Future( () )
 
-      mockedConverter.tweakProjectVersion(any,any,any,any) returns Future( () )
+      mockedConverter.tweakProjectVersionStreaming(any,any,any,any) returns Future( () )
       val mockedDAO = mock[FileEntryDAO]
       mockedDAO.getJavaFile(any) returns Future(mockedSourceFile)
       mockedDAO.entryFor(any) returns Future(Some(fakeFileEntry))
@@ -129,7 +129,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
         there was one(mockedTranslationDAO).findDisplayedVersion(DisplayedVersion(1,2,3))
         there was no(mockedConverter).backupFile(any)
         there was no(mockedConverter).checkExistingVersion(any, any)
-        there was no(mockedConverter).tweakProjectVersion(any, any, any, any)
+        there was no(mockedConverter).tweakProjectVersionStreaming(any, any, any, any)
 
         there was no(mockedDAO).getJavaFile(any)
         there was no(mockedDAO).entryFor(any)
@@ -147,7 +147,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
       mockedConverter.backupFile(any) returns Future(mockedBackupFile)
       mockedConverter.checkExistingVersion(any, any) returns Future( () )
 
-      mockedConverter.tweakProjectVersion(any,any,any,any) returns Future( () )
+      mockedConverter.tweakProjectVersionStreaming(any,any,any,any) returns Future( () )
       val mockedDAO = mock[FileEntryDAO]
       mockedDAO.getJavaFile(any) returns Future(mockedSourceFile)
       mockedDAO.entryFor(any) returns Future(None)
@@ -176,7 +176,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
         there was one(mockedTranslationDAO).findDisplayedVersion(DisplayedVersion(1,2,3))
         there was no(mockedConverter).backupFile(any)
         there was no(mockedConverter).checkExistingVersion(any, any)
-        there was no(mockedConverter).tweakProjectVersion(any, any, any, any)
+        there was no(mockedConverter).tweakProjectVersionStreaming(any, any, any, any)
 
         there was no(mockedDAO).getJavaFile(any)
         there was one(mockedDAO).entryFor(1234)
@@ -226,6 +226,53 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
 
         there was one(mockedDAO).getJavaPath(fakeFileEntry)
         there was one(mockedDAO).entryFor(1234)
+        there was no(mockedDAO).saveSimple(any)
+      }
+    }
+
+    "return 400 if the backup fails" in {
+      val now = Timestamp.from(Instant.now())
+      val fakeFileEntry = FileEntry(Some(1234), "/path/to/file.ext", 2, "fred", 1, now, now, now, true, true, None, Some(34))
+
+      val mockedBackupFile = mock[Path]
+      val mockedSourceFile = mock[Path]
+      val mockedConverter = mock[services.PremiereVersionConverter]
+      mockedConverter.backupFile(any) returns Future.failed(new RuntimeException("something blew up"))
+      mockedConverter.checkExistingVersion(any, any) returns Future( () )
+
+      mockedConverter.tweakProjectVersionStreaming(any,any,any,any) returns Future( () )
+      val mockedDAO = mock[FileEntryDAO]
+      mockedDAO.getJavaPath(any) returns Future(mockedSourceFile)
+      mockedDAO.entryFor(any) returns Future(Some(fakeFileEntry))
+      mockedDAO.saveSimple(any) answers((args:Array[AnyRef])=>Future(args.head.asInstanceOf[FileEntry]))
+
+      val translation = PremiereVersionTranslation(36,"Some test", DisplayedVersion(1,2,3))
+      val mockedTranslationDAO = mock[PremiereVersionTranslationDAO]
+      mockedTranslationDAO.findDisplayedVersion(any) returns Future(Seq(translation))
+
+      new WithApplication(buildAppWithMockedConverter(mockedConverter, mockedDAO, mockedTranslationDAO)) {
+        val response = route(app, FakeRequest(
+          method="POST",
+          uri="/api/file/1234/changePremiereVersion?requiredDisplayVersion=1.2.3",
+          headers=FakeHeaders(Seq(("Content-Type", "application/json"))),
+          body=""
+        ).withSession("uid"->"testuser")
+        ).get
+
+
+        val jsondata = Await.result(bodyAsJsonFuture(response), 5.seconds).as[JsValue]
+        (jsondata \ "status").as[String] mustEqual "error"
+        (jsondata \ "detail").as[String] mustEqual "something blew up"
+
+        status(response) mustEqual 400
+
+        there was one(mockedTranslationDAO).findDisplayedVersion(DisplayedVersion(1,2,3))
+        there was one(mockedConverter).backupFile(fakeFileEntry)
+        there was one(mockedConverter).checkExistingVersion(fakeFileEntry, translation)
+        there was no(mockedConverter).tweakProjectVersionStreaming(any,any,any,any)
+
+        there was no(mockedDAO).getJavaPath(any)
+        there was no(mockedDAO).entryFor(any)
         there was no(mockedDAO).saveSimple(any)
       }
     }
