@@ -37,6 +37,18 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
       .map(_.head.asInstanceOf[Path])
   }
 
+  def restoreFromBackup(backupFile:Path, fileEntry:FileEntry) = {
+    logger.info(s"restoring $fileEntry file from backup")
+    for {
+      mainPath <- fileEntryDAO.getJavaPath(fileEntry)
+      result <- newCopyFile(backupFile, mainPath)
+      _ <- Future.fromTry({
+        logger.info(s"Copied ${result.count} bytes from $backupFile to $mainPath")
+        result.status
+      })
+    } yield result
+  }
+
   def backupFileToStorage(fileEntry: FileEntry) = {
     implicit val db = dbConfigProvider.get[PostgresProfile].db
     logger.warn("in backupFileToStorage")
@@ -131,7 +143,7 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
         case other@_ => other
 
       })
-      .via(XmlWriting.writer(StandardCharsets.UTF_8))
+      .via(XmlWriting.writer(StandardCharsets.UTF_8)).async
       .via(Compression.gzip).async
       .toMat(FileIO.toPath(targetFile))(Keep.right)
       .run()
