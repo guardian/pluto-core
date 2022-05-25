@@ -43,7 +43,7 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
     for {
       projectStorage <- StorageEntryHelper.entryFor(fileEntry.storageId)
       backupStorage <- projectStorage.flatMap(_.backsUpTo).map(StorageEntryHelper.entryFor).getOrElse(Future(None))
-        result <- backupStorage match {
+      result <- backupStorage match {
         case Some(actualBackupStorage)=>
           logger.info(s"Creating an incremental backup for ${fileEntry.filepath} on storage ${actualBackupStorage.storageType} ${actualBackupStorage.id}")
           for {
