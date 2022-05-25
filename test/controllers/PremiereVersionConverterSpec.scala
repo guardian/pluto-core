@@ -272,7 +272,6 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
         there was no(mockedConverter).tweakProjectVersionStreaming(any,any,any,any)
 
         there was one(mockedDAO).getJavaPath(fakeFileEntry)
-        there was no(mockedDAO).entryFor(any)
         there was no(mockedDAO).saveSimple(any)
       }
     }
