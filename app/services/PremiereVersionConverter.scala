@@ -124,8 +124,8 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
     logger.warn("in tweakProjectVersionStreaming")
 
     FileIO.fromPath(backupFile)
-      .via(Compression.gunzip()).async
-      .via(XmlParsing.parser).async
+      .via(Compression.gunzip())
+      .via(XmlParsing.parser)
       .map({
         case elem@StartElement("Project", attributesList, prefix, namespace, namespaceCtx)=>
           logger.debug(s"Found projectNode with attributes $attributesList")
@@ -143,8 +143,8 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
         case other@_ => other
 
       })
-      .via(XmlWriting.writer(StandardCharsets.UTF_8)).async
-      .via(Compression.gzip).async
+      .via(XmlWriting.writer(StandardCharsets.UTF_8))
+      .via(Compression.gzip)
       .toMat(FileIO.toPath(targetFile))(Keep.right)
       .run()
       .flatMap(result=>{
