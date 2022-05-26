@@ -492,6 +492,48 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       })
   }
 
+  object SortDirection extends Enumeration {
+    val desc, asc = Value
+  }
+
+  private def getSortDirection(directionString:String):Option[SortDirection.Value] = Try { SortDirection.withName(directionString) }.toOption
+
+  def obitsListSorted(name:Option[String], startAt:Int, limit:Int, sort: String, sortDirection: String) = IsAuthenticatedAsync { uid => request =>
+    implicit val db = dbConfig.db
+
+    val baseQuery = name match {
+      case None=>
+        TableQuery[ProjectEntryRow].filter(_.isObitProject.nonEmpty)
+      case Some(obitName)=>
+        TableQuery[ProjectEntryRow].filter(_.isObitProject===obitName)
+    }
+
+    val sortedQuery = (sort, getSortDirection(sortDirection).getOrElse(SortDirection.asc)) match {
+      case ("created", SortDirection.desc) => baseQuery.sortBy(_.created.desc)
+      case ("created", SortDirection.asc) => baseQuery.sortBy(_.created.asc)
+      case ("title", SortDirection.desc) => baseQuery.sortBy(_.projectTitle.desc)
+      case ("title", SortDirection.asc) => baseQuery.sortBy(_.projectTitle.asc)
+      case ("name", SortDirection.desc) => baseQuery.sortBy(_.isObitProject.desc)
+      case ("name", SortDirection.asc) => baseQuery.sortBy(_.isObitProject.asc)
+      case _ =>
+        logger.warn(s"Sort field $sort was not recognised, ignoring.")
+        baseQuery
+    }
+
+    db.run(
+      for {
+        content <- sortedQuery.drop(startAt).take(limit).result
+        count <- sortedQuery.length.result
+      } yield (content, count)
+    )
+      .map(results=>Ok(Json.obj("status"->"ok","count"->results._2,"result"->jstranslate(results._1))))
+      .recover({
+        case err:Throwable=>
+          logger.error(s"Could not query database for obituaries: ${err.getMessage}", err)
+          InternalServerError(Json.obj("status"->"error", "detail"->"Database error, see logs for details"))
+      })
+  }
+
   /**
     * Returns a JSON object containing a list of strings for names of valid obituaries startig with the given prefix.
     * If no prefix is supplied, then everything is returned (up to the given limit)

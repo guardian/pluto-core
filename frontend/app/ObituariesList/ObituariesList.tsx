@@ -47,7 +47,7 @@ const ObituariesList = () => {
 
   const fetchObituaryProjects = async () => {
     try {
-      const response = await axios.get("/api/project/obits");
+      const response = await axios.get("/api/project/obits/sorted");
       const data = response?.data;
       const projects: ObituaryProject[] = data.result;
       setProjects(projects);
@@ -96,7 +96,7 @@ const ObituariesList = () => {
       ) : (
         <Grid container justifyContent="center" alignItems="center">
           <Grid item xs spacing={4}>
-            <CircularProgress />
+            No obituaries in the system.
           </Grid>
         </Grid>
       )}

@@ -44,6 +44,7 @@ GET     /api/project/distinctowners         @controllers.ProjectEntryController.
 
 GET     /api/project/obits                  @controllers.ProjectEntryController.listObits(name:Option[String], startAt:Int ?= 0, limit:Int ?=50)
 GET     /api/obits/names                    @controllers.ProjectEntryController.findAvailableObits(prefix:Option[String], limit:Int ?=5)
+GET     /api/project/obits/sorted           @controllers.ProjectEntryController.obitsListSorted(name:Option[String], startAt:Int ?= 0, limit:Int ?=50, sort:String ?="name", sortDirection:String ?="asc")
 
 PUT     /api/project                        @controllers.ProjectEntryController.create
 GET     /api/project/forFilename            @controllers.Files.projectFromFile(filename: String,startAt:Int ?= 0,limit:Int ?=50, includeBackups:Boolean ?=false)

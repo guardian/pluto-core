@@ -82,14 +82,9 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
   return (
     <Grid container direction="column" alignItems="stretch" spacing={2}>
       <Grid item xs>
-        <Box
-          minWidth={"400px"}
-          width={"100%"}
-          display="flex"
-          justifyContent={"center"}
-        >
+        <Box minWidth={"400px"} width={"100%"} display="flex">
           <Autocomplete
-            style={{ width: 300 }}
+            style={{ width: "100%" }}
             freeSolo
             autoComplete
             includeInputInList
