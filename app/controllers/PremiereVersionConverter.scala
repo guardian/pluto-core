@@ -58,7 +58,18 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
           _ <- converter.checkExistingVersion(projectFile, targetVersion) //breaks the chain if the versions are both the same
           backupFile <- converter.backupFile(projectFile)
           //.get is safe here because if it is None then `checkExistingVersion` will have failed the job
-          _ <- converter.tweakProjectVersionStreaming(projectFileJavaIO, backupFile, projectFile.maybePremiereVersion.get, targetVersion)
+          _ <- converter
+                .tweakProjectVersionStreaming(projectFileJavaIO, backupFile, projectFile.maybePremiereVersion.get, targetVersion)
+                .recoverWith({
+                  case err:Throwable=>
+                    logger.error(s"Could not update $projectFile, restoring backup: ${err.getMessage}", err)
+                    converter
+                      .restoreFromBackup(backupFile, projectFile)
+                      .flatMap(_=>{
+                        logger.error(s"Restore of backup completed")
+                        Future.failed(err)
+                      })
+                })
           updatedProjectFile <- fileEntryDAO.saveSimple(projectFile.copy(maybePremiereVersion = Some(targetVersion.internalVersionNumber)))
         } yield (updatedProjectFile, projectFile)
 

@@ -10,10 +10,11 @@ import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider
 import postrun.{AdobeXml, RunXmlLint}
 import slick.jdbc.PostgresProfile
+import akka.stream.IOResult
 
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Files, Path, Paths}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -23,18 +24,38 @@ import scala.xml.{Elem, MetaData, Node, UnprefixedAttribute}
 class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implicit fileEntryDAO:FileEntryDAO, ec:ExecutionContext, dbConfigProvider:DatabaseConfigProvider, mat:Materializer) extends AdobeXml {
   private final val logger = LoggerFactory.getLogger(getClass)
 
-  def backupFile(fileEntry:FileEntry) = Future.sequence(Seq(
-    backupFileToTemp(fileEntry),
-    backupFileToStorage(fileEntry)
-  )).map(_.head.asInstanceOf[Path])
+  def backupFile(fileEntry:FileEntry) = {
+    logger.warn("starting backupFile")
+    Future.sequence(Seq(
+      backupFileToTemp(fileEntry),
+      backupFileToStorage(fileEntry)
+    ))
+      .map(results=>{
+        logger.warn(s"backupFile completed, results were $results")
+        results
+      })
+      .map(_.head.asInstanceOf[Path])
+  }
+
+  def restoreFromBackup(backupFile:Path, fileEntry:FileEntry) = {
+    logger.info(s"restoring $fileEntry file from backup")
+    for {
+      mainPath <- fileEntryDAO.getJavaPath(fileEntry)
+      result <- newCopyFile(backupFile, mainPath)
+      _ <- Future.fromTry({
+        logger.info(s"Copied ${result.count} bytes from $backupFile to $mainPath")
+        result.status
+      })
+    } yield result
+  }
 
   def backupFileToStorage(fileEntry: FileEntry) = {
     implicit val db = dbConfigProvider.get[PostgresProfile].db
-
+    logger.warn("in backupFileToStorage")
     for {
       projectStorage <- StorageEntryHelper.entryFor(fileEntry.storageId)
       backupStorage <- projectStorage.flatMap(_.backsUpTo).map(StorageEntryHelper.entryFor).getOrElse(Future(None))
-        result <- backupStorage match {
+      result <- backupStorage match {
         case Some(actualBackupStorage)=>
           logger.info(s"Creating an incremental backup for ${fileEntry.filepath} on storage ${actualBackupStorage.storageType} ${actualBackupStorage.id}")
           for {
@@ -47,23 +68,37 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
           Future(None)
       }
     } yield result
-  }
+  }.map(result=>{
+    logger.warn(s"completed backupFileToStorage, result was $result")
+    result
+  })
+
   /**
     * Makes a backup copy of the file pointed to by the given FileEntry in the system default temporary location
     * @param fileEntry FileEntry to back up
     * @return a Future, containing a File pointing to the backed-up location
     */
-  def backupFileToTemp(fileEntry:FileEntry) = for {
-    sourceFile <- fileEntryDAO.getJavaFile(fileEntry)
-    result <- Future.fromTry({
-      val p = Paths.get(fileEntry.filepath)
-      val tempFile = File.createTempFile(p.getFileName.toString, ".bak")
+  def backupFileToTemp(fileEntry:FileEntry):Future[Path] = {
+    logger.warn("in backupFileToTemp")
+    for {
+      inPath <- fileEntryDAO.getJavaPath(fileEntry)
+      outPath <- Future({
+        val tempFile = File.createTempFile(fileEntry.filepath, ".bak")
+        Paths.get(tempFile.getPath)
+      })
+      result <- {
+        logger.warn(s"about to run newCopyFile from $inPath to $outPath")
+        newCopyFile(inPath, outPath)
+          .map(result=>{
+            logger.warn(s"newCopyFile completed with result $result")
+            result
+          })
+      }
+      _ <- Future.fromTry(result.status)
+      rtn <- if(Files.size(inPath) != Files.size(outPath)) Future.failed(new RuntimeException(s"Local cache copy failed, expected length ${Files.size(inPath)} but got ${Files.size(outPath)}")) else Future(outPath)
+    } yield rtn
+  }
 
-      Try {
-        FileUtils.copyFile(sourceFile, tempFile)  //this will throw if the copy did not complete successfully
-      }.map(_=>tempFile.toPath)
-    })
-  } yield result
 
   /**
     * Returns a failed future indicating that no update is necessary if the current file and the target version are equal
@@ -86,10 +121,11 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
     def canFindAttribute(attribs:List[akka.stream.alpakka.xml.Attribute], key:String): Option[String] = {
       attribs.find(_.name == key).map(_.value)
     }
+    logger.warn("in tweakProjectVersionStreaming")
 
     FileIO.fromPath(backupFile)
-      .via(Compression.gunzip()).async
-      .via(XmlParsing.parser).async
+      .via(Compression.gunzip())
+      .via(XmlParsing.parser)
       .map({
         case elem@StartElement("Project", attributesList, prefix, namespace, namespaceCtx)=>
           logger.debug(s"Found projectNode with attributes $attributesList")
@@ -108,7 +144,7 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
 
       })
       .via(XmlWriting.writer(StandardCharsets.UTF_8))
-      .via(Compression.gzip).async
+      .via(Compression.gzip)
       .toMat(FileIO.toPath(targetFile))(Keep.right)
       .run()
       .flatMap(result=>{
@@ -138,6 +174,11 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
         case Failure(copyErr)=> Future.failed(copyErr)  //if the copy-back fails pass on that error
       }
   })
+
+  def newCopyFile(fromFile:Path, toFile:Path)(implicit mat:Materializer) : Future[IOResult] = {
+    import java.nio.file.StandardOpenOption._
+    FileIO.fromPath(fromFile).runWith(FileIO.toPath(toFile, Set(WRITE, TRUNCATE_EXISTING, SYNC)))
+  }
 }
 
 object PremiereVersionConverter {
