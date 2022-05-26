@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { Helmet } from "react-helmet";
 import {
   Button,
@@ -20,6 +19,7 @@ import {
 import { CheckCircle, Error } from "@material-ui/icons";
 import { useHistory } from "react-router";
 import {
+  getFileStorageMetadata,
   getOpenUrl,
   getStorageData,
   openProject,
@@ -46,6 +46,8 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+const largestSupportedFile = 10485760; //don't try to convert anything bigger than 10meg, it's unreliable
+
 interface PremiereVersionChangeParams {
   project: string;
   requiredVersion: string;
@@ -60,6 +62,7 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
   const [requiredVersion, setRequiredVersion] = useState("");
   const [targetVersionName, setTargetVersionName] = useState("");
   const [fileId, setFileId] = useState<number | undefined>(undefined);
+  const [fileSize, setFileSize] = useState<number | undefined>(undefined);
 
   const [conversionInProgress, setConversionInProgress] = useState(false);
   const [newOpenUrl, setNewOpenUrl] = useState<string | undefined>(undefined);
@@ -68,8 +71,6 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
 
   useEffect(() => {
     try {
-      console.log("search string is ", props.location.search);
-
       const parsedParams = (parse(
         props.location.search
       ) as unknown) as PremiereVersionChangeParams;
@@ -82,7 +83,6 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
         );
         return;
       }
-      console.log("parsedParams are ", parsedParams);
       setProjectName(parsedParams.project);
       setRequiredVersion(parsedParams.requiredVersion);
     } catch (err) {
@@ -109,6 +109,40 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
         .finally(() => setLoading(false));
     }
   }, [projectName]);
+
+  useEffect(() => {
+    if (!!fileId) {
+      setLoading(true);
+      getFileStorageMetadata(fileId)
+        .then((meta) => {
+          console.log("Got file metadata of ", meta, " for ", fileId);
+          const sizeString = meta.get("size");
+          const sizeNum = sizeString ? parseInt(sizeString, 10) : undefined;
+          console.log("File size is ", sizeNum);
+          setFileSize(sizeNum);
+        })
+        .catch((err) => {
+          console.error(
+            "Could not get file storage metadata for ",
+            fileId,
+            ": ",
+            err
+          );
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [fileId]);
+
+  useEffect(() => {
+    if (fileSize && fileSize > largestSupportedFile) {
+      console.warn(
+        `File size is ${fileSize} which is larger than the preconfigured limit of ${largestSupportedFile}`
+      );
+      setLastError(
+        "This project is too large to be reliably converted automatically. Please contact multimediatech@theguardian.com who can perform the conversion manually."
+      );
+    }
+  }, [fileSize]);
 
   /**
    * User does not want to continue. If the window was opened directly then close it, otherwise go back to the root page.
