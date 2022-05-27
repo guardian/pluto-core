@@ -513,8 +513,8 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       case ("created", SortDirection.asc) => baseQuery.sortBy(_.created.asc)
       case ("title", SortDirection.desc) => baseQuery.sortBy(_.projectTitle.desc)
       case ("title", SortDirection.asc) => baseQuery.sortBy(_.projectTitle.asc)
-      case ("name", SortDirection.desc) => baseQuery.sortBy(_.isObitProject.desc)
-      case ("name", SortDirection.asc) => baseQuery.sortBy(_.isObitProject.asc)
+      case ("isObitProject", SortDirection.desc) => baseQuery.sortBy(_.isObitProject.desc)
+      case ("isObitProject", SortDirection.asc) => baseQuery.sortBy(_.isObitProject.asc)
       case _ =>
         logger.warn(s"Sort field $sort was not recognised, ignoring.")
         baseQuery

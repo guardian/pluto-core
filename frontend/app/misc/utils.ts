@@ -391,4 +391,7 @@ export const useGuardianStyles = makeStyles((theme) => ({
       color: theme.palette.text.secondary,
     },
   },
+  obituariesTitle: {
+    fontSize: "2.5em",
+  },
 }));
