@@ -22,6 +22,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import moment from "moment";
 import { SortDirection } from "~/utils/lists";
+import ProjectTypeDisplay from "~/common/ProjectTypeDisplay";
 
 export interface ObituaryProject {
   commissionId: number;
@@ -44,6 +45,7 @@ const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Obituary", key: "isObitProject" },
   { label: "Project", key: "title" },
   { label: "Created", key: "created" },
+  { label: "Type" },
   { label: "Action" },
 ];
 
@@ -183,6 +185,9 @@ const ObituariesList = () => {
                     <span className="datetime">
                       {moment(project.created).format("DD/MM/YYYY HH:mm")}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    <ProjectTypeDisplay projectTypeId={project.projectTypeId} />
                   </TableCell>
                   <TableCell align="right">
                     <Link to={"/project/" + project.id}>

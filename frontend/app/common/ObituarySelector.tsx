@@ -119,8 +119,9 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
               )
             }
           >
-            This name already exists in an obituary project. <br />
-            Edit that instead?
+            An obituary project already exists with this name.
+            <br />
+            Would you like to edit that instead?
           </Alert>
         </Grid>
       )}
