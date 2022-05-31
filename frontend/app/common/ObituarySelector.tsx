@@ -56,7 +56,6 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
         let obitNamesTitleCase: string[] = [];
         obitNames.map((name) => obitNamesTitleCase.push(toTitleCase(name)));
         setObituaryOptions(obitNamesTitleCase);
-        console.log("Setting options.");
       })
       .catch((err) => {
         console.error(`Could not get obituary names list: ${err}`);
