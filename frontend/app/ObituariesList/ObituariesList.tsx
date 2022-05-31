@@ -101,10 +101,6 @@ const ObituariesList = () => {
 
   useEffect(() => {
     fetchObituaryProjects();
-  }, []);
-
-  useEffect(() => {
-    fetchObituaryProjects();
   }, [page, rowsPerPage, order, orderBy, name]);
 
   const handleChangePage = (
