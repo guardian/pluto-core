@@ -16,6 +16,7 @@ import {
   InputLabel,
   FormControl,
   Box,
+  Button,
 } from "@material-ui/core";
 import { useGuardianStyles } from "~/misc/utils";
 import axios from "axios";
@@ -23,6 +24,13 @@ import { Link } from "react-router-dom";
 import moment from "moment";
 import { SortDirection } from "~/utils/lists";
 import ProjectTypeDisplay from "~/common/ProjectTypeDisplay";
+import {
+  openProject,
+  updateProjectOpenedStatus,
+} from "~/ProjectEntryList/helpers";
+import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
+import AssetFolderLink from "~/ProjectEntryList/AssetFolderLink";
+import CommissionEntryView from "../EntryViews/CommissionEntryView";
 
 export interface ObituaryProject {
   commissionId: number;
@@ -44,9 +52,12 @@ export interface ObituaryProject {
 const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Obituary", key: "isObitProject" },
   { label: "Project", key: "title" },
+  { label: "Commission" },
   { label: "Created", key: "created" },
   { label: "Type" },
+  { label: "Owner" },
   { label: "Action" },
+  { label: "Open" },
 ];
 
 const ObituariesList = () => {
@@ -183,6 +194,9 @@ const ObituariesList = () => {
                   </TableCell>
                   <TableCell>{project.title}</TableCell>
                   <TableCell>
+                    <CommissionEntryView entryId={project.commissionId} />
+                  </TableCell>
+                  <TableCell>
                     <span className="datetime">
                       {moment(project.created).format("DD/MM/YYYY HH:mm")}
                     </span>
@@ -190,10 +204,37 @@ const ObituariesList = () => {
                   <TableCell>
                     <ProjectTypeDisplay projectTypeId={project.projectTypeId} />
                   </TableCell>
+                  <TableCell>{project.user}</TableCell>
                   <TableCell align="right">
                     <Link to={"/project/" + project.id}>
                       Edit obituary project
                     </Link>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      className={classes.openProjectButton}
+                      variant="contained"
+                      color="primary"
+                      onClick={async () => {
+                        try {
+                          await openProject(project.id);
+                        } catch (error) {
+                          SystemNotification.open(
+                            SystemNotifcationKind.Error,
+                            `An error occurred when attempting to open the project.`
+                          );
+                          console.error(error);
+                        }
+                        try {
+                          await updateProjectOpenedStatus(project.id);
+                        } catch (error) {
+                          console.error(error);
+                        }
+                      }}
+                    >
+                      Open project
+                    </Button>
+                    <AssetFolderLink projectId={project.id} />
                   </TableCell>
                 </TableRow>
               ))}

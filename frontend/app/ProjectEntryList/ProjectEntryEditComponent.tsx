@@ -224,13 +224,17 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 autoFocus
                 onChange={(event) => fieldChanged(event, "title")}
               />
-              <ObituarySelector
-                label="Obituary"
-                value={project.isObitProject ?? ""}
-                valueDidChange={(evt, newValue) =>
-                  fieldChangedValue(newValue, "isObitProject")
-                }
-              />
+              <Tooltip title="Add a name here to make this into an obituary.">
+                <span>
+                  <ObituarySelector
+                    label="Obituary"
+                    value={project.isObitProject ?? ""}
+                    valueDidChange={(evt, newValue) =>
+                      fieldChangedValue(newValue, "isObitProject")
+                    }
+                  />
+                </span>
+              </Tooltip>
               <UsersAutoComplete
                 label="Owner"
                 shouldValidate={true}
