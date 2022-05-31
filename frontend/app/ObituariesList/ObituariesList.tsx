@@ -72,10 +72,7 @@ const ObituariesList = () => {
     try {
       let nameString = "";
       if (name != "") {
-        const titleCaseName = name.replace(/\w\S*/g, function (txt) {
-          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-        });
-        nameString = `&name=${titleCaseName}`;
+        nameString = `&name=${name.toLowerCase()}`;
       }
       const response = await axios.get(
         `/api/project/obits/sorted?startAt=${
@@ -177,7 +174,11 @@ const ObituariesList = () => {
             <TableBody>
               {projects.map((project: ObituaryProject) => (
                 <TableRow key={project.id}>
-                  <TableCell component="th" scope="row">
+                  <TableCell
+                    component="th"
+                    scope="row"
+                    className={classes.title_case_text}
+                  >
                     {project.isObitProject}
                   </TableCell>
                   <TableCell>{project.title}</TableCell>

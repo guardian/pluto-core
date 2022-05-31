@@ -52,7 +52,12 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
    */
   useEffect(() => {
     searchObits()
-      .then((obitNames) => setObituaryOptions(obitNames))
+      .then((obitNames) => {
+        let obitNamesTitleCase: string[] = [];
+        obitNames.map((name) => obitNamesTitleCase.push(toTitleCase(name)));
+        setObituaryOptions(obitNamesTitleCase);
+        console.log("Setting options.");
+      })
       .catch((err) => {
         console.error(`Could not get obituary names list: ${err}`);
         if (err.response) console.log(err.response.data);
@@ -83,6 +88,12 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
     props.valueDidChange(evt, newValue);
   };
 
+  function toTitleCase(str: string) {
+    return str.replace(/\w\S*/g, function (txt) {
+      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+  }
+
   return (
     <Grid container direction="column" alignItems="stretch" spacing={2}>
       <Grid item xs>
@@ -92,7 +103,7 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
             freeSolo
             autoComplete
             includeInputInList
-            value={props.value}
+            value={toTitleCase(props.value)}
             //onChange is fired when an option is selected
             onChange={props.valueDidChange}
             //onInputChange is fired when the user types

@@ -67,7 +67,9 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
               {props.obituaryName && (
                 <tr>
                   <td>Obituary</td>
-                  <td>{props.obituaryName}</td>
+                  <td className={classes.title_case_text}>
+                    {props.obituaryName}
+                  </td>
                 </tr>
               )}
               {!props.obituaryName && (

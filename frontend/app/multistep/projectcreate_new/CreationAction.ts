@@ -26,6 +26,9 @@ interface ProjectCreationResponse extends GeneralCreationResult {
 async function CreateProject(
   source: ProjectCreationDoc
 ): Promise<ProjectCreationResponse> {
+  if (source.obitProject != null) {
+    source.obitProject = source.obitProject.toLowerCase();
+  }
   const response = await axios.put(`/api/project`, source, {
     validateStatus: () => true,
   });

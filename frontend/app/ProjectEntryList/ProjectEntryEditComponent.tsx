@@ -147,6 +147,10 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   ): Promise<void> => {
     event.preventDefault();
 
+    if (project.isObitProject != null) {
+      project.isObitProject = project.isObitProject.toLowerCase();
+    }
+
     if (project.title) {
       try {
         await updateProject(project as Project);

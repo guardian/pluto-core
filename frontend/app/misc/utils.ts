@@ -394,4 +394,7 @@ export const useGuardianStyles = makeStyles((theme) => ({
   obituariesTitle: {
     fontSize: "2.5em",
   },
+  title_case_text: {
+    textTransform: "capitalize",
+  },
 }));
