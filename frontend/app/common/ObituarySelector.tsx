@@ -131,11 +131,11 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
           >
             An obituary project already exists for this person.
             <br />
-            If you would like to edit that instead please find it
+            If you would like to edit that instead please click
             <br />
-            from the Obituaries Project list, otherwise click NEXT
+            on the link on the right, otherwise click NEXT
             <br />
-            to create a new project.
+            to create a new project for this person.
           </Alert>
         </Grid>
       )}
