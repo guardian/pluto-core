@@ -67,7 +67,7 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
     const exists = contains(obituaryOptions, newValue);
     if (exists) {
       const response = await axios.get(
-        `/api/project/obits?name=${encodeURIComponent(newValue)}`
+        `/api/project/obits?name=${encodeURIComponent(newValue.toLowerCase())}`
       );
       const data = response?.data;
       const project = data.result[0];
@@ -129,9 +129,13 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
               )
             }
           >
-            An obituary project already exists with this name.
+            An obituary project already exists for this person.
             <br />
-            Would you like to edit that instead?
+            If you would like to edit that instead please find it
+            <br />
+            from the Obituaries Project list, otherwise click NEXT
+            <br />
+            to create a new project.
           </Alert>
         </Grid>
       )}

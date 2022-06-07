@@ -31,12 +31,15 @@ const ObituaryComponent = ({
         label="Is this an obituary?"
       />
       {isObituary ? (
-        <ObituarySelector
-          label="Obituary"
-          value={value}
-          valueDidChange={(e, val) => valueDidChange(val ?? "")}
-          shouldValidate
-        />
+        <>
+          <Typography>Start typing a person's name below</Typography>
+          <ObituarySelector
+            label="Obituary"
+            value={value}
+            valueDidChange={(e, val) => valueDidChange(val ?? "")}
+            shouldValidate
+          />
+        </>
       ) : (
         <Typography className={classes.secondaryText} style={{ width: 400 }}>
           Select the check box to select the person for whom the obituary is
