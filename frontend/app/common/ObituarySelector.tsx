@@ -26,10 +26,8 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
    * the promise rejects on failure
    */
   const searchObits = useMemo(() => {
-    let prefixString = "";
-    if (inputValue != "") {
-      prefixString = `?prefix=${inputValue}`;
-    }
+    const prefixString =
+      inputValue != "" ? `?prefix=${encodeURIComponent(inputValue)}` : "";
     return async () => {
       const response = await axios.get<{ obitNames: string[] }>(
         `/api/obits/names${prefixString}`

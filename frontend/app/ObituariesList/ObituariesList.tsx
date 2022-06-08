@@ -63,16 +63,6 @@ const tableHeaderTitles: HeaderTitle<Project>[] = [
 const ObituariesList = () => {
   const classes = useGuardianStyles();
   const [projects, setProjects] = useState<ObituaryProject[] | []>([]);
-  function createData(
-    name: string,
-    calories: number,
-    fat: number,
-    carbs: number,
-    protein: number
-  ) {
-    return { name, calories, fat, carbs, protein };
-  }
-
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(25);
   const [orderBy, setOrderBy] = useState<keyof Project>("isObitProject");
@@ -83,18 +73,19 @@ const ObituariesList = () => {
     try {
       let nameString = "";
       if (name != "") {
-        nameString = `&name=${name.toLowerCase()}`;
+        nameString = `&name=${encodeURIComponent(name.toLowerCase())}`;
       }
-      const response = await axios.get(
-        `/api/project/obits/sorted?startAt=${
+      const response = await axios.get<{ result: ObituaryProject[] }>(
+        `/api/project/obits?startAt=${
           page * rowsPerPage
         }&limit=${rowsPerPage}&sort=${orderBy}&sortDirection=${order}${nameString}`
       );
-      const data = response?.data;
-      const projects: ObituaryProject[] = data.result;
-      setProjects(projects);
-      console.log({ projects });
+      setProjects(response.data.result);
     } catch (error) {
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        `Could not load obituaries: ${error}`
+      );
       console.error({ error });
     }
   };

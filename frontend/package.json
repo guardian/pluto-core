@@ -100,7 +100,7 @@
     "lodash.omit": "^4.5.0",
     "material-ui-chip-input": "^1.1.0",
     "moment": "^2.29.2",
-    "pluto-headers": "https://gitlab.com/codmill/customer-projects/guardian/pluto-headers.git#a697f55ef256f86e490b2dba5c2ca99e2969af37",
+    "pluto-headers": "https://gitlab.com/codmill/customer-projects/guardian/pluto-headers.git#v1.6.4",
     "process": "^0.11.10",
     "prop-types": "^15.7.2",
     "query-string": "^6.13.1",

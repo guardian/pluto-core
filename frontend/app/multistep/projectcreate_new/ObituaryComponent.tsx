@@ -51,22 +51,3 @@ const ObituaryComponent = ({
 };
 
 export default ObituaryComponent;
-
-// <Autocomplete
-//   id="obituary-combo-box"
-//   value={value}
-//   inputValue={inputValue}
-//   onInputChange={(event, newInputValue) => {
-//     setInputValue(newInputValue);
-//   }}
-//   options={names}
-//   freeSolo
-//   style={{ width: 400 }}
-//   renderInput={(params) => (
-//     <TextField
-//       {...params}
-//       label="Who is this obituary for?"
-//       variant="standard"
-//     />
-//   )}
-// />

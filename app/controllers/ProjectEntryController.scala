@@ -468,30 +468,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       })
   }
 
-  def listObits(name:Option[String], startAt:Int, limit:Int) = IsAuthenticatedAsync { uid=> request=>
-    implicit val db = dbConfig.db
-
-    val baseQuery = name match {
-      case None=>
-        TableQuery[ProjectEntryRow].filter(_.isObitProject.nonEmpty)
-      case Some(obitName)=>
-        TableQuery[ProjectEntryRow].filter(_.isObitProject===obitName)
-    }
-
-    db.run(
-      for {
-        content <- baseQuery.drop(startAt).take(limit).result
-        count <- baseQuery.length.result
-      } yield (content, count)
-    )
-      .map(results=>Ok(Json.obj("status"->"ok","count"->results._2,"result"->jstranslate(results._1))))
-      .recover({
-        case err:Throwable=>
-          logger.error(s"Could not query database for obituaries: ${err.getMessage}", err)
-          InternalServerError(Json.obj("status"->"error", "detail"->"Database error, see logs for details"))
-      })
-  }
-
   object SortDirection extends Enumeration {
     val desc, asc = Value
   }
