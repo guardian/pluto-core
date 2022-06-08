@@ -71,14 +71,21 @@ const ObituariesList = () => {
 
   const fetchObituaryProjects = async () => {
     try {
-      let nameString = "";
-      if (name != "") {
-        nameString = `&name=${encodeURIComponent(name.toLowerCase())}`;
-      }
+      const args: { [key: string]: string | undefined } = {
+        name: name == "" ? undefined : name.toLowerCase(),
+        startAt: (page * rowsPerPage).toString(),
+        limit: rowsPerPage.toString(),
+        sort: orderBy,
+        sortDirection: order,
+      };
+
+      const queryString = Object.keys(args)
+        .filter((k) => !!args[k])
+        .map((k) => `${k}=${encodeURIComponent(args[k] as string)}`) //typecast is safe because we already filtered out null values
+        .join("&");
+
       const response = await axios.get<{ result: ObituaryProject[] }>(
-        `/api/project/obits?startAt=${
-          page * rowsPerPage
-        }&limit=${rowsPerPage}&sort=${orderBy}&sortDirection=${order}${nameString}`
+        `/api/project/obits?${queryString}`
       );
       setProjects(response.data.result);
     } catch (error) {
