@@ -441,10 +441,10 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
       </Paper>
       {/*will repace this with an icon*/}
       <Grid container direction="row" justifyContent="space-between">
-        <Grid item xs>
+        <Grid item>
           <Typography variant="h4">Projects</Typography>
         </Grid>
-        <Grid item xs>
+        <Grid item>
           <Button
             variant="contained"
             color="primary"

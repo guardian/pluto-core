@@ -114,7 +114,7 @@ const VersionTranslationsList: React.FC<RouteComponentProps> = (props) => {
       <Grid
         container
         spacing={3}
-        justifyContent="space-evenly"
+        justifyContent="space-between"
         alignContent="flex-end"
         className={classes.iconBanner}
       >

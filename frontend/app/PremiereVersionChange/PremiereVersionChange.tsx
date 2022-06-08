@@ -5,7 +5,6 @@ import {
   Grid,
   LinearProgress,
   Link,
-  makeStyles,
   Paper,
   Typography,
 } from "@material-ui/core";
@@ -21,30 +20,8 @@ import { useHistory } from "react-router";
 import {
   getFileStorageMetadata,
   getOpenUrl,
-  getStorageData,
-  openProject,
 } from "../ProjectEntryList/helpers";
-
-const useStyles = makeStyles((theme) => ({
-  centered: {
-    marginTop: "0.4em",
-    textAlign: "center",
-  },
-  success: {
-    color: theme.palette.success.dark,
-    width: "100px",
-    height: "100px",
-  },
-  error: {
-    color: theme.palette.error.main,
-  },
-  buttonContainer: {
-    marginTop: "1em",
-    maxWidth: "800px",
-    marginLeft: "auto",
-    marginRight: "auto",
-  },
-}));
+import { useGuardianStyles } from "~/misc/utils";
 
 const largestSupportedFile = 10485760; //don't try to convert anything bigger than 10meg, it's unreliable
 
@@ -54,7 +31,7 @@ interface PremiereVersionChangeParams {
 }
 
 const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
   const [loading, setLoading] = useState(true);
 
   const [lastError, setLastError] = useState<string | undefined>(undefined);
