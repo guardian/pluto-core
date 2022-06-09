@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import ChipInput from "material-ui-chip-input";
 import { Typography } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface ChipsWithWarningProps {
   label?: string;
@@ -11,16 +11,10 @@ interface ChipsWithWarningProps {
   warningText?: string;
 }
 
-const useStyles = makeStyles((theme) => ({
-  warningText: {
-    color: theme.palette.warning.dark,
-  },
-}));
-
 const ChipsWithWarning: React.FC<ChipsWithWarningProps> = (props) => {
   const [dirty, setDirty] = useState(false);
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   return (
     <>

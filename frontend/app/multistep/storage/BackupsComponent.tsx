@@ -6,25 +6,16 @@ import {
   Radio,
   Typography,
 } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
 import StorageSelector from "../../Selectors/StorageSelector";
 import axios from "axios";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface BackupsComponentProps {
   selectedBackupStorage?: number;
   onChange: (newValue?: number) => void;
   existingStorageId?: number;
 }
-
-const useStyles = makeStyles((theme) => ({
-  greyed: {
-    color: theme.palette.text.disabled,
-  },
-  normal: {
-    color: theme.palette.text.primary,
-  },
-}));
 
 const BackupsComponent: React.FC<BackupsComponentProps> = (props) => {
   const [backupSelected, setBackupSelected] = useState(false);
@@ -33,7 +24,7 @@ const BackupsComponent: React.FC<BackupsComponentProps> = (props) => {
 
   const [loading, setLoading] = useState(true);
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   useEffect(() => {
     const loadData = async () => {

@@ -7,8 +7,6 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
-  makeStyles,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -32,6 +30,7 @@ import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import { useGuardianStyles } from "~/misc/utils";
 
 const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Project title", key: "title" },
@@ -45,18 +44,6 @@ const tableHeaderTitles: HeaderTitle<Project>[] = [
 ];
 
 declare var deploymentRootPath: string;
-
-const useStyles = makeStyles({
-  table: {
-    maxWidth: "100%",
-    "& .MuiTableRow-root": {
-      cursor: "pointer",
-    },
-  },
-  openProjectButton: {
-    whiteSpace: "nowrap",
-  },
-});
 
 const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
   id,
@@ -90,7 +77,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   const [orderBy, setOrderBy] = useState<keyof Project>("created");
   const [order, setOrder] = useState<SortDirection>("desc");
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [updatingProject, setUpdatingProject] = useState<number>(0);
 
@@ -263,7 +250,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}
-        onChangeRowsPerPage={handleChangeRowsPerPage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
         // FIXME: remove when count is correct
         labelDisplayedRows={({ from, to }) => `${from}-${to}`}
       />

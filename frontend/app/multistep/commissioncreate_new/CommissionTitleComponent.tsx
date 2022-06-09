@@ -6,7 +6,7 @@ import {
   KeyboardTimePicker,
   KeyboardDatePicker,
 } from "@material-ui/pickers";
-import { makeStyles } from "@material-ui/core/styles";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface CommissionTitleComponentProps {
   title: string;
@@ -15,22 +15,10 @@ interface CommissionTitleComponentProps {
   onExpirationChanged: (newValue: Date) => void;
 }
 
-const useStyles = makeStyles((theme) => ({
-  inputBox: {
-    width: "50vw",
-    minWidth: "100px",
-    maxWidth: "600px",
-  },
-  secondary: {
-    fontSize: theme.typography.body2.fontSize,
-    color: theme.palette.text.secondary,
-  },
-}));
-
 const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
   props
 ) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   return (
     <div style={{ maxWidth: "800px" }}>

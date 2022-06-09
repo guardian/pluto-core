@@ -1,16 +1,14 @@
-import React, { ChangeEvent, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
 import {
+  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
-  FormControl,
-  FormControlLabel,
   Grid,
   IconButton,
-  makeStyles,
   Paper,
   TextField,
   Tooltip,
@@ -29,34 +27,8 @@ import { Helmet } from "react-helmet";
 import ProjectEntryVaultComponent from "./ProjectEntryVaultComponent";
 import { FileCopy, PermMedia } from "@material-ui/icons";
 import UsersAutoComplete from "../common/UsersAutoComplete";
-
-const useStyles = makeStyles({
-  root: {
-    display: "flex",
-    flexDirection: "column",
-    padding: "1rem",
-    "& .MuiTextField-root": {
-      width: "100%",
-      marginBottom: "1rem",
-    },
-    "& .MuiFormControl-root": {
-      width: "100%",
-      marginBottom: "1rem",
-    },
-  },
-  applicableRules: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  formButtons: {
-    display: "flex",
-    marginTop: "2.5rem",
-    justifyContent: "flex-end",
-    "& Button": {
-      marginLeft: "1rem",
-    },
-  },
-});
+import { useGuardianStyles } from "~/misc/utils";
+import ObituarySelector from "~/common/ObituarySelector";
 
 declare var deploymentRootPath: string;
 
@@ -75,6 +47,7 @@ const EMPTY_PROJECT: Project = {
   deletable: false,
   id: 0,
   productionOffice: "UK",
+  isObitProject: null,
   projectTypeId: 0,
   sensitive: false,
   status: "New",
@@ -86,7 +59,7 @@ const EMPTY_PROJECT: Project = {
 const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   props
 ) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
   const history = useHistory();
 
   const { state: projectFromList } = useLocation<Project | undefined>();
@@ -174,6 +147,10 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   ): Promise<void> => {
     event.preventDefault();
 
+    if (project.isObitProject != null) {
+      project.isObitProject = project.isObitProject.toLowerCase();
+    }
+
     if (project.title) {
       try {
         await updateProject(project as Project);
@@ -204,36 +181,37 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           <title>[{project.title}] Details</title>
         </Helmet>
       ) : null}
-      <Grid container justify="space-between" style={{ marginBottom: "0.8em" }}>
+      <Grid
+        container
+        justifyContent="space-between"
+        style={{ marginBottom: "0.8em" }}
+        spacing={3}
+      >
         <Grid item>
           <Breadcrumb
             projectId={project.id}
             plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
           />
         </Grid>
-        <Grid item>
-          <Grid container spacing={2}>
-            <Grid item>
-              <Tooltip title="View backups">
-                <IconButton
-                  onClick={() => history.push(`/project/${project.id}/backups`)}
-                >
-                  <FileCopy />
-                </IconButton>
-              </Tooltip>
-            </Grid>
-            <Grid item>
-              <Tooltip title="See project's media">
-                <IconButton
-                  onClick={() =>
-                    window.location.assign(`/vs/project/${project.id}`)
-                  }
-                >
-                  <PermMedia />
-                </IconButton>
-              </Tooltip>
-            </Grid>
-          </Grid>
+        <Grid item xs={3}>
+          <Box display="flex" justifyContent="flex-end">
+            <Tooltip title="View backups">
+              <IconButton
+                onClick={() => history.push(`/project/${project.id}/backups`)}
+              >
+                <FileCopy />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="See project's media">
+              <IconButton
+                onClick={() =>
+                  window.location.assign(`/vs/project/${project.id}`)
+                }
+              >
+                <PermMedia />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Grid>
       </Grid>
       <Paper className={classes.root} elevation={3}>
@@ -246,6 +224,17 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 autoFocus
                 onChange={(event) => fieldChanged(event, "title")}
               />
+              <Tooltip title="Add a name here to make this into an obituary.">
+                <span>
+                  <ObituarySelector
+                    label="Obituary"
+                    value={project.isObitProject ?? ""}
+                    valueDidChange={(evt, newValue) =>
+                      fieldChangedValue(newValue, "isObitProject")
+                    }
+                  />
+                </span>
+              </Tooltip>
               <UsersAutoComplete
                 label="Owner"
                 shouldValidate={true}

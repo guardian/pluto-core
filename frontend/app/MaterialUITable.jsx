@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  makeStyles,
   Paper,
   Table,
   TableBody,
@@ -16,6 +15,7 @@ import {
 } from "@material-ui/core";
 import PropTypes from "prop-types";
 import { getComparator, stableSort } from "./TableUtils";
+import { useGuardianStyles } from "~/misc/utils";
 
 function EnhancedTableHead(props) {
   const { classes, order, orderBy, onRequestSort, columnData } = props;
@@ -59,37 +59,13 @@ EnhancedTableHead.propTypes = {
   columnData: PropTypes.array.isRequired,
 };
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    width: "100%",
-  },
-  paper: {
-    width: "100%",
-    marginBottom: theme.spacing(2),
-  },
-  table: {
-    minWidth: 750,
-  },
-  visuallyHidden: {
-    border: 0,
-    clip: "rect(0 0 0 0)",
-    height: 1,
-    margin: -1,
-    overflow: "hidden",
-    padding: 0,
-    position: "absolute",
-    top: 20,
-    width: 1,
-  },
-}));
-
 EnhancedTable.propTypes = {
   columnData: PropTypes.array.isRequired,
   tableData: PropTypes.array.isRequired,
 };
 
 export default function EnhancedTable(props) {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
   const [order, setOrder] = React.useState("asc");
   const [orderBy, setOrderBy] = React.useState("id");
   const [page, setPage] = React.useState(0);
@@ -152,7 +128,7 @@ export default function EnhancedTable(props) {
           rowsPerPage={rowsPerPage}
           page={page}
           onChangePage={handleChangePage}
-          onChangeRowsPerPage={handleChangeRowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
       <FormControlLabel

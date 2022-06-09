@@ -7,12 +7,12 @@ import {
   TableRow,
   TableCell,
   Typography,
-  makeStyles,
   TableSortLabel,
   TableBody,
 } from "@material-ui/core";
 import ValidationJobRow from "./ValidationJobRow";
 import { getComparator, stableSort } from "../TableUtils";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface ValidationJobsTableProps {
   data: ValidationJob[];
@@ -22,19 +22,13 @@ interface ValidationJobsTableProps {
   currentStatusFilter?: string;
 }
 
-const useStyles = makeStyles((theme) => ({
-  tableHeaderText: {
-    fontSize: "0.8em",
-  },
-}));
-
 const ValidationJobsTable: React.FC<ValidationJobsTableProps> = (props) => {
   const [sortColumn, setSortColumn] = useState<ValidationJobColumn>(
     "startedAt"
   );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   /**
    * callback which is invoked when the user clicks on a sort label.

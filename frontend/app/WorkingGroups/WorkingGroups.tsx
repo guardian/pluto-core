@@ -8,7 +8,6 @@ import {
   TableCell,
   TableContainer,
   Paper,
-  makeStyles,
   Button,
   TablePagination,
   TableSortLabel,
@@ -27,6 +26,7 @@ import { isLoggedIn } from "../utils/api";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import { Helmet } from "react-helmet";
 import { Visibility, VisibilityOff } from "@material-ui/icons";
+import { useGuardianStyles } from "~/misc/utils";
 
 const tableHeaderTitles: HeaderTitle<WorkingGroup>[] = [
   { label: "Name", key: "name" },
@@ -35,38 +35,10 @@ const tableHeaderTitles: HeaderTitle<WorkingGroup>[] = [
   { label: "" },
 ];
 
-const useStyles = makeStyles((theme) => ({
-  table: {
-    maxWidth: "100%",
-    "& .MuiTableRow-hover": {
-      cursor: "pointer",
-    },
-  },
-  createNewWorkingGroup: {
-    display: "flex",
-    marginLeft: "auto",
-    marginBottom: "0.625rem",
-  },
-  visuallyHidden: {
-    border: 0,
-    clip: "rect(0 0 0 0)",
-    height: 1,
-    margin: -1,
-    overflow: "hidden",
-    padding: 0,
-    position: "absolute",
-    top: 20,
-    width: 1,
-  },
-  success: {
-    color: theme.palette.success.dark,
-  },
-  visibilityIcon: {},
-}));
 const pageSizeOptions = [25, 50, 100];
 
 const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const [workingGroups, setWorkingGroups] = useState<WorkingGroup[]>([]);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -252,7 +224,7 @@ const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
           rowsPerPage={pageSize}
           page={page}
           onPageChange={handleChangePage}
-          onChangeRowsPerPage={handleChangeRowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
           // FIXME: remove when count is correct
           labelDisplayedRows={({ from, to }) => `${from}-${to}`}
         />

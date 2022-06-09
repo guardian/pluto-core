@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   Paper,
   Typography,
-  makeStyles,
   TableContainer,
   Table,
   TableHead,
@@ -19,29 +18,7 @@ import { authenticatedFetch } from "../common/auth";
 import KeyboardArrowUpIcon from "@material-ui/icons/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@material-ui/icons/KeyboardArrowDown";
 import { loadAllVaultData, VaultState } from "../vaultdoor/vaultdoor";
-
-const useStyles = makeStyles({
-  projectVaultData: {
-    display: "flex",
-    flexDirection: "column",
-    padding: "1rem",
-    marginTop: "1rem",
-  },
-  loading: {
-    display: "flex",
-    flexDirection: "column",
-    width: "100%",
-    alignItems: "center",
-  },
-  archiveButton: {
-    width: "50px",
-    height: "50px",
-  },
-  archiveIcon: {
-    width: "60px",
-    height: "60px",
-  },
-});
+import { useGuardianStyles } from "~/misc/utils";
 
 declare var vaultdoorURL: string;
 
@@ -53,7 +30,7 @@ interface ProjectEntryVaultComponentProps {
 const ProjectEntryVaultComponent: React.FC<ProjectEntryVaultComponentProps> = (
   props
 ) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
   const [loading, setLoading] = useState(false);
   const [didLoad, setDidLoad] = useState(false);
   const { project } = props;

@@ -1,16 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { RouteComponentProps, useLocation } from "react-router-dom";
-import {
-  Button,
-  Grid,
-  makeStyles,
-  Paper,
-  Step,
-  StepLabel,
-  Stepper,
-  Tooltip,
-  Typography,
-} from "@material-ui/core";
+import { Typography } from "@material-ui/core";
 import NameComponent from "./projectcreate_new/NameComponent";
 import TemplateComponent from "./projectcreate_new/TemplateComponent";
 import UserContext from "../UserContext";
@@ -22,9 +12,9 @@ import InProgressComponent from "./projectcreate_new/InProgressComponent";
 import { CreateProject } from "./projectcreate_new/CreationAction";
 import ProjectCreatedComponent from "./projectcreate_new/ProjectCreatedComponent";
 import { Link } from "react-router-dom";
-import CommonMultistepContainer, {
-  multistepStyles,
-} from "./common/CommonMultistepContainer";
+import CommonMultistepContainer from "./common/CommonMultistepContainer";
+import ObituaryComponent from "./projectcreate_new/ObituaryComponent";
+import { useGuardianStyles } from "~/misc/utils";
 
 const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   const context = useContext(UserContext);
@@ -33,6 +23,16 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
 
   const [projectName, setProjectName] = useState("");
   const [filename, setFilename] = useState("");
+  const [isObituary, setObituary] = useState(false);
+  const [obituaryName, setObituaryName] = useState<null | string>(null);
+
+  useEffect(() => {
+    // Clear obituary name if the user deselects the *Is this an obituary?*
+
+    if (!isObituary) {
+      setObituaryName(null);
+    }
+  }, [isObituary]);
 
   const [creationInProgress, setCreationInProgress] = useState<
     boolean | undefined
@@ -67,11 +67,12 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
 
   const location = useLocation();
   const userContext = useContext(UserContext);
-  const classes = multistepStyles();
+  const classes = useGuardianStyles();
 
   const steps = [
     "Select project template",
     "Name your project",
+    "Obituary",
     "Working Group & Commission",
     "Production Office",
     "Media Rules",
@@ -101,13 +102,14 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   }, [location]);
 
   const createClicked = async () => {
-    setActiveStep(6);
+    setActiveStep(7);
     setCreationInProgress(true);
     setCreationFailed(undefined);
 
     const result = await CreateProject({
       filename: filename,
       title: projectName,
+      obitProject: obituaryName ?? null,
       destinationStorageId: selectedStorageId as number,
       projectTemplateId: selectedTemplateId as number,
       user: userContext?.userName ?? "unknown",
@@ -179,6 +181,8 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
       creationFailed={creationFailed}
       canComplete={canComplete}
       createClicked={createClicked}
+      obituaryName={obituaryName}
+      isObituary={isObituary}
     >
       <>
         {activeStep == 0 ? (
@@ -198,6 +202,14 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
           />
         ) : null}
         {activeStep == 2 ? (
+          <ObituaryComponent
+            valueDidChange={(newValue: string) => setObituaryName(newValue)}
+            checkBoxDidChange={(newValue: boolean) => setObituary(newValue)}
+            value={obituaryName ?? ""}
+            isObituary={isObituary}
+          />
+        ) : null}
+        {activeStep == 3 ? (
           <PlutoLinkageComponent
             commissionIdDidChange={(newValue) => setCommissionId(newValue)}
             workingGroupIdDidChange={(newValue) => setWorkingGroupId(newValue)}
@@ -205,13 +217,14 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             workingGroupId={workingGroupId}
           />
         ) : null}
-        {activeStep == 3 ? (
+
+        {activeStep == 4 ? (
           <ProductionOfficeComponent
             valueWasSet={(newValue) => setProductionOffice(newValue)}
             value={productionOffice}
           />
         ) : null}
-        {activeStep == 4 ? (
+        {activeStep == 5 ? (
           <MediaRulesComponent
             deletable={deletable}
             deepArchive={deepArchive}
@@ -220,13 +233,16 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
               setDeletable(newDeletable);
               setDeepArchive(newDeepArchive);
             }}
+            isObituary={isObituary}
             sensitiveChanged={(newValue) => setSensitive(newValue)}
           />
         ) : null}
-        {activeStep == 5 ? (
+        {activeStep == 6 ? (
           <SummaryComponent
             projectName={projectName}
             fileName={filename}
+            isObituary={isObituary}
+            obituaryName={obituaryName}
             projectTemplateId={selectedTemplateId}
             destinationStorageId={selectedStorageId}
             workingGroupId={workingGroupId}
@@ -237,21 +253,21 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             sensitive={sensitive}
           />
         ) : null}
-        {activeStep == 6 ? (
+        {activeStep == 7 ? (
           <InProgressComponent
             didFail={creationFailed !== undefined}
             errorMessage={creationFailed}
             description="Creating your project, please wait..."
           />
         ) : null}
-        {activeStep == 7 && createdProjectId && commissionId ? (
+        {activeStep == 8 && createdProjectId && commissionId ? (
           <ProjectCreatedComponent
             projectId={createdProjectId}
             commissionId={commissionId}
             title={projectName}
           />
         ) : null}
-        {activeStep == 7 && (!createdProjectId || !commissionId) ? (
+        {activeStep == 8 && (!createdProjectId || !commissionId) ? (
           <div>
             <Typography className={classes.warning} variant="h3">
               Well this is strange

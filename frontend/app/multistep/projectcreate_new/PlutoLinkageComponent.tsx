@@ -7,9 +7,9 @@ import {
   Typography,
 } from "@material-ui/core";
 import WorkingGroupSelector from "../common/WorkingGroupSelectorNew";
-import { makeStyles } from "@material-ui/core/styles";
 import CommissionSelector from "../common/CommissionSelectorNew";
 import { loadWorkingGroups } from "../common/WorkingGroupService";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface PlutoLinkageComponentProps {
   commissionId?: number;
@@ -17,16 +17,6 @@ interface PlutoLinkageComponentProps {
   commissionIdDidChange: (newValue: number | undefined) => void;
   workingGroupIdDidChange: (newValue: number | undefined) => void;
 }
-
-const useStyles = makeStyles((theme) => ({
-  selectorbox: {
-    width: "50%",
-  },
-  warningText: {
-    color: theme.palette.warning.dark,
-    textAlign: "center",
-  },
-}));
 
 const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
   const [knownWorkingGroups, setKnownWorkingGroups] = useState<WorkingGroup[]>(
@@ -36,7 +26,7 @@ const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
     "all"
   );
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   useEffect(() => {
     loadWorkingGroups(setKnownWorkingGroups);

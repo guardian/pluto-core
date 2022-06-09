@@ -1,6 +1,7 @@
 var webpack = require("webpack");
 var path = require("path");
 var TerserPlugin = require("terser-webpack-plugin");
+const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 
 var BUILD_DIR = path.resolve(__dirname, "../public/javascripts");
 var APP_DIR = path.resolve(__dirname, "app");
@@ -11,6 +12,10 @@ var config = {
     path: BUILD_DIR,
     filename: "bundle.js",
   },
+  devServer: {
+    hot: true,
+    port: 8080,
+  },
   resolve: {
     extensions: [".ts", ".tsx", ".js", ".jsx"],
     fallback: {
@@ -18,6 +23,11 @@ var config = {
       util: require.resolve("util/"),
       crypto: require.resolve("crypto-browserify"),
     },
+    plugins: [
+      new TsconfigPathsPlugin({
+        extensions: [".js", ".jsx", ".json", ".ts", ".tsx"],
+      }),
+    ],
   },
   optimization: {
     minimizer: [new TerserPlugin()],

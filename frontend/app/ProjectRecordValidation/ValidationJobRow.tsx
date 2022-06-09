@@ -1,13 +1,8 @@
 import React from "react";
-import {
-  Grid,
-  IconButton,
-  makeStyles,
-  TableCell,
-  TableRow,
-} from "@material-ui/core";
+import { Grid, IconButton, TableCell, TableRow } from "@material-ui/core";
 import { useHistory } from "react-router";
 import { ZoomIn, ZoomOut } from "@material-ui/icons";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface ValidationJobRowProps {
   data: ValidationJob;
@@ -17,15 +12,9 @@ interface ValidationJobRowProps {
   currentStatusFilter?: string;
 }
 
-const useStyles = makeStyles({
-  tableRow: {
-    cursor: "pointer",
-  },
-});
-
 const ValidationJobRow: React.FC<ValidationJobRowProps> = (props) => {
   const history = useHistory();
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const jumpToValidation = () =>
     history.push(`/validate/project/${props.data.uuid}`);

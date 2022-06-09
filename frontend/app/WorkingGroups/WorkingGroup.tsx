@@ -5,7 +5,6 @@ import {
   Paper,
   Button,
   Typography,
-  makeStyles,
   Checkbox,
   FormControlLabel,
   Dialog,
@@ -19,28 +18,7 @@ import {
   updateWorkingGroup,
 } from "./helpers";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
-
-const useStyles = makeStyles({
-  root: {
-    display: "flex",
-    flexDirection: "column",
-    padding: "1rem",
-    "& form": {
-      width: "400px",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "flex-start",
-      margin: 0,
-    },
-    "& .MuiTextField-root": {
-      marginBottom: "1rem",
-      width: "100%",
-    },
-  },
-  hide_control: {
-    marginBottom: "20px",
-  },
-});
+import { useGuardianStyles } from "~/misc/utils";
 
 interface WorkingGroupStateTypes {
   itemid?: string;
@@ -49,7 +27,7 @@ interface WorkingGroupStateTypes {
 type WorkingGroupProps = RouteComponentProps<WorkingGroupStateTypes>;
 
 const WorkingGroup: React.FC<WorkingGroupProps> = (props) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const [id, setId] = useState<number>(0);
   const [hide, setHide] = useState<boolean>(false);

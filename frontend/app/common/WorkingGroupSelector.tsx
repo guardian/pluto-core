@@ -11,7 +11,7 @@ import {
   Typography,
 } from "@material-ui/core";
 import ErrorIcon from "@material-ui/icons/Error";
-import { makeStyles } from "@material-ui/core/styles";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface WorkingGroupSelectorProps {
   workingGroupId: number;
@@ -19,17 +19,6 @@ interface WorkingGroupSelectorProps {
   maxLength?: number;
   showCommissioner?: boolean;
 }
-
-const useStyles = makeStyles((theme) => ({
-  discontinuedWG: {
-    fontStyle: "italic",
-    color: "darkgrey",
-  },
-  normalWG: {},
-  validationError: {
-    color: theme.palette.error.dark,
-  },
-}));
 
 const WorkingGroupSelector: React.FC<WorkingGroupSelectorProps> = (props) => {
   const [workingGroupList, setWorkingGroupList] = useState<
@@ -40,7 +29,7 @@ const WorkingGroupSelector: React.FC<WorkingGroupSelectorProps> = (props) => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [commissionerName, setCommissionerName] = useState<string>("");
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   /**
    * validate if the user is actually allowed to select this value. If the 'hide' property is true

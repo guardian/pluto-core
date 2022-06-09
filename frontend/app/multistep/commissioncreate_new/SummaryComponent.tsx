@@ -1,10 +1,10 @@
 import React, { useContext } from "react";
-import { makeStyles } from "@material-ui/core/styles";
 import { Typography } from "@material-ui/core";
 import format from "date-fns/format";
 import { isBefore, isAfter, addYears } from "date-fns";
 import WorkingGroupEntryView from "../../EntryViews/WorkingGroupEntryView";
 import UserContext from "../../UserContext";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface SummaryComponentProps {
   title: string;
@@ -13,17 +13,8 @@ interface SummaryComponentProps {
   productionOffice: ProductionOffice;
 }
 
-const useStyles = makeStyles((theme) => ({
-  warning: {
-    color: theme.palette.warning.dark,
-  },
-  error: {
-    color: theme.palette.error.dark,
-  },
-}));
-
 const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const userContext = useContext(UserContext);
   return (

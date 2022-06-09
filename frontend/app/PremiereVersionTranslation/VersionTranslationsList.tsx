@@ -5,7 +5,6 @@ import {
   CircularProgress,
   Grid,
   IconButton,
-  makeStyles,
   Paper,
   Table,
   TableBody,
@@ -21,14 +20,7 @@ import { sortListByOrder } from "../utils/lists";
 import VersionTranslationRow from "./VersionTranslationRow";
 import axios from "axios";
 import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
-
-const useStyles = makeStyles((theme) => ({
-  iconBanner: {
-    width: "100px",
-    marginLeft: "auto",
-  },
-  table: {},
-}));
+import { useGuardianStyles } from "~/misc/utils";
 
 const VersionTranslationsList: React.FC<RouteComponentProps> = (props) => {
   const [knownTranslations, setKnownTranslations] = useState<
@@ -38,7 +30,7 @@ const VersionTranslationsList: React.FC<RouteComponentProps> = (props) => {
 
   const [sortDescending, setSortDescending] = useState(true);
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const addNew = () => {
     setKnownTranslations((prev) =>
@@ -122,7 +114,7 @@ const VersionTranslationsList: React.FC<RouteComponentProps> = (props) => {
       <Grid
         container
         spacing={3}
-        justifyContent="space-evenly"
+        justifyContent="space-between"
         alignContent="flex-end"
         className={classes.iconBanner}
       >

@@ -3,15 +3,14 @@ import { Helmet } from "react-helmet";
 import {
   Button,
   Grid,
-  makeStyles,
   Step,
   StepLabel,
   Stepper,
   Tooltip,
-  Typography,
 } from "@material-ui/core";
 import StepContent from "./StepContent";
 import { CheckCircle } from "@material-ui/icons";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface CommonMultistepContainerProps {
   activeStep: number;
@@ -24,40 +23,9 @@ interface CommonMultistepContainerProps {
   canComplete: () => boolean | 0 | undefined;
   createClicked: () => Promise<void>;
   createButtonLabel?: string;
+  isObituary?: boolean;
+  obituaryName?: string | null;
 }
-
-const multistepStyles = makeStyles((theme) => ({
-  stepContainer: {
-    width: "fit-content",
-    padding: "3em",
-    paddingTop: "0.5em",
-    paddingBottom: "1em",
-    marginLeft: "auto",
-    marginRight: "auto",
-    marginTop: "3em",
-  },
-  warning: {
-    color: theme.palette.warning.main,
-  },
-  information: {
-    color: theme.palette.info.main,
-    fontSize: "0.8em",
-    fontStyle: "italic",
-  },
-  labelCell: {
-    verticalAlign: "bottom",
-    width: "25%",
-  },
-  fullWidth: {
-    width: "100%",
-  },
-  valueNotPresent: {
-    color: theme.palette.grey.A700,
-  },
-  stepper: {
-    backgroundColor: "#00000000",
-  },
-}));
 
 const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
   props
@@ -72,9 +40,11 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
     creationFailed,
     canComplete,
     createClicked,
+    isObituary,
+    obituaryName,
   } = props;
 
-  const classes = multistepStyles();
+  const classes = useGuardianStyles();
 
   const isStepSkipped = (step: number) => {
     return skipped.has(step);
@@ -122,7 +92,7 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
           <Grid item>
             <Button
               variant="outlined"
-              disabled={activeStep == 0 || creationInProgress || activeStep > 5}
+              disabled={activeStep == 0 || creationInProgress || activeStep > 6}
               onClick={handleBack}
             >
               Back
@@ -146,7 +116,8 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
                       !canComplete() ||
                       creationInProgress ||
                       creationFailed !== undefined ||
-                      activeStep > 6
+                      activeStep > 6 ||
+                      (isObituary && !obituaryName)
                     }
                     endIcon={<CheckCircle />}
                     onClick={createClicked}
@@ -167,5 +138,4 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
   );
 };
 
-export { multistepStyles };
 export default CommonMultistepContainer;

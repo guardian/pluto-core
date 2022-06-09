@@ -10,22 +10,12 @@ import {
   Grid,
   IconButton,
   List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  makeStyles,
   Paper,
   Tooltip,
   Typography,
 } from "@material-ui/core";
 import { Breadcrumb } from "pluto-headers";
-import {
-  ArrowBack,
-  FileCopy,
-  LocationOn,
-  PermMedia,
-  WarningRounded,
-} from "@material-ui/icons";
+import { ArrowBack, PermMedia, WarningRounded } from "@material-ui/icons";
 import { getFileStorageMetadata, getProject, getProjectFiles } from "./helpers";
 import { Alert } from "@material-ui/lab";
 import { format, parseISO } from "date-fns";
@@ -34,29 +24,9 @@ import { DEFAULT_DATE_FORMAT } from "../../types/constants";
 import BackupEntry from "./BackupEntry";
 import SizeFormatter from "../common/SizeFormatter";
 import PremiereVersionTranslationView from "../EntryViews/PremiereVersionTranslationView";
+import { useGuardianStyles } from "~/misc/utils";
 
 declare var deploymentRootPath: string;
-
-const useStyles = makeStyles((theme) => ({
-  warningIcon: {
-    color: theme.palette.warning.main,
-  },
-  inlineIcon: {
-    marginRight: "6px",
-    verticalAlign: "top",
-  },
-  centeredDiv: {
-    paddingTop: "2em",
-    paddingBottom: "2em",
-    justifyContent: "space-around",
-  },
-  emphasised: {
-    fontWeight: theme.typography.fontWeightBold,
-  },
-  noSpacing: {
-    marginBottom: "0",
-  },
-}));
 
 const PrimaryFilesIndicator: React.FC<{
   primaryFiles: FileEntry[];
@@ -64,7 +34,7 @@ const PrimaryFilesIndicator: React.FC<{
 }> = (props) => {
   const [timeString, setTimeString] = useState("");
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   useEffect(() => {
     if (props.primaryFiles.length >= 1) {
@@ -154,7 +124,7 @@ const ProjectBackups: React.FC<RouteComponentProps<{ itemid: string }>> = (
   >(new Map());
 
   const history = useHistory();
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   useEffect(() => {
     if (primaryFiles.length > 0) {

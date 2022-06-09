@@ -1,47 +1,13 @@
-import { Button, IconButton, makeStyles, Paper, Grid } from "@material-ui/core";
+import { Button, Paper, Grid } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
-import {
-  RouteComponentProps,
-  useHistory,
-  useLocation,
-  useParams,
-} from "react-router-dom";
+import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
 import ProjectFilterComponent from "../filter/ProjectFilterComponent.jsx";
 import { isLoggedIn } from "../utils/api";
-import { getProjectsOnPage, updateProjectOpenedStatus } from "./helpers";
+import { getProjectsOnPage } from "./helpers";
 import ProjectsTable from "./ProjectsTable";
 import { Helmet } from "react-helmet";
 import { buildFilterTerms, filterTermsToQuerystring } from "../filter/terms";
-
-const useStyles = makeStyles({
-  table: {
-    maxWidth: "100%",
-    "& .MuiTableRow-root": {
-      cursor: "pointer",
-    },
-  },
-  createButton: {
-    display: "flex",
-    marginBottom: "0.625rem",
-  },
-  openProjectButton: {
-    whiteSpace: "nowrap",
-  },
-  visuallyHidden: {
-    border: 0,
-    clip: "rect(0 0 0 0)",
-    height: 1,
-    margin: -1,
-    overflow: "hidden",
-    padding: 0,
-    position: "absolute",
-    top: 20,
-    width: 1,
-  },
-  buttonGrid: {
-    marginLeft: "auto",
-  },
-});
+import { useGuardianStyles } from "~/misc/utils";
 
 const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // React Router
@@ -59,7 +25,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   >(undefined);
 
   // Material-UI
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const fetchProjectsOnPage = async () => {
     const mineOnly = new URLSearchParams(search).has("mine");
@@ -145,7 +111,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
             />
           </Grid>
         ) : null}
-        <Grid item className={classes.buttonGrid}>
+        <Grid className={classes.buttonGrid}>
           <Button
             className={classes.createButton}
             variant="contained"

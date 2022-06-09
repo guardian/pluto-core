@@ -48,6 +48,7 @@ interface Project {
   created: string;
   user: string;
   workingGroupId: number;
+  isObitProject?: string | null;
   commissionId: number;
   deletable: boolean;
   deep_archive: boolean;

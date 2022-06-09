@@ -6,13 +6,13 @@ import {
   Switch,
   Typography,
 } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
 import { format } from "date-fns";
 import UserContext from "../../UserContext";
 import axios from "axios";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import StorageSelector from "../../Selectors/StorageSelector";
 import { getProjectsDefaultStorageId } from "./ProjectStorageService";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface NameComponentProps {
   projectName: string;
@@ -23,23 +23,11 @@ interface NameComponentProps {
   storageIdDidChange: (newValue: number) => void;
 }
 
-const useStyles = makeStyles((theme) => ({
-  inputBox: {
-    width: "50vw",
-    minWidth: "100px",
-    maxWidth: "600px",
-  },
-  secondary: {
-    fontSize: theme.typography.body2.fontSize,
-    color: theme.palette.text.secondary,
-  },
-}));
-
 const NameComponent: React.FC<NameComponentProps> = (props) => {
   const [autoName, setAutoName] = useState(true);
   const [knownStorages, setKnownStorages] = useState<PlutoStorage[]>([]);
   const [loading, setLoading] = useState(false);
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const userContext = useContext(UserContext);
 

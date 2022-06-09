@@ -1,15 +1,17 @@
 import React, { useContext } from "react";
 import { Grid, Typography } from "@material-ui/core";
 import ProjectTemplateEntryView from "../../EntryViews/ProjectTemplateEntryView";
-import { makeStyles } from "@material-ui/core/styles";
 import StorageEntryView from "../../EntryViews/StorageEntryView";
 import WorkingGroupEntryView from "../../EntryViews/WorkingGroupEntryView";
 import CommissionEntryView from "../../EntryViews/CommissionEntryView";
 import UserContext from "../../UserContext";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface SummaryComponentProps {
   projectName: string;
   fileName: string;
+  isObituary: boolean;
+  obituaryName?: string | null;
   projectTemplateId?: number;
   destinationStorageId?: number;
   workingGroupId?: number;
@@ -20,17 +22,8 @@ interface SummaryComponentProps {
   sensitive: boolean;
 }
 
-const useStyles = makeStyles((theme) => ({
-  warning: {
-    color: theme.palette.warning.dark,
-  },
-  error: {
-    color: theme.palette.error.dark,
-  },
-}));
-
 const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   const userContext = useContext(UserContext);
 
@@ -69,6 +62,28 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
             <td>New file name</td>
             <td>{props.fileName}</td>
           </tr>
+          {props.isObituary && (
+            <>
+              {props.obituaryName && (
+                <tr>
+                  <td>Obituary</td>
+                  <td className={classes.title_case_text}>
+                    {props.obituaryName}
+                  </td>
+                </tr>
+              )}
+              {!props.obituaryName && (
+                <tr>
+                  <td>Obituary</td>
+                  <td>
+                    <Typography className={classes.warning}>
+                      You need to pick a name for the obituary.
+                    </Typography>
+                  </td>
+                </tr>
+              )}
+            </>
+          )}
           <tr>
             <td>Project template</td>
             <td>
@@ -84,7 +99,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
           <tr>
             <td>Storage</td>
             <td>
-              {props.workingGroupId ? (
+              {props.destinationStorageId ? (
                 <StorageEntryView entryId={props.destinationStorageId} />
               ) : (
                 <Typography className={classes.error}>

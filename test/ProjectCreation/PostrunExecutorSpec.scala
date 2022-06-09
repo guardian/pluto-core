@@ -59,7 +59,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new PostrunExecutor(dbConfigProvider, app.configuration)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus, None).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), Some(mockedProjectEntry), Some(mockedPostrunSeq))
@@ -105,7 +105,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new PostrunExecutor(dbConfigProvider, app.configuration)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus, None).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), Some(mockedProjectEntry), Some(mockedPostrunSeq))
@@ -146,7 +146,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new PostrunExecutor( dbConfigProvider, app.configuration)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus, None).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), Some(mockedProjectEntry), Some(mockedPostrunSeq))
@@ -193,7 +193,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new PostrunExecutor( dbConfigProvider, app.configuration)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus, None).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), Some(mockedProjectEntry), Some(mockedPostrunSeq))
@@ -240,7 +240,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new PostrunExecutor(dbConfigProvider, app.configuration)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus, None).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), Some(mockedProjectEntry), Some(mockedPostrunSeq))
@@ -288,7 +288,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new PostrunExecutor(dbConfigProvider, app.configuration)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", Some(1), Some(1), false, false, false, ProductionOffice.Aus, None).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(Some(mockedFileEntry), Some(mockedProjectEntry), Some(mockedPostrunSeq))
@@ -314,7 +314,7 @@ class PostrunExecutorSpec extends Specification with BuildMyApp with Mockito {
 
       val ac = system.actorOf(Props(new PostrunExecutor(dbConfigProvider, app.configuration)))
 
-      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None,deletable=true, deep_archive=false, sensitive=false, ProductionOffice.Aus).hydrate, 10 seconds)
+      val maybeRq = Await.result(ProjectRequest("testprojectfile",1,"Test project entry", 1, "test-user", None, None,deletable=true, deep_archive=false, sensitive=false, ProductionOffice.Aus, None).hydrate, 10 seconds)
       maybeRq must beSome
 
       val initialData = ProjectCreateTransientData(None, None,None)

@@ -100,7 +100,8 @@ class LinkVStoPL (createProjectTypeId:Int, vsUserCache: VSUserCache)(implicit db
                 deep_archive = Some(vsProject.isDeepArchive),
                 sensitive = Some(vsProject.isSensitive),
                 status = maybeProjectStatus.getOrElse(EntryStatus.Completed),
-                productionOffice = maybeProductionOffice.getOrElse(ProductionOffice.UK)
+                productionOffice = maybeProductionOffice.getOrElse(ProductionOffice.UK),
+                None
               )
             })
           case Some(existingProject)=>

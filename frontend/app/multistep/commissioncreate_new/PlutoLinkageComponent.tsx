@@ -1,32 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Grid, Typography } from "@material-ui/core";
 import WorkingGroupSelector from "../common/WorkingGroupSelectorNew";
-import { makeStyles } from "@material-ui/core/styles";
-import axios from "axios";
-import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
 import { loadWorkingGroups } from "../common/WorkingGroupService";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface PlutoLinkageComponentProps {
   workingGroupId?: number;
   workingGroupIdDidChange: (newValue: number) => void;
 }
 
-const useStyles = makeStyles((theme) => ({
-  selectorbox: {
-    width: "50%",
-  },
-  warningText: {
-    color: theme.palette.warning.dark,
-    textAlign: "center",
-  },
-}));
-
 const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
   const [knownWorkingGroups, setKnownWorkingGroups] = useState<WorkingGroup[]>(
     []
   );
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   useEffect(() => {
     loadWorkingGroups(setKnownWorkingGroups).catch((err) => {

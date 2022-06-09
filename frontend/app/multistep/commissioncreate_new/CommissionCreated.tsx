@@ -1,9 +1,9 @@
 import React from "react";
-import { makeStyles } from "@material-ui/core/styles";
 import { useHistory } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { CheckCircle, ChevronRight } from "@material-ui/icons";
 import { Button, Typography } from "@material-ui/core";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface CommissionCreatedProps {
   commissionId: number;
@@ -11,24 +11,8 @@ interface CommissionCreatedProps {
   title: string;
 }
 
-const useStyles = makeStyles((theme) => ({
-  success: {
-    color: theme.palette.success.dark,
-    width: "100px",
-    height: "100px",
-  },
-  container: {
-    padding: "1em",
-  },
-  bannerText: {
-    fontWeight: theme.typography.fontWeightBold,
-    textAlign: "center",
-    marginBottom: "1em",
-  },
-}));
-
 const CommissionCreated: React.FC<CommissionCreatedProps> = (props) => {
-  const classes = useStyles();
+  const classes = useGuardianStyles();
   const history = useHistory();
 
   return (

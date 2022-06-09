@@ -6,7 +6,7 @@ import {
   Radio,
   Typography,
 } from "@material-ui/core";
-import { makeStyles } from "@material-ui/core/styles";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface MediaRulesComponentProps {
   deletable: boolean;
@@ -14,14 +14,8 @@ interface MediaRulesComponentProps {
   sensitive: boolean;
   archivalChanged: (deletable: boolean, deepArchive: boolean) => void;
   sensitiveChanged: (newValue: boolean) => void;
+  isObituary: boolean;
 }
-
-const useStyles = makeStyles((theme) => ({
-  secondaryText: {
-    color: theme.palette.text.secondary,
-    fontSize: theme.typography.body2.fontSize,
-  },
-}));
 
 const MediaRulesComponent: React.FC<MediaRulesComponentProps> = (props) => {
   const deepArchiveSelected = () => {
@@ -32,7 +26,7 @@ const MediaRulesComponent: React.FC<MediaRulesComponentProps> = (props) => {
     props.archivalChanged(true, false);
   };
 
-  const classes = useStyles();
+  const classes = useGuardianStyles();
 
   return (
     <div>
@@ -68,6 +62,7 @@ const MediaRulesComponent: React.FC<MediaRulesComponentProps> = (props) => {
         </Grid>
         <Grid item>
           <FormControlLabel
+            disabled={props.isObituary}
             label="Media can be removed once the project has been completed"
             control={
               <Radio

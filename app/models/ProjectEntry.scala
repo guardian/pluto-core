@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId: Option[String],
                          projectTitle: String, created:Timestamp, updated:Timestamp, user: String, workingGroupId: Option[Int],
                          commissionId: Option[Int], deletable: Option[Boolean], deep_archive: Option[Boolean],
-                         sensitive: Option[Boolean], status:EntryStatus.Value, productionOffice: ProductionOffice.Value)
+                         sensitive: Option[Boolean], status:EntryStatus.Value, productionOffice: ProductionOffice.Value, isObitProject:Option[String])
 extends PlutoModel{
   def projectDefaultStorage(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Option[StorageEntry]] = {
     import cats.implicits._
@@ -181,7 +181,9 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
   def status = column[EntryStatus.Value]("s_status")
   def productionOffice = column[ProductionOffice.Value]("s_production_office")
 
-  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, updated, user, workingGroup, commission, deletable, deep_archive, sensitive, status, productionOffice) <> (ProjectEntry.tupled, ProjectEntry.unapply)
+  def isObitProject = column[Option[String]]("s_is_obit_project")
+
+  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, updated, user, workingGroup, commission, deletable, deep_archive, sensitive, status, productionOffice, isObitProject) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }
 
 trait ProjectEntrySerializer extends TimestampSerialization {
@@ -203,7 +205,8 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "deep_archive").writeNullable[Boolean] and
       (JsPath \ "sensitive").writeNullable[Boolean] and
       (JsPath \ "status").write[EntryStatus.Value] and
-      (JsPath \ "productionOffice").write[ProductionOffice.Value]
+      (JsPath \ "productionOffice").write[ProductionOffice.Value] and
+    (JsPath \ "isObitProject").writeNullable[String]
     )(unlift(ProjectEntry.unapply))
 
   implicit val projectEntryReads:Reads[ProjectEntry] = (
@@ -220,16 +223,17 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "deep_archive").readNullable[Boolean] and
       (JsPath \ "sensitive").readNullable[Boolean] and
       (JsPath \ "status").read[EntryStatus.Value] and
-      (JsPath \ "productionOffice").read[ProductionOffice.Value]
+      (JsPath \ "productionOffice").read[ProductionOffice.Value] and
+      (JsPath \ "isObitProject").readNullable[String]
     )(ProjectEntry.apply _)
 }
 
-object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean], EntryStatus.Value, ProductionOffice.Value)=>ProjectEntry) {
+object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean], EntryStatus.Value, ProductionOffice.Value, Option[String])=>ProjectEntry) {
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String],
-                     deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value)
+                     deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value, isObitProject:Option[String])
                     (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
-    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user, workingGroupId, commissionId, existingVidispineId, deletable, deep_archive, sensitive, productionOffice)
+    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user, workingGroupId, commissionId, existingVidispineId, deletable, deep_archive, sensitive, productionOffice, isObitProject)
   }
 
   def entryForId(requestedId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
@@ -267,13 +271,13 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
 
   def createFromFile(sourceFile: FileEntry, projectTypeId: Int, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String],
-                     deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value)
+                     deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value, isObitProject:Option[String])
                     (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
 
     /* step one - create a new project entry */
     val timestamp = dateTimeToTimestamp(created.getOrElse(LocalDateTime.now()))
     val entry = ProjectEntry(None, projectTypeId, existingVidispineId, title, timestamp, timestamp,
-      user, workingGroupId, commissionId, Some(deletable), Some(deep_archive), Some(sensitive), EntryStatus.New, productionOffice)
+      user, workingGroupId, commissionId, Some(deletable), Some(deep_archive), Some(sensitive), EntryStatus.New, productionOffice, isObitProject)
     val savedEntry = entry.save
 
     /* step two - set up file association. Project entry must be saved, so this is done as a future map */
@@ -328,6 +332,25 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
       .distinctOn(_.user)
       .filter(_.user.toLowerCase.startsWith(lowerCasePrefix))
       .groupBy(_.user).map(_._1)
+      .take(limit)
+      .result
+  }
+
+
+  /**
+    * Returns a list of distinct obituaries starting with the given prefix
+    * @param prefix restricts results to only obits starting with this string
+    * @param limit only return up to this many results
+    * @param db implicitly provided database object
+    * @return a Future, containing a sequence of matching usernames
+    */
+  def listObits(prefix:String, limit:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = db.run {
+    val lowerCasePrefix = prefix.toLowerCase
+    TableQuery[ProjectEntryRow]
+      .filter(_.isObitProject.isDefined)
+      .distinctOn(_.isObitProject.get)
+      .filter(_.isObitProject.toLowerCase.startsWith(lowerCasePrefix))
+      .groupBy(_.isObitProject).map(_._1)
       .take(limit)
       .result
   }
