@@ -66,7 +66,7 @@ const WorkingGroupSelector: React.FC<WorkingGroupSelectorProps> = (props) => {
 
   useEffect(() => {
     axios
-      .get(`/api/pluto/workinggroup?length=${props.maxLength ?? 25}`)
+      .get(`/api/pluto/workinggroup?length=${props.maxLength ?? 500}`)
       .then((result) => {
         setWorkingGroupList(result.data.result as WorkingGroup[]);
         setLoading(false);
@@ -98,17 +98,22 @@ const WorkingGroupSelector: React.FC<WorkingGroupSelectorProps> = (props) => {
             value={props.workingGroupId}
             onChange={validateChangedValue}
           >
-            {workingGroupList.map((entry) => (
-              <MenuItem
-                key={entry.id}
-                value={entry.id}
-                className={
-                  entry.hide ? classes.discontinuedWG : classes.normalWG
-                }
-              >
-                {entry.name} {entry.hide ? "(discontinued)" : ""}
-              </MenuItem>
-            ))}
+            {workingGroupList
+              .sort(
+                ({ hide: stateA = false }, { hide: stateB = false }) =>
+                  Number(stateA) - Number(stateB)
+              )
+              .map((entry) => (
+                <MenuItem
+                  key={entry.id}
+                  value={entry.id}
+                  className={
+                    entry.hide ? classes.discontinuedWG : classes.normalWG
+                  }
+                >
+                  {entry.name} {entry.hide ? "(discontinued)" : ""}
+                </MenuItem>
+              ))}
           </Select>
           {validationError ? (
             <Typography className={classes.validationError}>
