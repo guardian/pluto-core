@@ -2,20 +2,18 @@ package services
 
 import akka.actor.{ActorRef, ActorSystem}
 import com.newmotion.akka.rabbitmq._
+import com.rabbitmq.client.AMQP.Exchange
 import com.rabbitmq.client.{AMQP, ShutdownSignalException}
 import models.{PlutoCommission, PlutoCommissionRow}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-
-import javax.inject.{Inject, Named, Singleton}
+import javax.inject.{Inject, Singleton}
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 import org.apache.commons.codec.binary.StringUtils
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.PostgresProfile
-import slick.lifted.TableQuery
-
-import java.util.UUID
+import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import slick.jdbc.PostgresProfile.api._
@@ -33,12 +31,23 @@ class AtomResponderReceiver @Inject()(config:Configuration, dbConfigProvider:Dat
   factory.setUri(config.get[String]("rabbitmq.uri"))
   val exchangeName = config.getOptional[String]("rabbitmq.atomresponder_exchange").getOrElse("pluto-atomresponder")
 
-  //Get a connection actor
   private val connection = system.actorOf(ConnectionActor.props(factory), "atomresponder-receiver-connection")
   logger.debug("Got Rabbit MQ connection actor, requesting subscriber")
-  //Configure ourselves as a subscriber
+
   connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("plutocore-atomresponder-channel"))
   private implicit val db = dbConfigProvider.get[PostgresProfile].db
+
+  val rmqExchange = config.getOptional[String]("rabbitmq.exchange").getOrElse("pluto-core")
+
+  def channelSetup(channel: Channel, self: ActorRef): Exchange.DeclareOk = {
+    channel.exchangeDeclare(rmqExchange, "topic")
+  }
+
+  val rmqFactory = new ConnectionFactory()
+  rmqFactory.setUri(config.get[String]("rabbitmq.uri"))
+  val rmqConnection: ActorRef = system.actorOf(ConnectionActor.props(rmqFactory, reconnectionDelay = 10.seconds), "pluto-core-two")
+  val rmqChannel: ActorRef = rmqConnection.createChannel(ChannelActor.props(channelSetup))
+  val rmqRouteBase = config.getOptional[String]("rabbitmq.route-base").getOrElse("core")
 
 
   def loadEvent(body:Array[Byte]) = {
@@ -60,12 +69,21 @@ class AtomResponderReceiver @Inject()(config:Configuration, dbConfigProvider:Dat
           case Failure(error)=>throw error
         })
     }
+  }
 
+  def publishData(messageType: String, plutoCom: PlutoCommission, commissionId: Int) = {
+    val route = s"$rmqRouteBase.commission.${messageType}"
+
+    var messageToSend: String = s"""[{"id":$commissionId}]"""
+
+    if (plutoCom != null) {
+      messageToSend = s"""[{"id":${plutoCom.id.get},"created":"${plutoCom.created.toString}","updated":"${plutoCom.updated.toString}","title":"${plutoCom.title}","status":"${plutoCom.status}","description":"${plutoCom.description}","workingGroupId":${plutoCom.workingGroup},"scheduledCompletion":"${plutoCom.scheduledCompletion.toString}","owner":"${plutoCom.owner}","productionOffice":"${plutoCom.productionOffice}"}]"""
+    }
+    rmqChannel ! ChannelMessage(channel => channel.basicPublish(rmqExchange, route, null, messageToSend.getBytes), dropIfNoChannel = false)
   }
 
   def makeConsumer(channel:Channel): DefaultConsumer = {
     new DefaultConsumer(channel) {
-      //note - docs say to avoid long-running code here because it delays dispatch of other messages on the same connection
       override def handleShutdownSignal(consumerTag: String, sig: ShutdownSignalException): Unit = super.handleShutdownSignal(consumerTag, sig)
 
       override def handleCancel(consumerTag: String): Unit = super.handleCancel(consumerTag)
@@ -75,14 +93,12 @@ class AtomResponderReceiver @Inject()(config:Configuration, dbConfigProvider:Dat
       override def handleConsumeOk(consumerTag: String): Unit = super.handleConsumeOk(consumerTag)
 
       override def handleDelivery(consumerTag: String, envelope: Envelope, properties: AMQP.BasicProperties, body: Array[Byte]): Unit = {
-        //logger.info(s"${channel}")
-        logger.info(s"${envelope}")
         loadEvent(body) match {
           case Left(err)=>
             logger.error(s"Received invalid message with key ${envelope.getRoutingKey} from exchange ${envelope.getExchange}: ${err.getMessage}", err)
 
           case Right(messageData)=>
-            handleEvent(consumerTag, envelope.getRoutingKey, messageData).map({
+            handleEvent(messageData).map({
               case true=>
                 channel.basicAck(envelope.getDeliveryTag, false)
               case false=>
@@ -92,14 +108,22 @@ class AtomResponderReceiver @Inject()(config:Configuration, dbConfigProvider:Dat
         }
       }
 
-      def handleEvent(consumerTag: String, routingKey: String, messageData: MissingCommission): Future[Boolean] = {
-        logger.info(s"Key is ${routingKey}")
+      def handleEvent(messageData: MissingCommission): Future[Boolean] = {
         if (messageData.id.isValidInt) {
-          logger.info(s"Missing commission id. is ${messageData.id}")
+          logger.debug(s"Missing commission id. is ${messageData.id}")
           val commissionDataObject = getCommission(Some(messageData.id))
           commissionDataObject.onComplete({
             case Success(commissionData) => {
-              logger.info(s"${commissionData}")
+              commissionData match {
+                case Some(PlutoCommission(id, collectionId, siteId, created, updated, title, status, description, workingGroup, originalCommissionerName, scheduledCompletion, owner, notes, productionOffice, originalTitle, googleFolder)) => {
+                  logger.debug(s"Found a commission.")
+                  publishData("update", commissionData.get, messageData.id)
+                }
+                case None => {
+                  logger.debug(s"No commission found.")
+                  publishData("delete", null, messageData.id)
+                }
+              }
             }
             case Failure(exception) => {
               logger.info(s"${exception}")
