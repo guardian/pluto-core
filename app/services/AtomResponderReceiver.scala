@@ -149,7 +149,7 @@ class AtomResponderReceiver @Inject()(config:Configuration, dbConfigProvider:Dat
 
     val maybeQueue = Try {
       channel
-        .queueDeclare("missing-commissions", true, false, false, queueArgs.asJava)
+        .queueDeclare("missing-commissions", false, false, false, queueArgs.asJava)
         .getQueue
     }
 
