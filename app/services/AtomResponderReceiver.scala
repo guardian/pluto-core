@@ -143,13 +143,9 @@ class AtomResponderReceiver @Inject()(config:Configuration, dbConfigProvider:Dat
 
     logger.debug(s"Exchange name is $exchangeName")
 
-    val queueArgs = Map[String, Object](
-      "x-message-ttl"-> 60000.asInstanceOf[Object],
-    )
-
     val maybeQueue = Try {
       channel
-        .queueDeclare("missing-commissions", false, false, false, queueArgs.asJava)
+        .queueDeclare("missing-commissions", false, false, false, null)
         .getQueue
     }
 
