@@ -13,7 +13,6 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.jdk.CollectionConverters._
-import java.io.File
 
 class CopyProjectToAssetfolder extends PojoPostrun {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -25,13 +24,7 @@ class CopyProjectToAssetfolder extends PojoPostrun {
   def attributeViewFor(path:Path) = Files.getFileAttributeView(path, classOf[PosixFileAttributeView])
 
   protected def preservePermissionsAndOwnership(from:Path, to:Path) = Try {
-    val fromFile = new File(from.toString)
-    val toFile = new File(to.toString)
-
-    while (!Files.exists(to) && (fromFile.length != toFile.length)) {
-      logger.debug("Waiting for file to exist.")
-    }
-
+    Thread.sleep(20000)
     val sourceView = attributeViewFor(from)
     val destView = attributeViewFor(to)
 
