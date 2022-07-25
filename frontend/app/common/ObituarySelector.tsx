@@ -95,25 +95,45 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
     <Grid container direction="column" alignItems="stretch" spacing={2}>
       <Grid item xs>
         <Box minWidth={"400px"} width={"100%"} display="flex">
-          <Autocomplete
-            style={{ width: "100%" }}
-            freeSolo
-            autoComplete
-            includeInputInList
-            value={toTitleCase(props.value)}
-            //onChange is fired when an option is selected
-            onChange={props.valueDidChange}
-            //onInputChange is fired when the user types
-            onInputChange={inputDidChange}
-            options={obituaryOptions ?? []}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                error={validationFailed}
-                label={props.label}
-              />
-            )}
-          />
+          {inputValue != "" ? (
+            <Autocomplete
+              style={{ width: "100%" }}
+              freeSolo
+              autoComplete
+              includeInputInList
+              value={toTitleCase(props.value)}
+              //onChange is fired when an option is selected
+              onChange={props.valueDidChange}
+              //onInputChange is fired when the user types
+              onInputChange={inputDidChange}
+              options={obituaryOptions ?? []}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  error={validationFailed}
+                  label={props.label}
+                />
+              )}
+            />
+          ) : (
+            <Autocomplete
+              style={{ width: "100%" }}
+              freeSolo
+              autoComplete
+              includeInputInList
+              value={toTitleCase(props.value)}
+              onChange={props.valueDidChange}
+              onInputChange={inputDidChange}
+              options={[]}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  error={validationFailed}
+                  label={props.label}
+                />
+              )}
+            />
+          )}
         </Box>
       </Grid>
       {validationFailed && props.shouldValidate && (

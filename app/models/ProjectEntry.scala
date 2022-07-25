@@ -349,7 +349,7 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
     TableQuery[ProjectEntryRow]
       .filter(_.isObitProject.isDefined)
       .distinctOn(_.isObitProject.get)
-      .filter(_.isObitProject.toLowerCase.startsWith(lowerCasePrefix))
+      .filter(_.isObitProject.toLowerCase like s"%$lowerCasePrefix%")
       .groupBy(_.isObitProject).map(_._1)
       .take(limit)
       .result
