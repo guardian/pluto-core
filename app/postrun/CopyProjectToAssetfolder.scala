@@ -31,6 +31,10 @@ class CopyProjectToAssetfolder extends PojoPostrun {
       Thread.sleep(100)
     }
 
+    if (to.getFileName.toString.endsWith(".cpr")) {
+      Thread.sleep(4000)
+    }
+
     val sourceView = attributeViewFor(from)
     val destView = attributeViewFor(to)
 
