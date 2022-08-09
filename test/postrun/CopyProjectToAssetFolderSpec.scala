@@ -94,7 +94,7 @@ class CopyProjectToAssetFolderSpec extends Specification with Mockito with After
 
       val result = Await.result(
         toTest.postrun("postrun/tests/data/test.cpr",mock[ProjectEntry],mock[ProjectType], mockDataCache, None,None),
-        6.second)
+        1.second)
 
       def attributeViewFor(path:Path) = Files.getFileAttributeView(path, classOf[PosixFileAttributeView])
 
@@ -118,7 +118,7 @@ class CopyProjectToAssetFolderSpec extends Specification with Mockito with After
       //The permissions should be set correctly at this point.
       val resultTwo = Await.result(
         toTestTwo.postrun("postrun/tests/data/test.cpr",mock[ProjectEntry],mock[ProjectType], mockDataCache, None,None),
-        6.second)
+        1.second)
 
       val destViewTwo = attributeViewFor(Paths.get("/tmp/test.cpr").toAbsolutePath)
 
