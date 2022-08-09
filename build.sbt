@@ -61,7 +61,7 @@ libraryDependencies ++= Seq(
   // https://mvnrepository.com/artifact/com.typesafe.play/play-slick
   "com.typesafe.play" %% "play-slick" % "4.0.2",
   "com.typesafe.play" %% "play-slick-evolutions" % "4.0.2",
-  "commons-io" % "commons-io" % "2.6",
+  "commons-io" % "commons-io" % "2.7",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-json-joda
   "com.typesafe.play" %% "play-json-joda" % "2.7.4",
   "commons-codec" % "commons-codec" % "1.13",
@@ -74,7 +74,7 @@ libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
 //authentication
 libraryDependencies ++= Seq(
   "com.unboundid" % "unboundid-ldapsdk" % "5.0.0",
-  "com.nimbusds" % "nimbus-jose-jwt" % "8.21",
+  "com.nimbusds" % "nimbus-jose-jwt" % "8.21.1",
 )
 
 
@@ -111,7 +111,7 @@ libraryDependencies ++= Seq(
 )
 
 //Sentry
-libraryDependencies += "io.sentry" % "sentry-logback" % "1.7.30"
+libraryDependencies += "io.sentry" % "sentry-logback" % "5.5.2"
 
 //Reflections library for scanning classpath
 libraryDependencies += "org.reflections" % "reflections" % "0.9.11"
