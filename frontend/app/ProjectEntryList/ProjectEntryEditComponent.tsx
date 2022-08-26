@@ -228,7 +228,9 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 Open project
               </Button>
             </div>
-            <AssetFolderLink projectId={project.id} />
+            <div style={{ marginRight: "1em" }}>
+              <AssetFolderLink projectId={project.id} />
+            </div>
             <Tooltip title="View backups">
               <IconButton
                 onClick={() => history.push(`/project/${project.id}/backups`)}

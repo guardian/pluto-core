@@ -42,7 +42,7 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [props.projectId]);
 
   const requestNewAssetFolder = async () => {
     loadData();
