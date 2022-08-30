@@ -1,11 +1,12 @@
 package services
 
 import java.util.UUID
-
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import com.fasterxml.jackson.annotation.{JsonSubTypes, JsonTypeInfo}
 import com.google.inject.Inject
+import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.AMQP.Exchange
+
 import javax.inject.Singleton
 import org.slf4j.LoggerFactory
 import play.api.libs.json.Json.JsValueWrapper
@@ -52,6 +53,18 @@ class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSyst
     channel.exchangeDeclare(rmqExchange, "topic")
   }
 
+  /**
+    * builds properties in-line with what storagetier etc. will expect
+    * @return
+    */
+  private def buildProps() = {
+    val builder = new AMQP.BasicProperties.Builder()
+    builder.messageId(UUID.randomUUID().toString) //create a new randomised message ID
+      .contentType("application/json")
+      .contentEncoding("UTF-8")
+      .build()
+  }
+
   override def receive: Receive = {
     /**
      * re-run any messages stuck in the actor's state. This is sent at 5 minute intervals by ClockSingleton and
@@ -63,7 +76,7 @@ class RabbitMqPropagator @Inject()(configuration:Configuration, system:ActorSyst
       ev.itemType match {
         case Some(itemtype) =>
           val route = s"$rmqRouteBase.$itemtype.${operationPath(ev.operation)}"
-          rmqChannel ! ChannelMessage(channel => channel.basicPublish(rmqExchange, route, null, ev.json.getBytes), dropIfNoChannel = false)
+          rmqChannel ! ChannelMessage(channel => channel.basicPublish(rmqExchange, route, buildProps(), ev.json.getBytes), dropIfNoChannel = false)
           sender() ! akka.actor.Status.Success(())
         case None =>
           logger.error("Unknown object type for rabbitmq propagation")
