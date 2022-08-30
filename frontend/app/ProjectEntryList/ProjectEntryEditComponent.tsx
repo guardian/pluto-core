@@ -13,7 +13,13 @@ import {
   TextField,
   Tooltip,
 } from "@material-ui/core";
-import { getProject, getProjectByVsid, updateProject } from "./helpers";
+import {
+  getProject,
+  getProjectByVsid,
+  openProject,
+  updateProject,
+  updateProjectOpenedStatus,
+} from "./helpers";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 
 import ProjectEntryDeliverablesComponent from "./ProjectEntryDeliverablesComponent";
@@ -29,6 +35,7 @@ import { FileCopy, PermMedia } from "@material-ui/icons";
 import UsersAutoComplete from "../common/UsersAutoComplete";
 import { useGuardianStyles } from "~/misc/utils";
 import ObituarySelector from "~/common/ObituarySelector";
+import AssetFolderLink from "~/ProjectEntryList/AssetFolderLink";
 
 declare var deploymentRootPath: string;
 
@@ -193,8 +200,37 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
           />
         </Grid>
-        <Grid item xs={3}>
+        <Grid item xs={5}>
           <Box display="flex" justifyContent="flex-end">
+            <div style={{ marginRight: "1em" }}>
+              <Button
+                className={classes.openProjectButton}
+                variant="contained"
+                color="primary"
+                onClick={async () => {
+                  try {
+                    await openProject(project.id);
+                  } catch (error) {
+                    SystemNotification.open(
+                      SystemNotifcationKind.Error,
+                      `An error occurred when attempting to open the project.`
+                    );
+                    console.error(error);
+                  }
+
+                  try {
+                    await updateProjectOpenedStatus(project.id);
+                  } catch (error) {
+                    console.error(error);
+                  }
+                }}
+              >
+                Open project
+              </Button>
+            </div>
+            <div style={{ marginRight: "1em" }}>
+              <AssetFolderLink projectId={project.id} />
+            </div>
             <Tooltip title="View backups">
               <IconButton
                 onClick={() => history.push(`/project/${project.id}/backups`)}
