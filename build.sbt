@@ -90,7 +90,7 @@ libraryDependencies ++= Seq(
 libraryDependencies += "com.google.guava" % "guava" % "30.1-jre"
 
 val akkaManagementVersion = "1.0.8"
-val akkaVersion = "2.6.14"
+val akkaVersion = "2.6.19"
 //messaging persistence and clustering
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
@@ -104,7 +104,7 @@ libraryDependencies ++= Seq(
 )
 
 //explicit akka upgrades for version fixes
-val akkaHttpVersion = "10.1.12"
+val akkaHttpVersion = "10.1.15"
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
