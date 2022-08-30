@@ -104,7 +104,7 @@ libraryDependencies ++= Seq(
 )
 
 //explicit akka upgrades for version fixes
-val akkaHttpVersion = "10.1.12"
+val akkaHttpVersion = "10.1.15"
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
