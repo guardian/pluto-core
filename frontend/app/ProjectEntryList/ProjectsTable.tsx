@@ -26,7 +26,7 @@ import {
   updateProjectOpenedStatus,
   setProjectStatusToKilled,
   openProject,
-  getProjectTypeData,
+  getSimpleProjectTypeData,
 } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
@@ -142,7 +142,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   useEffect(() => {
     const fetchProjectTypeData = async () => {
       try {
-        const projectTypeData = await getProjectTypeData();
+        const projectTypeData = await getSimpleProjectTypeData();
         console.log(projectTypeData);
         setProjectTypeData(projectTypeData);
       } catch (error) {

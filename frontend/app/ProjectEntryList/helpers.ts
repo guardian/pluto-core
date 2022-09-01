@@ -293,7 +293,7 @@ export const openProject = async (id: number) => {
   window.open(url, "_blank");
 };
 
-export const getProjectTypeData = async () => {
+export const getSimpleProjectTypeData = async () => {
   const response = await Axios.get(`${API}/projecttype`, {
     validateStatus: (s) => s == 200,
   });
