@@ -16,6 +16,7 @@ import {
   TableRow,
   TableSortLabel,
   Box,
+  useTheme,
 } from "@material-ui/core";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
@@ -25,6 +26,7 @@ import {
   updateProjectOpenedStatus,
   setProjectStatusToKilled,
   openProject,
+  getProjectTypeData,
 } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
@@ -39,6 +41,7 @@ const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Group", key: "workingGroupId" },
   { label: "Status", key: "status" },
   { label: "Owner", key: "user" },
+  { label: "" },
   { label: "" },
   { label: "Open" },
 ];
@@ -80,6 +83,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   const classes = useGuardianStyles();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [updatingProject, setUpdatingProject] = useState<number>(0);
+  const [projectTypeData, setProjectTypeData] = useState<any>({});
 
   useEffect(() => {
     console.log("filter terms or search changed, updating...");
@@ -135,6 +139,53 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
 
   const customCellStyle = { width: "200px" };
 
+  useEffect(() => {
+    const fetchProjectTypeData = async () => {
+      try {
+        const projectTypeData = await getProjectTypeData();
+        console.log(projectTypeData);
+        setProjectTypeData(projectTypeData);
+      } catch (error) {
+        console.error("Could get project type data:", error);
+      }
+    };
+
+    fetchProjectTypeData();
+  }, []);
+
+  const imagePath = (imageName: string) => {
+    return "/pluto-core/assets/images/types/" + imageName + ".png";
+  };
+
+  const detectDarkTheme = () => {
+    const isDarkTheme = useTheme().palette.type === "dark";
+    return isDarkTheme;
+  };
+
+  const backgroundColourForType = (typeName: string) => {
+    const darkColours: any = {
+      Cubase: "#51232d",
+      "After Effects": "#1c1c5e",
+      Premiere: "#62314d",
+      Prelude: "#582c1d",
+      Audition: "#215235",
+      Migrated: "#252525",
+    };
+    const lightColours: any = {
+      Cubase: "#ffd8e3",
+      "After Effects": "#d0d0ff",
+      Premiere: "#ffdef1",
+      Prelude: "#ffdccf",
+      Audition: "#d1ffe5",
+      Migrated: "#ffffff",
+    };
+    if (detectDarkTheme()) {
+      return darkColours[typeName];
+    } else {
+      return lightColours[typeName];
+    }
+  };
+
   return (
     <>
       <TableContainer>
@@ -171,9 +222,18 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                 workingGroupId,
                 status,
                 user: projectUser,
+                projectTypeId,
               } = project;
               return (
-                <TableRow key={id} hover>
+                <TableRow
+                  key={id}
+                  hover
+                  style={{
+                    backgroundColor: backgroundColourForType(
+                      projectTypeData[projectTypeId]
+                    ),
+                  }}
+                >
                   <TableCell>{title}</TableCell>
                   <TableCell>
                     <CommissionEntryView entryId={commissionId} />
@@ -188,6 +248,9 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                   </TableCell>
                   <TableCell>{status}</TableCell>
                   <TableCell>{projectUser}</TableCell>
+                  <TableCell>
+                    <img src={imagePath(projectTypeData[projectTypeId])} />
+                  </TableCell>
                   <TableCell>
                     <Box width="100px">
                       <span className="icons">
