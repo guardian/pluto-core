@@ -165,16 +165,16 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   const backgroundColourForType = (typeName: string) => {
     const darkColours: any = {
       Cubase: "#502d2c",
-      "After Effects": "#2a2a57",
-      Premiere: "#613950",
+      "After Effects": "#613950",
+      Premiere: "#2a2a57",
       Prelude: "#5e382c",
       Audition: "#2d533d",
       Migrated: "#414141",
     };
     const lightColours: any = {
       Cubase: "#ffd8e3",
-      "After Effects": "#d0d0ff",
-      Premiere: "#ffdef1",
+      "After Effects": "#ffdef1",
+      Premiere: "#d0d0ff",
       Prelude: "#ffdccf",
       Audition: "#d1ffe5",
       Migrated: "#ffffff",
