@@ -19,6 +19,7 @@ import {
   openProject,
   updateProject,
   updateProjectOpenedStatus,
+  getSimpleProjectTypeData,
 } from "./helpers";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 
@@ -77,6 +78,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     undefined
   );
   const [errorDialog, setErrorDialog] = useState<boolean>(false);
+  const [projectTypeData, setProjectTypeData] = useState<any>({});
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -180,6 +182,24 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     setErrorDialog(false);
     props.history.goBack();
   };
+
+  const imagePath = (imageName: string) => {
+    return "/pluto-core/assets/images/types/" + imageName + ".png";
+  };
+
+  useEffect(() => {
+    const fetchProjectTypeData = async () => {
+      try {
+        const projectTypeData = await getSimpleProjectTypeData();
+        console.log(projectTypeData);
+        setProjectTypeData(projectTypeData);
+      } catch (error) {
+        console.error("Could get project type data:", error);
+      }
+    };
+
+    fetchProjectTypeData();
+  }, []);
 
   return (
     <>
@@ -303,7 +323,10 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                   label="Project type"
                 />
               ) : null}
-
+              <img
+                src={imagePath(projectTypeData[project.projectTypeId])}
+                style={{ marginBottom: "1em" }}
+              />
               <ApplicableRulesSelector
                 deletable={project.deletable}
                 deep_archive={project.deep_archive}

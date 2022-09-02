@@ -292,3 +292,32 @@ export const openProject = async (id: number) => {
   const url = await getOpenUrlForId(id);
   window.open(url, "_blank");
 };
+
+export const getSimpleProjectTypeData = async () => {
+  const response = await Axios.get(`${API}/projecttype`, {
+    validateStatus: (s) => s == 200,
+  });
+
+  switch (response.status) {
+    case 200:
+      const searchStrings = [
+        "Premiere",
+        "Cubase",
+        "After Effects",
+        "Audition",
+        "Prelude",
+        "Migrated",
+      ];
+      let typeData: any = {};
+      for (const type of response.data.result) {
+        for (const currentString of searchStrings) {
+          if (type.name.includes(currentString)) {
+            typeData[type.id] = currentString;
+          }
+        }
+      }
+      return typeData;
+    default:
+      throw `Axios returned an unexpected response code ${response.status}`;
+  }
+};

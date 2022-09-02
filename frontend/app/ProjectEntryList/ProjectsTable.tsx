@@ -16,6 +16,7 @@ import {
   TableRow,
   TableSortLabel,
   Box,
+  useTheme,
 } from "@material-ui/core";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
@@ -25,6 +26,7 @@ import {
   updateProjectOpenedStatus,
   setProjectStatusToKilled,
   openProject,
+  getSimpleProjectTypeData,
 } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
@@ -40,7 +42,9 @@ const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Status", key: "status" },
   { label: "Owner", key: "user" },
   { label: "" },
+  { label: "" },
   { label: "Open" },
+  { label: "" },
 ];
 
 declare var deploymentRootPath: string;
@@ -80,6 +84,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   const classes = useGuardianStyles();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [updatingProject, setUpdatingProject] = useState<number>(0);
+  const [projectTypeData, setProjectTypeData] = useState<any>({});
 
   useEffect(() => {
     console.log("filter terms or search changed, updating...");
@@ -135,6 +140,53 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
 
   const customCellStyle = { width: "200px" };
 
+  useEffect(() => {
+    const fetchProjectTypeData = async () => {
+      try {
+        const projectTypeData = await getSimpleProjectTypeData();
+        console.log(projectTypeData);
+        setProjectTypeData(projectTypeData);
+      } catch (error) {
+        console.error("Could get project type data:", error);
+      }
+    };
+
+    fetchProjectTypeData();
+  }, []);
+
+  const imagePath = (imageName: string) => {
+    return "/pluto-core/assets/images/types/" + imageName + ".png";
+  };
+
+  const detectDarkTheme = () => {
+    const isDarkTheme = useTheme().palette.type === "dark";
+    return isDarkTheme;
+  };
+
+  const backgroundColourForType = (typeName: string) => {
+    const darkColours: any = {
+      Cubase: "#502d2c",
+      "After Effects": "#613950",
+      Premiere: "#2a2a57",
+      Prelude: "#5e382c",
+      Audition: "#2d533d",
+      Migrated: "#414141",
+    };
+    const lightColours: any = {
+      Cubase: "#ffd8e3",
+      "After Effects": "#ffdef1",
+      Premiere: "#d0d0ff",
+      Prelude: "#ffdccf",
+      Audition: "#d1ffe5",
+      Migrated: "#ffffff",
+    };
+    if (detectDarkTheme()) {
+      return darkColours[typeName];
+    } else {
+      return lightColours[typeName];
+    }
+  };
+
   return (
     <>
       <TableContainer>
@@ -171,9 +223,18 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                 workingGroupId,
                 status,
                 user: projectUser,
+                projectTypeId,
               } = project;
               return (
-                <TableRow key={id} hover>
+                <TableRow
+                  key={id}
+                  hover
+                  style={{
+                    backgroundColor: backgroundColourForType(
+                      projectTypeData[projectTypeId]
+                    ),
+                  }}
+                >
                   <TableCell>{title}</TableCell>
                   <TableCell>
                     <CommissionEntryView entryId={commissionId} />
@@ -188,6 +249,9 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                   </TableCell>
                   <TableCell>{status}</TableCell>
                   <TableCell>{projectUser}</TableCell>
+                  <TableCell>
+                    <img src={imagePath(projectTypeData[projectTypeId])} />
+                  </TableCell>
                   <TableCell>
                     <Box width="100px">
                       <span className="icons">
@@ -231,6 +295,8 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                     >
                       Open project
                     </Button>
+                  </TableCell>
+                  <TableCell>
                     <AssetFolderLink projectId={id} />
                   </TableCell>
                 </TableRow>
