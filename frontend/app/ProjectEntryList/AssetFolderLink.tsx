@@ -72,7 +72,7 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
           href={`pluto:openfolder:${assetFolderPath}`}
           variant="contained"
         >
-          Asset folder
+          Asset&nbsp;folder
         </Button>
       )}
     </>
