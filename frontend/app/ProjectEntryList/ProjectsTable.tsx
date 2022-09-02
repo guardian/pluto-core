@@ -44,6 +44,7 @@ const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "" },
   { label: "" },
   { label: "Open" },
+  { label: "" },
 ];
 
 declare var deploymentRootPath: string;
@@ -267,7 +268,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                       </span>
                     </Box>
                   </TableCell>
-                  <TableCell style={{ width: "320px" }}>
+                  <TableCell>
                     <Button
                       className={classes.openProjectButton}
                       variant="contained"
@@ -294,6 +295,8 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                     >
                       Open project
                     </Button>
+                  </TableCell>
+                  <TableCell>
                     <AssetFolderLink projectId={id} />
                   </TableCell>
                 </TableRow>
