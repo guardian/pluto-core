@@ -201,7 +201,7 @@ const CommissionsList: React.FC = () => {
                     hover={true}
                     onClick={() => {
                       window.open(
-                        `${deploymentRootPath}project/${id}`,
+                        `${deploymentRootPath}commission/${id}`,
                         "_blank"
                       );
                     }}
