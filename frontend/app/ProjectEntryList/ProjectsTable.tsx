@@ -53,7 +53,11 @@ const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
   id,
   isAdmin = false,
 }) => (
-  <IconButton href={`${deploymentRootPath}project/${id}`}>
+  <IconButton
+    onClick={(event) =>
+      window.open(`${deploymentRootPath}project/${id}`, "_blank")
+    }
+  >
     <EditIcon />
   </IconButton>
 );

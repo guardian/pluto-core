@@ -30,6 +30,7 @@ const tableHeaderTitles: HeaderTitle<Commission>[] = [
   { label: "Owner", key: "owner" },
 ];
 
+declare var deploymentRootPath: string;
 const pageSizeOptions = [25, 50, 100];
 
 const CommissionsList: React.FC = () => {
@@ -199,7 +200,10 @@ const CommissionsList: React.FC = () => {
                   <TableRow
                     hover={true}
                     onClick={() => {
-                      history.push(`/commission/${id}`);
+                      window.open(
+                        `${deploymentRootPath}commission/${id}`,
+                        "_blank"
+                      );
                     }}
                     key={id}
                   >
