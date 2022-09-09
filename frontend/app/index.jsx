@@ -200,7 +200,7 @@ class App extends React.Component {
           "/refreshLogin?returnTo=" + window.location.pathname
         );
       }
-    }, 5000);
+    }, 3000);
   }
 
   render() {
