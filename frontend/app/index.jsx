@@ -188,6 +188,21 @@ class App extends React.Component {
     this.setState({ currentUsername: "", isLoggedIn: false });
   }
 
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    setTimeout(() => {
+      if (
+        this.state.haveChecked &&
+        !this.state.isLoggedIn &&
+        window.location.pathname !== "/"
+      ) {
+        console.log("Not logged in, redirecting to pluto-start.");
+        window.location.assign(
+          "/refreshLogin?returnTo=" + window.location.pathname
+        );
+      }
+    }, 5000);
+  }
+
   render() {
     return (
       <PlutoThemeProvider>
