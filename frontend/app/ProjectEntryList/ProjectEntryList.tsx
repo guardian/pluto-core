@@ -67,7 +67,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   useEffect(() => {
     const currentURL = new URLSearchParams(search).toString();
 
-    let newFilters = buildFilterTerms(currentURL, user);
+    let newFilters = buildFilterTerms(currentURL);
 
     if (newFilters.title) {
       newFilters.match = "W_CONTAINS";
