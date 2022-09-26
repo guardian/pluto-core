@@ -4,7 +4,7 @@ import { Autocomplete } from "@material-ui/lab";
 import axios from "axios";
 
 interface UsersAutoCompleteProps {
-  valueDidChange: (event: ChangeEvent<{}>, newValue: string | null) => void;
+  valueDidChange: (event: ChangeEvent<{}>, newValue: string[] | null) => void;
   value: string;
   label?: string;
   shouldValidate?: boolean;
@@ -17,6 +17,11 @@ const UsersAutoComplete: React.FC<UsersAutoCompleteProps> = (props) => {
   const [userOptions, setUserOptions] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [validationFailed, setValidationFailed] = useState(false);
+  const [userFieldValue, setUserFieldValue] = useState<string[]>([]);
+
+  useEffect(() => {
+    setUserFieldValue(props.value.split("|"));
+  }, [props.value]);
 
   /**
    * useMemo remembers a value for a given input and will not-recalculate it if the dependency does not change
@@ -64,10 +69,11 @@ const UsersAutoComplete: React.FC<UsersAutoCompleteProps> = (props) => {
 
   return (
     <Autocomplete
+      multiple
       freeSolo
       autoComplete
       includeInputInList
-      value={props.value}
+      value={userFieldValue}
       //onChange is fired when an option is selected
       onChange={props.valueDidChange}
       //onInputChange is fired when the user types

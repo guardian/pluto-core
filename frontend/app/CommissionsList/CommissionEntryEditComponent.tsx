@@ -144,7 +144,7 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
         <Grid item xs={6}>
           <UsersAutoComplete
             valueDidChange={(evt, newValue) =>
-              fieldValueChanged(newValue ?? "", "owner")
+              fieldValueChanged(newValue?.join("|") ?? "", "owner")
             }
             label="Owner"
             value={props.commission.owner}

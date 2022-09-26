@@ -314,7 +314,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
   def getDistinctOwnersList:Future[Try[Seq[String]]] = {
     //work around distinctOn bug - https://github.com/slick/slick/issues/1712
-    dbConfig.db.run(sql"""select distinct(s_user) from "ProjectEntry"""".as[String].asTry)
+    dbConfig.db.run(sql"""select distinct(s_user) from "ProjectEntry" where s_user not like '%|%'""".as[String].asTry)
   }
 
   def distinctOwners = IsAuthenticatedAsync {uid=>{request=>
