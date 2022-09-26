@@ -214,7 +214,7 @@ const CommissionsList: React.FC = () => {
                       {workingGroups.get(workingGroupId) ?? "<Unknown>"}
                     </TableCell>
                     <TableCell>{status}</TableCell>
-                    <TableCell>{owner}</TableCell>
+                    <TableCell>{owner.replace(/\|/g, " ")}</TableCell>
                   </TableRow>
                 )
               )}

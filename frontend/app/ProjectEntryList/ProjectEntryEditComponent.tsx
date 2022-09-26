@@ -131,6 +131,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     setProject({ ...project, [field]: value });
   };
 
+  const fieldChangedValueArray = (
+    value: string[],
+    field: keyof Project
+  ): void => {
+    setProject({ ...project, [field]: value.join("|") });
+  };
+
   const fieldChanged = (
     event: React.ChangeEvent<
       | HTMLTextAreaElement
@@ -295,9 +302,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 label="Owner"
                 shouldValidate={true}
                 value={project.user}
-                valueDidChange={(evt, newValue) =>
-                  fieldChangedValue(newValue, "user")
-                }
+                valueDidChange={(evt, newValue) => {
+                  if (newValue) {
+                    fieldChangedValueArray(newValue, "user");
+                  } else {
+                    fieldChangedValue(newValue, "user");
+                  }
+                }}
               />
               <StatusSelector
                 value={project.status}

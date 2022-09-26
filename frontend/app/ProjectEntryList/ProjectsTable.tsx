@@ -252,7 +252,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                     <WorkingGroupEntryView entryId={workingGroupId} />
                   </TableCell>
                   <TableCell>{status}</TableCell>
-                  <TableCell>{projectUser}</TableCell>
+                  <TableCell>{projectUser.replace(/\|/g, " ")}</TableCell>
                   <TableCell>
                     <img src={imagePath(projectTypeData[projectTypeId])} />
                   </TableCell>

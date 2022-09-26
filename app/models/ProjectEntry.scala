@@ -331,6 +331,7 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
     TableQuery[ProjectEntryRow]
       .distinctOn(_.user)
       .filter(_.user.toLowerCase.startsWith(lowerCasePrefix))
+      .filterNot(_.user.toLowerCase like s"%|%")
       .groupBy(_.user).map(_._1)
       .take(limit)
       .result
