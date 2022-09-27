@@ -65,6 +65,7 @@ const BackupEntry: React.FC<BackupEntryProps> = (props) => {
               </Typography>
               {props.premiereVersion ? (
                 <Typography variant="caption">
+                  {" "}
                   This is a Premiere project at internal version{" "}
                   {props.premiereVersion}
                 </Typography>

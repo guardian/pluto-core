@@ -10,7 +10,7 @@ const SizeFormatter: React.FC<SizeFormatterProps> = (props) => {
 
   const suffixes = ["bytes", "Kb", "Mb", "Gb", "Tb"];
   useEffect(() => {
-    if (props.bytes) {
+    if (props.bytes || props.bytes == 0) {
       try {
         let value =
           typeof props.bytes == "string" ? parseInt(props.bytes) : props.bytes;
@@ -28,6 +28,9 @@ const SizeFormatter: React.FC<SizeFormatterProps> = (props) => {
     }
   }, [props.bytes]);
 
+  if (string == "0.00 bytes") {
+    return <>0 bytes</>;
+  }
   return <>{string}</>;
 };
 
