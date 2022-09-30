@@ -208,6 +208,17 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     fetchProjectTypeData();
   }, []);
 
+  const fixPermissions = async (project: number) => {
+    try {
+      const response = await axios.get(
+        `/api/project/${project}/fixPermissions`
+      );
+      console.log("Attempt to fix permissions got ", response.data);
+    } catch (err) {
+      console.error("Could not fix permissions: ", err);
+    }
+  };
+
   return (
     <>
       {project ? (
@@ -230,6 +241,23 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         <Grid item xs={5}>
           <Box display="flex" justifyContent="flex-end">
             <div style={{ marginRight: "1em" }}>
+              <Button
+                onClick={async () => {
+                  try {
+                    await fixPermissions(project.id);
+                  } catch (error) {
+                    SystemNotification.open(
+                      SystemNotifcationKind.Error,
+                      `An error occurred when attempting to fix permissions.`
+                    );
+                    console.error(error);
+                  }
+                }}
+                variant="contained"
+                style={{ marginRight: "2em" }}
+              >
+                Fix Permissions
+              </Button>
               <Button
                 className={classes.openProjectButton}
                 variant="contained"

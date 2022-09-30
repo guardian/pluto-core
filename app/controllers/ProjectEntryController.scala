@@ -23,9 +23,10 @@ import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile
 import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
-
+import services.RabbitMqSend.FixEvent
+import java.nio.file.Paths
 import java.time.ZonedDateTime
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
@@ -37,6 +38,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         dbConfigProvider: DatabaseConfigProvider,
                                         cacheImpl:SyncCacheApi,
                                         @Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef,
+                                        @Named("rabbitmq-send") rabbitMqSend:ActorRef,
                                         @Named("auditor") auditor:ActorRef,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
@@ -530,4 +532,35 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
           InternalServerError(Json.obj("status"->"db_error", "detail"->"Database error, see logs for details"))
       })
   }
+
+  def assetFolderForProject(projectId:Int) = {
+    implicit val db = dbConfig.db
+    db.run(
+      TableQuery[ProjectMetadataRow]
+        .filter(_.key===ProjectMetadata.ASSET_FOLDER_KEY)
+        .filter(_.projectRef===projectId)
+        .result
+    ).map(results=>{
+      val resultCount = results.length
+      if(resultCount==0){
+        logger.error("No asset folder registered under that project id.")
+      } else if(resultCount>1){
+        logger.warn(s"Multiple asset folders found for project $projectId: $results")
+      } else {
+        results.head.value.getOrElse("")
+      }
+    }).recover({
+      case err: Throwable =>
+        logger.error(s"Could not look up asset folder for project id $projectId: ", err)
+    })
+  }
+
+  def fixPermissions(projectId: Int) = IsAuthenticatedAsync {uid=> request=>
+    val assetFolderString = Await.result(assetFolderForProject(projectId), Duration.Inf).toString
+    val fileName = Paths.get(assetFolderString).getFileName.toString
+    val parentDir = Paths.get(assetFolderString).getParent.toString
+    rabbitMqSend ! FixEvent(true,false,fileName,parentDir)
+    Future(Ok(Json.obj("status"->"ok","detail"->"Fix permissions run.")))
+  }
+
 }
