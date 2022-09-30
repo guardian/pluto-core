@@ -208,6 +208,25 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     fetchProjectTypeData();
   }, []);
 
+  const fixPermissions = async (project: number) => {
+    try {
+      const response = await axios.get(
+        `/api/project/${project}/fixPermissions`
+      );
+      console.log("Attempt to fix permissions got ", response.data);
+      SystemNotification.open(
+        SystemNotifcationKind.Success,
+        `Successfully started attempt at fixing permissions.`
+      );
+    } catch (err) {
+      console.error("Could not fix permissions: ", err);
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        `Failed to start attempt at fixing permissions.`
+      );
+    }
+  };
+
   return (
     <>
       {project ? (
@@ -255,8 +274,28 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 Open project
               </Button>
             </div>
-            <div style={{ marginRight: "1em" }}>
+            <div style={{ marginRight: "2em" }}>
               <AssetFolderLink projectId={project.id} />
+            </div>
+            <div style={{ marginRight: "1em" }}>
+              <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
+                <Button
+                  onClick={async () => {
+                    try {
+                      await fixPermissions(project.id);
+                    } catch (error) {
+                      SystemNotification.open(
+                        SystemNotifcationKind.Error,
+                        `An error occurred when attempting to fix permissions.`
+                      );
+                      console.error(error);
+                    }
+                  }}
+                  variant="contained"
+                >
+                  Fix&nbsp;Permissions
+                </Button>
+              </Tooltip>
             </div>
             <Tooltip title="View backups">
               <IconButton
