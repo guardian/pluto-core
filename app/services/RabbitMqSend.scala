@@ -45,7 +45,7 @@ class RabbitMqSend @Inject()(configuration:Configuration, system:ActorSystem) ex
   override def receive: Receive = {
     case event:FixEvent =>
       logger.info(s"RabbitMqSend is attempting to send a message to the queue.")
-      val messageToSend: String  = s"""[{"is_dir":${event.is_dir},"is_file":${event.is_file},"filename":"${event.filename}","parent_dir":"${event.parent_dir}"}]"""
+      val messageToSend: String  = s"""{"is_dir":${event.is_dir},"is_file":${event.is_file},"filename":"${event.filename}","parent_dir":"${event.parent_dir}"}"""
       rmqChannel ! ChannelMessage(channel => channel.basicPublish(rmqExchange, rmqRouteBase, null, messageToSend.getBytes), dropIfNoChannel = false)
     case other:Any=>
       logger.error(s"RabbitMqSend got an unexpected input: ${other}")
