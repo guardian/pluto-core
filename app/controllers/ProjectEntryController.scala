@@ -483,7 +483,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       case None=>
         TableQuery[ProjectEntryRow].filter(_.isObitProject.nonEmpty)
       case Some(obitName)=>
-        TableQuery[ProjectEntryRow].filter(_.isObitProject===obitName)
+        TableQuery[ProjectEntryRow].filter(_.isObitProject.toLowerCase like s"%$obitName%")
     }
 
     val sortedQuery = (sort, getSortDirection(sortDirection).getOrElse(SortDirection.asc)) match {

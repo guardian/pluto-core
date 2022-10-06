@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
 import {
   Grid,
@@ -12,11 +12,10 @@ import {
   TableRow,
   TableSortLabel,
   Typography,
-  Input,
-  InputLabel,
   FormControl,
   Box,
   Button,
+  TextField,
 } from "@material-ui/core";
 import { useGuardianStyles } from "~/misc/utils";
 import axios from "axios";
@@ -31,6 +30,7 @@ import {
 import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
 import AssetFolderLink from "~/ProjectEntryList/AssetFolderLink";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
+import { Autocomplete } from "@material-ui/lab";
 
 export interface ObituaryProject {
   commissionId: number;
@@ -68,6 +68,7 @@ const ObituariesList = () => {
   const [orderBy, setOrderBy] = useState<keyof Project>("isObitProject");
   const [order, setOrder] = useState<SortDirection>("asc");
   const [name, setName] = useState<string>("");
+  const [obituaryOptions, setObituaryOptions] = useState<null | string[]>(null);
 
   const fetchObituaryProjects = async () => {
     try {
@@ -123,12 +124,43 @@ const ObituariesList = () => {
     setOrderBy(property);
   };
 
-  const entryUpdated = (
-    event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
-  ) => {
-    const newValue = event.target.value;
-    setName(newValue);
+  const searchObits = useMemo(() => {
+    const prefixString =
+      name != "" ? `?prefix=${encodeURIComponent(name)}` : "";
+    return async () => {
+      const response = await axios.get<{ obitNames: string[] }>(
+        `/api/obits/names${prefixString}`
+      );
+      return response.data.obitNames;
+    };
+  }, [name]);
+
+  useEffect(() => {
+    searchObits()
+      .then((obitNames) => {
+        let obitNamesTitleCase: string[] = [];
+        obitNames.map((name) => obitNamesTitleCase.push(toTitleCase(name)));
+        setObituaryOptions(obitNamesTitleCase);
+      })
+      .catch((err) => {
+        console.error(`Could not get obituary names list: ${err}`);
+        if (err.response) console.log(err.response.data);
+      });
+  }, [name, searchObits]);
+
+  const inputDidChange = (evt: ChangeEvent<{}>, newValue: string | null) => {
+    setName(newValue ?? "");
   };
+
+  const valueDidChange = (evt: ChangeEvent<{}>, newValue: string | null) => {
+    setName(newValue ?? "");
+  };
+
+  function toTitleCase(str: string) {
+    return str.replace(/\w\S*/g, function (txt) {
+      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+  }
 
   return (
     <>
@@ -145,8 +177,25 @@ const ObituariesList = () => {
           <Grid item xs={3}>
             <Box display="flex" justifyContent="flex-end">
               <FormControl>
-                <InputLabel>Name Filter</InputLabel>
-                <Input onChange={(event) => entryUpdated(event)} />
+                <Autocomplete
+                  style={{ width: "100%" }}
+                  freeSolo
+                  autoComplete
+                  includeInputInList
+                  value={name}
+                  //onChange is fired when an option is selected
+                  onChange={valueDidChange}
+                  //onInputChange is fired when the user types
+                  onInputChange={inputDidChange}
+                  options={obituaryOptions ?? []}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Name Filter"
+                      style={{ width: "300px" }}
+                    />
+                  )}
+                />
               </FormControl>
             </Box>
           </Grid>
