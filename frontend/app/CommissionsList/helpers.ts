@@ -128,15 +128,18 @@ export const updateCommissionData: (
 export const projectsForCommission: (
   commissionId: number,
   page: number,
-  pageSize: number
+  pageSize: number,
+  filterTerms: ProjectFilterTerms
 ) => Promise<Project[]> = async (
   commissionId: number,
   page: number,
-  pageSize: number
+  pageSize: number,
+  filterTerms: ProjectFilterTerms
 ) => {
+  filterTerms["commissionId"] = commissionId;
   return getProjectsOnPage({
     page: page,
     pageSize: pageSize,
-    filterTerms: { commissionId: commissionId, match: "W_STARTSWITH" },
+    filterTerms: filterTerms,
   });
 };

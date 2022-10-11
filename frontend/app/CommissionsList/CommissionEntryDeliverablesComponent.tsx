@@ -16,6 +16,7 @@ import { useGuardianStyles } from "~/misc/utils";
 
 interface CommissionEntryDeliverablesComponentProps {
   commission: CommissionFullRecord;
+  searchString: string;
 }
 
 const ActionIcons: React.FC<{ id: number }> = (props) => (
@@ -73,18 +74,24 @@ const CommissionEntryDeliverablesComponent: React.FC<CommissionEntryDeliverables
             </TableRow>
           </TableHead>
           <TableBody>
-            {bundles.map((entry, idx) => (
-              <TableRow key={idx}>
-                <TableCell>{entry.name}</TableCell>
-                <TableCell>{entry.pluto_core_project_id}</TableCell>
-                <TableCell>
-                  {moment(entry.created).format("DD/MM/YYYY HH:mm A")}
-                </TableCell>
-                <TableCell>
-                  <ActionIcons id={entry.pluto_core_project_id} />
-                </TableCell>
-              </TableRow>
-            ))}
+            {bundles
+              .filter((bundle) =>
+                bundle.name
+                  .toLowerCase()
+                  .includes(props.searchString.toLowerCase())
+              )
+              .map((entry, idx) => (
+                <TableRow key={idx}>
+                  <TableCell>{entry.name}</TableCell>
+                  <TableCell>{entry.pluto_core_project_id}</TableCell>
+                  <TableCell>
+                    {moment(entry.created).format("DD/MM/YYYY HH:mm A")}
+                  </TableCell>
+                  <TableCell>
+                    <ActionIcons id={entry.pluto_core_project_id} />
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </TableContainer>

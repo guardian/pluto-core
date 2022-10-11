@@ -17,6 +17,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Input,
+  InputLabel,
 } from "@material-ui/core";
 import {
   KeyboardDatePicker,
@@ -44,6 +46,9 @@ import CommissionEntryDeliverablesComponent from "./CommissionEntryDeliverablesC
 import ChipsWithWarning from "./ChipsWithWarning";
 import UsersAutoComplete from "../common/UsersAutoComplete";
 import { useGuardianStyles } from "~/misc/utils";
+import ProjectFilterComponent from "~/filter/ProjectFilterComponent";
+import { filterTermsToQuerystring } from "~/filter/terms";
+import { isLoggedIn } from "~/utils/api";
 declare var deploymentRootPath: string;
 
 interface CommissionEntryFormProps {
@@ -238,6 +243,14 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   const classes = useGuardianStyles();
   const history = useHistory();
   const [errorDialog, setErrorDialog] = useState<boolean>(false);
+  const [filterTerms, setFilterTerms] = useState<ProjectFilterTerms>({
+    commissionId: parseInt(props.match.params.commissionId),
+    match: "W_STARTSWITH",
+  });
+  const [user, setUser] = useState<PlutoUser | null>(null);
+  const [deliverablesSearchString, setDeliverablesSearchString] = useState<
+    string
+  >("");
 
   let commissionId: number;
   try {
@@ -256,7 +269,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
    */
   useEffect(() => {
     const doLoadIn = () => {
-      projectsForCommission(commissionId, 0, 5)
+      projectsForCommission(commissionId, 0, 5, filterTerms)
         .then((projects) => {
           setProjectList(projects);
           setLastError(null);
@@ -293,7 +306,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
     };
 
     doLoadIn();
-  }, []);
+  }, [filterTerms]);
 
   /**
    * load in commission data on launch
@@ -344,6 +357,26 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   const closeDialog = () => {
     setErrorDialog(false);
     props.history.goBack();
+  };
+
+  useEffect(() => {
+    const fetchWhoIsLoggedIn = async () => {
+      try {
+        const user = await isLoggedIn();
+        setUser(user);
+      } catch (error) {
+        console.error("Could not login user:", error);
+      }
+    };
+
+    fetchWhoIsLoggedIn();
+  }, []);
+
+  const stringUpdated = (
+    event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => {
+    const newValue = event.target.value;
+    setDeliverablesSearchString(newValue);
   };
 
   return (
@@ -458,13 +491,44 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
           </Button>
         </Grid>
       </Grid>
+      <Grid container>
+        {filterTerms ? (
+          <Grid item>
+            <ProjectFilterComponent
+              filterTerms={filterTerms}
+              filterDidUpdate={(newFilters: ProjectFilterTerms) => {
+                console.log(
+                  "ProjectFilterComponent filterDidUpdate ",
+                  newFilters
+                );
+                const updatedUrlParams = filterTermsToQuerystring(newFilters);
+
+                if (newFilters.user === "Everyone") {
+                  newFilters.user = undefined;
+                }
+
+                if (newFilters.title) {
+                  newFilters.match = "W_CONTAINS";
+                }
+
+                if (newFilters.user === "Mine" && user) {
+                  newFilters.user = user.uid;
+                }
+                setFilterTerms(newFilters);
+
+                history.push("?" + updatedUrlParams);
+              }}
+            />
+          </Grid>
+        ) : null}
+      </Grid>
       <Paper elevation={3}>
         {projectList ? (
           <ProjectsTable
             className={classes.table}
             pageSizeOptions={[5, 10, 20]}
             updateRequired={(page, pageSize) => {
-              projectsForCommission(commissionId, page, pageSize)
+              projectsForCommission(commissionId, page, pageSize, filterTerms)
                 .then((projects) => setProjectList(projects))
                 .catch((err) =>
                   console.error("Could not update project list: ", err)
@@ -474,12 +538,28 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
           />
         ) : null}
       </Paper>
-      <Typography variant="h4" style={{ marginTop: "20px" }}>
-        Deliverables
-      </Typography>
+      <Grid
+        container
+        direction="row"
+        justifyContent="space-between"
+        style={{ marginTop: "20px", marginBottom: "10px" }}
+      >
+        <Grid item>
+          <Typography variant="h4">Deliverables</Typography>
+        </Grid>
+        <Grid item>
+          <FormControl>
+            <InputLabel>Name Filter</InputLabel>
+            <Input onChange={(event) => stringUpdated(event)} />
+          </FormControl>
+        </Grid>
+      </Grid>
       <Paper elevation={3}>
         {commissionData ? (
-          <CommissionEntryDeliverablesComponent commission={commissionData} />
+          <CommissionEntryDeliverablesComponent
+            commission={commissionData}
+            searchString={deliverablesSearchString}
+          />
         ) : null}
       </Paper>
       <Dialog
