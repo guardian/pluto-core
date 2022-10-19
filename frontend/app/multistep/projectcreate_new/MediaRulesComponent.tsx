@@ -29,7 +29,7 @@ const MediaRulesComponent: React.FC<MediaRulesComponentProps> = (props) => {
   const classes = useGuardianStyles();
 
   return (
-    <div>
+    <div className={classes.common_box_size}>
       <Typography variant="h3">Media Management Rules</Typography>
       <Typography>
         We need to know which archive management rules to apply to this

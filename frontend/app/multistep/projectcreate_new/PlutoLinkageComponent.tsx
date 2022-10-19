@@ -45,7 +45,7 @@ const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
   }, [knownWorkingGroups, props.workingGroupId]);
 
   return (
-    <div>
+    <div className={classes.common_box_size}>
       <Typography variant="h3">Select commission</Typography>
       <Typography>
         We need to know which piece of work this project file relates to. Please

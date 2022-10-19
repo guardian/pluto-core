@@ -101,7 +101,7 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
   }, [knownStorages]);
 
   return (
-    <div>
+    <div className={classes.common_box_size}>
       <Typography variant="h3">Name your project</Typography>
       <Typography>
         Now, we need a descriptive name for your new project
