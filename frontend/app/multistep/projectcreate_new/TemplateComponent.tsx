@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@material-ui/core";
 import { projectCreateStyles } from "./CommonStyles";
+import { useGuardianStyles } from "~/misc/utils";
 
 interface TemplateComponentProps {
   value?: number;
@@ -24,6 +25,7 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
   const [loading, setLoading] = useState(true);
 
   const classes = projectCreateStyles();
+  const guardianClasses = useGuardianStyles();
 
   //load in project type data at mount
   useEffect(() => {
@@ -105,7 +107,7 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
   }, [knownProjectTemplates]);
 
   return (
-    <div>
+    <div className={guardianClasses.common_box_size}>
       <Typography variant={"h3"}>Select project template</Typography>
       <Typography>
         The first piece of information we need is a template to base your new

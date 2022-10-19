@@ -18,7 +18,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
 
   const userContext = useContext(UserContext);
   return (
-    <>
+    <div className={classes.common_box_size}>
       <Typography variant="h2">Create a new commission</Typography>
       <Typography>
         We will create a new commission with the information below.
@@ -86,7 +86,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
           </tr>
         </tbody>
       </table>
-    </>
+    </div>
   );
 };
 

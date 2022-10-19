@@ -21,7 +21,7 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
   const classes = useGuardianStyles();
 
   return (
-    <div style={{ maxWidth: "800px" }}>
+    <div className={classes.common_box_size}>
       <MuiPickersUtilsProvider utils={DateFnsUtils}>
         <Typography variant="h3">Name your commission</Typography>
         <Typography>

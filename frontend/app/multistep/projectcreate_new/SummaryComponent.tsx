@@ -28,7 +28,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
   const userContext = useContext(UserContext);
 
   return (
-    <div>
+    <div className={classes.common_box_size}>
       <Typography variant="h2">Create new edit project</Typography>
       <Typography>
         We will create a new project with the information below.

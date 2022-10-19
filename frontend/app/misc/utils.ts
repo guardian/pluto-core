@@ -397,4 +397,8 @@ export const useGuardianStyles = makeStyles((theme) => ({
   title_case_text: {
     textTransform: "capitalize",
   },
+  common_box_size: {
+    width: "1000px",
+    height: "570px",
+  },
 }));
