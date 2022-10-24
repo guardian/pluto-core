@@ -19,6 +19,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   const [pageSize, setPageSize] = useState<number>(25);
   const [page, setPage] = useState<number>(1);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectCount, setProjectCount] = useState<number>(0);
 
   const [filterTerms, setFilterTerms] = useState<
     ProjectFilterTerms | undefined
@@ -36,13 +37,14 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
       return;
     }
 
-    const projects = await getProjectsOnPage({
+    const [projects, count] = await getProjectsOnPage({
       page,
       pageSize,
       filterTerms: filterTerms,
     });
 
     setProjects(projects);
+    setProjectCount(count);
   };
 
   useEffect(() => {
@@ -138,6 +140,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
             setPage(page);
           }}
           projects={projects}
+          projectCount={projectCount}
         />
       </Paper>
     </>

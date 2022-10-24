@@ -248,6 +248,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
     match: "W_STARTSWITH",
   });
   const [user, setUser] = useState<PlutoUser | null>(null);
+  const [projectCount, setProjectCount] = useState<number>(0);
   const [deliverablesSearchString, setDeliverablesSearchString] = useState<
     string
   >("");
@@ -270,8 +271,9 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   useEffect(() => {
     const doLoadIn = () => {
       projectsForCommission(commissionId, 0, 5, filterTerms)
-        .then((projects) => {
+        .then(([projects, count]) => {
           setProjectList(projects);
+          setProjectCount(count);
           setLastError(null);
         })
         .catch((err) => {
@@ -529,12 +531,16 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
             pageSizeOptions={[5, 10, 20]}
             updateRequired={(page, pageSize) => {
               projectsForCommission(commissionId, page, pageSize, filterTerms)
-                .then((projects) => setProjectList(projects))
+                .then(([projects, count]) => {
+                  setProjectList(projects);
+                  setProjectCount(count);
+                })
                 .catch((err) =>
                   console.error("Could not update project list: ", err)
                 );
             }}
             projects={projectList}
+            projectCount={projectCount}
           />
         ) : null}
       </Paper>

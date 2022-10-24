@@ -355,3 +355,8 @@ interface FileEntryFilterTerms {
   match: string;
   storageId?: number;
 }
+
+interface PlutoApiResponseWithCount<T> {
+  result: T;
+  count: number;
+}

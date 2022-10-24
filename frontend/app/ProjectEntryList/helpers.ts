@@ -21,24 +21,25 @@ export const getProjectsOnPage = async ({
   page = 0,
   pageSize = 25,
   filterTerms,
-}: ProjectsOnPage): Promise<Project[]> => {
+}: ProjectsOnPage): Promise<[Project[], number]> => {
   try {
     const {
       status,
       data: { result },
+      data: { count },
     } = filterTerms
-      ? await Axios.put<PlutoApiResponse<Project[]>>(
+      ? await Axios.put<PlutoApiResponseWithCount<Project[]>>(
           `${API_PROJECTS_FILTER}?startAt=${
             page * pageSize
           }&length=${pageSize}`,
           filterTerms
         )
-      : await Axios.get<PlutoApiResponse<Project[]>>(
+      : await Axios.get<PlutoApiResponseWithCount<Project[]>>(
           `${API_PROJECTS}?startAt=${page * pageSize}&length=${pageSize}`
         );
 
     if (status === 200) {
-      return result;
+      return [result, count];
     }
 
     throw new Error(`Could not retrieve projects. ${status}`);

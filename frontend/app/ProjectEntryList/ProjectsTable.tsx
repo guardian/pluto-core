@@ -73,6 +73,7 @@ interface ProjectsTableProps {
   projects: Project[];
   //is the user an admin
   isAdmin?: boolean;
+  projectCount: number;
 }
 
 const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
@@ -313,16 +314,11 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
       <TablePagination
         rowsPerPageOptions={props.pageSizeOptions}
         component="div"
-        // FIXME: count = -1 causes the pagination component to be able to
-        // walk past the last page, which displays zero rows. Need an endpoint
-        // which returns the total, or is returned along the commissions data.
-        count={-1}
+        count={props.projectCount}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        // FIXME: remove when count is correct
-        labelDisplayedRows={({ from, to }) => `${from}-${to}`}
       />
       <Dialog
         open={openDialog}
