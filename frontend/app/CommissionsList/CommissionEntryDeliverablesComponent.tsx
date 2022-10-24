@@ -69,6 +69,7 @@ const CommissionEntryDeliverablesComponent: React.FC<CommissionEntryDeliverables
             <TableRow>
               <TableCell>Name</TableCell>
               <TableCell>Project Id.</TableCell>
+              <TableCell>Items</TableCell>
               <TableCell>Created</TableCell>
               <TableCell>Open</TableCell>
             </TableRow>
@@ -84,6 +85,7 @@ const CommissionEntryDeliverablesComponent: React.FC<CommissionEntryDeliverables
                 <TableRow key={idx}>
                   <TableCell>{entry.name}</TableCell>
                   <TableCell>{entry.pluto_core_project_id}</TableCell>
+                  <TableCell>{entry.total_assets}</TableCell>
                   <TableCell>
                     {moment(entry.created).format("DD/MM/YYYY HH:mm A")}
                   </TableCell>

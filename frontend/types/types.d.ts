@@ -162,6 +162,7 @@ interface DeliverablesCount {
 }
 
 interface DeliverableBundle {
+  total_assets: number;
   project_id: string;
   pluto_core_project_id: number;
   commission_id: number;
