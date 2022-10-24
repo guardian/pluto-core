@@ -130,7 +130,7 @@ export const projectsForCommission: (
   page: number,
   pageSize: number,
   filterTerms: ProjectFilterTerms
-) => Promise<Project[]> = async (
+) => Promise<[Project[], number]> = async (
   commissionId: number,
   page: number,
   pageSize: number,
