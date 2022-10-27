@@ -563,7 +563,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     Future(Ok(Json.obj("status"->"ok","detail"->"Fix permissions run.")))
   }
 
-  def deleteData(projectId: Int) = IsAuthenticatedAsync {uid=> request=>
+  def deleteData(projectId: Int) = IsAdminAsync {uid=> request=>
     logger.info(s"Got a delete data request for project ${projectId}.")
     logger.info(s"Pluto value is: ${request.body.asJson.get("pluto")}")
     if (request.body.asJson.get("pluto").toString() == "true") {
