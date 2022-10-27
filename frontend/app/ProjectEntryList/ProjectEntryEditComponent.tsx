@@ -37,6 +37,7 @@ import UsersAutoComplete from "../common/UsersAutoComplete";
 import { useGuardianStyles } from "~/misc/utils";
 import ObituarySelector from "~/common/ObituarySelector";
 import AssetFolderLink from "~/ProjectEntryList/AssetFolderLink";
+import { isLoggedIn } from "~/utils/api";
 
 declare var deploymentRootPath: string;
 
@@ -79,6 +80,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   );
   const [errorDialog, setErrorDialog] = useState<boolean>(false);
   const [projectTypeData, setProjectTypeData] = useState<any>({});
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -121,6 +123,17 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
       loadProject();
     }
+
+    const fetchWhoIsLoggedIn = async () => {
+      try {
+        const loggedIn = await isLoggedIn();
+        setIsAdmin(loggedIn.isAdmin);
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+
+    fetchWhoIsLoggedIn();
 
     return () => {
       isMounted = false;
@@ -248,6 +261,17 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         </Grid>
         <Grid item xs={5}>
           <Box display="flex" justifyContent="flex-end">
+            {isAdmin ? (
+              <div style={{ marginRight: "1em" }}>
+                <Button
+                  href={"/pluto-core/project/" + project.id + "/deletedata"}
+                  color="secondary"
+                  variant="contained"
+                >
+                  Delete&nbsp;Data
+                </Button>
+              </div>
+            ) : null}
             <div style={{ marginRight: "1em" }}>
               <Button
                 className={classes.openProjectButton}

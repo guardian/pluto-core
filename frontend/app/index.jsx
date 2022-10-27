@@ -55,6 +55,7 @@ import ValidationJobResults from "./ProjectRecordValidation/ValidationJobResults
 import ProjectBackups from "./ProjectEntryList/ProjectBackups";
 import PremiereVersionChange from "./PremiereVersionChange/PremiereVersionChange";
 import VersionTranslationsList from "./PremiereVersionTranslation/VersionTranslationsList";
+import ProjectDeleteDataComponent from "./ProjectEntryList/ProjectDeleteDataComponent";
 
 library.add(faSearch);
 
@@ -276,6 +277,10 @@ class App extends React.Component {
                 <Route
                   path="/project/:itemid/delete"
                   component={ProjectDeleteComponent}
+                />
+                <Route
+                  path="/project/:itemid/deletedata"
+                  component={ProjectDeleteDataComponent}
                 />
                 <Route
                   path="/project/:itemid"

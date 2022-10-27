@@ -322,3 +322,33 @@ export const getSimpleProjectTypeData = async () => {
       throw `Axios returned an unexpected response code ${response.status}`;
   }
 };
+
+export const startDelete = async (
+  id: number,
+  pluto: boolean,
+  deliverables: boolean,
+  sAN: boolean,
+  matrix: boolean,
+  s3: boolean
+): Promise<void> => {
+  try {
+    const { status } = await Axios.put<PlutoApiResponse<void>>(
+      `${API_PROJECTS}/${id}/deleteData`,
+      `{"pluto":${pluto},"deliverables":${deliverables},"SAN":${sAN},"matrix":${matrix},"S3":${s3}}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (status !== 200) {
+      throw new Error(
+        `Could not start deletion of data for project ${id}: server said ${status}`
+      );
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
