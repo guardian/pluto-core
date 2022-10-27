@@ -84,6 +84,11 @@ object ProjectMetadata extends ((Option[Int], Int, String, Option[String])=>Proj
       TableQuery[ProjectMetadataRow].filter(_.projectRef===projectRef).result.asTry
     )
 
+  def deleteAllMetadataFor(projectRef:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Int]] =
+    db.run(
+      TableQuery[ProjectMetadataRow].filter(_.projectRef===projectRef).delete.asTry
+    )
+
   /**
     * Set (by upsert) entries in bulk
     * @param projectRef project ID to set entries for

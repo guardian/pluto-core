@@ -568,6 +568,13 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     logger.info(s"Pluto value is: ${request.body.asJson.get("pluto")}")
     if (request.body.asJson.get("pluto").toString() == "true") {
       implicit val db = dbConfig.db
+      ProjectMetadata.deleteAllMetadataFor(projectId).map({
+        case Success(rows)=>
+          logger.info(s"Attempt at removing project metadata worked.")
+        case Failure(err)=>
+          logger.error(s"Could not delete metadata", err)
+          throw err
+      })
       ProjectEntry.entryForId(projectId).map({
         case Success(projectEntry:ProjectEntry)=>
           projectEntry.removeFromDatabase.map({
