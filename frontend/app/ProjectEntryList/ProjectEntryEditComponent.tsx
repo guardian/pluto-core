@@ -261,17 +261,6 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         </Grid>
         <Grid item xs={5}>
           <Box display="flex" justifyContent="flex-end">
-            {isAdmin ? (
-              <div style={{ marginRight: "1em" }}>
-                <Button
-                  href={"/pluto-core/project/" + project.id + "/deletedata"}
-                  color="secondary"
-                  variant="contained"
-                >
-                  Delete&nbsp;Data
-                </Button>
-              </div>
-            ) : null}
             <div style={{ marginRight: "1em" }}>
               <Button
                 className={classes.openProjectButton}
@@ -301,7 +290,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             <div style={{ marginRight: "2em" }}>
               <AssetFolderLink projectId={project.id} />
             </div>
-            <div style={{ marginRight: "1em" }}>
+            <div style={{ marginRight: "2em" }}>
               <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
                 <Button
                   onClick={async () => {
@@ -321,6 +310,17 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 </Button>
               </Tooltip>
             </div>
+            {isAdmin ? (
+              <div style={{ marginRight: "1em" }}>
+                <Button
+                  href={"/pluto-core/project/" + project.id + "/deletedata"}
+                  color="secondary"
+                  variant="contained"
+                >
+                  Delete&nbsp;Data
+                </Button>
+              </div>
+            ) : null}
             <Tooltip title="View backups">
               <IconButton
                 onClick={() => history.push(`/project/${project.id}/backups`)}

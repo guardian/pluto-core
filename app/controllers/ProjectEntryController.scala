@@ -573,7 +573,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
           logger.info(s"Attempt at removing project metadata worked.")
         case Failure(err)=>
           logger.error(s"Could not delete metadata", err)
-          throw err
       })
       ProjectEntry.entryForId(projectId).map({
         case Success(projectEntry:ProjectEntry)=>
