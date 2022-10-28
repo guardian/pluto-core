@@ -55,6 +55,7 @@ PUT     /api/project/:id                    @controllers.ProjectEntryController.
 #DELETE  /api/project/:id                   @controllers.ProjectEntryController.delete(id: Int)
 PUT     /api/project/:id/status             @controllers.ProjectEntryController.updateStatus(id:Int)
 GET     /api/project/:id/fixPermissions     @controllers.ProjectEntryController.fixPermissions(id:Int)
+PUT     /api/project/:id/deleteData         @controllers.ProjectEntryController.deleteData(id: Int)
 
 
 GET     /api/valid-users                    @controllers.ProjectEntryController.queryUsersForAutocomplete(prefix:String ?= "", limit:Option[Int])

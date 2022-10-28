@@ -563,4 +563,35 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     Future(Ok(Json.obj("status"->"ok","detail"->"Fix permissions run.")))
   }
 
+  def deleteData(projectId: Int) = IsAdminAsync {uid=> request=>
+    logger.info(s"Got a delete data request for project ${projectId}.")
+    logger.info(s"Pluto value is: ${request.body.asJson.get("pluto")}")
+    if (request.body.asJson.get("pluto").toString() == "true") {
+      implicit val db = dbConfig.db
+      ProjectMetadata.deleteAllMetadataFor(projectId).map({
+        case Success(rows)=>
+          logger.info(s"Attempt at removing project metadata worked.")
+        case Failure(err)=>
+          logger.error(s"Could not delete metadata", err)
+      })
+      ProjectEntry.entryForId(projectId).map({
+        case Success(projectEntry:ProjectEntry)=>
+          projectEntry.removeFromDatabase.map({
+            case Success(_) =>
+              logger.info(s"Attempt at removing project record worked.")
+            case Failure(error) =>
+              logger.error(s"Attempt at removing project record failed with error: ${error}")
+          })
+        case Failure(error)=>
+          logger.error(s"Could not look up project entry for ${projectId}: ", error)
+          Left(error.toString)
+      })
+    }
+    logger.info(s"Deliverables value is: ${request.body.asJson.get("deliverables")}")
+    logger.info(s"SAN value is: ${request.body.asJson.get("SAN")}")
+    logger.info(s"Matrix value is: ${request.body.asJson.get("matrix")}")
+    logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
+    Future(Ok(Json.obj("status"->"ok","detail"->"Delete data run.")))
+  }
+
 }
