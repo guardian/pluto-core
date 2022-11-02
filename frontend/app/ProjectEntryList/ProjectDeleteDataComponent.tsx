@@ -46,6 +46,7 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
   const [errorDialog, setErrorDialog] = useState<boolean>(false);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [pluto, setPluto] = useState<boolean>(true);
+  const [file, setFile] = useState<boolean>(true);
   const [deliverables, setDeliverables] = useState<boolean>(false);
   const [sAN, setSAN] = useState<boolean>(false);
   const [matrix, setMatrix] = useState<boolean>(false);
@@ -103,7 +104,15 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
 
     if (project.title) {
       try {
-        await startDelete(project.id, pluto, deliverables, sAN, matrix, s3);
+        await startDelete(
+          project.id,
+          pluto,
+          file,
+          deliverables,
+          sAN,
+          matrix,
+          s3
+        );
 
         SystemNotification.open(
           SystemNotifcationKind.Success,
@@ -141,6 +150,14 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                     checked={pluto}
                     onChange={() => setPluto(!pluto)}
                     name="pluto"
+                  />
+                </Grid>
+                <Grid item>
+                  Project File
+                  <Checkbox
+                    checked={file}
+                    onChange={() => setFile(!file)}
+                    name="file"
                   />
                 </Grid>
                 {/*
