@@ -588,12 +588,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                     val resultCount = results.length
                     if(resultCount==0){
                       logger.info(s"No asset folder registered for that project id.")
-                    } else if(resultCount>1){
-                      logger.warn(s"Multiple asset folders found for project $projectId: $results")
                     } else {
-                      logger.info(s"Found the asset folder at: ${results.head.toString} Attempting to delete any Cubase files present." )
+                      logger.info(s"Found the asset folder at: ${results.head.value.get} Attempting to delete any Cubase files present." )
                       for {
-                        files <- Option(new File(results.head.toString).listFiles)
+                        files <- Option(new File(results.head.value.get).listFiles)
                         file <- files if file.getName.endsWith(".cpr")
                       } file.delete()
                     }
