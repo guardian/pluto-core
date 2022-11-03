@@ -326,6 +326,7 @@ export const getSimpleProjectTypeData = async () => {
 export const startDelete = async (
   id: number,
   pluto: boolean,
+  file: boolean,
   deliverables: boolean,
   sAN: boolean,
   matrix: boolean,
@@ -334,7 +335,7 @@ export const startDelete = async (
   try {
     const { status } = await Axios.put<PlutoApiResponse<void>>(
       `${API_PROJECTS}/${id}/deleteData`,
-      `{"pluto":${pluto},"deliverables":${deliverables},"SAN":${sAN},"matrix":${matrix},"S3":${s3}}`,
+      `{"pluto":${pluto},"file":${file},"deliverables":${deliverables},"SAN":${sAN},"matrix":${matrix},"S3":${s3}}`,
       {
         headers: {
           "Content-Type": "application/json",

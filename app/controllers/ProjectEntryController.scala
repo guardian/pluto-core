@@ -12,6 +12,7 @@ import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
+import play.api.inject.Injector
 import play.api.libs.json.{JsError, JsResult, JsValue, Json, Writes}
 import play.api.mvc._
 import services.RabbitMqPropagator.ChangeEvent
@@ -31,6 +32,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import java.io.File
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
@@ -41,6 +43,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         @Named("rabbitmq-send") rabbitMqSend:ActorRef,
                                         @Named("auditor") auditor:ActorRef,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
+                                       (implicit fileEntryDAO:FileEntryDAO, injector: Injector)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
     with UpdateTitleRequestSerializer with FileEntrySerializer
@@ -563,35 +566,106 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     Future(Ok(Json.obj("status"->"ok","detail"->"Fix permissions run.")))
   }
 
-  def deleteData(projectId: Int) = IsAdminAsync {uid=> request=>
-    logger.info(s"Got a delete data request for project ${projectId}.")
-    logger.info(s"Pluto value is: ${request.body.asJson.get("pluto")}")
-    if (request.body.asJson.get("pluto").toString() == "true") {
+  def deleteDataRunner(projectId: Int, pluto: Boolean, file: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean): Unit = {
+    def deleteFileJob() = Future {
+      if (file) {
+        implicit val db = dbConfig.db
+        ProjectEntry.entryForId(projectId).map({
+          case Success(projectEntry: ProjectEntry) =>
+            projectEntry.associatedFiles(false).map(fileList => {
+              fileList.map(entry => {
+                logger.info(s"Attempting to delete the file at: ${entry.filepath}")
+                fileEntryDAO
+                  .deleteFromDisk(entry)
+                  .andThen(_ => fileEntryDAO.deleteRecord(entry))
+                if(entry.filepath.endsWith(".cpr")) {
+                  db.run(
+                    TableQuery[ProjectMetadataRow]
+                      .filter(_.key===ProjectMetadata.ASSET_FOLDER_KEY)
+                      .filter(_.projectRef===projectId)
+                      .result
+                  ).map(results=>{
+                    val resultCount = results.length
+                    if(resultCount==0){
+                      logger.info(s"No asset folder registered for that project id.")
+                    } else {
+                      logger.info(s"Found the asset folder at: ${results.head.value.get} Attempting to delete any Cubase files present." )
+                      for {
+                        files <- Option(new File(results.head.value.get).listFiles)
+                        file <- files if file.getName.endsWith(".cpr")
+                      } file.delete()
+                    }
+                  }).recover({
+                    case err: Throwable =>
+                      logger.error(s"Could not look up asset folder for project id $projectId: ", err)
+                  })
+                }
+                })
+              }
+            )
+          case Failure(error) =>
+            logger.error(s"Could not look up project entry for ${projectId}: ", error)
+        })
+      }
+    }
+
+    def job2() = Future {
+
+    }
+
+    def job3() = Future {
+
+    }
+
+    def job4() = Future {
+
+    }
+
+    def job5() = Future {
+
+    }
+
+    val f = for {
+      f1 <- deleteFileJob()
+      f2 <- job2()
+      f3 <- job3()
+      f4 <- job4()
+      f5 <- job5()
+    } yield List(f1, f2, f3, f4, f5)
+    if (pluto) {
+      Thread.sleep(800)
       implicit val db = dbConfig.db
       ProjectMetadata.deleteAllMetadataFor(projectId).map({
-        case Success(rows)=>
+        case Success(rows) =>
           logger.info(s"Attempt at removing project metadata worked.")
-        case Failure(err)=>
+        case Failure(err) =>
           logger.error(s"Could not delete metadata", err)
       })
       ProjectEntry.entryForId(projectId).map({
-        case Success(projectEntry:ProjectEntry)=>
+        case Success(projectEntry: ProjectEntry) =>
           projectEntry.removeFromDatabase.map({
             case Success(_) =>
               logger.info(s"Attempt at removing project record worked.")
             case Failure(error) =>
               logger.error(s"Attempt at removing project record failed with error: ${error}")
           })
-        case Failure(error)=>
+        case Failure(error) =>
           logger.error(s"Could not look up project entry for ${projectId}: ", error)
           Left(error.toString)
       })
     }
+  }
+
+  def deleteData(projectId: Int) = IsAdmin { uid =>
+    request =>
+    logger.info(s"Got a delete data request for project ${projectId}.")
+    logger.info(s"Pluto value is: ${request.body.asJson.get("pluto")}")
+    logger.info(s"File value is: ${request.body.asJson.get("file")}")
     logger.info(s"Deliverables value is: ${request.body.asJson.get("deliverables")}")
     logger.info(s"SAN value is: ${request.body.asJson.get("SAN")}")
     logger.info(s"Matrix value is: ${request.body.asJson.get("matrix")}")
     logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
-    Future(Ok(Json.obj("status"->"ok","detail"->"Delete data run.")))
+    deleteDataRunner(projectId, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean)
+    Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
   }
-
 }
