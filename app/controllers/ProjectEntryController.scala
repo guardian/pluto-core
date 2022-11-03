@@ -32,6 +32,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import java.io.File
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
@@ -577,6 +578,30 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                 fileEntryDAO
                   .deleteFromDisk(entry)
                   .andThen(_ => fileEntryDAO.deleteRecord(entry))
+                if(entry.filepath.endsWith(".cpr")) {
+                  db.run(
+                    TableQuery[ProjectMetadataRow]
+                      .filter(_.key===ProjectMetadata.ASSET_FOLDER_KEY)
+                      .filter(_.projectRef===projectId)
+                      .result
+                  ).map(results=>{
+                    val resultCount = results.length
+                    if(resultCount==0){
+                      logger.info(s"No asset folder registered for that project id.")
+                    } else if(resultCount>1){
+                      logger.warn(s"Multiple asset folders found for project $projectId: $results")
+                    } else {
+                      logger.info(s"Found the asset folder at: ${results.head.toString} Attempting to delete any Cubase files present." )
+                      for {
+                        files <- Option(new File(results.head.toString).listFiles)
+                        file <- files if file.getName.endsWith(".cpr")
+                      } file.delete()
+                    }
+                  }).recover({
+                    case err: Throwable =>
+                      logger.error(s"Could not look up asset folder for project id $projectId: ", err)
+                  })
+                }
                 })
               }
             )
