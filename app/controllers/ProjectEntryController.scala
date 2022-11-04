@@ -566,7 +566,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     Future(Ok(Json.obj("status"->"ok","detail"->"Fix permissions run.")))
   }
 
-  def deleteDataRunner(projectId: Int, pluto: Boolean, file: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean): Unit = {
+  def deleteDataRunner(projectId: Int, pluto: Boolean, file: Boolean, backups: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean): Unit = {
     def deleteFileJob() = Future {
       if (file) {
         implicit val db = dbConfig.db
@@ -609,8 +609,25 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       }
     }
 
-    def job2() = Future {
-
+    def deleteBackupsJob() = Future {
+      if (backups) {
+        implicit val db = dbConfig.db
+        ProjectEntry.entryForId(projectId).map({
+          case Success(projectEntry: ProjectEntry) =>
+            logger.info(s"About to attempt to delete any backups present for project ${projectId}")
+            projectEntry.associatedFiles(true).map(fileList => {
+              fileList.map(entry => {
+                logger.info(s"Attempting to delete the file at: ${entry.filepath}")
+                fileEntryDAO
+                  .deleteFromDisk(entry)
+                  .andThen(_ => fileEntryDAO.deleteRecord(entry))
+              })
+            }
+            )
+          case Failure(error) =>
+            logger.error(s"Could not look up project entry for ${projectId}: ", error)
+        })
+      }
     }
 
     def job3() = Future {
@@ -627,7 +644,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
     val f = for {
       f1 <- deleteFileJob()
-      f2 <- job2()
+      f2 <- deleteBackupsJob()
       f3 <- job3()
       f4 <- job4()
       f5 <- job5()
@@ -661,11 +678,12 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     logger.info(s"Got a delete data request for project ${projectId}.")
     logger.info(s"Pluto value is: ${request.body.asJson.get("pluto")}")
     logger.info(s"File value is: ${request.body.asJson.get("file")}")
+    logger.info(s"Backups value is: ${request.body.asJson.get("backups")}")
     logger.info(s"Deliverables value is: ${request.body.asJson.get("deliverables")}")
     logger.info(s"SAN value is: ${request.body.asJson.get("SAN")}")
     logger.info(s"Matrix value is: ${request.body.asJson.get("matrix")}")
     logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
-    deleteDataRunner(projectId, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean)
+    deleteDataRunner(projectId, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean)
     Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
   }
 }
