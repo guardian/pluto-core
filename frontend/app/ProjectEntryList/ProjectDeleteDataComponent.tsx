@@ -173,7 +173,7 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                   />
                 </Grid>
                 <Grid item>
-                  PTR File
+                  Pointer File
                   <Checkbox
                     checked={pTR}
                     onChange={() => setPTR(!pTR)}
