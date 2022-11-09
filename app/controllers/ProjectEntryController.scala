@@ -566,7 +566,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     Future(Ok(Json.obj("status"->"ok","detail"->"Fix permissions run.")))
   }
 
-  def deleteDataRunner(projectId: Int, pluto: Boolean, file: Boolean, backups: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean): Unit = {
+  def deleteDataRunner(projectId: Int, pluto: Boolean, file: Boolean, backups: Boolean, pTR: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean): Unit = {
     def deleteFileJob() = Future {
       if (file) {
         implicit val db = dbConfig.db
@@ -635,8 +635,44 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       }
     }
 
-    def job3() = Future {
+    val xtensionXtractor="^(.*)\\.([^.]+)$".r
 
+    def removeProjectFileExtension(projectFileName:String) = projectFileName match {
+      case xtensionXtractor(barePath,_)=>barePath
+      case _=>
+        logger.warn(s"The project file '$projectFileName' does not appear to have a file extension")
+        projectFileName
+    }
+
+    def deletePTRJob() = Future {
+      if (pTR) {
+        implicit val db = dbConfig.db
+        ProjectEntry.entryForId(projectId).map({
+          case Success(projectEntry: ProjectEntry) =>
+            projectEntry.associatedFiles(false).map(fileList => {
+              fileList.map(entry => {
+                fileEntryDAO
+                  .storage(entry)
+                  .andThen({
+                    case Success(storageTry) =>
+                      storageTry match {
+                        case Some(storage) =>
+                          val targetFilePath = storage.rootpath.get + "/" + removeProjectFileExtension(entry.filepath) + ".ptr"
+                          logger.info(s"Attempting to delete a possible file at: ${targetFilePath}")
+                          new File(targetFilePath).delete()
+                        case None =>
+                          logger.info(s"Attempt at loading storage data failed.")
+                      }
+                    case Failure(err)=>
+                      logger.error(s"Attempt at loading storage data failed.", err)
+                  })
+              })
+            }
+            )
+          case Failure(error) =>
+            logger.error(s"Could not look up project entry for ${projectId}: ", error)
+        })
+      }
     }
 
     def job4() = Future {
@@ -648,9 +684,9 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
 
     val f = for {
-      f1 <- deleteFileJob()
-      f2 <- deleteBackupsJob()
-      f3 <- job3()
+      f1 <- deletePTRJob()
+      f2 <- deleteFileJob()
+      f3 <- deleteBackupsJob()
       f4 <- job4()
       f5 <- job5()
     } yield List(f1, f2, f3, f4, f5)
@@ -684,11 +720,12 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     logger.info(s"Pluto value is: ${request.body.asJson.get("pluto")}")
     logger.info(s"File value is: ${request.body.asJson.get("file")}")
     logger.info(s"Backups value is: ${request.body.asJson.get("backups")}")
+    logger.info(s"PTR value is: ${request.body.asJson.get("PTR")}")
     logger.info(s"Deliverables value is: ${request.body.asJson.get("deliverables")}")
     logger.info(s"SAN value is: ${request.body.asJson.get("SAN")}")
     logger.info(s"Matrix value is: ${request.body.asJson.get("matrix")}")
     logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
-    deleteDataRunner(projectId, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean)
+    deleteDataRunner(projectId, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean)
     Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
   }
 }
