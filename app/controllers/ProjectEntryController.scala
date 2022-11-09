@@ -617,10 +617,15 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             logger.info(s"About to attempt to delete any backups present for project ${projectId}")
             projectEntry.associatedFiles(true).map(fileList => {
               fileList.map(entry => {
-                logger.info(s"Attempting to delete the file at: ${entry.filepath}")
-                fileEntryDAO
-                  .deleteFromDisk(entry)
-                  .andThen(_ => fileEntryDAO.deleteRecord(entry))
+                entry.backupOf match {
+                  case Some(value) =>
+                    logger.info(s"Attempting to delete the file at: ${entry.filepath}")
+                    fileEntryDAO
+                      .deleteFromDisk(entry)
+                      .andThen(_ => fileEntryDAO.deleteRecord(entry))
+                  case None =>
+                    logger.info(s"Ignoring non-backup file at ${entry.filepath}")
+                }
               })
             }
             )
