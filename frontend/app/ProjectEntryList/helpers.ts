@@ -328,6 +328,7 @@ export const startDelete = async (
   pluto: boolean,
   file: boolean,
   backups: boolean,
+  pTR: boolean,
   deliverables: boolean,
   sAN: boolean,
   matrix: boolean,
@@ -336,7 +337,7 @@ export const startDelete = async (
   try {
     const { status } = await Axios.put<PlutoApiResponse<void>>(
       `${API_PROJECTS}/${id}/deleteData`,
-      `{"pluto":${pluto},"file":${file},"backups":${backups},"deliverables":${deliverables},"SAN":${sAN},"matrix":${matrix},"S3":${s3}}`,
+      `{"pluto":${pluto},"file":${file},"backups":${backups},"PTR":${pTR},"deliverables":${deliverables},"SAN":${sAN},"matrix":${matrix},"S3":${s3}}`,
       {
         headers: {
           "Content-Type": "application/json",
