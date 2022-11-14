@@ -49,7 +49,7 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
   const [file, setFile] = useState<boolean>(true);
   const [backups, setBackups] = useState<boolean>(true);
   const [pTR, setPTR] = useState<boolean>(true);
-  const [deliverables, setDeliverables] = useState<boolean>(false);
+  const [deliverables, setDeliverables] = useState<boolean>(true);
   const [sAN, setSAN] = useState<boolean>(false);
   const [matrix, setMatrix] = useState<boolean>(false);
   const [s3, setS3] = useState<boolean>(false);
@@ -180,15 +180,15 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                     name="ptr"
                   />
                 </Grid>
+                <Grid item>
+                  Deliverables
+                  <Checkbox
+                    checked={deliverables}
+                    onChange={() => setDeliverables(!deliverables)}
+                    name="deliverables"
+                  />
+                </Grid>
                 {/*
-                    <Grid item>
-                      Deliverables
-                      <Checkbox
-                          checked={deliverables}
-                          onChange={() => setDeliverables(!deliverables)}
-                          name="deliverables"
-                      />
-                    </Grid>
                     <Grid item>
                       Storage Area Network Data
                       <Checkbox

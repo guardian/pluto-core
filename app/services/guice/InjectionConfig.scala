@@ -22,6 +22,7 @@ class InjectionConfig extends AbstractModule with AkkaGuiceSupport {
     bindActor[CommissionStatusPropagator]("commission-status-propagator")
     bindActor[RabbitMqPropagator]("rabbitmq-propagator")
     bindActor[RabbitMqSend]("rabbitmq-send")
+    bindActor[RabbitMqDeliverable]("rabbitmq-deliverable")
     bindActor[Auditor]("auditor")
     bind(classOf[PeriodicScanReceiver]).asEagerSingleton()
     bind(classOf[MXSConnectionManager]).asEagerSingleton()

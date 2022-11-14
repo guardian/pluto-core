@@ -33,6 +33,7 @@ import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import java.io.File
+import services.RabbitMqDeliverable.DeliverableEvent
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
@@ -41,6 +42,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         cacheImpl:SyncCacheApi,
                                         @Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef,
                                         @Named("rabbitmq-send") rabbitMqSend:ActorRef,
+                                        @Named("rabbitmq-deliverable") rabbitMqDeliverable:ActorRef,
                                         @Named("auditor") auditor:ActorRef,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
                                        (implicit fileEntryDAO:FileEntryDAO, injector: Injector)
@@ -675,8 +677,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       }
     }
 
-    def job4() = Future {
-
+    def deleteDeliverables() = Future {
+      if (deliverables) {
+        rabbitMqDeliverable ! DeliverableEvent(projectId)
+      }
     }
 
     def job5() = Future {
@@ -687,7 +691,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       f1 <- deletePTRJob()
       f2 <- deleteFileJob()
       f3 <- deleteBackupsJob()
-      f4 <- job4()
+      f4 <- deleteDeliverables()
       f5 <- job5()
     } yield List(f1, f2, f3, f4, f5)
     if (pluto) {
