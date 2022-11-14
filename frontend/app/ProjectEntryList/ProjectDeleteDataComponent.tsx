@@ -47,6 +47,7 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [pluto, setPluto] = useState<boolean>(true);
   const [file, setFile] = useState<boolean>(true);
+  const [backups, setBackups] = useState<boolean>(true);
   const [deliverables, setDeliverables] = useState<boolean>(false);
   const [sAN, setSAN] = useState<boolean>(false);
   const [matrix, setMatrix] = useState<boolean>(false);
@@ -108,6 +109,7 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
           project.id,
           pluto,
           file,
+          backups,
           deliverables,
           sAN,
           matrix,
@@ -158,6 +160,14 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                     checked={file}
                     onChange={() => setFile(!file)}
                     name="file"
+                  />
+                </Grid>
+                <Grid item>
+                  Project File Backups
+                  <Checkbox
+                    checked={backups}
+                    onChange={() => setBackups(!backups)}
+                    name="backups"
                   />
                 </Grid>
                 {/*
