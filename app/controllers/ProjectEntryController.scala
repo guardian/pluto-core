@@ -6,7 +6,7 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import auth.{BearerTokenAuth, Security}
 import exceptions.RecordNotFoundException
-import helpers.AllowCORSFunctions
+import helpers.{AllowCORSFunctions, S3Helper}
 import models._
 import play.api.cache.SyncCacheApi
 import play.api.{Configuration, Logger}
@@ -568,7 +568,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     Future(Ok(Json.obj("status"->"ok","detail"->"Fix permissions run.")))
   }
 
-  def deleteDataRunner(projectId: Int, pluto: Boolean, file: Boolean, backups: Boolean, pTR: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean): Unit = {
+  def deleteDataRunner(projectId: Int, pluto: Boolean, file: Boolean, backups: Boolean, pTR: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean, buckets: Array[String], bucketBooleans: Array[Boolean]): Unit = {
     def deleteFileJob() = Future {
       if (file) {
         implicit val db = dbConfig.db
@@ -683,8 +683,47 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       }
     }
 
-    def job5() = Future {
-
+    def deleteS3() = Future {
+      if (s3) {
+        for((bucket,i) <- buckets.view.zipWithIndex) {
+          if (bucketBooleans(i)) {
+            val assetFolderString = Await.result(assetFolderForProject(projectId), Duration.Inf).toString
+            logger.info(s"Asset folder for project: $assetFolderString")
+            if (assetFolderString == "") {
+              logger.warn(s"No asset folder found for project. Can not attempt to delete data from S3.")
+            } else {
+              logger.info(s"About to attempt to delete any data in the S3 bucket: ${bucket}")
+              implicit lazy val s3helper: S3Helper = helpers.S3Helper.createFromBucketName(bucket).toOption.get
+              val assetFolderBasePath = config.get[String]("postrun.assetFolder.basePath")
+              val keyForSearch = assetFolderString.replace(s"$assetFolderBasePath/", "")
+              val bucketObjectData = s3helper.listBucketObjects(keyForSearch)
+              for (s3Object <- bucketObjectData) {
+                if (s"$keyForSearch/" != s3Object.key) {
+                  logger.info(s"Found S3 key: ${s3Object.key}")
+                  val objectVersions = s3helper.listObjectsVersions(s3Object)
+                  for (version <- objectVersions) {
+                    logger.info(s"Found version: ${version.versionId()} for key: ${version.key()}")
+                    val deleteOutcome = s3helper.deleteObject(s3Object, version.versionId())
+                    logger.info(s"Delete response was: $deleteOutcome")
+                  }
+                }
+              }
+              val bucketObjectDataFolder = s3helper.listBucketObjects(keyForSearch)
+              for (s3Object <- bucketObjectDataFolder) {
+                if (s"$keyForSearch/" == s3Object.key) {
+                  logger.info(s"Found S3 key: ${s3Object.key}")
+                  val objectVersionsFolder = s3helper.listObjectsVersions(s3Object)
+                  for (version <- objectVersionsFolder) {
+                    logger.info(s"Found version: ${version.versionId()} for key: ${version.key()}")
+                    val deleteOutcomeFolder = s3helper.deleteObject(s3Object, version.versionId())
+                    logger.info(s"Delete response was: $deleteOutcomeFolder")
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
 
     val f = for {
@@ -692,7 +731,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       f2 <- deleteFileJob()
       f3 <- deleteBackupsJob()
       f4 <- deleteDeliverables()
-      f5 <- job5()
+      f5 <- deleteS3()
     } yield List(f1, f2, f3, f4, f5)
     if (pluto) {
       Thread.sleep(800)
@@ -729,7 +768,9 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     logger.info(s"SAN value is: ${request.body.asJson.get("SAN")}")
     logger.info(s"Matrix value is: ${request.body.asJson.get("matrix")}")
     logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
-    deleteDataRunner(projectId, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean)
+    logger.info(s"Buckets value is: ${request.body.asJson.get("buckets")}")
+    logger.info(s"Bucket Booleans value is: ${request.body.asJson.get("bucketBooleans")}")
+    deleteDataRunner(projectId, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
     Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
   }
 }
