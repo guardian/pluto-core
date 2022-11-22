@@ -129,6 +129,8 @@ POST    /api/premiereVersion                                     @controllers.Pr
 DELETE  /api/premiereVersion/:internalVersion                    @controllers.PremiereVersionConverter.delete(internalVersion:Int)
 POST    /api/premiereVersion/scanExistingProjects                @controllers.PremiereVersionConverter.scanAllVersions(projectTypeId:Int ?= 0)
 
+GET     /api/buckets                        @controllers.Buckets.list
+
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 GET     /meta/*file                 controllers.Assets.at(path="/public/meta", file)

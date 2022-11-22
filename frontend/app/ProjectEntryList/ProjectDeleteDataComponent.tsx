@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
 import { Button, Checkbox, Grid, Paper } from "@material-ui/core";
-import { getProject, getProjectByVsid, startDelete } from "./helpers";
+import {
+  getProject,
+  getProjectByVsid,
+  startDelete,
+  getBuckets,
+} from "./helpers";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import { Helmet } from "react-helmet";
 import { useGuardianStyles } from "~/misc/utils";
@@ -52,7 +57,9 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
   const [deliverables, setDeliverables] = useState<boolean>(true);
   const [sAN, setSAN] = useState<boolean>(false);
   const [matrix, setMatrix] = useState<boolean>(false);
-  const [s3, setS3] = useState<boolean>(false);
+  const [s3, setS3] = useState<boolean>(true);
+  const [buckets, setBuckets] = useState<string[]>([]);
+  const [bucketBooleans, updateBucketBooleans] = useState<boolean[]>([]);
 
   useEffect(() => {
     if (projectFromList) {
@@ -94,6 +101,20 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
 
     fetchWhoIsLoggedIn();
 
+    const getBucketData = async () => {
+      try {
+        const returnedBuckets = await getBuckets();
+        for (const bucket in returnedBuckets) {
+          updateBucketBooleans((arr) => [...arr, true]);
+        }
+        setBuckets(returnedBuckets);
+      } catch {
+        console.log("Could not load buckets.");
+      }
+    };
+
+    getBucketData();
+
     return () => {
       isMounted = false;
     };
@@ -115,7 +136,9 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
           deliverables,
           sAN,
           matrix,
-          s3
+          s3,
+          buckets,
+          bucketBooleans
         );
 
         SystemNotification.open(
@@ -205,20 +228,49 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                           name="matrix"
                       />
                     </Grid>
-                    <Grid item>
-                      Amazon Web Services Simple Storage Service Data
-                      <Checkbox
-                          checked={s3}
-                          onChange={() => setS3(!s3)}
-                          name="s3"
-                      />
-                    </Grid>
                     */}
+                <Grid item>
+                  Amazon Web Services Simple Storage Service Data
+                  <Checkbox
+                    checked={s3}
+                    onChange={() => setS3(!s3)}
+                    name="s3"
+                  />
+                  <br />
+                  Buckets
+                  <br />
+                  {buckets
+                    ? buckets.map((bucket, ix) => {
+                        return (
+                          <>
+                            {bucket}
+                            <Checkbox
+                              checked={bucketBooleans[ix]}
+                              onChange={() => {
+                                let booleansCopy = [...bucketBooleans];
+                                booleansCopy[ix] = !bucketBooleans[ix];
+                                updateBucketBooleans(booleansCopy);
+                              }}
+                              name={bucket}
+                            />
+                            <br />
+                          </>
+                        );
+                      })
+                    : null}
+                </Grid>
               </Grid>
               <div>
                 Please note: some parts of the Pluto system where not designed
                 to be tolerant of data removal. Certain undesirable consequences
                 may occur if you remove data from the system.
+                <br />
+                <br />
+                Please note: deletion from the Amazon Web Services Simple
+                Storage Service does not take into account that other projects
+                may reference items from this project. If this is used to delete
+                items which are referenced by other projects, the other projects
+                will not be able to load the items.
               </div>
               <div className={classes.formButtons}>
                 <Button

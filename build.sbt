@@ -120,6 +120,14 @@ libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.1.2"
 
 libraryDependencies += "org.mockito" % "mockito-inline" % "2.8.9"
 
+val awsSdk2Version = "2.18.17"
+
+libraryDependencies ++= Seq(
+  "software.amazon.awssdk" % "s3" % awsSdk2Version,
+  "software.amazon.awssdk" % "s3-transfer-manager" % "2.17.177-PREVIEW",
+  "software.amazon.awssdk" % "url-connection-client" % awsSdk2Version
+)
+
 enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)
