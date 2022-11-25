@@ -39,7 +39,7 @@ class RabbitMqSend @Inject()(configuration:Configuration, system:ActorSystem) ex
   val rmqExchange = configuration.getOptional[String]("rabbitmq.fix.exchange").getOrElse("assetsweeper")
 
   def channelSetup(channel: Channel, self: ActorRef): Exchange.DeclareOk = {
-    channel.exchangeDeclare(rmqExchange, "topic")
+    channel.exchangeDeclare(rmqExchange, "topic", true)
   }
 
   override def receive: Receive = {
