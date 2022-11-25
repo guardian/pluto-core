@@ -43,7 +43,7 @@ class RabbitMqSAN @Inject()(configuration:Configuration, system:ActorSystem) ext
   val rmqExchange = configuration.getOptional[String]("rabbitmq.san.exchange").getOrElse("storagetier-project-restorer")
 
   def channelSetup(channel: Channel, self: ActorRef): Exchange.DeclareOk = {
-    channel.exchangeDeclare(rmqExchange, "topic")
+    channel.exchangeDeclare(rmqExchange, "topic", true)
   }
 
   override def receive: Receive = {
