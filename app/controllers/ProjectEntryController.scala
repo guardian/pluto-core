@@ -27,13 +27,21 @@ import slick.jdbc.PostgresProfile.api._
 import services.RabbitMqSend.FixEvent
 import java.nio.file.Paths
 import java.time.ZonedDateTime
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import java.io.File
 import services.RabbitMqDeliverable.DeliverableEvent
+import vidispine.{VSOnlineOutputMessage, VidispineCommunicator, VidispineConfig}
+import mes.OnlineOutputMessage
+import mess.InternalOnlineOutputMessage
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+import java.util.concurrent.Executors
+import de.geekonaut.slickmdc.MdcExecutionContext
+import services.RabbitMqSAN.SANEvent
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
@@ -43,6 +51,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         @Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef,
                                         @Named("rabbitmq-send") rabbitMqSend:ActorRef,
                                         @Named("rabbitmq-deliverable") rabbitMqDeliverable:ActorRef,
+                                        @Named("rabbitmq-san") rabbitMqSAN:ActorRef,
                                         @Named("auditor") auditor:ActorRef,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
                                        (implicit fileEntryDAO:FileEntryDAO, injector: Injector)
@@ -726,13 +735,47 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       }
     }
 
+    def onlineFilesByProject(vidispineCommunicator: VidispineCommunicator, projectId: Int): Future[Seq[OnlineOutputMessage]] = {
+      vidispineCommunicator.getFilesOfProject(projectId)
+        .map(_.filterNot(isBranding).map(InternalOnlineOutputMessage.toOnlineOutputMessage))
+    }
+
+    def isBranding(item: VSOnlineOutputMessage): Boolean = item.mediaCategory.toLowerCase match {
+      case "branding" => true // Case insensitive
+      case _ => false
+    }
+
+    def deleteSAN() = Future {
+      if (sAN) {
+        logger.info(s"About to attempt to delete any SAN data present for project ${projectId}")
+        lazy val vidispineConfig = VidispineConfig.fromEnvironment.toOption.get
+        implicit lazy val executionContext = new MdcExecutionContext(
+          ExecutionContext.fromExecutor(
+            Executors.newWorkStealingPool(10)
+          )
+        )
+        implicit lazy val actorSystem:ActorSystem = ActorSystem("pluto-core-delete", defaultExecutionContext=Some(executionContext))
+        implicit lazy val mat:Materializer = Materializer(actorSystem)
+        implicit lazy val vidispineCommunicator = new VidispineCommunicator(vidispineConfig)
+
+
+        val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 8.seconds)
+        logger.info(s"Output of Vidispine method: $vidispineMethodOut")
+        vidispineMethodOut.map(onlineOutputMessage => {
+          logger.info(s"About to attempt to send a message to delete Vidispine item ${onlineOutputMessage.vidispineItemId.get}")
+          rabbitMqSAN ! SANEvent(onlineOutputMessage.vidispineItemId.get, onlineOutputMessage)
+        })
+      }
+    }
+
     val f = for {
       f1 <- deletePTRJob()
       f2 <- deleteFileJob()
       f3 <- deleteBackupsJob()
       f4 <- deleteDeliverables()
       f5 <- deleteS3()
-    } yield List(f1, f2, f3, f4, f5)
+      f6 <- deleteSAN()
+    } yield List(f1, f2, f3, f4, f5, f6)
     if (pluto) {
       Thread.sleep(800)
       implicit val db = dbConfig.db

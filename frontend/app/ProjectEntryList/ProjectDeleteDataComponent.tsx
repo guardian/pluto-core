@@ -55,7 +55,7 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
   const [backups, setBackups] = useState<boolean>(true);
   const [pTR, setPTR] = useState<boolean>(true);
   const [deliverables, setDeliverables] = useState<boolean>(true);
-  const [sAN, setSAN] = useState<boolean>(false);
+  const [sAN, setSAN] = useState<boolean>(true);
   const [matrix, setMatrix] = useState<boolean>(false);
   const [s3, setS3] = useState<boolean>(true);
   const [buckets, setBuckets] = useState<string[]>([]);
@@ -211,15 +211,15 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                     name="deliverables"
                   />
                 </Grid>
+                <Grid item>
+                  Storage Area Network Data
+                  <Checkbox
+                    checked={sAN}
+                    onChange={() => setSAN(!sAN)}
+                    name="san"
+                  />
+                </Grid>
                 {/*
-                    <Grid item>
-                      Storage Area Network Data
-                      <Checkbox
-                          checked={sAN}
-                          onChange={() => setSAN(!sAN)}
-                          name="san"
-                      />
-                    </Grid>
                     <Grid item>
                       Object Matrix Data
                       <Checkbox
