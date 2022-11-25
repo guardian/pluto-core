@@ -39,7 +39,7 @@ class RabbitMqDeliverable @Inject()(configuration:Configuration, system:ActorSys
   val rmqExchange = configuration.getOptional[String]("rabbitmq.deliverable.exchange").getOrElse("pluto-deliverables")
 
   def channelSetup(channel: Channel, self: ActorRef): Exchange.DeclareOk = {
-    channel.exchangeDeclare(rmqExchange, "topic")
+    channel.exchangeDeclare(rmqExchange, "topic", true)
   }
 
   override def receive: Receive = {
