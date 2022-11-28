@@ -2,7 +2,7 @@ package services
 
 import akka.actor.{Actor, ActorRef, ActorSystem}
 import com.google.inject.Inject
-import com.rabbitmq.client.AMQP.Exchange
+import com.rabbitmq.client.AMQP.{Exchange, BasicProperties}
 import mes.OnlineOutputMessage
 import javax.inject.Singleton
 import org.slf4j.LoggerFactory
@@ -10,6 +10,7 @@ import play.api.{Configuration, Logger}
 import io.circe.Json
 import io.circe.syntax.EncoderOps
 import io.circe.Encoder
+import java.util.UUID
 
 
 object RabbitMqSAN {
@@ -71,7 +72,12 @@ class RabbitMqSAN @Inject()(configuration:Configuration, system:ActorSystem) ext
       //{"mediaTier":"ONLINE","projectIds":["516","516"],"originalFilePath":"/srv/Multimedia2/NextGenDev/Media Production/Assets/Fred_In_Bed/This_Is_A_Test/david_allison_SAN_Delete_JSON_Test/Title 01.mp4","fileSize":65464,"vidispineItemId":"VX-3384","nearlineId":"741d089d-a920-11ec-a895-8e29f591bdb6-1877","mediaCategory":"Rushes"}
       val messageToSend: String = s"""{"mediaTier":"${event.message.mediaTier}","projectIds":${projectIdsString},"originalFilePath":"$originalPath","fileSize":$fileSize,"vidispineItemId":"${event.message.vidispineItemId.get}","nearlineId":"${nearlineId}","mediaCategory":"${event.message.mediaCategory}"}"""
       //val messageToSend = event.message.asJson.noSpaces
-      rmqChannel ! ChannelMessage(channel => channel.basicPublish(rmqExchange, rmqRouteBase, null, messageToSend.getBytes), dropIfNoChannel = false)
+      val msgProps = new BasicProperties.Builder()
+        .contentType("application/json")
+        .contentEncoding("UTF-8")
+        .messageId(UUID.randomUUID().toString)
+        .build()
+      rmqChannel ! ChannelMessage(channel => channel.basicPublish(rmqExchange, rmqRouteBase, msgProps, messageToSend.getBytes), dropIfNoChannel = false)
     case other:Any=>
       logger.error(s"RabbitMqSAN got an unexpected input: ${other}")
     case _=>
