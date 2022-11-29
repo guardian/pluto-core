@@ -13,9 +13,9 @@ case class SearchResultItemSimplified(
 
   /** Returns the metadata values, as a string, for the given field. By default only "root" level fields are searched
     * but you can look inside a group instead by setting `maybeGroupname`
-    * @param fieldName field to look for
-    * @param maybeGroupname group name to search within
-    * @return a sequence of `MetadataValuesWrite`
+    * @param fieldName Field to look for
+    * @param maybeGroupname Group name to search within
+    * @return A sequence of `MetadataValuesWrite`
     */
   def valuesForField(
       fieldName: String,
@@ -53,7 +53,6 @@ object VSOnlineOutputMessage {
       itemSimplified: SearchResultItemSimplified,
       projectId: Int
   ): Option[VSOnlineOutputMessage] = {
-    logger.info(s"Attempting to generate a new VSOnlineOutMessage.")
     try {
       val mediaTier = "ONLINE"
       val itemId = Option(itemSimplified.id)

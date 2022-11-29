@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
- * this object can be imported into communicator classes, and supplies routines to buffer the response entity into
+ * This object can be imported into communicator classes, and supplies routines to buffer the response entity into
  * memory and to parse/unmarshal it as JSON
  */
 object AkkaHttpHelpers {
@@ -20,7 +20,7 @@ object AkkaHttpHelpers {
   case object RetryRequired extends HttpUnsuccessActions
 
   /**
-   * internal method that consumes a given response entity to a String
+   * Internal method that consumes a given response entity to a String
    *
    * @param entity ResponseEntity object
    * @return a Future containing the String of the content
@@ -35,10 +35,10 @@ object AkkaHttpHelpers {
     stream.toMat(sink)(Keep.right).run().map(_.utf8String)
   }
   /**
-   * convenience method that consumes a given response entity and parses it into a Json object
+   * Convenience method that consumes a given response entity and parses it into a Json object
    *
    * @param entity ResponseEntity object
-   * @return a Future containing either the ParsingFailure error or the parsed Json object
+   * @return A Future containing either the ParsingFailure error or the parsed Json object
    */
   def consumeResponseEntityJson(entity: ResponseEntity)(implicit mat:Materializer, ec:ExecutionContext) = consumeResponseEntity(entity)
     .map(io.circe.parser.parse)
@@ -55,18 +55,18 @@ object AkkaHttpHelpers {
     })
 
   /**
-   * handle the HTTP response from akka.  This will return different actions to take depending on the response code, all returned in a Future:
-   * - 200 => returns a Right, containing a ByteString source of the response body all contained in a Future
-   * - 404 => returns a Right, containing None
-   * - 403/401 => returns a failed Future with an error message
-   * - 400 => returns a failed Future with an error message
-   * - 301 => retrieves the Location header from the response and returns a Left with a RedirectRequired value giving the location to redirect to
-   * - 50x => returns a Left with a RetryRequired value
-   * @param response the HttpResponse to process
-   * @param description descriptive string of the remote component being talked to, for logging
-   * @param mat implicitly provided Materializer
-   * @param ec implicitly provided ExecutionContext
-   * @return a Future indicating the action to take.
+   * Handle the HTTP response from akka.  This will return different actions to take depending on the response code, all returned in a Future:
+   * - 200 => Returns a Right, containing a ByteString source of the response body all contained in a Future
+   * - 404 => Returns a Right, containing None
+   * - 403/401 => Returns a failed Future with an error message
+   * - 400 => Returns a failed Future with an error message
+   * - 301 => Retrieves the Location header from the response and returns a Left with a RedirectRequired value giving the location to redirect to
+   * - 50x => Returns a Left with a RetryRequired value
+   * @param response The HttpResponse to process
+   * @param description Descriptive string of the remote component being talked to, for logging
+   * @param mat Implicitly provided Materializer
+   * @param ec Implicitly provided ExecutionContext
+   * @return A Future indicating the action to take.
    */
   def handleResponse(response:HttpResponse, description:String) (implicit mat:Materializer, ec:ExecutionContext):Future[Either[HttpUnsuccessActions, Option[HttpEntity]]] = response.status.intValue() match {
     case 200 =>
