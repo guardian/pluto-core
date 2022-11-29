@@ -3,7 +3,7 @@ package vidispine
 import org.slf4j.LoggerFactory
 
 import java.net.URI
-import scala.util.{Failure, Try}
+import scala.util.Try
 
 case class FileItemRef(id:String)
 
@@ -19,7 +19,7 @@ trait FileDocumentUtils {
   private val logger = LoggerFactory.getLogger(getClass)
   /**
    * tries to parse the given URI string, check if it's a file: url and if so returns the path segment
-   * @param uri string to check
+   * @param uri String to check
    * @return a Right with the decoded path if successful, or a Left with an error if not
    */
   protected def extractFilePathFromUri(uri:String) = {

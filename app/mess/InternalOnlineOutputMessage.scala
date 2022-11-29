@@ -1,7 +1,7 @@
 package mess
 
 import mes.OnlineOutputMessage
-import vidispine.{SearchResultItemSimplified, VSOnlineOutputMessage}
+import vidispine.VSOnlineOutputMessage
 /**
  * Converts an ObjectMatrixEntry object or Vidispine object to an OnlineOutputMessage message
  * for every associated file in a project

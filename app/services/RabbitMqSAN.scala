@@ -7,9 +7,6 @@ import mes.OnlineOutputMessage
 import javax.inject.Singleton
 import org.slf4j.LoggerFactory
 import play.api.{Configuration, Logger}
-import io.circe.Json
-import io.circe.syntax.EncoderOps
-import io.circe.Encoder
 import java.util.UUID
 
 
@@ -20,12 +17,12 @@ object RabbitMqSAN {
   }
 
   object SANEvent {
-    def apply(item_id: String, message: OnlineOutputMessage): SANEvent = {
-      new SANEvent(item_id, message)
+    def apply(message: OnlineOutputMessage): SANEvent = {
+      new SANEvent(message)
     }
   }
 
-  case class SANEvent(item_id: String, message: OnlineOutputMessage)
+  case class SANEvent(message: OnlineOutputMessage)
     extends RabbitMqSANEvent
 }
 
@@ -68,10 +65,7 @@ class RabbitMqSAN @Inject()(configuration:Configuration, system:ActorSystem) ext
       })
       projectIdsString = projectIdsString.dropRight(1)
       projectIdsString = s"$projectIdsString]"
-      //val messageToSend: String  = s"""{"item_id":${event.item_id}}"""
-      //{"mediaTier":"ONLINE","projectIds":["516","516"],"originalFilePath":"/srv/Multimedia2/NextGenDev/Media Production/Assets/Fred_In_Bed/This_Is_A_Test/david_allison_SAN_Delete_JSON_Test/Title 01.mp4","fileSize":65464,"vidispineItemId":"VX-3384","nearlineId":"741d089d-a920-11ec-a895-8e29f591bdb6-1877","mediaCategory":"Rushes"}
       val messageToSend: String = s"""{"mediaTier":"${event.message.mediaTier}","projectIds":${projectIdsString},"originalFilePath":"$originalPath","fileSize":$fileSize,"vidispineItemId":"${event.message.vidispineItemId.get}","nearlineId":"${nearlineId}","mediaCategory":"${event.message.mediaCategory}"}"""
-      //val messageToSend = event.message.asJson.noSpaces
       val msgProps = new BasicProperties.Builder()
         .contentType("application/json")
         .contentEncoding("UTF-8")

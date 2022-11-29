@@ -757,13 +757,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         implicit lazy val actorSystem:ActorSystem = ActorSystem("pluto-core-delete", defaultExecutionContext=Some(executionContext))
         implicit lazy val mat:Materializer = Materializer(actorSystem)
         implicit lazy val vidispineCommunicator = new VidispineCommunicator(vidispineConfig)
-
-
-        val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 8.seconds)
-        logger.info(s"Output of Vidispine method: $vidispineMethodOut")
+        val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 120.seconds)
         vidispineMethodOut.map(onlineOutputMessage => {
           logger.info(s"About to attempt to send a message to delete Vidispine item ${onlineOutputMessage.vidispineItemId.get}")
-          rabbitMqSAN ! SANEvent(onlineOutputMessage.vidispineItemId.get, onlineOutputMessage)
+          rabbitMqSAN ! SANEvent(onlineOutputMessage)
         })
       }
     }

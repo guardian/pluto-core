@@ -1,7 +1,7 @@
 package vidispine
 
 /*
-data models for constructing metadata updates that go to Vidispine.
+Data models for constructing metadata updates that go to Vidispine.
 These "write" variants contain only the fields you need to _push_ data, not the extra fields that come back
 when you read it
  */
@@ -13,10 +13,10 @@ case class MetadataWrite(timespan:Seq[Timespan])
 
 object MetadataWrite {
   /**
-   * convenience method that builds a serializable object to write a key/value pair to item metadata
-   * @param field field name to set
-   * @param value value to set
-   * @return a MetadataWrite document, that can be serialized with `.asJson.noSpaces`
+   * Convenience method that builds a serializable object to write a key/value pair to item metadata
+   * @param field Field name to set
+   * @param value Value to set
+   * @return A MetadataWrite document, that can be serialized with `.asJson.noSpaces`
    */
   def simpleKeyValue(field:String, value:String):MetadataWrite = MetadataWrite(
     Seq(
@@ -43,10 +43,10 @@ object MetadataWrite {
   )
 
   /**
-   * convenience method that builds a serializable object to write a  number of values to the same field in item metadata
-   * @param field field name to set
-   * @param values values to set
-   * @return a MetadataWrite document, that can be serialized with `.asJson.noSpaces`
+   * Convenience method that builds a serializable object to write a  number of values to the same field in item metadata
+   * @param field Field name to set
+   * @param values Values to set
+   * @return A MetadataWrite document, that can be serialized with `.asJson.noSpaces`
    */
   def keyMultipleValue(field: String, values:Seq[String]):MetadataWrite = MetadataWrite(
     Seq(
@@ -68,9 +68,9 @@ case class ItemResponseSimplified(item:Seq[ItemResponseContentSimplified]) {
   /**
    * Returns the metadata values, as a string, for the given field. By default only "root" level fields are searched
    * but you can look inside a group instead by setting `maybeGroupname`
-   * @param fieldName field to look for
-   * @param maybeGroupname group name to search within
-   * @return a sequence of `MetadataValuesWrite`
+   * @param fieldName Field to look for
+   * @param maybeGroupname Group name to search within
+   * @return A sequence of `MetadataValuesWrite`
    */
   def valuesForField(fieldName:String, maybeGroupname:Option[String]=None) = {
     val timespans = item.flatMap(_.metadata.timespan.filter(t=>t.start=="-INF" && t.end=="+INF"))

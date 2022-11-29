@@ -2,7 +2,6 @@ package vidispine
 
 import org.slf4j.LoggerFactory
 
-import java.time.ZonedDateTime
 
 case class VSShapeFile(
                       id: String,
@@ -11,8 +10,7 @@ case class VSShapeFile(
                       state: String,
                       size: Long,
                       hash: Option[String],
-                      timestamp: String,  //sure, this should really be a ZonedDateTime. But since we are not using the
-                      //field and it can cause parsing issues, keeping it as a String for the time being.
+                      timestamp: String,
                       refreshFlag: Int,
                       storage: String,
                       ) extends FileDocumentUtils {
@@ -20,9 +18,9 @@ case class VSShapeFile(
 }
 
 /**
- * simplified Component stanza of the VSShapeDocument, containing just what we are interested in
- * @param id component ID
- * @param file list of VSShapeFile instances
+ * Simplified Component stanza of the VSShapeDocument, containing just what we are interested in
+ * @param id Component id.
+ * @param file List of VSShapeFile instances
  */
 case class SimplifiedComponent(id:String, file:Seq[VSShapeFile])
 
