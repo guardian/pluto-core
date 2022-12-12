@@ -276,28 +276,32 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                     onChange={() => setS3(!s3)}
                     name="s3"
                   />
-                  <br />
-                  Buckets
-                  <br />
-                  {buckets
-                    ? buckets.map((bucket, ix) => {
-                        return (
-                          <>
-                            {bucket}
-                            <Checkbox
-                              checked={bucketBooleans[ix]}
-                              onChange={() => {
-                                let booleansCopy = [...bucketBooleans];
-                                booleansCopy[ix] = !bucketBooleans[ix];
-                                updateBucketBooleans(booleansCopy);
-                              }}
-                              name={bucket}
-                            />
-                            <br />
-                          </>
-                        );
-                      })
-                    : null}
+                  {s3 ? (
+                    <>
+                      <br />
+                      Buckets
+                      <br />
+                      {buckets
+                        ? buckets.map((bucket, ix) => {
+                            return (
+                              <>
+                                {bucket}
+                                <Checkbox
+                                  checked={bucketBooleans[ix]}
+                                  onChange={() => {
+                                    let booleansCopy = [...bucketBooleans];
+                                    booleansCopy[ix] = !bucketBooleans[ix];
+                                    updateBucketBooleans(booleansCopy);
+                                  }}
+                                  name={bucket}
+                                />
+                                <br />
+                              </>
+                            );
+                          })
+                        : null}
+                    </>
+                  ) : null}
                 </Grid>
               </Grid>
               <div>
