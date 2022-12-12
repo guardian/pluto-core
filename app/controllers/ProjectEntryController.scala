@@ -748,6 +748,8 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     def deleteSAN() = Future {
       if (sAN) {
         logger.info(s"About to attempt to delete any SAN data present for project ${projectId}")
+        implicit val db = dbConfig.db
+        DeleteJobDAO.getOrCreate(projectId, "Started")
         lazy val vidispineConfig = VidispineConfig.fromEnvironment.toOption.get
         implicit lazy val executionContext = new MdcExecutionContext(
           ExecutionContext.fromExecutor(
@@ -759,9 +761,15 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         implicit lazy val vidispineCommunicator = new VidispineCommunicator(vidispineConfig)
         val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 120.seconds)
         vidispineMethodOut.map(onlineOutputMessage => {
-          logger.info(s"About to attempt to send a message to delete Vidispine item ${onlineOutputMessage.vidispineItemId.get}")
-          rabbitMqSAN ! SANEvent(onlineOutputMessage)
+          if (onlineOutputMessage.projectIds.length > 2) {
+            logger.info(s"Refusing to attempt to delete Vidispine item ${onlineOutputMessage.vidispineItemId.get} as it is referenced by more than one project.")
+            ItemDeleteDataDAO.getOrCreate(projectId, onlineOutputMessage.vidispineItemId.get)
+          } else {
+            logger.info(s"About to attempt to send a message to delete Vidispine item ${onlineOutputMessage.vidispineItemId.get}")
+            rabbitMqSAN ! SANEvent(onlineOutputMessage)
+          }
         })
+        DeleteJobDAO.getOrCreate(projectId, "Finished")
       }
     }
 
@@ -812,5 +820,20 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     logger.info(s"Bucket Booleans value is: ${request.body.asJson.get("bucketBooleans")}")
     deleteDataRunner(projectId, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
     Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
+  }
+
+  def deleteJob(projectId: Int) = IsAdminAsync { uid => request =>
+    dbConfig.db.run(
+      TableQuery[DeleteJob].filter(_.projectEntry===projectId).result
+    ).map(_.headOption match {
+    case Some(jobRecord)=>
+      Ok(Json.obj("status"->"ok","job_status"->jobRecord.status))
+    case None=>
+      NotFound(Json.obj("status"->"notfound","detail"->s"No job with project id: $projectId"))
+    }).recover({
+      case err:Throwable=>
+        logger.error(s"Could not look up project $projectId: ", err)
+        InternalServerError(Json.obj("status"->"error","detail"->"Database error looking up job, see server logs"))
+    })
   }
 }

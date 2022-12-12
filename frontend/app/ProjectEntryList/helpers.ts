@@ -21,6 +21,14 @@ interface PlutoBucketsAPIResponse<T> {
   buckets: T;
 }
 
+interface PlutoDeleteJobAPIResponse<T> {
+  job_status: T;
+}
+
+interface PlutoItemDeleteDataAPIResponse<T> {
+  results: T;
+}
+
 export const getProjectsOnPage = async ({
   page = 0,
   pageSize = 25,
@@ -386,6 +394,50 @@ export const getBuckets = async (): Promise<string[]> => {
     }
 
     throw new Error(`Could not get buckets. ${status}`);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const getDeleteJob = async (id: number): Promise<string> => {
+  try {
+    const {
+      status,
+      data: { job_status },
+    } = await Axios.get<PlutoDeleteJobAPIResponse<string>>(
+      `${API_PROJECTS}/${id}/deleteJob`
+    );
+
+    if (status === 200) {
+      return job_status;
+    }
+
+    throw new Error(`Could not get job status for project ${id}. ${status}`);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const getItemsNotDeleted = async (
+  id: number
+): Promise<ItemsNotDeleted[]> => {
+  try {
+    const {
+      status,
+      data: { results },
+    } = await Axios.get<PlutoItemDeleteDataAPIResponse<ItemsNotDeleted[]>>(
+      `${API_PROJECTS}/${id}/deleteItems`
+    );
+
+    if (status === 200) {
+      return results;
+    }
+
+    throw new Error(
+      `Could not get items not deleted for project ${id}. ${status}`
+    );
   } catch (error) {
     console.error(error);
     throw error;

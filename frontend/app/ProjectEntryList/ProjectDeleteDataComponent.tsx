@@ -6,6 +6,8 @@ import {
   getProjectByVsid,
   startDelete,
   getBuckets,
+  getDeleteJob,
+  getItemsNotDeleted,
 } from "./helpers";
 import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
 import { Helmet } from "react-helmet";
@@ -60,6 +62,19 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
   const [s3, setS3] = useState<boolean>(true);
   const [buckets, setBuckets] = useState<string[]>([]);
   const [bucketBooleans, updateBucketBooleans] = useState<boolean[]>([]);
+  const [deleteJobStatus, setDeleteJobStatus] = useState<string>("");
+  const [itemsNotDeleted, setItemsNotDeleted] = useState<ItemsNotDeleted[]>([]);
+  const [refreshInterval, setRefreshInterval] = useState<any>();
+
+  const getDeleteItemData = async () => {
+    try {
+      const id = Number(props.match.params.itemid);
+      const returnedItems = await getItemsNotDeleted(id);
+      setItemsNotDeleted(returnedItems);
+    } catch {
+      console.log("Could not load items that where not deleted.");
+    }
+  };
 
   useEffect(() => {
     if (projectFromList) {
@@ -115,8 +130,26 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
 
     getBucketData();
 
+    const getDeleteJobData = async () => {
+      try {
+        const id = Number(props.match.params.itemid);
+        const returnedStatus = await getDeleteJob(id);
+        setDeleteJobStatus(returnedStatus);
+      } catch {
+        console.log("Could not load delete job status.");
+      }
+    };
+
+    getDeleteJobData();
+
+    const interval = setInterval(() => getDeleteJobData(), 10000);
+    setRefreshInterval(interval);
+
+    getDeleteItemData();
+
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -153,6 +186,13 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
       }
     }
   };
+
+  useEffect(() => {
+    if (deleteJobStatus == "Finished") {
+      getDeleteItemData();
+      clearInterval(refreshInterval);
+    }
+  }, [deleteJobStatus]);
 
   return (
     <>
@@ -286,6 +326,49 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
               </div>
             </form>
           </Paper>
+          {deleteJobStatus != "" ? (
+            <Paper
+              className={classes.root}
+              elevation={3}
+              style={{ marginTop: "40px" }}
+            >
+              <Grid container xs={12} direction="row" spacing={3}>
+                <Grid item xs={12} style={{ fontSize: "1.6em" }}>
+                  Storage Area Network Data Delete Job Outcome
+                </Grid>
+                <Grid item xs={12}>
+                  {deleteJobStatus == "Started" ? <>Job running...</> : null}
+                  {deleteJobStatus == "Finished" ? (
+                    <>
+                      Job finished
+                      {itemsNotDeleted ? (
+                        <>
+                          <br />
+                          <br />
+                          No attempt to delete the following items was made due
+                          to them being in more than one project:-
+                          <br />
+                        </>
+                      ) : null}
+                      {itemsNotDeleted
+                        ? itemsNotDeleted.map((vidispine_item) => {
+                            const { id, projectEntry, item } = vidispine_item;
+                            return (
+                              <>
+                                <a href={"/vs/item/" + item} target="_blank">
+                                  {item}
+                                </a>
+                                <br />
+                              </>
+                            );
+                          })
+                        : null}
+                    </>
+                  ) : null}
+                </Grid>
+              </Grid>
+            </Paper>
+          ) : null}
         </>
       ) : (
         <div>You do not have access to this page.</div>
