@@ -63,7 +63,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         @Named("rabbitmq-matrix") rabbitMqMatrix:ActorRef,
                                         @Named("auditor") auditor:ActorRef,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
-                                       (implicit fileEntryDAO:FileEntryDAO, injector: Injector, mat: Materializer, matrixStoreBuilder: MXSConnectionBuilder)
+                                       (implicit fileEntryDAO:FileEntryDAO, injector: Injector, mat: Materializer)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
     with UpdateTitleRequestSerializer with FileEntrySerializer
@@ -827,8 +827,8 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       nearlineFilesByProject(vault, projectId.toString)
     }
 
-    def getNearlineResults(projectId: Int, nearlineVaultId: String): Future[Either[String, Seq[OnlineOutputMessage]]] =
-      matrixStoreBuilder.withVaultFuture(nearlineVaultId) { vault =>
+    def getNearlineResults(projectId: Int, nearlineVaultId: String, matrixStore: MXSConnectionBuilderImpl): Future[Either[String, Seq[OnlineOutputMessage]]] =
+      matrixStore.withVaultFuture(nearlineVaultId) { vault =>
         searchAssociatedNearlineMedia(projectId, vault).map(Right.apply)
       }
 
@@ -849,7 +849,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             Executors.newWorkStealingPool(10)
           )
         )
-        implicit lazy val actorSystem:ActorSystem = ActorSystem("pluto-core-delete", defaultExecutionContext=Some(executionContext))
+        implicit lazy val actorSystem:ActorSystem = ActorSystem("pluto-core-delete-matrix", defaultExecutionContext=Some(executionContext))
         implicit lazy val mat:Materializer = Materializer(actorSystem)
         //implicit lazy val vidispineCommunicator = new VidispineCommunicator(vidispineConfig)
         val connectionIdleTime = sys.env.getOrElse("CONNECTION_MAX_IDLE", "750").toInt
@@ -861,7 +861,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
           maxIdleSeconds = connectionIdleTime
         )
         //val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 120.seconds)
-        val matrixMethodOut = Await.result(getNearlineResults(projectId, matrixStoreConfig.nearlineVaultId), 120.seconds)
+        val matrixMethodOut = Await.result(getNearlineResults(projectId, matrixStoreConfig.nearlineVaultId, matrixStore), 120.seconds)
         matrixMethodOut match {
           case Right(nearlineResults) =>
             nearlineResults.map(onlineOutputMessage => {
