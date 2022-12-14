@@ -58,7 +58,7 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
   const [pTR, setPTR] = useState<boolean>(true);
   const [deliverables, setDeliverables] = useState<boolean>(true);
   const [sAN, setSAN] = useState<boolean>(true);
-  const [matrix, setMatrix] = useState<boolean>(false);
+  const [matrix, setMatrix] = useState<boolean>(true);
   const [s3, setS3] = useState<boolean>(true);
   const [buckets, setBuckets] = useState<string[]>([]);
   const [bucketBooleans, updateBucketBooleans] = useState<boolean[]>([]);
@@ -259,16 +259,14 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                     name="san"
                   />
                 </Grid>
-                {/*
-                    <Grid item>
-                      Object Matrix Data
-                      <Checkbox
-                          checked={matrix}
-                          onChange={() => setMatrix(!matrix)}
-                          name="matrix"
-                      />
-                    </Grid>
-                    */}
+                <Grid item>
+                  Object Matrix Data
+                  <Checkbox
+                    checked={matrix}
+                    onChange={() => setMatrix(!matrix)}
+                    name="matrix"
+                  />
+                </Grid>
                 <Grid item>
                   Amazon Web Services Simple Storage Service Data
                   <Checkbox
