@@ -774,7 +774,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         implicit lazy val mat:Materializer = Materializer(actorSystem)
         implicit lazy val vidispineCommunicator = new VidispineCommunicator(vidispineConfig)
         val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 120.seconds)
-        logger.info(s"Vidispine data: $vidispineMethodOut")
         vidispineMethodOut.map(onlineOutputMessage => {
           if (onlineOutputMessage.projectIds.length > 2) {
             logger.info(s"Refusing to attempt to delete Vidispine item ${onlineOutputMessage.vidispineItemId.get} as it is referenced by more than one project.")
@@ -795,30 +794,15 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         Array("MXFS_PATH", "MXFS_FILENAME", "GNM_PROJECT_ID", "GNM_TYPE", "__mxs__length")
       )
       ).filterNot(isBrandingMatrix)
-        .filterNot(isMetadataOrProxy)
         .map(InternalOnlineOutputMessage.toOnlineOutputMessage)
         .toMat(sinkFactory)(Keep.right)
         .run()
     }
 
-    // GP-823 Ensure that branding does not get deleted
     def isBrandingMatrix(entry: ObjectMatrixEntry): Boolean = entry.stringAttribute("GNM_TYPE") match {
       case Some(gnmType) =>
         gnmType.toLowerCase match {
           case "branding" => true // Case insensitive
-          case _ => false
-        }
-      case _ => false
-    }
-
-    // GP-826 Ensure that we don't emit Media not required-messages for proxy and metadata files, as media_remover uses
-    // ATT_PROXY_OID and ATT_META_OID on the main file to remove those.
-    // (This will just remove the latest version of the metadata file, but is a known limitation and deemed acceptable for now.)
-    def isMetadataOrProxy(entry: ObjectMatrixEntry): Boolean = entry.stringAttribute("GNM_TYPE") match {
-      case Some(gnmType) =>
-        gnmType.toLowerCase match {
-          case "metadata" => true
-          case "proxy" => true
           case _ => false
         }
       case _ => false
@@ -863,12 +847,9 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         )
         //val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 120.seconds)
         val matrixMethodOut = Await.result(getNearlineResults(projectId, matrixStoreConfig.nearlineVaultId, matrixStore), 120.seconds)
-        logger.info(s"Matrix Store data: $matrixMethodOut")
         matrixMethodOut match {
           case Right(nearlineResults) =>
-            logger.info(s"Found some results: $nearlineResults")
             nearlineResults.map(onlineOutputMessage => {
-              logger.info(s"Found a result: $onlineOutputMessage")
               if (onlineOutputMessage.projectIds.length > 2) {
                 logger.info(s"Refusing to attempt to delete Object Matrix data for object ${onlineOutputMessage.nearlineId.get} as it is referenced by more than one project.")
                 MatrixDeleteDataDAO.getOrCreate(projectId, onlineOutputMessage.nearlineId.get)
