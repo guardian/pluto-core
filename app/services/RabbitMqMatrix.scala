@@ -63,9 +63,13 @@ class RabbitMqMatrix @Inject()(configuration:Configuration, system:ActorSystem) 
       event.message.projectIds.foreach(project => {
         projectIdsString = s"""$projectIdsString"$project","""
       })
+      var vidispineItemId = ""
+      if (event.message.vidispineItemId.isDefined) {
+        vidispineItemId = event.message.vidispineItemId.get
+      }
       projectIdsString = projectIdsString.dropRight(1)
       projectIdsString = s"$projectIdsString]"
-      val messageToSend: String = s"""{"mediaTier":"${event.message.mediaTier}","projectIds":${projectIdsString},"originalFilePath":"$originalPath","fileSize":$fileSize,"vidispineItemId":"${event.message.vidispineItemId.get}","nearlineId":"${nearlineId}","mediaCategory":"${event.message.mediaCategory}"}"""
+      val messageToSend: String = s"""{"mediaTier":"${event.message.mediaTier}","projectIds":${projectIdsString},"originalFilePath":"$originalPath","fileSize":$fileSize,"vidispineItemId":"$vidispineItemId","nearlineId":"${nearlineId}","mediaCategory":"${event.message.mediaCategory}"}"""
       val msgProps = new BasicProperties.Builder()
         .contentType("application/json")
         .contentEncoding("UTF-8")
