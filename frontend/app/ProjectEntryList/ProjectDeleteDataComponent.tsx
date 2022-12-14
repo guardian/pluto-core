@@ -343,7 +343,7 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                   {deleteJobStatus == "Finished" ? (
                     <>
                       Job finished
-                      {itemsNotDeleted ? (
+                      {itemsNotDeleted.length > 0 ? (
                         <>
                           <br />
                           <br />
