@@ -58,6 +58,8 @@ GET     /api/project/:id/fixPermissions     @controllers.ProjectEntryController.
 PUT     /api/project/:id/deleteData         @controllers.ProjectEntryController.deleteData(id: Int)
 GET     /api/project/:id/deleteJob          @controllers.ProjectEntryController.deleteJob(id: Int)
 GET     /api/project/:id/deleteItems        @controllers.ItemDeleteDataController.listForProject(id: Int)
+GET     /api/project/:id/matrixDeleteJob    @controllers.ProjectEntryController.matrixDeleteJob(id: Int)
+GET     /api/project/:id/matrixDeleteItems  @controllers.MatrixDeleteDataController.listForProject(id: Int)
 
 GET     /api/valid-users                    @controllers.ProjectEntryController.queryUsersForAutocomplete(prefix:String ?= "", limit:Option[Int])
 GET     /api/known-user                     @controllers.ProjectEntryController.isUserKnown(uname:String ?= "")

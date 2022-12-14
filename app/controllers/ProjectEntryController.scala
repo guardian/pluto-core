@@ -42,6 +42,14 @@ import akka.stream.Materializer
 import java.util.concurrent.Executors
 import de.geekonaut.slickmdc.MdcExecutionContext
 import services.RabbitMqSAN.SANEvent
+import com.om.mxs.client.japi.Vault
+import akka.stream.scaladsl.{Keep, Sink, Source}
+import mxscopy.streamcomponents.OMFastContentSearchSource
+import mxscopy.models.ObjectMatrixEntry
+import matrixstore.MatrixStoreEnvironmentConfigProvider
+import mxscopy.MXSConnectionBuilderImpl
+import mxscopy.MXSConnectionBuilder
+import services.RabbitMqMatrix.MatrixEvent
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
@@ -52,9 +60,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         @Named("rabbitmq-send") rabbitMqSend:ActorRef,
                                         @Named("rabbitmq-deliverable") rabbitMqDeliverable:ActorRef,
                                         @Named("rabbitmq-san") rabbitMqSAN:ActorRef,
+                                        @Named("rabbitmq-matrix") rabbitMqMatrix:ActorRef,
                                         @Named("auditor") auditor:ActorRef,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
-                                       (implicit fileEntryDAO:FileEntryDAO, injector: Injector)
+                                       (implicit fileEntryDAO:FileEntryDAO, injector: Injector, mat: Materializer, matrixStoreBuilder: MXSConnectionBuilder)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
     with UpdateTitleRequestSerializer with FileEntrySerializer
@@ -778,14 +787,108 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       }
     }
 
+    def nearlineFilesByProject(vault: Vault, projectId: String): Future[Seq[OnlineOutputMessage]] = {
+      val sinkFactory = Sink.seq[OnlineOutputMessage]
+      Source.fromGraph(new OMFastContentSearchSource(vault,
+        s"""GNM_PROJECT_ID:\"$projectId\"""",
+        Array("MXFS_PATH", "MXFS_FILENAME", "GNM_PROJECT_ID", "GNM_TYPE", "__mxs__length")
+      )
+      ).filterNot(isBrandingMatrix)
+        .filterNot(isMetadataOrProxy)
+        .map(InternalOnlineOutputMessage.toOnlineOutputMessage)
+        .toMat(sinkFactory)(Keep.right)
+        .run()
+    }
+
+    // GP-823 Ensure that branding does not get deleted
+    def isBrandingMatrix(entry: ObjectMatrixEntry): Boolean = entry.stringAttribute("GNM_TYPE") match {
+      case Some(gnmType) =>
+        gnmType.toLowerCase match {
+          case "branding" => true // Case insensitive
+          case _ => false
+        }
+      case _ => false
+    }
+
+    // GP-826 Ensure that we don't emit Media not required-messages for proxy and metadata files, as media_remover uses
+    // ATT_PROXY_OID and ATT_META_OID on the main file to remove those.
+    // (This will just remove the latest version of the metadata file, but is a known limitation and deemed acceptable for now.)
+    def isMetadataOrProxy(entry: ObjectMatrixEntry): Boolean = entry.stringAttribute("GNM_TYPE") match {
+      case Some(gnmType) =>
+        gnmType.toLowerCase match {
+          case "metadata" => true
+          case "proxy" => true
+          case _ => false
+        }
+      case _ => false
+    }
+
+    def searchAssociatedNearlineMedia(projectId: Int, vault: Vault): Future[Seq[OnlineOutputMessage]] = {
+      nearlineFilesByProject(vault, projectId.toString)
+    }
+
+    def getNearlineResults(projectId: Int, nearlineVaultId: String): Future[Either[String, Seq[OnlineOutputMessage]]] =
+      matrixStoreBuilder.withVaultFuture(nearlineVaultId) { vault =>
+        searchAssociatedNearlineMedia(projectId, vault).map(Right.apply)
+      }
+
+    def deleteMatrix() = Future {
+      if (matrix) {
+        logger.info(s"About to attempt to delete any Object Matrix data present for project ${projectId}")
+        implicit val db = dbConfig.db
+        MatrixDeleteJobDAO.getOrCreate(projectId, "Started")
+        //lazy val vidispineConfig = VidispineConfig.fromEnvironment.toOption.get
+        lazy val matrixStoreConfig = new MatrixStoreEnvironmentConfigProvider().get() match {
+          case Left(err)=>
+            logger.error(s"Could not initialise due to incorrect matrix-store config: $err")
+            sys.exit(1)
+          case Right(config)=>config
+        }
+        implicit lazy val executionContext = new MdcExecutionContext(
+          ExecutionContext.fromExecutor(
+            Executors.newWorkStealingPool(10)
+          )
+        )
+        implicit lazy val actorSystem:ActorSystem = ActorSystem("pluto-core-delete", defaultExecutionContext=Some(executionContext))
+        implicit lazy val mat:Materializer = Materializer(actorSystem)
+        //implicit lazy val vidispineCommunicator = new VidispineCommunicator(vidispineConfig)
+        val connectionIdleTime = sys.env.getOrElse("CONNECTION_MAX_IDLE", "750").toInt
+        implicit val matrixStore = new MXSConnectionBuilderImpl(
+          hosts = matrixStoreConfig.hosts,
+          accessKeyId = matrixStoreConfig.accessKeyId,
+          accessKeySecret = matrixStoreConfig.accessKeySecret,
+          clusterId = matrixStoreConfig.clusterId,
+          maxIdleSeconds = connectionIdleTime
+        )
+        //val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 120.seconds)
+        val matrixMethodOut = Await.result(getNearlineResults(projectId, matrixStoreConfig.nearlineVaultId), 120.seconds)
+        matrixMethodOut match {
+          case Right(nearlineResults) =>
+            nearlineResults.map(onlineOutputMessage => {
+              if (onlineOutputMessage.projectIds.length > 2) {
+                logger.info(s"Refusing to attempt to delete Object Matrix data for Vidispine item ${onlineOutputMessage.vidispineItemId.get} as it is referenced by more than one project.")
+                MatrixDeleteDataDAO.getOrCreate(projectId, onlineOutputMessage.vidispineItemId.get)
+              } else {
+                logger.info(s"About to attempt to send a message to delete Object Matrix data for Vidispine item ${onlineOutputMessage.vidispineItemId.get}")
+                rabbitMqMatrix ! MatrixEvent(onlineOutputMessage)
+              }
+            })
+          case Left(something) =>
+            logger.info(s"No Object Matrix data was found to process.")
+        }
+        MatrixDeleteJobDAO.getOrCreate(projectId, "Finished")
+      }
+    }
+
     val f = for {
       f1 <- deletePTRJob()
       f2 <- deleteFileJob()
       f3 <- deleteBackupsJob()
       f4 <- deleteDeliverables()
       f5 <- deleteS3()
-      f6 <- deleteSAN()
-    } yield List(f1, f2, f3, f4, f5, f6)
+      f6 <- deleteMatrix()
+      f7 <- deleteSAN()
+    } yield List(f1, f2, f3, f4, f5, f6, f7)
     if (pluto) {
       Thread.sleep(800)
       implicit val db = dbConfig.db
@@ -835,6 +938,21 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       Ok(Json.obj("status"->"ok","job_status"->jobRecord.status))
     case None=>
       NotFound(Json.obj("status"->"notfound","detail"->s"No job with project id: $projectId"))
+    }).recover({
+      case err:Throwable=>
+        logger.error(s"Could not look up project $projectId: ", err)
+        InternalServerError(Json.obj("status"->"error","detail"->"Database error looking up job, see server logs"))
+    })
+  }
+
+  def matrixDeleteJob(projectId: Int) = IsAdminAsync { uid => request =>
+    dbConfig.db.run(
+      TableQuery[MatrixDeleteJob].filter(_.projectEntry===projectId).result
+    ).map(_.headOption match {
+      case Some(jobRecord)=>
+        Ok(Json.obj("status"->"ok","job_status"->jobRecord.status))
+      case None=>
+        NotFound(Json.obj("status"->"notfound","detail"->s"No job with project id: $projectId"))
     }).recover({
       case err:Throwable=>
         logger.error(s"Could not look up project $projectId: ", err)
