@@ -774,6 +774,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         implicit lazy val mat:Materializer = Materializer(actorSystem)
         implicit lazy val vidispineCommunicator = new VidispineCommunicator(vidispineConfig)
         val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 120.seconds)
+        logger.info(s"Vidispine data: $vidispineMethodOut")
         vidispineMethodOut.map(onlineOutputMessage => {
           if (onlineOutputMessage.projectIds.length > 2) {
             logger.info(s"Refusing to attempt to delete Vidispine item ${onlineOutputMessage.vidispineItemId.get} as it is referenced by more than one project.")
@@ -865,7 +866,9 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         logger.info(s"Matrix Store data: $matrixMethodOut")
         matrixMethodOut match {
           case Right(nearlineResults) =>
+            logger.info(s"Found some results: $nearlineResults")
             nearlineResults.map(onlineOutputMessage => {
+              logger.info(s"Found a result: $onlineOutputMessage")
               if (onlineOutputMessage.projectIds.length > 2) {
                 logger.info(s"Refusing to attempt to delete Object Matrix data for Vidispine item ${onlineOutputMessage.vidispineItemId.get} as it is referenced by more than one project.")
                 MatrixDeleteDataDAO.getOrCreate(projectId, onlineOutputMessage.vidispineItemId.get)
