@@ -870,10 +870,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             nearlineResults.map(onlineOutputMessage => {
               logger.info(s"Found a result: $onlineOutputMessage")
               if (onlineOutputMessage.projectIds.length > 2) {
-                logger.info(s"Refusing to attempt to delete Object Matrix data for Vidispine item ${onlineOutputMessage.vidispineItemId.get} as it is referenced by more than one project.")
-                MatrixDeleteDataDAO.getOrCreate(projectId, onlineOutputMessage.vidispineItemId.get)
+                logger.info(s"Refusing to attempt to delete Object Matrix data for object ${onlineOutputMessage.nearlineId.get} as it is referenced by more than one project.")
+                MatrixDeleteDataDAO.getOrCreate(projectId, onlineOutputMessage.nearlineId.get)
               } else {
-                logger.info(s"About to attempt to send a message to delete Object Matrix data for Vidispine item ${onlineOutputMessage.vidispineItemId.get}")
+                logger.info(s"About to attempt to send a message to delete Object Matrix data for object ${onlineOutputMessage.nearlineId.get}")
                 rabbitMqMatrix ! MatrixEvent(onlineOutputMessage)
               }
             })
