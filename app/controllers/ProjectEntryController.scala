@@ -862,6 +862,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         )
         //val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 120.seconds)
         val matrixMethodOut = Await.result(getNearlineResults(projectId, matrixStoreConfig.nearlineVaultId, matrixStore), 120.seconds)
+        logger.info(s"Matrix Store data: $matrixMethodOut")
         matrixMethodOut match {
           case Right(nearlineResults) =>
             nearlineResults.map(onlineOutputMessage => {
