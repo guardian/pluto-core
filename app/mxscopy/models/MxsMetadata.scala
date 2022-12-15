@@ -1,7 +1,6 @@
 package mxscopy.models
 
 import java.time.{Instant, LocalDateTime, ZoneOffset, ZonedDateTime}
-
 import com.om.mxs.client.japi.Attribute
 import org.slf4j.LoggerFactory
 
@@ -9,8 +8,8 @@ case class MxsMetadata (stringValues:Map[String,String], boolValues:Map[String,B
   private val logger = LoggerFactory.getLogger(getClass)
 
   /**
-    * converts the data to a Seq[com.om.mxs.client.japi.Attribute], suitable for passing to ObjectMatrix API calls
-    * @return sequence of Attributes.
+    * Converts the data to a Seq[com.om.mxs.client.japi.Attribute], suitable for passing to ObjectMatrix API calls
+    * @return Sequence of Attributes.
     */
   def toAttributes:Seq[Attribute] = {
     stringValues.map(entry=>
@@ -26,23 +25,23 @@ case class MxsMetadata (stringValues:Map[String,String], boolValues:Map[String,B
   }
 
   /**
-    * convenience function to set a string value. Internally calls `withValue`.
-    * @param key key to set
-    * @param value string value to set it to
-    * @return and updated [[MxsMetadata]] object
+    * Convenience function to set a string value. Internally calls `withValue`.
+    * @param key Key to set
+    * @param value String value to set it to
+    * @return An updated [[MxsMetadata]] object
     */
   def withString(key:String, value:String):MxsMetadata = {
     withValue[String](key,value)
   }
 
   /**
-    * sets the given value for the given key and returns an updated [[MxsMetadata]] object.
-    * if the type of `value` is not supported, then it emits a warning and returns the original [[MxsMetadata]]
-    * @param key key to identify the metadata
-    * @param value value to set. This must be either Boolean, String, Int, Long or ZonedDateTime. ZonedDateTime is converted
+    * Sets the given value for the given key and returns an updated [[MxsMetadata]] object.
+    * If the type of `value` is not supported, then it emits a warning and returns the original [[MxsMetadata]]
+    * @param key Key to identify the metadata
+    * @param value Value to set. This must be either Boolean, String, Int, Long or ZonedDateTime. ZonedDateTime is converted
     *              to epoch millisenconds and stored as a long
-    * @tparam T the data type of `value`. Normally the compiler can infer this from the argument
-    * @return an updated [[MxsMetadata]] object
+    * @tparam T The data type of `value`. Normally the compiler can infer this from the argument
+    * @return An updated [[MxsMetadata]] object
     */
   def withValue[T](key:String, value:T):MxsMetadata = {
     value match {
@@ -60,8 +59,8 @@ case class MxsMetadata (stringValues:Map[String,String], boolValues:Map[String,B
   }
 
   /**
-   * merge this metadata with another one.  If the case of conflicts, the other instances metadata takes priority
-   * @param other another MxsMetadata object to merge with
+   * Merge this metadata with another one.  If the case of conflicts, the other instances metadata takes priority
+   * @param other Another MxsMetadata object to merge with
    */
   def merge(other:MxsMetadata) = {
     this.copy(
@@ -78,7 +77,7 @@ object MxsMetadata {
   def empty = new MxsMetadata(Map(),Map(),Map(),Map())
 
   /**
-   * a client is not allowed to write to any of these fields on the MatrixStore
+   * A client is not allowed to write to any of these fields on the MatrixStore
    */
   val disallowedWriteLongs = Seq(
     "MXFS_ARCHIVE_TIME",

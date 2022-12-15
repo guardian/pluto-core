@@ -15,16 +15,15 @@ import scala.util.{Failure, Success, Try}
 object MetadataHelper {
   private val logger = LoggerFactory.getLogger(getClass)
   /**
-    * iterates the available metadata and presents it as a dictionary
+    * Iterates the available metadata and presents it as a dictionary
     * @param obj [[MxsObject]] entity to retrieve information from
-    * @param mat implicitly provided materializer for streams
-    * @param ec implicitly provided execution context
-    * @return a Future, with the relevant map
+    * @param mat Implicitly provided materializer for streams
+    * @param ec Implicitly provided execution context
+    * @return A Future, with the relevant map
     */
   def getAttributeMetadata(obj:MxsObject)(implicit mat:Materializer, ec:ExecutionContext) = {
     val view = obj.getAttributeView
 
-    //val sink = Sink.fold[Seq[(String,AnyRef)],(String,AnyRef)](Seq())((acc,elem)=>acc++Seq(elem))
     val sink = Sink.fold[MxsMetadata,(String,Any)](MxsMetadata(Map(),Map(),Map(),Map()))((acc,elem)=>{
       elem._2 match {
         case boolValue: Boolean => acc.copy(boolValues = acc.boolValues ++ Map(elem._1->boolValue))
@@ -56,7 +55,6 @@ object MetadataHelper {
   def setAttributeMetadata(obj:MxsObject, newMetadata:MxsMetadata) = {
     val view = obj.getAttributeView
 
-    //meh, this is probably not very efficient
     newMetadata.stringValues.foreach(entry=>view.writeString(entry._1,entry._2))
     newMetadata.longValues.foreach(entry=>view.writeLong(entry._1, entry._2))
     newMetadata.intValues.foreach(entry=>view.writeInt(entry._1,entry._2))
@@ -71,7 +69,7 @@ object MetadataHelper {
   }
 
   /**
-   * exhaustive determination of file size.  Tries __mxs__length and DPSP_SIZE (both as a Long and a String) from the metadata first.
+   * Exhaustive determination of file size.  Tries __mxs__length and DPSP_SIZE (both as a Long and a String) from the metadata first.
    * If nothing is found, then falls back to using MxfsAttributeView
    * @param obj
    * @return
@@ -102,7 +100,6 @@ object MetadataHelper {
     metaValue match {
       case Some(size)=>size
       case None=>
-        //MXFSAttributeView seems unreliable for some reason
         logger.debug(s"Could not find any file size for ${obj.getId} in metadata, falling back to MXFSAttributeView")
         val mxfsMeta = obj.getMXFSFileAttributeView
         val attrs = mxfsMeta.readAttributes()
