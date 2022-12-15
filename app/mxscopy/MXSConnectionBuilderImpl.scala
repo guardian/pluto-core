@@ -20,12 +20,12 @@ trait MXSConnectionBuilder {
 
 /**
  * Real implementation of MXSConnectionBuilder.  This will call out to the appliance to retrieve vault references
- * @param hosts appliance hostnames/IP addresses as an array of strings
- * @param clusterId cluster ID
- * @param accessKeyId access key ID for the service account to use to connect
- * @param accessKeySecret access key secret for the service account to use to connect
- * @param maxIdleSeconds timeout, in seconds, after which an idle connection will be cloased
- * @param loanLimitWarning timeout, in seconds, after warnings will be emitted if a connection is still "in-use"
+ * @param hosts Appliance hostnames/IP addresses as an array of strings
+ * @param clusterId Cluster id.
+ * @param accessKeyId Access key id. for the service account to use to connect
+ * @param accessKeySecret Access key secret for the service account to use to connect
+ * @param maxIdleSeconds Timeout, in seconds, after which an idle connection will be cloased
+ * @param loanLimitWarning Timeout, in seconds, after warnings will be emitted if a connection is still "in-use"
  */
 class MXSConnectionBuilderImpl(hosts: Array[String], clusterId:String, accessKeyId:String, accessKeySecret:String, maxIdleSeconds:Int=300, loanLimitWarning:Int=14400)(implicit actorSystem: ActorSystem) extends MXSConnectionBuilder {
   //private vars are synchronised to object instance on access - that's why they need to be private and final
@@ -85,15 +85,15 @@ class MXSConnectionBuilderImpl(hosts: Array[String], clusterId:String, accessKey
   })
 
   /**
-   * initiates a connection to the configuration indicated by the builder, opens the given vault then runs the callback.
+   * Initiates a connection to the configuration indicated by the builder, opens the given vault then runs the callback.
    * The callback is expected to return a Future of some type T.
    * Whether it succeeds or fails, the vault connection is then disposed.
    * Use this in preference to the static method if you have no pre-existing connection
-   * @param vaultId vault ID to open
-   * @param cb callback function which takes the Vault instance as a parameter and returns a Future of any type
-   * @param ec implicitly defined execution context
-   * @tparam T the type returned by the callback's Future
-   * @return either the result of the callback, or a failed Try indicating some error in establishing the connection
+   * @param vaultId Vault id. to open
+   * @param cb Callback function which takes the Vault instance as a parameter and returns a Future of any type
+   * @param ec Implicitly defined execution context
+   * @tparam T The type returned by the callback's Future
+   * @return Either the result of the callback, or a failed Try indicating some error in establishing the connection
    */
   def withVaultFuture[T](vaultId:String)(cb: Vault => Future[Either[String, T]])(implicit ec:ExecutionContext) = {
     Future.fromTry(getConnection()).flatMap(mxs=>{
@@ -110,11 +110,11 @@ class MXSConnectionBuilderImpl(hosts: Array[String], clusterId:String, accessKey
    * Exactly the same as [[withVaultFuture]] but takes in multiple vault IDs and opens a connection to each of them.
    * The sequence of Vault instances passed to the callback should be in the same order as the vault IDs passed to the
    * function.
-   * @param vaultIds sequence of strings representing the vault IDs to open. A failure is returned if any of these fail.
-   * @param cb callback function, which needs to take a sequence of Vault objects representing the open vaults and return a Future of some type
-   * @param ec implicitly provided execution context
-   * @tparam T data type returned in the Future of the callback
-   * @return the result of the callback, or a failure if we were not able to establish the connection
+   * @param vaultIds Sequence of strings representing the vault IDs to open. A failure is returned if any of these fail.
+   * @param cb Callback function, which needs to take a sequence of Vault objects representing the open vaults and return a Future of some type
+   * @param ec Implicitly provided execution context
+   * @tparam T Data type returned in the Future of the callback
+   * @return The result of the callback, or a failure if we were not able to establish the connection
    */
   def withVaultsFuture[T](vaultIds:Seq[String])(cb: Seq[Vault]=>Future[T])(implicit ec:ExecutionContext) = {
     Future.fromTry(getConnection()).flatMap(mxs=>{

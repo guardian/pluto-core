@@ -4,7 +4,6 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 import akka.stream.Materializer
 import com.om.mxs.client.japi.{MXFSFileAttributes, Vault}
 import mxscopy.helpers.MetadataHelper
-
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -18,8 +17,8 @@ case class ObjectMatrixEntry(oid:String, attributes:Option[MxsMetadata], fileAtt
     )
 
   /**
-   * pull filesystem metadata from the appliance
-   * @param vault vault to query
+   * Pull filesystem metadata from the appliance
+   * @param vault Vault to query
    * @return
    */
   def getMxfsMetadata(vault:Vault) = Try {
@@ -60,8 +59,8 @@ case class ObjectMatrixEntry(oid:String, attributes:Option[MxsMetadata], fileAtt
 object ObjectMatrixEntry {
   /**
    * Returns an ObjectMatrixEntry pre-populated with the full metadata from the given object.
-   * @param oid id of the object matrix blob to interrogate
-   * @param vault open vault ID to look it up on. `withVault` can get you this value.
+   * @param oid Id. of the object matrix blob to interrogate
+   * @param vault Open vault id. to look it up on. `withVault` can get you this value.
    */
   def fromOID(oid: String, vault: Vault)(implicit mat:Materializer, ec:ExecutionContext) = for {
       withMXFS <- Future.fromTry(new ObjectMatrixEntry(oid, None, None).getMxfsMetadata(vault))
@@ -71,8 +70,8 @@ object ObjectMatrixEntry {
   /**
    * Returns an ObjectMatrixEntry that _only_ contains the given OID and NO METADATA YET.
    * This should only be used internally; `ObjectMatrixEntry.fromOID` is more likely to do what you want
-   * @param oid id of the object matrix blob to interrogate
-   * @return the ObjectMatrixEntry record
+   * @param oid Id. of the object matrix blob to interrogate
+   * @return The ObjectMatrixEntry record
    */
   def apply(oid:String) = new ObjectMatrixEntry(oid, None, None)
 }

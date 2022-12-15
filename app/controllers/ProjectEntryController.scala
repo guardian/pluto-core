@@ -822,7 +822,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         logger.info(s"About to attempt to delete any Object Matrix data present for project ${projectId}")
         implicit val db = dbConfig.db
         MatrixDeleteJobDAO.getOrCreate(projectId, "Started")
-        //lazy val vidispineConfig = VidispineConfig.fromEnvironment.toOption.get
         lazy val matrixStoreConfig = new MatrixStoreEnvironmentConfigProvider().get() match {
           case Left(err)=>
             logger.error(s"Could not initialise due to incorrect matrix-store config: $err")
@@ -836,7 +835,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         )
         implicit lazy val actorSystem:ActorSystem = ActorSystem("pluto-core-delete-matrix", defaultExecutionContext=Some(executionContext))
         implicit lazy val mat:Materializer = Materializer(actorSystem)
-        //implicit lazy val vidispineCommunicator = new VidispineCommunicator(vidispineConfig)
         val connectionIdleTime = sys.env.getOrElse("CONNECTION_MAX_IDLE", "750").toInt
         implicit val matrixStore = new MXSConnectionBuilderImpl(
           hosts = matrixStoreConfig.hosts,
@@ -845,7 +843,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
           clusterId = matrixStoreConfig.clusterId,
           maxIdleSeconds = connectionIdleTime
         )
-        //val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 120.seconds)
         val matrixMethodOut = Await.result(getNearlineResults(projectId, matrixStoreConfig.nearlineVaultId, matrixStore), 120.seconds)
         matrixMethodOut match {
           case Right(nearlineResults) =>
