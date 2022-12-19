@@ -42,7 +42,7 @@ lazy val `pluto-core` = (project in file("."))
 
 javaOptions in Test += "-Duser.timezone=UTC"
 
-scalaVersion := "2.13.2"
+scalaVersion := "2.13.9"
 
 libraryDependencies ++= Seq( jdbc, ehcache , ws   , specs2 % Test, guice )
 
