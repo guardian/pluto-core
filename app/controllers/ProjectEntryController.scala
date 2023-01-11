@@ -587,7 +587,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     Future(Ok(Json.obj("status"->"ok","detail"->"Fix permissions run.")))
   }
 
-  def deleteDataRunner(projectId: Int, pluto: Boolean, file: Boolean, backups: Boolean, pTR: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean, buckets: Array[String], bucketBooleans: Array[Boolean]): Unit = {
+  def deleteDataRunner(projectId: Int, delay: Int, pluto: Boolean, file: Boolean, backups: Boolean, pTR: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean, buckets: Array[String], bucketBooleans: Array[Boolean]): Unit = {
     def deleteFileJob() = Future {
       if (file) {
         implicit val db = dbConfig.db
@@ -761,6 +761,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
     def deleteSAN() = Future {
       if (sAN) {
+        Thread.sleep(delay)
         logger.info(s"About to attempt to delete any SAN data present for project ${projectId}")
         implicit val db = dbConfig.db
         DeleteJobDAO.getOrCreate(projectId, "Started")
@@ -819,6 +820,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
     def deleteMatrix() = Future {
       if (matrix) {
+        Thread.sleep(delay)
         logger.info(s"About to attempt to delete any Object Matrix data present for project ${projectId}")
         implicit val db = dbConfig.db
         MatrixDeleteJobDAO.getOrCreate(projectId, "Started")
@@ -908,7 +910,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
     logger.info(s"Buckets value is: ${request.body.asJson.get("buckets")}")
     logger.info(s"Bucket Booleans value is: ${request.body.asJson.get("bucketBooleans")}")
-    deleteDataRunner(projectId, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
+    deleteDataRunner(projectId, 0, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
     Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
   }
 
@@ -940,5 +942,52 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         logger.error(s"Could not look up project $projectId: ", err)
         InternalServerError(Json.obj("status"->"error","detail"->"Database error looking up job, see server logs"))
     })
+  }
+
+  def getProjectsForCommission(commission: Int) = dbConfig.db.run(
+    TableQuery[ProjectEntryRow].filter(_.commission===commission).sortBy(_.created.desc).result
+  ).map(Success(_)).recover(Failure(_))
+
+  def deleteCommissionData(commissionId: Int) = IsAdmin { uid =>
+    request =>
+      logger.info(s"Got a delete data request for commission ${commissionId}.")
+      logger.info(s"Commission value is: ${request.body.asJson.get("commission")}")
+      logger.info(s"Pluto value is: ${request.body.asJson.get("pluto")}")
+      logger.info(s"File value is: ${request.body.asJson.get("file")}")
+      logger.info(s"Backups value is: ${request.body.asJson.get("backups")}")
+      logger.info(s"PTR value is: ${request.body.asJson.get("PTR")}")
+      logger.info(s"Deliverables value is: ${request.body.asJson.get("deliverables")}")
+      logger.info(s"SAN value is: ${request.body.asJson.get("SAN")}")
+      logger.info(s"Matrix value is: ${request.body.asJson.get("matrix")}")
+      logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
+      logger.info(s"Buckets value is: ${request.body.asJson.get("buckets")}")
+      logger.info(s"Bucket Booleans value is: ${request.body.asJson.get("bucketBooleans")}")
+
+      implicit val db = dbConfig.db
+
+      getProjectsForCommission(commissionId).map({
+        case Success(result)=>
+          result.map((project) => {
+            logger.info(s"Found project ${project.id.get}.")
+            deleteDataRunner(project.id.get, 400, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
+          })
+          Thread.sleep(1400)
+
+          PlutoCommission.forId(commissionId).map({
+            case Some(plutoCommission: PlutoCommission) =>
+              plutoCommission.removeFromDatabase.map({
+                case Success(_) =>
+                  logger.info(s"Attempt at removing commission record worked.")
+                case Failure(error) =>
+                  logger.error(s"Attempt at removing commission record failed with error: ${error}")
+              })
+            case None =>
+              logger.error(s"Could not look up commission entry for ${commissionId}: ")
+          })
+        case Failure(error)=>
+          logger.error(error.toString)
+      })
+
+      Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
   }
 }

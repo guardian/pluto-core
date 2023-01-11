@@ -143,3 +143,51 @@ export const projectsForCommission: (
     filterTerms: filterTerms,
   });
 };
+
+export const startDelete = async (
+  id: number,
+  commission: boolean,
+  pluto: boolean,
+  file: boolean,
+  backups: boolean,
+  pTR: boolean,
+  deliverables: boolean,
+  sAN: boolean,
+  matrix: boolean,
+  s3: boolean,
+  buckets: string[],
+  bucketBooleans: boolean[]
+): Promise<void> => {
+  try {
+    let bucketsArray = `[`;
+    for (const bucket of buckets) {
+      bucketsArray = bucketsArray + `"${bucket}",`;
+    }
+    bucketsArray = bucketsArray.slice(0, -1);
+    bucketsArray = bucketsArray + `]`;
+    let booleansArray = `[`;
+    for (const boolean of bucketBooleans) {
+      booleansArray = booleansArray + `${boolean},`;
+    }
+    booleansArray = booleansArray.slice(0, -1);
+    booleansArray = booleansArray + `]`;
+    const { status } = await Axios.put<PlutoApiResponse<void>>(
+      `${API_COMMISSION}/${id}/deleteData`,
+      `{"commission":${commission},"pluto":${pluto},"file":${file},"backups":${backups},"PTR":${pTR},"deliverables":${deliverables},"SAN":${sAN},"matrix":${matrix},"S3":${s3},"buckets":${bucketsArray},"bucketBooleans":${booleansArray}}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (status !== 200) {
+      throw new Error(
+        `Could not start deletion of data for commission ${id}: server said ${status}`
+      );
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};

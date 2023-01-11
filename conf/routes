@@ -105,6 +105,7 @@ PUT     /api/pluto/commission/list         @controllers.PlutoCommissionControlle
 OPTIONS /api/pluto/commission/list         @controllers.Application.corsOptions
 PUT     /api/pluto/commission/:id           @controllers.PlutoCommissionController.updateByAnyone(id:Int)
 PUT     /api/pluto/commission/:id/status   @controllers.PlutoCommissionController.updateStatus(id:Int)
+PUT     /api/pluto/commission/:id/deleteData    @controllers.ProjectEntryController.deleteCommissionData(id: Int)
 
 GET     /api/assetfolder/lookup            @controllers.AssetFolderController.assetFolderForPath(path:String)
 GET     /api/project/:projectId/assetfolder @controllers.AssetFolderController.assetFolderForProject(projectId:Int)
