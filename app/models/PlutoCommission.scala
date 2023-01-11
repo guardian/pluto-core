@@ -89,6 +89,15 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: Op
     "commissionTitle"->title,
     "commissionDescription"->description.getOrElse("")
   )
+
+  def removeFromDatabase(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Unit]] = id match {
+    case Some(realEntityId)=>
+      db.run(DBIO.seq(
+        TableQuery[PlutoCommissionRow].filter(_.id===realEntityId).delete,
+      ).asTry)
+    case None=>
+      Future(Failure(new RuntimeException("A record must have been saved before it can be removed from the database.")))
+  }
 }
 
 class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoCommission"){

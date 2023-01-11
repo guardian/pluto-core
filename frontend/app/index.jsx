@@ -56,6 +56,7 @@ import ProjectBackups from "./ProjectEntryList/ProjectBackups";
 import PremiereVersionChange from "./PremiereVersionChange/PremiereVersionChange";
 import VersionTranslationsList from "./PremiereVersionTranslation/VersionTranslationsList";
 import ProjectDeleteDataComponent from "./ProjectEntryList/ProjectDeleteDataComponent";
+import CommissionDeleteDataComponent from "./CommissionsList/CommissionDeleteDataComponent";
 
 library.add(faSearch);
 
@@ -295,6 +296,10 @@ class App extends React.Component {
                       userName={this.state.currentUsername}
                     />
                   )}
+                />
+                <Route
+                  path="/commission/:commissionId/deletedata"
+                  component={CommissionDeleteDataComponent}
                 />
                 <Route
                   path="/commission/:commissionId"
