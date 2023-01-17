@@ -3,8 +3,7 @@ name: Build and upload pluto-core
 on:
   push:
     branches:
-      - '*'
-      - main
+      - "**"
   pull_request:
     branches: [ main ]
 
