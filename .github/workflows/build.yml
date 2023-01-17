@@ -78,7 +78,7 @@ jobs:
 
       - run: yarn lint
         working-directory: frontend
-      - run: yarn test-ci
+      - run: yarn test:ci
         env:
           JEST_JUNIT_OUTPUT_DIR: ../junit-tests
           JEST_JUNIT_TITLE: Frontend tests
