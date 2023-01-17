@@ -6,7 +6,7 @@ import {
 } from "../utils/api";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 import WarningIcon from "@material-ui/icons/Warning";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import { SystemNotification, SystemNotifcationKind } from "@guardian/pluto-headers";
 import { useGuardianStyles } from "~/misc/utils";
 
 const tableHeaderTitles: string[] = ["Filename", "Size", "Status"];

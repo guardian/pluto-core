@@ -8,7 +8,7 @@ import {
 } from "@material-ui/core";
 import StorageSelector from "../../Selectors/StorageSelector";
 import axios from "axios";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import { SystemNotification, SystemNotifcationKind } from "@guardian/pluto-headers";
 import { useGuardianStyles } from "~/misc/utils";
 
 interface BackupsComponentProps {

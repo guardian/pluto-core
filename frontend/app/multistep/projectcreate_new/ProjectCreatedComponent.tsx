@@ -7,7 +7,7 @@ import {
   updateProjectOpenedStatus,
 } from "../../ProjectEntryList/helpers";
 import { createProjectDeliverable } from "../../utils/api";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import { SystemNotification, SystemNotifcationKind } from "@guardian/pluto-headers";
 import { Helmet } from "react-helmet";
 import { useHistory } from "react-router-dom";
 import { useGuardianStyles } from "~/misc/utils";

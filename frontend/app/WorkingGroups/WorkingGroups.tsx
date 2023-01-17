@@ -23,7 +23,7 @@ import DeleteIcon from "@material-ui/icons/Delete";
 import { getWorkingGroupsOnPage, deleteWorkingGroup } from "./helpers";
 import { sortListByOrder, SortDirection } from "../utils/lists";
 import { isLoggedIn } from "../utils/api";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import { SystemNotification, SystemNotifcationKind } from "@guardian/pluto-headers";
 import { Helmet } from "react-helmet";
 import { Visibility, VisibilityOff } from "@material-ui/icons";
 import { useGuardianStyles } from "~/misc/utils";
