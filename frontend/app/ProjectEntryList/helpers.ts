@@ -1,6 +1,9 @@
 import Axios from "axios";
 import axios from "axios";
-import { SystemNotifcationKind, SystemNotification } from "@guardian/pluto-headers";
+import {
+  SystemNotifcationKind,
+  SystemNotification,
+} from "@guardian/pluto-headers";
 
 const API = "/api";
 const API_PROJECTS = `${API}/project`;

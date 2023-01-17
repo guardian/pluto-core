@@ -1,14 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { RouteComponentProps } from "react-router-dom";
 import axios from "axios";
-import { SystemNotification, SystemNotifcationKind } from "@guardian/pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import ImprovedDeleteComponent from "./ImprovedDeleteComponent";
 import { CircularProgress } from "@material-ui/core";
 import SummaryComponent from "../multistep/storage/SummaryComponent";
 
-const StorageDeleteComponent: React.FC<RouteComponentProps<{
-  itemid?: string;
-}>> = (props) => {
+const StorageDeleteComponent: React.FC<
+  RouteComponentProps<{
+    itemid?: string;
+  }>
+> = (props) => {
   const emptyLoginDetails: StorageLoginDetails = {
     hostname: "",
     port: 0,
@@ -29,9 +34,8 @@ const StorageDeleteComponent: React.FC<RouteComponentProps<{
   );
   const [storageType, setStorageType] = useState<StorageType>(emptyStorageType);
   const [isLoading, setIsLoading] = useState(true);
-  const [loginDetails, setLoginDetails] = useState<StorageLoginDetails>(
-    emptyLoginDetails
-  );
+  const [loginDetails, setLoginDetails] =
+    useState<StorageLoginDetails>(emptyLoginDetails);
 
   const loadData = async () => {
     if (props.match.params.itemid) {

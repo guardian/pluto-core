@@ -23,7 +23,10 @@ import DeleteIcon from "@material-ui/icons/Delete";
 import { getWorkingGroupsOnPage, deleteWorkingGroup } from "./helpers";
 import { sortListByOrder, SortDirection } from "../utils/lists";
 import { isLoggedIn } from "../utils/api";
-import { SystemNotification, SystemNotifcationKind } from "@guardian/pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import { Helmet } from "react-helmet";
 import { Visibility, VisibilityOff } from "@material-ui/icons";
 import { useGuardianStyles } from "~/misc/utils";
@@ -89,13 +92,12 @@ const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
     setPage(0);
   };
 
-  const sortByColumn = (property: keyof WorkingGroup) => (
-    _event: React.MouseEvent<unknown>
-  ) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
-  };
+  const sortByColumn =
+    (property: keyof WorkingGroup) => (_event: React.MouseEvent<unknown>) => {
+      const isAsc = orderBy === property && order === "asc";
+      setOrder(isAsc ? "desc" : "asc");
+      setOrderBy(property);
+    };
 
   const closeDialog = () => {
     setOpenDialog(false);

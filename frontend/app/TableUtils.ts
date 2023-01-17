@@ -48,12 +48,12 @@ type ComparatorFunc<V> = (
 function getComparator<T, V>(order: Ordering, orderBy: T): ComparatorFunc<V> {
   return order === "desc"
     ? (a: IndexedArray<V>, b: IndexedArray<V>) =>
-        descendingComparator(a, b, (orderBy as unknown) as string)
+        descendingComparator(a, b, orderBy as unknown as string)
     : (a: IndexedArray<V>, b: IndexedArray<V>) =>
         -(descendingComparator(
           a,
           b,
-          (orderBy as unknown) as string
+          orderBy as unknown as string
         ) as number) as ComparatorValue;
 }
 

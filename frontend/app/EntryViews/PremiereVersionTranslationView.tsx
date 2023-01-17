@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { SystemNotifcationKind, SystemNotification } from "@guardian/pluto-headers";
+import {
+  SystemNotifcationKind,
+  SystemNotification,
+} from "@guardian/pluto-headers";
 
 interface PremiereVersionTranslationViewProps {
   internalVersion: number;
 }
 
-const PremiereVersionTranslationView: React.FC<PremiereVersionTranslationViewProps> = (
-  props
-) => {
+const PremiereVersionTranslationView: React.FC<
+  PremiereVersionTranslationViewProps
+> = (props) => {
   const [translation, setTranslation] = useState<
     PremiereVersionTranslation | undefined
   >(undefined);

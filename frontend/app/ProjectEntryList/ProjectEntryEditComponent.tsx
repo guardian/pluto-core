@@ -21,7 +21,10 @@ import {
   updateProjectOpenedStatus,
   getSimpleProjectTypeData,
 } from "./helpers";
-import { SystemNotification, SystemNotifcationKind } from "@guardian/pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 
 import ProjectEntryDeliverablesComponent from "./ProjectEntryDeliverablesComponent";
 import { Breadcrumb } from "@guardian/pluto-headers";
@@ -45,9 +48,8 @@ interface ProjectEntryEditComponentStateTypes {
   itemid?: string;
 }
 
-type ProjectEntryEditComponentProps = RouteComponentProps<
-  ProjectEntryEditComponentStateTypes
->;
+type ProjectEntryEditComponentProps =
+  RouteComponentProps<ProjectEntryEditComponentStateTypes>;
 
 const EMPTY_PROJECT: Project = {
   commissionId: -1,

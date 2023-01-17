@@ -3,7 +3,10 @@ import { RouteComponentProps } from "react-router-dom";
 import CommonMultistepContainer from "./common/CommonMultistepContainer";
 import StorageTypeComponent from "./storage/TypeComponent";
 import axios from "axios";
-import { SystemNotification, SystemNotifcationKind } from "@guardian/pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import StorageLoginComponent from "./storage/LoginComponent";
 import StorageSubfolderComponent from "./storage/SubfolderComponent";
 import SummaryComponent from "./storage/SummaryComponent";
@@ -19,9 +22,9 @@ interface StorageMultistepParams {
   itemid?: string;
 }
 
-const StorageMultistepNew: React.FC<RouteComponentProps<
-  StorageMultistepParams
->> = (props) => {
+const StorageMultistepNew: React.FC<
+  RouteComponentProps<StorageMultistepParams>
+> = (props) => {
   const [activeStep, setActiveStep] = useState(0);
   const [creationInProgress, setCreationInProgress] = useState(false);
   const [creationFailed, setCreationFailed] = useState<string | undefined>(

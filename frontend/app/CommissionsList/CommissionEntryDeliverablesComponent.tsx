@@ -27,9 +27,9 @@ const ActionIcons: React.FC<{ id: number }> = (props) => (
   </span>
 );
 
-const CommissionEntryDeliverablesComponent: React.FC<CommissionEntryDeliverablesComponentProps> = (
-  props
-) => {
+const CommissionEntryDeliverablesComponent: React.FC<
+  CommissionEntryDeliverablesComponentProps
+> = (props) => {
   const classes = useGuardianStyles();
 
   const [loading, setLoading] = useState<boolean>(true);

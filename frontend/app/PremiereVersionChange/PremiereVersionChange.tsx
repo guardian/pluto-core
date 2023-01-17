@@ -48,9 +48,9 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
 
   useEffect(() => {
     try {
-      const parsedParams = (parse(
+      const parsedParams = parse(
         props.location.search
-      ) as unknown) as PremiereVersionChangeParams;
+      ) as unknown as PremiereVersionChangeParams;
       if (
         parsedParams.project == undefined ||
         parsedParams.requiredVersion == undefined

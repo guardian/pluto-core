@@ -31,7 +31,10 @@ import {
 import AssetFolderLink from "./AssetFolderLink";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { SystemNotification, SystemNotifcationKind } from "@guardian/pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import { useGuardianStyles } from "~/misc/utils";
 
 const tableHeaderTitles: HeaderTitle<Project>[] = [
@@ -110,13 +113,12 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
     setPage(0);
   };
 
-  const sortByColumn = (property: keyof Project) => (
-    _event: React.MouseEvent<unknown>
-  ) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
-  };
+  const sortByColumn =
+    (property: keyof Project) => (_event: React.MouseEvent<unknown>) => {
+      const isAsc = orderBy === property && order === "asc";
+      setOrder(isAsc ? "desc" : "asc");
+      setOrderBy(property);
+    };
 
   const closeDialog = () => {
     setOpenDialog(false);

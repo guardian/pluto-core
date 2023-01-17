@@ -1,5 +1,8 @@
 import axios from "axios";
-import { SystemNotifcationKind, SystemNotification } from "@guardian/pluto-headers";
+import {
+  SystemNotifcationKind,
+  SystemNotification,
+} from "@guardian/pluto-headers";
 
 const loadWorkingGroups = async (
   setKnownWorkingGroups: (prevState: WorkingGroup[]) => void

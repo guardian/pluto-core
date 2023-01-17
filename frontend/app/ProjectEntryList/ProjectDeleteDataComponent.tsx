@@ -7,7 +7,10 @@ import {
   startDelete,
   getBuckets,
 } from "./helpers";
-import { SystemNotification, SystemNotifcationKind } from "@guardian/pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import { Helmet } from "react-helmet";
 import { useGuardianStyles } from "~/misc/utils";
 import { isLoggedIn } from "~/utils/api";
@@ -18,9 +21,8 @@ interface ProjectDeleteDataComponentStateTypes {
   itemid?: string;
 }
 
-type ProjectDeleteDataComponentProps = RouteComponentProps<
-  ProjectDeleteDataComponentStateTypes
->;
+type ProjectDeleteDataComponentProps =
+  RouteComponentProps<ProjectDeleteDataComponentStateTypes>;
 
 const EMPTY_PROJECT: Project = {
   commissionId: -1,

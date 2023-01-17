@@ -23,9 +23,8 @@ interface ValidationJobsTableProps {
 }
 
 const ValidationJobsTable: React.FC<ValidationJobsTableProps> = (props) => {
-  const [sortColumn, setSortColumn] = useState<ValidationJobColumn>(
-    "startedAt"
-  );
+  const [sortColumn, setSortColumn] =
+    useState<ValidationJobColumn>("startedAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const classes = useGuardianStyles();

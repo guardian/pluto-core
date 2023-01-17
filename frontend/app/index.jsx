@@ -42,8 +42,15 @@ import CommissionMultistepNew from "./multistep/CommissionMultistepNew";
 
 import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
-import { PlutoThemeProvider, SystemNotification } from "@guardian/pluto-headers";
-import { Header, AppSwitcher, handleUnauthorized } from "@guardian/pluto-headers";
+import {
+  PlutoThemeProvider,
+  SystemNotification,
+} from "@guardian/pluto-headers";
+import {
+  Header,
+  AppSwitcher,
+  handleUnauthorized,
+} from "@guardian/pluto-headers";
 
 import "./styles/app.css";
 import CommissionEntryEditComponent from "./CommissionsList/CommissionEntryEditComponent";

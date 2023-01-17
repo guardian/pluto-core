@@ -55,9 +55,8 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   const [commissionId, setCommissionId] = useState<number | undefined>(
     undefined
   );
-  const [productionOffice, setProductionOffice] = useState<ProductionOffice>(
-    "UK"
-  );
+  const [productionOffice, setProductionOffice] =
+    useState<ProductionOffice>("UK");
   const [deletable, setDeletable] = useState(false);
   const [deepArchive, setDeepArchive] = useState(true);
   const [sensitive, setSensitive] = useState(false);
