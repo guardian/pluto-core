@@ -17,6 +17,7 @@ jobs:
       contents: read
       checks: write
       pull-requests: write
+      packages: write
     # services:
     #   postgres: 9.6
     # env:
