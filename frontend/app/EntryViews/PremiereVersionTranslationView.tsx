@@ -9,9 +9,9 @@ interface PremiereVersionTranslationViewProps {
   internalVersion: number;
 }
 
-const PremiereVersionTranslationView: React.FC<
-  PremiereVersionTranslationViewProps
-> = (props) => {
+const PremiereVersionTranslationView: React.FC<PremiereVersionTranslationViewProps> = (
+  props
+) => {
   const [translation, setTranslation] = useState<
     PremiereVersionTranslation | undefined
   >(undefined);

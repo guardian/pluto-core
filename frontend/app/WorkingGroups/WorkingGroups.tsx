@@ -92,12 +92,13 @@ const WorkingGroups: React.FC<RouteComponentProps> = (props) => {
     setPage(0);
   };
 
-  const sortByColumn =
-    (property: keyof WorkingGroup) => (_event: React.MouseEvent<unknown>) => {
-      const isAsc = orderBy === property && order === "asc";
-      setOrder(isAsc ? "desc" : "asc");
-      setOrderBy(property);
-    };
+  const sortByColumn = (property: keyof WorkingGroup) => (
+    _event: React.MouseEvent<unknown>
+  ) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
+  };
 
   const closeDialog = () => {
     setOpenDialog(false);

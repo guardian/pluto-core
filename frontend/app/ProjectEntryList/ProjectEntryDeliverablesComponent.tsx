@@ -19,13 +19,15 @@ interface ProjectEntryDeliverablesComponentProps {
   onError?: (errorDesc: string) => void;
 }
 
-const ProjectEntryDeliverablesComponent: React.FC<
-  ProjectEntryDeliverablesComponentProps
-> = (props) => {
+const ProjectEntryDeliverablesComponent: React.FC<ProjectEntryDeliverablesComponentProps> = (
+  props
+) => {
   const classes = useGuardianStyles();
   const [deliverable, setDeliverables] = useState<Deliverable[]>([]);
-  const [deliverableCount, setDeliverableCount] =
-    useState<DeliverablesCount | null>(null);
+  const [
+    deliverableCount,
+    setDeliverableCount,
+  ] = useState<DeliverablesCount | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [failed, setFailed] = useState<string>("");
   const { project } = props;

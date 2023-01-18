@@ -85,12 +85,13 @@ const CommissionsList: React.FC = () => {
     setPage(0);
   };
 
-  const sortByColumn =
-    (property: keyof Commission) => (_event: React.MouseEvent<unknown>) => {
-      const isAsc = orderBy === property && order === "asc";
-      setOrder(isAsc ? "desc" : "asc");
-      setOrderBy(property);
-    };
+  const sortByColumn = (property: keyof Commission) => (
+    _event: React.MouseEvent<unknown>
+  ) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
+  };
 
   useEffect(() => {
     const fetchWhoIsLoggedIn = async () => {

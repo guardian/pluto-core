@@ -23,8 +23,9 @@ class ServerDefaults extends React.Component {
     };
 
     this.updateDefaultSetting = this.updateDefaultSetting.bind(this);
-    this.updateDefaultProjectTemplateSetting =
-      this.updateDefaultProjectTemplateSetting.bind(this);
+    this.updateDefaultProjectTemplateSetting = this.updateDefaultProjectTemplateSetting.bind(
+      this
+    );
   }
 
   componentDidMount() {

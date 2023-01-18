@@ -227,9 +227,9 @@ interface RouteComponentMatches {
   commissionId: string;
 }
 
-const CommissionEntryEditComponent: React.FC<
-  RouteComponentProps<RouteComponentMatches>
-> = (props) => {
+const CommissionEntryEditComponent: React.FC<RouteComponentProps<
+  RouteComponentMatches
+>> = (props) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [commissionData, setCommissionData] = useState<
     CommissionFullRecord | undefined
@@ -249,8 +249,9 @@ const CommissionEntryEditComponent: React.FC<
   });
   const [user, setUser] = useState<PlutoUser | null>(null);
   const [projectCount, setProjectCount] = useState<number>(0);
-  const [deliverablesSearchString, setDeliverablesSearchString] =
-    useState<string>("");
+  const [deliverablesSearchString, setDeliverablesSearchString] = useState<
+    string
+  >("");
 
   let commissionId: number;
   try {

@@ -33,8 +33,9 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
   const [scheduledCompletion, setScheduledCompletion] = useState<Date>(
     add(new Date(), { weeks: 4 })
   );
-  const [productionOffice, setProductionOffice] =
-    useState<ProductionOffice>("UK");
+  const [productionOffice, setProductionOffice] = useState<ProductionOffice>(
+    "UK"
+  );
 
   const [createdCommissionId, setCreatedCommissionId] = useState<
     number | undefined

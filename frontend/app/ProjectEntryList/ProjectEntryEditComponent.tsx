@@ -48,8 +48,9 @@ interface ProjectEntryEditComponentStateTypes {
   itemid?: string;
 }
 
-type ProjectEntryEditComponentProps =
-  RouteComponentProps<ProjectEntryEditComponentStateTypes>;
+type ProjectEntryEditComponentProps = RouteComponentProps<
+  ProjectEntryEditComponentStateTypes
+>;
 
 const EMPTY_PROJECT: Project = {
   commissionId: -1,

@@ -22,8 +22,9 @@ const ProjectValidationMain: React.FC = () => {
   const [loadedJobs, setLoadedJobs] = useState<ValidationJob[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastError, setLastError] = useState<string | undefined>(undefined);
-  const [selectedScanType, setSelectedScanType] =
-    useState<ValidationScanType>("CheckAllFiles");
+  const [selectedScanType, setSelectedScanType] = useState<ValidationScanType>(
+    "CheckAllFiles"
+  );
 
   const [showingNewRun, setShowingNewRun] = useState(false);
 

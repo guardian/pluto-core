@@ -22,9 +22,9 @@ interface StorageMultistepParams {
   itemid?: string;
 }
 
-const StorageMultistepNew: React.FC<
-  RouteComponentProps<StorageMultistepParams>
-> = (props) => {
+const StorageMultistepNew: React.FC<RouteComponentProps<
+  StorageMultistepParams
+>> = (props) => {
   const [activeStep, setActiveStep] = useState(0);
   const [creationInProgress, setCreationInProgress] = useState(false);
   const [creationFailed, setCreationFailed] = useState<string | undefined>(

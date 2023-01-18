@@ -21,8 +21,9 @@ interface ProjectDeleteDataComponentStateTypes {
   itemid?: string;
 }
 
-type ProjectDeleteDataComponentProps =
-  RouteComponentProps<ProjectDeleteDataComponentStateTypes>;
+type ProjectDeleteDataComponentProps = RouteComponentProps<
+  ProjectDeleteDataComponentStateTypes
+>;
 
 const EMPTY_PROJECT: Project = {
   commissionId: -1,
