@@ -27,10 +27,6 @@ jobs:
           POSTGRES_USER: projectlocker
           POSTGRES_PASSWORD: projectlocker
           POSTGRES_HOST_AUTH_METHOD: trust
-#          TEST_DB_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker
-#          DEFAULT_DB_URL: jdbc:postgresql://postgres:5432/projectlocker?user=projectlocker
-#          TEST_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
-#          DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/postgres?user=projectlocker&password=projectlocker
         ports: ["5432/tcp"]
           # needed because the postgres container does not provide a healthcheck
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
@@ -95,14 +91,7 @@ jobs:
         working-directory: frontend
       - name: Setup postgres
         env:
-          JAVA_OPTS: "-Dbuild.number=${{ env.GITHUB_RUN_NUMBER }}"
-          SBT_JUNIT_OUTPUT: ./junit-tests
-          DB_PORT: ${{ job.services.postgres.ports[5432] }}
-          POSTGRES_HOST_AUTH_METHOD: trust
-          TEST_DB_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker
-          DEFAULT_DB_URL: jdbc:postgresql://postgres:5432/projectlocker?user=projectlocker
-          TEST_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
-          DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/postgres?user=projectlocker&password=projectlocker
+          TEST_DB_URL: jdbc:postgresql://localhost:5432/projectlocker_test?user=projectlocker
         run: |
           echo $TEST_DB_URL
           echo "db.default.url = "\"$TEST_DB_URL\" >> conf/application.conf
@@ -113,10 +102,10 @@ jobs:
           SBT_JUNIT_OUTPUT: ./junit-tests
           DB_PORT: ${{ job.services.postgres.ports[5432] }}
           POSTGRES_HOST_AUTH_METHOD: trust
-          TEST_DB_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker
-          DEFAULT_DB_URL: jdbc:postgresql://postgres:5432/projectlocker?user=projectlocker
-          TEST_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
-          DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/postgres?user=projectlocker&password=projectlocker
+          TEST_DB_URL: jdbc:postgresql://localhost:5432/projectlocker_test?user=projectlocker
+          DEFAULT_DB_URL: jdbcpostgresql://localhost:5432/projectlocker?user=projectlocker
+          TEST_DB_PROPERTIES_URL: jdbcpostgresql://localhost:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
+          DEFAULT_DB_PROPERTIES_URL: jdbcpostgresql://localhost:5432/postgres?user=projectlocker&password=projectlocker
         run: sbt -v "test"
 
       - name: Publish Unit Test Results
