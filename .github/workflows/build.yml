@@ -33,12 +33,8 @@ jobs:
 #          DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/postgres?user=projectlocker&password=projectlocker
         ports: ["5432/tcp"]
           # needed because the postgres container does not provide a healthcheck
-        # options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-        healthcheck:
-          test: pg_isready --dbname=projectlocker_test --username=projectlocker --quiet
-          interval: 10s
-          timeout: 5s
-          retries: 5
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
 
     env:
       POSTGRES_DB: projectlocker_test
@@ -97,7 +93,8 @@ jobs:
         working-directory: frontend
       - run: yarn build
         working-directory: frontend
-
+      - name: Wait for postgres to be ready
+        run: wait-for-it postgres:5432
       - name: Build and test backend
         env:
           JAVA_OPTS: "-Dbuild.number=${{ env.GITHUB_RUN_NUMBER }}"
