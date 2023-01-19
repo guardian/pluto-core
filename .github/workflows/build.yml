@@ -21,7 +21,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:13-alpine
+        image: postgres:9.6-alpine
         env:
           POSTGRES_DB: projectlocker_test
           POSTGRES_USER: projectlocker
@@ -33,7 +33,12 @@ jobs:
 #          DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/postgres?user=projectlocker&password=projectlocker
         ports: ["5432/tcp"]
           # needed because the postgres container does not provide a healthcheck
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        # options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        healthcheck:
+          test: pg_isready --dbname=projectlocker_test --username=projectlocker --quiet
+          interval: 10s
+          timeout: 5s
+          retries: 5
 
     env:
       POSTGRES_DB: projectlocker_test
@@ -93,7 +98,7 @@ jobs:
       - run: yarn build
         working-directory: frontend
 
-      - name: Build and test everything
+      - name: Build and test backend
         env:
           JAVA_OPTS: "-Dbuild.number=${{ env.GITHUB_RUN_NUMBER }}"
           SBT_JUNIT_OUTPUT: ./junit-tests
@@ -104,7 +109,7 @@ jobs:
           TEST_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
           DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/postgres?user=projectlocker&password=projectlocker
 
-        run: sbt -v "test; docker:publishLocal"
+        run: sbt -v "test"
 
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1
