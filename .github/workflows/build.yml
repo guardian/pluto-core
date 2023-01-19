@@ -97,6 +97,7 @@ jobs:
         env:
           JAVA_OPTS: "-Dbuild.number=${{ env.GITHUB_RUN_NUMBER }}"
           SBT_JUNIT_OUTPUT: ./junit-tests
+          DB_PORT: ${{ job.services.postgres.ports[5432] }}
         run: sbt -v "test; docker:publishLocal"
 
       - name: Publish Unit Test Results
