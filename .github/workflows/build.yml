@@ -26,7 +26,7 @@ jobs:
           POSTGRES_DB: projectlocker_test
           POSTGRES_USER: projectlocker
           POSTGRES_PASSWORD: projectlocker
-#          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_HOST_AUTH_METHOD: trust
 #          TEST_DB_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker
 #          DEFAULT_DB_URL: jdbc:postgresql://postgres:5432/projectlocker?user=projectlocker
 #          TEST_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
@@ -93,8 +93,6 @@ jobs:
         working-directory: frontend
       - run: yarn build
         working-directory: frontend
-      - name: Wait for postgres to be ready
-        run: wait-for-it postgres:5432
       - name: Build and test backend
         env:
           JAVA_OPTS: "-Dbuild.number=${{ env.GITHUB_RUN_NUMBER }}"
