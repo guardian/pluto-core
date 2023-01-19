@@ -104,7 +104,9 @@ jobs:
           TEST_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
           DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/postgres?user=projectlocker&password=projectlocker
         run: |
-          echo "db.default.url="$TEST_DB_URL >> conf/application.conf
+          echo $TEST_DB_URL
+          echo "db.default.url = "$TEST_DB_URL >> conf/application.conf
+          cat conf/application.conf
       - name: Run tests
         env:
           JAVA_OPTS: "-Dbuild.number=${{ env.GITHUB_RUN_NUMBER }}"
