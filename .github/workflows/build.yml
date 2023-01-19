@@ -106,6 +106,15 @@ jobs:
         run: |
           echo "db.default.url="$TEST_DB_URL >> conf/application.conf
       - name: Run tests
+        env:
+          JAVA_OPTS: "-Dbuild.number=${{ env.GITHUB_RUN_NUMBER }}"
+          SBT_JUNIT_OUTPUT: ./junit-tests
+          DB_PORT: ${{ job.services.postgres.ports[5432] }}
+          POSTGRES_HOST_AUTH_METHOD: trust
+          TEST_DB_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker
+          DEFAULT_DB_URL: jdbc:postgresql://postgres:5432/projectlocker?user=projectlocker
+          TEST_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
+          DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/postgres?user=projectlocker&password=projectlocker
         run: sbt -v "test"
 
       - name: Publish Unit Test Results
