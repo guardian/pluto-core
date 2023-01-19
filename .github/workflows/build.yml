@@ -93,7 +93,7 @@ jobs:
         working-directory: frontend
       - run: yarn build
         working-directory: frontend
-      - name: Build and test backend
+      - name: Setup postgres
         env:
           JAVA_OPTS: "-Dbuild.number=${{ env.GITHUB_RUN_NUMBER }}"
           SBT_JUNIT_OUTPUT: ./junit-tests
@@ -103,7 +103,9 @@ jobs:
           DEFAULT_DB_URL: jdbc:postgresql://postgres:5432/projectlocker?user=projectlocker
           TEST_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
           DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://postgres:5432/postgres?user=projectlocker&password=projectlocker
-
+        run: |
+          echo "db.default.url="$TEST_DB_URL >> conf/application.conf
+      - name: Run tests
         run: sbt -v "test"
 
       - name: Publish Unit Test Results
