@@ -48,7 +48,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 8
-
+      - name: Setup sbt
+        uses: actions/setup-sbt@v1
+        with:
+          sbt-version: 1.4.3
       - name: Setup node.js
         uses: actions/setup-node@v2
         with:
