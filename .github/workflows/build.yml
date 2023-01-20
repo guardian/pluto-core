@@ -27,16 +27,17 @@ jobs:
           POSTGRES_USER: projectlocker
           POSTGRES_PASSWORD: projectlocker
           POSTGRES_HOST_AUTH_METHOD: trust
-        ports: ["5432/tcp"]
+        ports:
+          - 5432:5432
           # needed because the postgres container does not provide a healthcheck
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-
 
     env:
       POSTGRES_DB: projectlocker_test
       POSTGRES_USER: projectlocker
       POSTGRES_PASSWORD: projectlocker
-      POSTGRES_HOST: localhost
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
 
     steps:
       - uses: actions/checkout@v2
@@ -94,7 +95,6 @@ jobs:
         env:
           TEST_DB_URL: jdbc:postgresql://localhost:5432/projectlocker_test?user=projectlocker
         run: |
-          echo $TEST_DB_URL
           echo "db.default.url = "\"$TEST_DB_URL\" >> conf/application.conf
           cat conf/application.conf
       - name: Run tests
