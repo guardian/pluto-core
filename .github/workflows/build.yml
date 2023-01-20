@@ -52,7 +52,8 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: "16.14.1"
-
+      - name: Install xmllint
+        run: apt -y install libxml2-utils
       # GITHUB_RUN_NUMBER always starts from 1, so to maintain compatibility we adjust it here
       - name: Make GITHUB_RUN_NUMBER env var available outside of shells
         working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -78,6 +79,23 @@ jobs:
       - run: "echo -e \"\n//npm.pkg.github.com/:_authToken=${{secrets.GITHUB_TOKEN}}\" >> .npmrc"
         working-directory: frontend
 
+      - name: Setup postgres
+        env:
+          TEST_DB_URL: jdbc:postgresql://localhost:5432/projectlocker_test?user=projectlocker
+        run: |
+          echo "db.default.url = "\"$TEST_DB_URL\" >> conf/application.conf
+      - name: Run backend tests
+        env:
+          JAVA_OPTS: "-Dbuild.number=${{ env.GITHUB_RUN_NUMBER }}"
+          SBT_JUNIT_OUTPUT: ./junit-tests
+          DB_PORT: ${{ job.services.postgres.ports[5432] }}
+          POSTGRES_HOST_AUTH_METHOD: trust
+          TEST_DB_URL: jdbc:postgresql://localhost:5432/projectlocker_test?user=projectlocker
+          DEFAULT_DB_URL: jdbc:postgresql://localhost:5432/projectlocker?user=projectlocker
+          TEST_DB_PROPERTIES_URL: jdbc:postgresql://localhost:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
+          DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://localhost:5432/postgres?user=projectlocker&password=projectlocker
+        run: sbt -v "test"
+
       - run: yarn install --frozen-lockfile
         working-directory: frontend
         env:
@@ -91,24 +109,6 @@ jobs:
         working-directory: frontend
       - run: yarn build
         working-directory: frontend
-      - name: Setup postgres
-        env:
-          TEST_DB_URL: jdbc:postgresql://localhost:5432/projectlocker_test?user=projectlocker
-        run: |
-          echo "db.default.url = "\"$TEST_DB_URL\" >> conf/application.conf
-          cat conf/application.conf
-      - name: Run tests
-        env:
-          JAVA_OPTS: "-Dbuild.number=${{ env.GITHUB_RUN_NUMBER }}"
-          SBT_JUNIT_OUTPUT: ./junit-tests
-          DB_PORT: ${{ job.services.postgres.ports[5432] }}
-          POSTGRES_HOST_AUTH_METHOD: trust
-          TEST_DB_URL: jdbc:postgresql://localhost:5432/projectlocker_test?user=projectlocker
-          DEFAULT_DB_URL: jdbc:postgresql://localhost:5432/projectlocker?user=projectlocker
-          TEST_DB_PROPERTIES_URL: jdbc:postgresql://localhost:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
-          DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://localhost:5432/postgres?user=projectlocker&password=projectlocker
-        run: sbt -v "test"
-
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1
         if: always()  #runs even if there is a test failure
