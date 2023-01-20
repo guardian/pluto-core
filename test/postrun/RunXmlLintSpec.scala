@@ -40,6 +40,13 @@ class RunXmlLintSpec extends Specification with BuildMyApp{
       val pe = futureResults.head.asInstanceOf[Try[ProjectEntry]].get
       val pt = futureResults(1).asInstanceOf[ProjectType]
 
+      val directory = new File("/tmp")
+      val files = directory.listFiles
+      if (files != null) {
+        files.foreach(file => println(file.getName))
+      }
+
+
       val result = Await.result(s.postrun("/tmp/test_run_xmllint.prproj",pe,pt,dataCache,None,None),10 seconds)
       result must beSuccessfulTry
     }
