@@ -53,7 +53,7 @@ jobs:
         with:
           node-version: "16.14.1"
       - name: Install xmllint
-        run: apt -y install libxml2-utils
+        run: sudo apt -y install libxml2-utils
       # GITHUB_RUN_NUMBER always starts from 1, so to maintain compatibility we adjust it here
       - name: Make GITHUB_RUN_NUMBER env var available outside of shells
         working-directory: ${{env.GITHUB_WORKSPACE}}
