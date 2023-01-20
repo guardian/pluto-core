@@ -36,6 +36,7 @@ jobs:
       POSTGRES_DB: projectlocker_test
       POSTGRES_USER: projectlocker
       POSTGRES_PASSWORD: projectlocker
+      POSTGRES_HOST: localhost
 
     steps:
       - uses: actions/checkout@v2
