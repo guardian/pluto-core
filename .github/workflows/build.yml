@@ -104,9 +104,9 @@ jobs:
           DB_PORT: ${{ job.services.postgres.ports[5432] }}
           POSTGRES_HOST_AUTH_METHOD: trust
           TEST_DB_URL: jdbc:postgresql://localhost:5432/projectlocker_test?user=projectlocker
-          DEFAULT_DB_URL: jdbcpostgresql://localhost:5432/projectlocker?user=projectlocker
-          TEST_DB_PROPERTIES_URL: jdbcpostgresql://localhost:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
-          DEFAULT_DB_PROPERTIES_URL: jdbcpostgresql://localhost:5432/postgres?user=projectlocker&password=projectlocker
+          DEFAULT_DB_URL: jdbc:postgresql://localhost:5432/projectlocker?user=projectlocker
+          TEST_DB_PROPERTIES_URL: jdbc:postgresql://localhost:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
+          DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://localhost:5432/postgres?user=projectlocker&password=projectlocker
         run: sbt -v "test"
 
       - name: Publish Unit Test Results
