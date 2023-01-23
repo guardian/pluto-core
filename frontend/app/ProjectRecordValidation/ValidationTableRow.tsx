@@ -8,7 +8,10 @@ import {
 } from "@material-ui/core";
 import { format, parseISO } from "date-fns";
 import { Launch } from "@material-ui/icons";
-import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
+import {
+  SystemNotifcationKind,
+  SystemNotification,
+} from "@guardian/pluto-headers";
 import { getProject, getProjectType } from "../ProjectEntryList/helpers";
 import axios from "axios";
 

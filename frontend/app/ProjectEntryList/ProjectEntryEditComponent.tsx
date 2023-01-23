@@ -21,10 +21,13 @@ import {
   updateProjectOpenedStatus,
   getSimpleProjectTypeData,
 } from "./helpers";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 
 import ProjectEntryDeliverablesComponent from "./ProjectEntryDeliverablesComponent";
-import { Breadcrumb } from "pluto-headers";
+import { Breadcrumb } from "@guardian/pluto-headers";
 import ApplicableRulesSelector from "./ApplicableRulesSelector";
 import moment from "moment";
 import axios from "axios";

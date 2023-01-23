@@ -17,7 +17,10 @@ import {
   getWorkingGroup,
   updateWorkingGroup,
 } from "./helpers";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import { useGuardianStyles } from "~/misc/utils";
 
 interface WorkingGroupStateTypes {

@@ -9,7 +9,10 @@ import {
 import { format } from "date-fns";
 import UserContext from "../../UserContext";
 import axios from "axios";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import StorageSelector from "../../Selectors/StorageSelector";
 import { getProjectsDefaultStorageId } from "./ProjectStorageService";
 import { useGuardianStyles } from "~/misc/utils";

@@ -5,7 +5,10 @@ import EnhancedTable from "./MaterialUITable";
 import GeneralListComponent from "./GeneralListComponent";
 import ListActionButtons from "./common/ListActionButtons";
 import { Helmet } from "react-helmet";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 
 const PostrunList: React.FC<RouteComponentProps> = (props) => {
   const [tableData, setTableData] = useState<PostrunAction[]>([]);

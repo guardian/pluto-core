@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
+import {
+  SystemNotifcationKind,
+  SystemNotification,
+} from "@guardian/pluto-headers";
 
 interface PremiereVersionTranslationViewProps {
   internalVersion: number;

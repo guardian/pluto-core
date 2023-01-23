@@ -7,7 +7,10 @@ import {
   startDelete,
   getBuckets,
 } from "./helpers";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import { Helmet } from "react-helmet";
 import { useGuardianStyles } from "~/misc/utils";
 import { isLoggedIn } from "~/utils/api";

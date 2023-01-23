@@ -27,7 +27,10 @@ import {
   openProject,
   updateProjectOpenedStatus,
 } from "~/ProjectEntryList/helpers";
-import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
+import {
+  SystemNotifcationKind,
+  SystemNotification,
+} from "@guardian/pluto-headers";
 import AssetFolderLink from "~/ProjectEntryList/AssetFolderLink";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
 import { Autocomplete } from "@material-ui/lab";

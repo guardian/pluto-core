@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { RouteComponentProps, useHistory } from "react-router";
-import { Breadcrumb } from "pluto-headers";
+import { Breadcrumb } from "@guardian/pluto-headers";
 import {
   Button,
   CircularProgress,
