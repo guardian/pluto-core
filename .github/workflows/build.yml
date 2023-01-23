@@ -84,7 +84,7 @@ jobs:
           && docker tag guardianmultimedia/pluto-core-periodictrigger:${{ env.GITHUB_RUN_NUMBER }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/pluto-core-periodictrigger:${{ env.GITHUB_RUN_NUMBER }} \
           && docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/pluto-core-periodictrigger:${{ env.GITHUB_RUN_NUMBER }}
 
-      - name: Add .nprc
+      - name: Add .npmrc
         run: "echo -e \"\n//npm.pkg.github.com/:_authToken=${{secrets.GITHUB_TOKEN}}\" >> .npmrc"
         working-directory: frontend
 
