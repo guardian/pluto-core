@@ -45,8 +45,6 @@ import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
 import {
   PlutoThemeProvider,
   SystemNotification,
-} from "@guardian/pluto-headers";
-import {
   Header,
   AppSwitcher,
   handleUnauthorized,
