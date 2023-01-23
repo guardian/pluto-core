@@ -347,7 +347,7 @@
   dependencies:
     prop-types "^15.7.2"
 
-"@guardian/pluto-headers@^v1.6.5":
+"@guardian/pluto-headers@1.6.5":
   version "1.6.5"
   resolved "https://npm.pkg.github.com/download/@guardian/pluto-headers/1.6.5/e0dbfb8728cb43d33eab0a56c757cb3ab919b759#e0dbfb8728cb43d33eab0a56c757cb3ab919b759"
   integrity sha512-UeBrFKUnH6g1rH5RVFHIwxNB6g8SaEw7F7Sz/7Zs29YnnYT9Ttf8l78pQnLLqQwsjwjFbC+Ywg8WWipdn2Ab8g==
