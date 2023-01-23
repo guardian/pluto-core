@@ -128,6 +128,14 @@ jobs:
       - name: Push docker image
         run: docker push  ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/pluto-core:${{ env.GITHUB_RUN_NUMBER }}
 
+      - name: Build and upload periodictrigger app
+        working-directory: periodic_trigger
+        run: |
+          docker build . \
+          -t guardianmultimedia/pluto-core-periodictrigger:${{ env.GITHUB_RUN_NUMBER }} \
+          docker tag guardianmultimedia/pluto-core-periodictrigger:${{ env.GITHUB_RUN_NUMBER }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/pluto-core-periodictrigger:${{ env.GITHUB_RUN_NUMBER }} \
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/pluto-core-periodictrigger:${{ env.GITHUB_RUN_NUMBER }}
+
       - name: Output build-info.yaml
         uses: fredex42/pluto-build-info@v1.1
         with:
