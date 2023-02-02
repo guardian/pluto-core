@@ -1,6 +1,12 @@
 // setup file
-import { configure } from 'enzyme';
-import Adapter from 'enzyme-adapter-react-16';
+import { configure } from "enzyme";
+import Adapter from "enzyme-adapter-react-16";
 
-configure({ "adapter": new Adapter() });
-require('jest-fetch-mock').enableMocks();
+configure({ adapter: new Adapter() });
+require("jest-fetch-mock").enableMocks();
+
+// Ensure that global TextEncoder is present, needed to Jose to avoid breaking on ReferenceError: TextEncoder is not defined
+const { TextEncoder, TextDecoder } = require("util");
+
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
