@@ -225,13 +225,29 @@ class App extends React.Component {
     console.log("Loaded oAuthConfig: ", oAuthConfig);
     if (this.haveToken()) {
       verifyExistingLogin(oAuthConfig)
-        .then((profile) =>
-          this.setState({ userProfile: profile, isLoggedIn: true })
-        )
+        .then((profile) => {
+          const userNameV = this.generateUserName(
+            profile.preferred_username ?? profile.username
+          );
+          this.setState({
+            userProfile: profile,
+            isLoggedIn: true,
+            currentUsername: userNameV,
+          });
+        })
         .catch((err) => {
           console.error("Could not verify existing user profile: ", err);
         });
     }
+  }
+
+  generateUserName(inputString) {
+    if (inputString.includes("@")) {
+      const splitString = inputString.split("@", 1)[0];
+      const userNameConst = splitString.replace(".", "_");
+      return userNameConst;
+    }
+    return inputString;
   }
 
   render() {

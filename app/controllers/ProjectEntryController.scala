@@ -309,7 +309,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       errors=>
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       projectRequest=> {
-        val fullRequestFuture=projectRequest.copy(user=uid).hydrate
+        val fullRequestFuture=projectRequest.hydrate
         fullRequestFuture.flatMap({
           case None=>
             Future(BadRequest(Json.obj("status"->"error","detail"->"Invalid template or storage ID")))
