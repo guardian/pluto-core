@@ -6,5 +6,5 @@ interface UserContextData {
 }
 
 const UserContext = React.createContext<UserContextData | null>(null);
-export const UserContextProvider = UserContext.Provider;
+export const CoreUserContextProvider = UserContext.Provider;
 export default UserContext;

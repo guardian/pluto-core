@@ -96,7 +96,8 @@ const CommissionsList: React.FC = () => {
   useEffect(() => {
     const fetchWhoIsLoggedIn = async () => {
       try {
-        const user = await isLoggedIn();
+        let user = await isLoggedIn();
+        user.uid = generateUserName(user.uid);
         setUser(user);
       } catch (error) {
         console.error("Could not login user:", error);
@@ -115,6 +116,15 @@ const CommissionsList: React.FC = () => {
     console.log("Filter terms set: ", newFilters);
     setFilterTerms(newFilters);
   }, [user]);
+
+  const generateUserName = (inputString: string) => {
+    if (inputString.includes("@")) {
+      const splitString = inputString.split("@", 1)[0];
+      const userNameConst = splitString.replace(".", "_");
+      return userNameConst;
+    }
+    return inputString;
+  };
 
   return (
     <>

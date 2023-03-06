@@ -364,7 +364,8 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   useEffect(() => {
     const fetchWhoIsLoggedIn = async () => {
       try {
-        const user = await isLoggedIn();
+        let user = await isLoggedIn();
+        user.uid = generateUserName(user.uid);
         setUser(user);
       } catch (error) {
         console.error("Could not login user:", error);
@@ -379,6 +380,15 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   ) => {
     const newValue = event.target.value;
     setDeliverablesSearchString(newValue);
+  };
+
+  const generateUserName = (inputString: string) => {
+    if (inputString.includes("@")) {
+      const splitString = inputString.split("@", 1)[0];
+      const userNameConst = splitString.replace(".", "_");
+      return userNameConst;
+    }
+    return inputString;
   };
 
   return (

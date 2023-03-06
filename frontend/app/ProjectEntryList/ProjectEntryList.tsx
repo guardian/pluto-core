@@ -56,7 +56,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   useEffect(() => {
     const fetchWhoIsLoggedIn = async () => {
       try {
-        const user = await isLoggedIn();
+        let user = await isLoggedIn();
+        user.uid = generateUserName(user.uid);
         setUser(user);
       } catch (error) {
         console.error("Could not login user:", error);
@@ -86,6 +87,15 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
 
     setFilterTerms(newFilters);
   }, [user?.uid]);
+
+  const generateUserName = (inputString: string) => {
+    if (inputString.includes("@")) {
+      const splitString = inputString.split("@", 1)[0];
+      const userNameConst = splitString.replace(".", "_");
+      return userNameConst;
+    }
+    return inputString;
+  };
 
   return (
     <>

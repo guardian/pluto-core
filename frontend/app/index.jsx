@@ -32,7 +32,7 @@ import axios from "axios";
 
 import { config, library } from "@fortawesome/fontawesome-svg-core";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import { UserContextProvider } from "./UserContext";
+import { CoreUserContextProvider } from "./UserContext";
 
 import Raven from "raven-js";
 import ProjectValidationView from "./ProjectValidationView.jsx";
@@ -44,12 +44,16 @@ import WorkingGroups from "./WorkingGroups/WorkingGroups.tsx";
 import WorkingGroup from "./WorkingGroups/WorkingGroup.tsx";
 import {
   PlutoThemeProvider,
-  SystemNotification,
-  Header,
   AppSwitcher,
+  Header,
+  JwtDataShape,
+  OAuthContextData,
+  OAuthContextProvider,
+  SystemNotification,
+  UserContextProvider,
+  verifyExistingLogin,
   handleUnauthorized,
 } from "@guardian/pluto-headers";
-
 import "./styles/app.css";
 import CommissionEntryEditComponent from "./CommissionsList/CommissionEntryEditComponent";
 import ProjectCreateMultistepNew from "./multistep/ProjectCreateMultistepNew";
@@ -94,12 +98,14 @@ class App extends React.Component {
       isAdmin: false,
       loading: false,
       plutoConfig: {},
+      userProfile: undefined,
     };
 
     this.onLoggedIn = this.onLoggedIn.bind(this);
     this.onLoggedOut = this.onLoggedOut.bind(this);
     this.handleUnauthorizedFailed = this.handleUnauthorizedFailed.bind(this);
     this.onLoginValid = this.onLoginValid.bind(this);
+    this.oAuthConfigLoaded = this.oAuthConfigLoaded.bind(this);
 
     axios.interceptors.response.use(
       (response) => response,
@@ -209,135 +215,189 @@ class App extends React.Component {
     }, 3000);
   }
 
+  haveToken() {
+    return window.localStorage.getItem("pluto:access-token");
+  }
+
+  oAuthConfigLoaded(oAuthConfig) {
+    //If we already have a user token at mount, verify it and update our internal state.
+    //If we do not, ignore for the time being; it will be set dynamically when the login occurs.
+    console.log("Loaded oAuthConfig: ", oAuthConfig);
+    if (this.haveToken()) {
+      verifyExistingLogin(oAuthConfig)
+        .then((profile) => {
+          const userNameV = this.generateUserName(
+            profile.preferred_username ?? profile.username
+          );
+          this.setState({
+            userProfile: profile,
+            isLoggedIn: true,
+            currentUsername: userNameV,
+          });
+        })
+        .catch((err) => {
+          console.error("Could not verify existing user profile: ", err);
+        });
+    }
+  }
+
+  generateUserName(inputString) {
+    if (inputString.includes("@")) {
+      const splitString = inputString.split("@", 1)[0];
+      const userNameConst = splitString.replace(".", "_");
+      return userNameConst;
+    }
+    return inputString;
+  }
+
   render() {
     return (
-      <PlutoThemeProvider>
-        <CssBaseline />
+      <OAuthContextProvider onLoaded={this.oAuthConfigLoaded}>
         <UserContextProvider
-          value={
-            this.state.isLoggedIn
-              ? {
-                  userName: this.state.currentUsername,
-                  isAdmin: this.state.isAdmin,
-                }
-              : null
-          }
+          value={{
+            profile: this.state.userProfile,
+            updateProfile: (newValue) =>
+              this.setState({ userProfile: newValue }),
+          }}
         >
-          <div className="app">
-            <Header />
-            <AppSwitcher onLoginValid={this.onLoginValid} />
-            <div id="mainbody" className="mainbody">
-              <Switch>
-                <Route
-                  path="/premversion"
-                  component={VersionTranslationsList}
-                />
-                <Route
-                  path="/storage/:itemid/delete"
-                  component={StorageContextComponent}
-                />
-                <Route
-                  path="/storage/:itemid"
-                  component={StorageMultistepNew}
-                />
-                <Route path="/storage/" component={StorageListComponent} />
-                <Route
-                  path="/template/:itemid/delete"
-                  component={ProjectTemplateDeleteComponent}
-                />
-                <Route
-                  path="/template/:itemid"
-                  component={ProjectTemplateMultistep}
-                />
-                <Route path="/template/" component={ProjectTemplateIndex} />
-                <Route
-                  path="/file/changePremiereVersion"
-                  component={PremiereVersionChange}
-                />
-                <Route
-                  path="/file/:itemid/delete"
-                  component={FileDeleteComponent}
-                />
-                <Route path="/file/:itemid" component={FileEntryList} />
-                <Route path="/file/" component={FileEntryList} />
-                <Route
-                  path="/type/:itemid/delete"
-                  component={TypeDeleteComponent}
-                />
-                <Route path="/type/:itemid" component={ProjectTypeMultistep} />
-                <Route path="/type/" component={ProjectTypeList} />
-                <Route
-                  path="/project/new"
-                  render={(props) => (
-                    <ProjectCreateMultistepNew
-                      isAdmin={this.state.isAdmin}
-                      {...props}
+          <PlutoThemeProvider>
+            <CssBaseline />
+            <CoreUserContextProvider
+              value={
+                this.state.isLoggedIn
+                  ? {
+                      userName: this.state.currentUsername,
+                      isAdmin: this.state.isAdmin,
+                    }
+                  : null
+              }
+            >
+              <div className="app">
+                <Header />
+                <AppSwitcher onLoginValid={this.onLoginValid} />
+                <div id="mainbody" className="mainbody">
+                  <Switch>
+                    <Route
+                      path="/premversion"
+                      component={VersionTranslationsList}
                     />
-                  )}
-                />
-                <Route
-                  path="/project/:itemid/backups"
-                  component={ProjectBackups}
-                />
-                <Route
-                  path="/project/:itemid/delete"
-                  component={ProjectDeleteComponent}
-                />
-                <Route
-                  path="/project/:itemid/deletedata"
-                  component={ProjectDeleteDataComponent}
-                />
-                <Route
-                  path="/project/:itemid"
-                  component={ProjectEntryEditComponent}
-                />
-                <Route path="/project/" component={ProjectEntryList} />
-                <Route
-                  path="/commission/new"
-                  render={(props) => (
-                    <CommissionMultistepNew
-                      match={props.match}
-                      userName={this.state.currentUsername}
+                    <Route
+                      path="/storage/:itemid/delete"
+                      component={StorageContextComponent}
                     />
-                  )}
-                />
-                <Route
-                  path="/commission/:commissionId"
-                  render={(props) => (
-                    <CommissionEntryEditComponent {...props} />
-                  )}
-                />
-                <Route path="/commission/" component={CommissionsList} />
-                <Route path="/obituaries/" component={ObituariesList} />
-                <Route path="/working-group/:itemid" component={WorkingGroup} />
-                <Route path="/working-group/" component={WorkingGroups} />
-                <Route
-                  path="/validate/project/:jobId"
-                  component={ValidationJobResults}
-                />
-                <Route
-                  path="/validate/project"
-                  component={ProjectValidationMain}
-                />
-                <Route
-                  path="/postrun/:itemid/delete"
-                  component={PostrunDeleteComponent}
-                />
-                <Route path="/postrun/:itemid" component={PostrunMultistep} />
-                <Route path="/postrun/" component={PostrunList} />
-                <Route path="/defaults/" component={ServerDefaults} />
+                    <Route
+                      path="/storage/:itemid"
+                      component={StorageMultistepNew}
+                    />
+                    <Route path="/storage/" component={StorageListComponent} />
+                    <Route
+                      path="/template/:itemid/delete"
+                      component={ProjectTemplateDeleteComponent}
+                    />
+                    <Route
+                      path="/template/:itemid"
+                      component={ProjectTemplateMultistep}
+                    />
+                    <Route path="/template/" component={ProjectTemplateIndex} />
+                    <Route
+                      path="/file/changePremiereVersion"
+                      component={PremiereVersionChange}
+                    />
+                    <Route
+                      path="/file/:itemid/delete"
+                      component={FileDeleteComponent}
+                    />
+                    <Route path="/file/:itemid" component={FileEntryList} />
+                    <Route path="/file/" component={FileEntryList} />
+                    <Route
+                      path="/type/:itemid/delete"
+                      component={TypeDeleteComponent}
+                    />
+                    <Route
+                      path="/type/:itemid"
+                      component={ProjectTypeMultistep}
+                    />
+                    <Route path="/type/" component={ProjectTypeList} />
+                    <Route
+                      path="/project/new"
+                      render={(props) => (
+                        <ProjectCreateMultistepNew
+                          isAdmin={this.state.isAdmin}
+                          {...props}
+                        />
+                      )}
+                    />
+                    <Route
+                      path="/project/:itemid/backups"
+                      component={ProjectBackups}
+                    />
+                    <Route
+                      path="/project/:itemid/delete"
+                      component={ProjectDeleteComponent}
+                    />
+                    <Route
+                      path="/project/:itemid/deletedata"
+                      component={ProjectDeleteDataComponent}
+                    />
+                    <Route
+                      path="/project/:itemid"
+                      component={ProjectEntryEditComponent}
+                    />
+                    <Route path="/project/" component={ProjectEntryList} />
+                    <Route
+                      path="/commission/new"
+                      render={(props) => (
+                        <CommissionMultistepNew
+                          match={props.match}
+                          userName={this.state.currentUsername}
+                        />
+                      )}
+                    />
+                    <Route
+                      path="/commission/:commissionId"
+                      render={(props) => (
+                        <CommissionEntryEditComponent {...props} />
+                      )}
+                    />
+                    <Route path="/commission/" component={CommissionsList} />
+                    <Route path="/obituaries/" component={ObituariesList} />
+                    <Route
+                      path="/working-group/:itemid"
+                      component={WorkingGroup}
+                    />
+                    <Route path="/working-group/" component={WorkingGroups} />
+                    <Route
+                      path="/validate/project/:jobId"
+                      component={ValidationJobResults}
+                    />
+                    <Route
+                      path="/validate/project"
+                      component={ProjectValidationMain}
+                    />
+                    <Route
+                      path="/postrun/:itemid/delete"
+                      component={PostrunDeleteComponent}
+                    />
+                    <Route
+                      path="/postrun/:itemid"
+                      component={PostrunMultistep}
+                    />
+                    <Route path="/postrun/" component={PostrunList} />
+                    <Route path="/defaults/" component={ServerDefaults} />
 
-                <Route
-                  exact
-                  path="/"
-                  render={() => <Redirect to="/project/" />}
-                />
-              </Switch>
-            </div>
-          </div>
-          <SystemNotification />
+                    <Route
+                      exact
+                      path="/"
+                      render={() => <Redirect to="/project/" />}
+                    />
+                  </Switch>
+                </div>
+              </div>
+              <SystemNotification />
+            </CoreUserContextProvider>
+          </PlutoThemeProvider>
         </UserContextProvider>
-      </PlutoThemeProvider>
+      </OAuthContextProvider>
     );
   }
 }
