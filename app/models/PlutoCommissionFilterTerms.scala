@@ -4,6 +4,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsValue, _}
 import slick.lifted.Query
 import slick.jdbc.PostgresProfile.api._
+import java.sql.Timestamp
 
 //https://github.com/d6y/slick-ilike-example/blob/master/src/main/scala/main.scala
 object ILike {
@@ -22,6 +23,7 @@ object ILike {
 case class PlutoCommissionFilterTerms(title:Option[String],
                                       status:Option[EntryStatus.Value],
                                       siteId:Option[String],
+                                      completionDateBefore:Option[Timestamp],
                                       collectionId:Option[Int],
                                       user:Option[String],
                                       group:Option[String],
@@ -46,6 +48,7 @@ extends GeneralFilterEntryTerms[PlutoCommissionRow, PlutoCommission] {
     if(title.isDefined) action = action.filter(_.title ilike makeWildcard(title.get))
     if(siteId.isDefined) action = action.filter(_.siteId ===siteId.get)
     if(status.isDefined) action = action.filter(_.status === status.get)
+    if(completionDateBefore.isDefined) action = action.filter(_.scheduledCompletion<completionDateBefore.get)
     if(collectionId.isDefined) action = action.filter(_.collectionId===collectionId.get)
     if(workingGroupId.isDefined) action = action.filter(_.workingGroup===workingGroupId.get)
     if(user.isDefined && user.get!="Everyone") action = action.filter(_.owner like makeWildcard(user.get))
@@ -56,7 +59,7 @@ extends GeneralFilterEntryTerms[PlutoCommissionRow, PlutoCommission] {
   }
 }
 
-trait PlutoCommissionFilterTermsSerializer {
+trait PlutoCommissionFilterTermsSerializer extends TimestampSerialization {
   implicit val wildcardSerializer:Reads[FilterTypeWildcard.Value] = Reads.enumNameReads(FilterTypeWildcard)
   import EntryStatusMapper._
 
@@ -64,6 +67,7 @@ trait PlutoCommissionFilterTermsSerializer {
     (JsPath \ "title").readNullable[String] and
       (JsPath \ "status").readNullable[EntryStatus.Value] and
       (JsPath \ "siteId").readNullable[String] and
+      (JsPath \ "completionDateBefore").readNullable[Timestamp] and
       (JsPath \ "collectionId").readNullable[Int] and
       (JsPath \ "user").readNullable[String] and
       (JsPath \ "group").readNullable[String] and
