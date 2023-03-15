@@ -16,8 +16,9 @@ TIMESTAMP = "2022-01-01T00:00:00Z"
 TITLE = None
 
 # Set the URLs for the API
-UPDATE_URL = "https://prexit.local/pluto-core/api/pluto/commission"
-GET_URL = "https://prexit.local/pluto-core/api/pluto/commission/list"
+BASE_URL="https://prexit.local"
+UPDATE_URL = f"{BASE_URL}/pluto-core/api/pluto/commission"
+GET_URL = f"{BASE_URL}/pluto-core/api/pluto/commission/list"
 
 STATUS_STRINGS = ["New", "Held", "Completed", "Killed", "In Production"]
 ALLOWED_INPUT = ["1", "2", "3", "4", "5", "6"]
