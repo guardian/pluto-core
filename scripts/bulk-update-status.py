@@ -8,18 +8,23 @@ import datetime
 # Disable SSL warnings
 requests.packages.urllib3.disable_warnings()
 
-STATUS_STRINGS = ["New", "Held", "Completed", "Killed", "In Production"]
+# Set the timestamp to filter records by
+TIMESTAMP = "2022-01-01T00:00:00Z"
 
+# Set the title to filter records by
+TITLE = None
+
+# Set the URLs for the API
 UPDATE_URL = "https://prexit.local/pluto-core/api/pluto/commission"
 GET_URL = "https://prexit.local/pluto-core/api/pluto/commission/list"
+
+STATUS_STRINGS = ["New", "Held", "Completed", "Killed", "In Production"]
+ALLOWED_INPUT = ["1", "2", "3", "4", "5", "6"]
+
 MAX_RECORDS_PER_PAGE = 100
 
 # get token from environment variable
 token = os.environ.get("PLUTO_TOKEN")
-
-TIMESTAMP = "2022-01-01T00:00:00Z"
-
-ALLOWED_INPUT = ["1", "2", "3", "4", "5", "6"]
 
 headers = {
     "Content-Type": "application/json",
@@ -95,7 +100,7 @@ def display_records(records) -> None:
     print(f"\nTotal records: {len(records)}\n")
 
 def get_input() -> int:
-        status_int = input("\n1: New\n2: Held\n3: Completed\n4: Killed\n5: In Production\n6: Abort, Abort!!\n")
+        status_int = input("\n1: New\n2: Held\n3: Completed\n4: Killed\n5: In Production\n6: Exit script\n")
         if status_int not in ALLOWED_INPUT:
             print("Invalid input. Exiting script")
             sys.exit()       
@@ -107,5 +112,5 @@ def get_input() -> int:
 if __name__ == "__main__":
     logging.info(f"Starting script at {datetime.datetime.now()}")
     print(f"Update status of records with completion date before {TIMESTAMP} that are:")
-    filtered_records = get_filtered_records(timestamp=TIMESTAMP, status=STATUS_STRINGS[get_input()])
+    filtered_records = get_filtered_records(timestamp=TIMESTAMP, title=TITLE, status=STATUS_STRINGS[get_input()])
     update_status(filtered_records)
