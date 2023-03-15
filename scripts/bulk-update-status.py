@@ -53,7 +53,7 @@ def get_filtered_records(timestamp, status, title=None) -> list:
     try:
         for _ in range(max_retries):
             response = requests.put(GET_URL, headers=headers, data=json_body, verify=False)
-            if response.status_code in [502, 503]:
+            if response.status_code in [408, 502, 503, 504]:
                 print(f"Received {response.status_code}. Retrying in {backoff_time} seconds...")
                 time.sleep(backoff_time)
                 backoff_time *= 2
@@ -71,14 +71,14 @@ def get_filtered_records(timestamp, status, title=None) -> list:
         for page in range(1, total_pages + 1):
             print(f"loading page: {page}")
 
-            for i in range(max_retries):
+            for _ in range(max_retries):
                 response = requests.put(
                     f"{GET_URL}?startAt={start_at}&length={MAX_RECORDS_PER_PAGE}",
                     data=json_body,
                     headers=headers,
                     verify=False,
                 )
-                if response.status_code in [502, 503]:
+                if response.status_code in [408, 502, 503, 504]:
                     print(f"Received {response.status_code}. Retrying in {backoff_time} seconds...")
                     time.sleep(backoff_time)
                     backoff_time *= 2
