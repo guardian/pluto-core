@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 import requests
 import json
 import logging
@@ -35,34 +36,67 @@ headers = {
 logging.basicConfig(filename="data.log", level=logging.DEBUG)
 
 def get_filtered_records(timestamp, status, title=None) -> list:
-    request_body = { 
-    "match": "W_EXACT",
-    "completionDateBefore": timestamp,
-    "status": status
+    request_body = {
+        "match": "W_EXACT",
+        "completionDateBefore": timestamp,
+        "status": status,
     }
     if title:
-        request_body['title'] = title
+        request_body["title"] = title
 
     json_body = json.dumps(request_body)
     records = []
+    max_retries = 5
+    backoff_time = 1
+
     try:
-        response = requests.put(GET_URL, headers=headers, data=json_body, verify=False)
-        response.raise_for_status()  # Raise an HTTPError if status is not 2xx
-        json_content = response.json()
-        total_records = json_content['count']
-        total_pages = (total_records + MAX_RECORDS_PER_PAGE - 1) // MAX_RECORDS_PER_PAGE
-        start_at = 0
-        for page in range(1, total_pages + 1):
-            print(f"loading page: {page}")
-            response = requests.put(f"{GET_URL}?startAt={start_at}&length={MAX_RECORDS_PER_PAGE}", data=json_body, headers=headers, verify=False)
+        for _ in range(max_retries):
+            response = requests.put(GET_URL, headers=headers, data=json_body, verify=False)
+            if response.status_code in [502, 503]:
+                print(f"Received {response.status_code}. Retrying in {backoff_time} seconds...")
+                time.sleep(backoff_time)
+                backoff_time *= 2
+                continue
+
             response.raise_for_status()  # Raise an HTTPError if status is not 2xx
             json_content = response.json()
+            total_records = json_content["count"]
+            total_pages = (total_records + MAX_RECORDS_PER_PAGE - 1) // MAX_RECORDS_PER_PAGE
+            start_at = 0
+            break
+        else:
+            raise Exception("Maximum retries reached. Exiting script...")
+
+        for page in range(1, total_pages + 1):
+            print(f"loading page: {page}")
+
+            for i in range(max_retries):
+                response = requests.put(
+                    f"{GET_URL}?startAt={start_at}&length={MAX_RECORDS_PER_PAGE}",
+                    data=json_body,
+                    headers=headers,
+                    verify=False,
+                )
+                if response.status_code in [502, 503]:
+                    print(f"Received {response.status_code}. Retrying in {backoff_time} seconds...")
+                    time.sleep(backoff_time)
+                    backoff_time *= 2
+                    continue
+
+                response.raise_for_status()  # Raise an HTTPError if status is not 2xx
+                break
+            else:
+                raise Exception("Maximum retries reached. Exiting script...")
+
+            json_content = response.json()
             logging.debug(f"page: {page}, records: {json_content['result']}")
-            records.extend(json_content['result'])
+            records.extend(json_content["result"])
             start_at += MAX_RECORDS_PER_PAGE
 
     except requests.exceptions.RequestException as e:
         print(e)
+        raise Exception("An error occurred. Exiting script...")
+
     return records
 
 def update_status(records) -> None:
