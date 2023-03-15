@@ -12,12 +12,12 @@ STATUS_STRINGS = ["New", "Held", "Completed", "Killed", "In Production"]
 
 UPDATE_URL = "https://prexit.local/pluto-core/api/pluto/commission"
 GET_URL = "https://prexit.local/pluto-core/api/pluto/commission/list"
-MAX_RECORDS_PER_PAGE = 10
+MAX_RECORDS_PER_PAGE = 100
 
 # get token from environment variable
 token = os.environ.get("PLUTO_TOKEN")
 
-TIMESTAMP = "2023-11-19T00:00:00Z"
+TIMESTAMP = "2022-01-01T00:00:00Z"
 
 ALLOWED_INPUT = ["1", "2", "3", "4", "5", "6"]
 
@@ -55,13 +55,12 @@ def get_filtered_records(timestamp, status, title=None) -> list:
             logging.debug(f"page: {page}, records: {json_content['result']}")
             records.extend(json_content['result'])
             start_at += MAX_RECORDS_PER_PAGE
-            
+
     except requests.exceptions.RequestException as e:
         print(e)
-    
     return records
 
-def update_status(records):
+def update_status(records) -> None:
     #display records to be updated
     if records:    
         display_records(records)
@@ -89,13 +88,13 @@ def update_status(records):
         except requests.exceptions.RequestException as e:
             print(e)
 
-def display_records(records):
+def display_records(records) -> None:
     print("\n")
     for record in records:
-        print(f"id: {record['id']:<5} title: {record['title']:<40} status: {record['status']:<10} scheduledCompletion: {record['scheduledCompletion']}")
-    print("\n")
+        print(f"id: {record['id']:<5} title: {record['title']:<65} status: {record['status']:<10} scheduledCompletion: {record['scheduledCompletion']}")
+    print(f"\nTotal records: {len(records)}\n")
 
-def get_input():
+def get_input() -> int:
         status_int = input("\n1: New\n2: Held\n3: Completed\n4: Killed\n5: In Production\n6: Abort, Abort!!\n")
         if status_int not in ALLOWED_INPUT:
             print("Invalid input. Exiting script")
@@ -107,6 +106,6 @@ def get_input():
             
 if __name__ == "__main__":
     logging.info(f"Starting script at {datetime.datetime.now()}")
-    print("Update status of records that are:")
-    filtered_records = get_filtered_records(TIMESTAMP, STATUS_STRINGS[get_input()])  
+    print(f"Update status of records with completion date before {TIMESTAMP} that are:")
+    filtered_records = get_filtered_records(timestamp=TIMESTAMP, status=STATUS_STRINGS[get_input()])
     update_status(filtered_records)
