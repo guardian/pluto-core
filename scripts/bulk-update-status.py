@@ -35,6 +35,10 @@ MAX_RECORDS_PER_PAGE = 100
 
 # get token from environment variable
 token = os.environ.get("PLUTO_TOKEN")
+if token == None:
+    print("No token found. Exiting script...")
+    sys.exit()
+
 
 headers = {
     "Content-Type": "application/json",
