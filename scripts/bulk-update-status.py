@@ -142,9 +142,11 @@ def update_status(records) -> None:
 
 def display_records(records) -> None:
     print("\n")
+    project_count = 0
     for record in records:
+        project_count += record['projectCount']
         print(f"id: {record['id']:<5} title: {record['title']:<65} status: {record['status']:<10} scheduledCompletion: {record['scheduledCompletion']}")
-    print(f"\nTotal records: {len(records)}\n")
+    print(f"\nTotal commissions: {len(records)}\nTotal projects:    {project_count}\n")
 
 def get_input() -> int:
         status_int = input("\n1: New\n2: Held\n3: Completed\n4: Killed\n5: In Production\n6: Exit script\n")
