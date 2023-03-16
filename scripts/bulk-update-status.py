@@ -1,3 +1,4 @@
+import argparse
 import sys
 import os
 import time
@@ -6,14 +7,21 @@ import json
 import logging
 import datetime
 
+
+argparser = argparse.ArgumentParser(description='Bulk update status of records')
+argparser.add_argument('-t', '--timestamp', help='Date to filter records before (yyyy-mm-dd)')
+argparser.add_argument('-T', '--title', help='Title to filter records by')
+args = argparser.parse_args()
+print(args.timestamp)
+
 # Disable SSL warnings
 requests.packages.urllib3.disable_warnings()
 
 # Set the timestamp to filter records by
-TIMESTAMP = "2022-01-01T00:00:00Z"
-
-# Set the title to filter records by
-TITLE = None
+if not args.timestamp:
+    TIMESTAMP = "2022-01-01T00:00:00Z"
+else:
+    TIMESTAMP = f"{args.timestamp}T00:00:00Z"
 
 # Set the URLs for the API
 BASE_URL="https://prexit.local"
@@ -147,5 +155,5 @@ def get_input() -> int:
 if __name__ == "__main__":
     logging.info(f"Starting script at {datetime.datetime.now()}")
     print(f"Update status of records with completion date before {TIMESTAMP} that are:")
-    filtered_records = get_filtered_records(timestamp=TIMESTAMP, title=TITLE, status=STATUS_STRINGS[get_input()])
+    filtered_records = get_filtered_records(timestamp=TIMESTAMP, title=args.title, status=STATUS_STRINGS[get_input()])
     update_status(filtered_records)
