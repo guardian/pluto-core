@@ -25,8 +25,8 @@ else:
 
 # Set the URLs for the API
 BASE_URL="https://prexit.local"
-UPDATE_URL = f"{BASE_URL}/pluto-core/api/pluto/commission"
-GET_URL = f"{BASE_URL}/pluto-core/api/pluto/commission/list"
+UPDATE_URL = f"{BASE_URL}/pluto-core/api/project"
+COMMISSION_LIST_URL = f"{BASE_URL}/pluto-core/api/pluto/commission/list"
 
 STATUS_STRINGS = ["New", "Held", "Completed", "Killed", "In Production"]
 ALLOWED_INPUT = ["1", "2", "3", "4", "5", "6"]
@@ -85,7 +85,7 @@ def get_filtered_records(timestamp, status, title=None) -> list:
 
             for _ in range(max_retries):
                 response = requests.put(
-                    f"{GET_URL}?startAt={start_at}&length={MAX_RECORDS_PER_PAGE}",
+                    f"{COMMISSION_LIST_URL}?startAt={start_at}&length={MAX_RECORDS_PER_PAGE}",
                     data=json_body,
                     headers=headers,
                     verify=False,
