@@ -6,6 +6,7 @@ import requests
 import json
 import logging
 import datetime
+import jwt
 
 
 argparser = argparse.ArgumentParser(description='Bulk update status of records')
@@ -38,7 +39,9 @@ token = os.environ.get("PLUTO_TOKEN")
 if token == None:
     print("No token found. Exiting script...")
     sys.exit()
-
+decoded_token = jwt.decode(token, algorithms=[], options={"verify_signature": False})
+expiration_time = datetime.datetime.fromtimestamp(decoded_token["exp"])
+print(f"Token expires at: {expiration_time}\n")
 
 headers = {
     "Content-Type": "application/json",
