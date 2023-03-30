@@ -51,12 +51,13 @@ headers = {
 # Set up logging to write to a file
 logging.basicConfig(filename="data.log", level=logging.DEBUG)
 
-def get_filtered_records(timestamp, status, title=None) -> list:
+def get_filtered_commission_records(timestamp, status, title=None) -> list:
     request_body = {
         "match": "W_EXACT",
-        "completionDateBefore": timestamp,
-        "status": status,
+        "completionDateBefore": timestamp
     }
+    if status != None:
+        request_body["status"] = status
     if title:
         request_body["title"] = title
 
@@ -198,5 +199,9 @@ def get_input() -> int:
 if __name__ == "__main__":
     logging.info(f"Starting script at {datetime.datetime.now()}")
     print(f"Update status of records with completion date before {TIMESTAMP} that are:")
-    filtered_records = get_filtered_records(timestamp=TIMESTAMP, title=args.title, status=STATUS_STRINGS[get_input()])
-    update_status(filtered_records)
+    filtered_records = get_filtered_commission_records(timestamp=TIMESTAMP, title=args.title, status=STATUS_STRINGS[get_input()])
+    projects = get_projects(filtered_records)
+    #write projects to file
+    with open(f"projects_before_{TIMESTAMP}.json", "w") as f:
+        json.dump(projects, f)
+    update_project_status()
