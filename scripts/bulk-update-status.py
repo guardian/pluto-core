@@ -11,11 +11,6 @@ import jwt
 # Disable SSL warnings
 requests.packages.urllib3.disable_warnings()
 
-BASE_URL="https://prexit.local"
-UPDATE_URL = f"{BASE_URL}/pluto-core/api/project"
-COMMISSION_LIST_URL = f"{BASE_URL}/pluto-core/api/pluto/commission/list"
-PROJECT_LIST_URL = f"{BASE_URL}/pluto-core/api/project/list"
-
 STATUS_STRINGS = ["New", "Held", "Completed", "Killed", "In Production", None]
 ALLOWED_INPUT = ["1", "2", "3", "4", "5", "6", "7"]
 
@@ -24,6 +19,7 @@ MAX_RECORDS_PER_PAGE = 100
 def setup_argparser() -> argparse.ArgumentParser:
     """Set up the argument parser for the script"""
     argparser = argparse.ArgumentParser(description='Bulk update status of records')
+    argparser.add_argument('-b', '--baseurl', help='Base URL of the environment to run the script against')
     argparser.add_argument('-t', '--timestamp', help='Date to filter records before (yyyy-mm-dd)')
     argparser.add_argument('-T', '--title', help='Title to filter records by')
     argparser.add_argument('-S', '--stop', help='Stop script after after n number of commisions are updated')
@@ -42,6 +38,13 @@ def get_token() -> str:
         sys.exit()
     print(f"Token expires at: {expiration_time}\n")
     return token
+
+def create_urls(base_url):
+    update_url = f"{base_url}/pluto-core/api/project"
+    commission_list_url = f"{base_url}/pluto-core/api/pluto/commission/list"
+    project_list_url = f"{base_url}/pluto-core/api/project/list"
+
+    return update_url, commission_list_url, project_list_url
 
 def get_headers(token: str) -> dict:
     return {
@@ -67,7 +70,7 @@ def api_put_request(url, headers, json_body, max_retries=5):
             print(f"An error occurred: {e}. Retrying in {wait_time} seconds...")
             time.sleep(wait_time)
 
-def get_filtered_commission_records(timestamp, status, headers, title=None) -> list:
+def get_filtered_commission_records(timestamp, status, headers, commission_list_url, title=None) -> list:
     request_body = {
         "match": "W_EXACT",
         "completionDateBefore": timestamp
@@ -81,7 +84,7 @@ def get_filtered_commission_records(timestamp, status, headers, title=None) -> l
     records = []
 
     try:
-        json_content = api_put_request(COMMISSION_LIST_URL, headers, json_body)
+        json_content = api_put_request(commission_list_url, headers, json_body)
         total_records = json_content["count"]
         total_pages = (total_records + MAX_RECORDS_PER_PAGE - 1) // MAX_RECORDS_PER_PAGE
         start_at = 0
@@ -90,7 +93,7 @@ def get_filtered_commission_records(timestamp, status, headers, title=None) -> l
             print(f"loading page: {page}")
 
             response = api_put_request(
-                f"{COMMISSION_LIST_URL}?startAt={start_at}&length={MAX_RECORDS_PER_PAGE}",
+                f"{commission_list_url}?startAt={start_at}&length={MAX_RECORDS_PER_PAGE}",
                 headers,
                 json_body,
             )
@@ -111,7 +114,7 @@ def get_filtered_commission_records(timestamp, status, headers, title=None) -> l
         json.dump(records, f)
     return records
 
-def get_projects(records, headers, timestamp) -> list:
+def get_projects(records, headers, timestamp, project_list_url) -> list:
     projects = []
     number_of_records = len(records)
     for record in records:
@@ -122,7 +125,7 @@ def get_projects(records, headers, timestamp) -> list:
         print(f"Getting projects for commission ID: {commission_id}")
         try:
             json_content = api_put_request(
-                PROJECT_LIST_URL,
+                project_list_url,
                 headers,
                 json.dumps({"match": "W_EXACT", "commissionId": commission_id}),
             )
@@ -142,13 +145,13 @@ def get_projects(records, headers, timestamp) -> list:
 
 def update_project_status(headers, timestamp) -> None:
     #open projects file
-    input = f"Open projects_{timestamp}.json? (y/n): "
-    if input.lower() is "y":
+    input = input(f"Open projects_{timestamp}.json? (y/n): ")
+    if input.lower() == "y":
         with open(f"projects_{timestamp}.json", "r") as f:
             projects = json.load(f)
-    elif input.lower() is "n":
-        input = "Enter path to projects file: "
-        with open(input, "r") as f:
+    elif input.lower() == "n":
+        path = input("Enter path to projects file: ")
+        with open(path, "r") as f:
             projects = json.load(f)
 
     if projects:  
@@ -202,6 +205,11 @@ def get_input() -> int:
 
 def main() -> None:
     args = setup_argparser().parse_args()
+    baseurl = args.baseurl or "https://local.prexit"
+    update_url, commission_list_url, project_list_url = create_urls(baseurl)
+    print(f"update_url: {update_url}")
+    print(f"commission_list_url: {commission_list_url}")
+    print(f"project_list_url: {project_list_url}")
     token = get_token()
     headers = get_headers(token)
     setup_logging()
@@ -210,17 +218,18 @@ def main() -> None:
     timestamp = args.timestamp or "2022-01-01"
     timestamp = f"{timestamp}T00:00:00Z"
 
+    
+
     choice = input("(G)et or (U)pdate projects?\n")
     if choice.lower() == "g":
         print(f"Get projects with a completion date before {timestamp} that are:")
         status = get_input()
-        filtered_records = get_filtered_commission_records(timestamp=timestamp, title=args.title, headers=headers, status=STATUS_STRINGS[status])
-        projects = get_projects(filtered_records, headers, timestamp)
+        filtered_records = get_filtered_commission_records(timestamp=timestamp, title=args.title, headers=headers, status=STATUS_STRINGS[status], commission_list_url=commission_list_url)
+        projects = get_projects(filtered_records, headers, timestamp, project_list_url)
         display_projects(projects)
     elif choice.lower() == "u":
-        update_project_status(headers, timestamp)
-
-            
+        update_project_status(headers, timestamp, update_url)
+      
 if __name__ == "__main__":
     logging.info(f"Starting script at {datetime.datetime.now()}")
     main()
