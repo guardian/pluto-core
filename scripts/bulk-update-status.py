@@ -8,106 +8,96 @@ import logging
 import datetime
 import jwt
 
-
-argparser = argparse.ArgumentParser(description='Bulk update status of records')
-argparser.add_argument('-t', '--timestamp', help='Date to filter records before (yyyy-mm-dd)')
-argparser.add_argument('-T', '--title', help='Title to filter records by')
-args = argparser.parse_args()
-print(args.timestamp)
-
 # Disable SSL warnings
 requests.packages.urllib3.disable_warnings()
 
-# Set the timestamp to filter records by
-if not args.timestamp:
-    TIMESTAMP = "2022-01-01T00:00:00Z"
-else:
-    TIMESTAMP = f"{args.timestamp}T00:00:00Z"
-
-# Set the URLs for the API
 BASE_URL="https://prexit.local"
 UPDATE_URL = f"{BASE_URL}/pluto-core/api/project"
 COMMISSION_LIST_URL = f"{BASE_URL}/pluto-core/api/pluto/commission/list"
+PROJECT_LIST_URL = f"{BASE_URL}/pluto-core/api/project/list"
 
 STATUS_STRINGS = ["New", "Held", "Completed", "Killed", "In Production", None]
 ALLOWED_INPUT = ["1", "2", "3", "4", "5", "6", "7"]
 
 MAX_RECORDS_PER_PAGE = 100
 
-# get token from environment variable
-token = os.environ.get("PLUTO_TOKEN")
-if token == None:
-    print("No token found. Exiting script...")
-    sys.exit()
-decoded_token = jwt.decode(token, algorithms=[], options={"verify_signature": False})
-expiration_time = datetime.datetime.fromtimestamp(decoded_token["exp"])
-print(f"Token expires at: {expiration_time}\n")
+def setup_argparser() -> argparse.ArgumentParser:
+    """Set up the argument parser for the script"""
+    argparser = argparse.ArgumentParser(description='Bulk update status of records')
+    argparser.add_argument('-t', '--timestamp', help='Date to filter records before (yyyy-mm-dd)')
+    argparser.add_argument('-T', '--title', help='Title to filter records by')
+    argparser.add_argument('-S', '--stop', help='Stop script after after n number of commisions are updated')
+    return argparser
 
-headers = {
-    "Content-Type": "application/json",
-    "Authorization": f"Bearer {token}",
-}
+def get_token() -> str:
+    """Set token from environment variable"""
+    token = os.environ.get("PLUTO_TOKEN")
+    if token == None:
+        print("No token found. Exiting script...")
+        sys.exit()
+    decoded_token = jwt.decode(token, algorithms=[], options={"verify_signature": False})
+    expiration_time = datetime.datetime.fromtimestamp(decoded_token["exp"])
+    if expiration_time < datetime.datetime.now():
+        print("Token has expired. Exiting script...")
+        sys.exit()
+    print(f"Token expires at: {expiration_time}\n")
+    return token
 
-# Set up logging to write to a file
-logging.basicConfig(filename="data.log", level=logging.DEBUG)
+def get_headers(token: str) -> dict:
+    return {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}",
+    }
 
-def get_filtered_commission_records(timestamp, status, title=None) -> list:
+def setup_logging() -> None:
+    logging.basicConfig(filename="data.log", level=logging.DEBUG)
+
+
+def api_put_request(url, headers, json_body, max_retries=5):
+    backoff_factor = 2
+    for retry in range(max_retries):
+        try:
+            with requests.put(url, headers=headers, data=json_body, verify=False) as response:
+                response.raise_for_status()
+                return response.json()
+        except (requests.exceptions.HTTPError, requests.exceptions.RequestException) as e:
+            if retry == max_retries - 1:  # If this is the last retry, raise the exception.
+                raise
+            wait_time = backoff_factor ** retry
+            print(f"An error occurred: {e}. Retrying in {wait_time} seconds...")
+            time.sleep(wait_time)
+
+def get_filtered_commission_records(timestamp, status, headers, title=None) -> list:
     request_body = {
         "match": "W_EXACT",
         "completionDateBefore": timestamp
     }
-    if status != None:
+    if status:
         request_body["status"] = status
     if title:
         request_body["title"] = title
 
     json_body = json.dumps(request_body)
     records = []
-    max_retries = 5
-    backoff_time = 1
 
     try:
-        for _ in range(max_retries):
-            response = requests.put(COMMISSION_LIST_URL, headers=headers, data=json_body, verify=False)
-            if response.status_code in [408, 502, 503, 504]:
-                print(f"Received {response.status_code}. Retrying in {backoff_time} seconds...")
-                time.sleep(backoff_time)
-                backoff_time *= 2
-                continue
-
-            response.raise_for_status()  # Raise an HTTPError if status is not 2xx
-            json_content = response.json()
-            total_records = json_content["count"]
-            total_pages = (total_records + MAX_RECORDS_PER_PAGE - 1) // MAX_RECORDS_PER_PAGE
-            start_at = 0
-            break
-        else:
-            raise Exception("Maximum retries reached. Exiting script...")
+        json_content = api_put_request(COMMISSION_LIST_URL, headers, json_body)
+        total_records = json_content["count"]
+        total_pages = (total_records + MAX_RECORDS_PER_PAGE - 1) // MAX_RECORDS_PER_PAGE
+        start_at = 0
 
         for page in range(1, total_pages + 1):
             print(f"loading page: {page}")
 
-            for _ in range(max_retries):
-                response = requests.put(
-                    f"{COMMISSION_LIST_URL}?startAt={start_at}&length={MAX_RECORDS_PER_PAGE}",
-                    data=json_body,
-                    headers=headers,
-                    verify=False,
-                )
-                if response.status_code in [408, 502, 503, 504]:
-                    print(f"Received {response.status_code}. Retrying in {backoff_time} seconds...")
-                    time.sleep(backoff_time)
-                    backoff_time *= 2
-                    continue
+            response = api_put_request(
+                f"{COMMISSION_LIST_URL}?startAt={start_at}&length={MAX_RECORDS_PER_PAGE}",
+                headers,
+                json_body,
+            )
 
-                response.raise_for_status()  # Raise an HTTPError if status is not 2xx
-                break
-            else:
-                raise Exception("Maximum retries reached. Exiting script...")
-
-            json_content = response.json()
+            json_content = response
             logging.debug(f"page: {page}, records: {json_content['result']}")
-            if status == None:
+            if status is None:
                 records.extend([record for record in json_content["result"] if record["status"] not in ["Completed", "Killed"]])
             else:
                 records.extend(json_content["result"])
@@ -117,36 +107,42 @@ def get_filtered_commission_records(timestamp, status, title=None) -> list:
         print(e)
         raise Exception("An error occurred. Exiting script...")
     # write records to file
-    with open(f"commissions_before{TIMESTAMP}.json", "w") as f:
+    with open(f"commissions_before{timestamp}.json", "w") as f:
         json.dump(records, f)
     return records
 
-def get_projects(records) -> list:
+def get_projects(records, headers, timestamp) -> list:
     projects = []
     number_of_records = len(records)
     for record in records:
         commission_id = record['id']
         print(f"{number_of_records} commissions to go...")
         number_of_records -= 1
+
+        print(f"Getting projects for commission ID: {commission_id}")
         try:
-            print(f"Getting projects for commission ID: {commission_id}")
-            response = requests.put("https://prexit.local/pluto-core/api/project/list", headers=headers, data=json.dumps({"match": "W_EXACT", "commissionId": commission_id}), verify=False)
-            response.raise_for_status()  # Raise an HTTPError if status is not 2xx
-            json_content = response.json()
+            json_content = api_put_request(
+                PROJECT_LIST_URL,
+                headers,
+                json.dumps({"match": "W_EXACT", "commissionId": commission_id}),
+            )
+
             for project in json_content["result"]:
                 if project['status'] == "Completed" or project['status'] == "Killed":
-                    print(f"Skipping project {project['id']}with status: {project['status']}")
+                    print(f"Skipping project {project['id']} with status: {project['status']}")
                     continue
                 print(f"Adding project with id: {project['id']} to list of projects to update")
                 projects += [project]
+                with open(f"projects_{timestamp}.json", "a") as f:
+                    f.write(json.dumps(project))
         except requests.exceptions.RequestException as e:
             raise Exception(f"An error occurred. {e} Exiting script...")
     return projects
 
 
-def update_project_status() -> None:
+def update_project_status(headers, timestamp) -> None:
     #open projects file
-    with open(f"projects_before_{TIMESTAMP}.json", "r") as f:
+    with open(f"projects_{timestamp}.json", "r") as f:
         projects = json.load(f)
 
     if projects:  
@@ -169,11 +165,13 @@ def update_project_status() -> None:
         request_body = { "status": status }
         json_body = json.dumps(request_body)
         try:
-            response = requests.put(f"{UPDATE_URL}/{project['id']}/status", headers=headers, data=json_body, verify=False)
-            response.raise_for_status()  # Raise an HTTPError if status is not 2xx
-            json_content = response.json()
+            json_content = api_put_request(
+                f"{UPDATE_URL}/{project['id']}/status",
+                headers,
+                json_body,
+            )
             print(f"Updated record: {project['id']} to {status} {json_content['status']}")
-            logging.debug(f"record: {project['id']}, status: {json_content['status']}, project status updated to: {status}")
+            logging.info(f"record: {project['id']}, status: {json_content['status']}, project status updated to: {status}")
         except requests.exceptions.RequestException as e:
             raise Exception(f"An error occurred. {e} Exiting script...")
 
@@ -195,13 +193,23 @@ def get_input() -> int:
             print("Exiting script")
             sys.exit()
         return int(status_int) - 1
+
+def main() -> None:
+    args = setup_argparser().parse_args()
+    token = get_token()
+    headers = get_headers(token)
+    setup_logging()
+
+    # Set the timestamp to filter records by
+    timestamp = args.timestamp or "2022-01-01"
+    timestamp = f"{timestamp}T00:00:00Z"
+
+    print(f"Update status of records with completion date before {timestamp} that are:")
+    # filtered_records = get_filtered_commission_records(timestamp=timestamp, title=args.title, headers=headers, status=STATUS_STRINGS[get_input()])
+    # projects = get_projects(filtered_records, headers, timestamp)    
+    update_project_status(headers, timestamp)
+
             
 if __name__ == "__main__":
     logging.info(f"Starting script at {datetime.datetime.now()}")
-    print(f"Update status of records with completion date before {TIMESTAMP} that are:")
-    filtered_records = get_filtered_commission_records(timestamp=TIMESTAMP, title=args.title, status=STATUS_STRINGS[get_input()])
-    projects = get_projects(filtered_records)
-    #write projects to file
-    with open(f"projects_before_{TIMESTAMP}.json", "w") as f:
-        json.dump(projects, f)
-    update_project_status()
+    main()
