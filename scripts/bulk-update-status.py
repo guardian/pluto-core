@@ -142,8 +142,14 @@ def get_projects(records, headers, timestamp) -> list:
 
 def update_project_status(headers, timestamp) -> None:
     #open projects file
-    with open(f"projects_{timestamp}.json", "r") as f:
-        projects = json.load(f)
+    input = f"Open projects_{timestamp}.json? (y/n): "
+    if input.lower() is "y":
+        with open(f"projects_{timestamp}.json", "r") as f:
+            projects = json.load(f)
+    elif input.lower() is "n":
+        input = "Enter path to projects file: "
+        with open(input, "r") as f:
+            projects = json.load(f)
 
     if projects:  
         display_projects(projects)
@@ -155,7 +161,7 @@ def update_project_status(headers, timestamp) -> None:
     
     confirm = input(f"Do you want to update the status of these projects to \033[32m{status}\033[0m? (y/n): ")
     
-    if confirm != "y":
+    if confirm.lower != "y":
         print("Exiting script")
         return
     
@@ -204,10 +210,15 @@ def main() -> None:
     timestamp = args.timestamp or "2022-01-01"
     timestamp = f"{timestamp}T00:00:00Z"
 
-    print(f"Update status of records with completion date before {timestamp} that are:")
-    # filtered_records = get_filtered_commission_records(timestamp=timestamp, title=args.title, headers=headers, status=STATUS_STRINGS[get_input()])
-    # projects = get_projects(filtered_records, headers, timestamp)    
-    update_project_status(headers, timestamp)
+    choice = input("(G)et or (U)pdate projects?\n")
+    if choice.lower() == "g":
+        print(f"Get projects with a completion date before {timestamp} that are:")
+        status = get_input()
+        filtered_records = get_filtered_commission_records(timestamp=timestamp, title=args.title, headers=headers, status=STATUS_STRINGS[status])
+        projects = get_projects(filtered_records, headers, timestamp)
+        display_projects(projects)
+    elif choice.lower() == "u":
+        update_project_status(headers, timestamp)
 
             
 if __name__ == "__main__":
