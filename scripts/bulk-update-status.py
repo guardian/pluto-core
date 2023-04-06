@@ -22,7 +22,7 @@ def setup_argparser() -> argparse.ArgumentParser:
     argparser.add_argument('-b', '--baseurl', help='Base URL of the environment to run the script against')
     argparser.add_argument('-t', '--timestamp', help='Date to filter records before (yyyy-mm-dd)')
     argparser.add_argument('-T', '--title', help='Title to filter records by')
-    argparser.add_argument('-S', '--stop', help='Stop script after after n number of commisions are updated')
+    # argparser.add_argument('-S', '--stop', help='Stop script after after n number of commisions are updated')
     return argparser
 
 def get_token() -> str:
@@ -143,13 +143,13 @@ def get_projects(records, headers, timestamp, project_list_url) -> list:
     return projects
 
 
-def update_project_status(headers, timestamp) -> None:
+def update_project_status(headers, timestamp, update_url) -> None:
     #open projects file
-    input = input(f"Open projects_{timestamp}.json? (y/n): ")
-    if input.lower() == "y":
+    user_input = input(f"Open projects_{timestamp}.json? (y/n): ")
+    if user_input.lower() == "y":
         with open(f"projects_{timestamp}.json", "r") as f:
             projects = json.load(f)
-    elif input.lower() == "n":
+    elif user_input.lower() == "n":
         path = input("Enter path to projects file: ")
         with open(path, "r") as f:
             projects = json.load(f)
@@ -175,7 +175,7 @@ def update_project_status(headers, timestamp) -> None:
         json_body = json.dumps(request_body)
         try:
             json_content = api_put_request(
-                f"{UPDATE_URL}/{project['id']}/status",
+                f"{update_url}/{project['id']}/status",
                 headers,
                 json_body,
             )
