@@ -117,10 +117,11 @@ def get_filtered_commission_records(timestamp, status, headers, commission_list_
 def get_projects(records, headers, timestamp, project_list_url) -> list:
     projects = []
     number_of_records = len(records)
-    for record in records:
+    with open(f"projects_{timestamp}.json", "w") as f:
+        f.write("[")  # start the array
+    for i, record in enumerate(records):
         commission_id = record['id']
-        print(f"{number_of_records} commissions to go...")
-        number_of_records -= 1
+        print(f"{number_of_records - i} commissions to go...")
 
         print(f"Getting projects for commission ID: {commission_id}")
         try:
@@ -138,8 +139,16 @@ def get_projects(records, headers, timestamp, project_list_url) -> list:
                 projects += [project]
                 with open(f"projects_{timestamp}.json", "a") as f:
                     f.write(json.dumps(project))
+                    f.write(",")  # add a comma between records
         except requests.exceptions.RequestException as e:
             raise Exception(f"An error occurred. {e} Exiting script...")
+
+    # remove the trailing comma and end the array
+    with open(f"projects_{timestamp}.json", "rb+") as f:
+        f.seek(-1, os.SEEK_END)
+        f.truncate()
+        f.write(b"]")
+
     return projects
 
 
