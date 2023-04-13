@@ -72,7 +72,7 @@ def api_put_request(url, headers, json_body, max_retries=5):
 
 def get_filtered_commission_records(timestamp, status, headers, commission_list_url, title=None) -> list:
     request_body = {
-        "match": "W_EXACT",
+        "match": "W_CONTAINS",
         "completionDateBefore": timestamp
     }
     if status:
@@ -110,7 +110,7 @@ def get_filtered_commission_records(timestamp, status, headers, commission_list_
         print(e)
         raise Exception("An error occurred. Exiting script...")
     # write records to file
-    with open(f"commissions_before{timestamp}.json", "w") as f:
+    with open(f"commissions_before{timestamp}.json", "a") as f:
         json.dump(records, f)
     return records
 
@@ -173,7 +173,8 @@ def update_project_status(headers, timestamp, update_url) -> None:
     
     confirm = input(f"Do you want to update the status of these projects to \033[32m{status}\033[0m? (y/n): ")
     
-    if confirm.lower != "y":
+    print(confirm.lower())
+    if confirm.lower() != "y":
         print("Exiting script")
         return
     
