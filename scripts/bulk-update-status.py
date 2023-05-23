@@ -7,6 +7,7 @@ import json
 import logging
 import datetime
 import jwt
+from datetime import datetime, timezone
 
 # Disable SSL warnings
 requests.packages.urllib3.disable_warnings()
@@ -22,7 +23,6 @@ def setup_argparser() -> argparse.ArgumentParser:
     argparser.add_argument('-b', '--baseurl', help='Base URL of the environment to run the script against')
     argparser.add_argument('-t', '--timestamp', help='Date to filter records before (yyyy-mm-dd)')
     argparser.add_argument('-T', '--title', help='Title to filter records by')
-    # argparser.add_argument('-S', '--stop', help='Stop script after after n number of commisions are updated')
     return argparser
 
 def get_token() -> str:
@@ -32,8 +32,8 @@ def get_token() -> str:
         print("No token found. Exiting script...")
         sys.exit()
     decoded_token = jwt.decode(token, algorithms=[], options={"verify_signature": False})
-    expiration_time = datetime.datetime.fromtimestamp(decoded_token["exp"])
-    if expiration_time < datetime.datetime.now():
+    expiration_time = datetime.fromtimestamp(decoded_token["exp"])
+    if expiration_time < datetime.now():
         print("Token has expired. Exiting script...")
         sys.exit()
     print(f"Token expires at: {expiration_time}\n")
@@ -71,6 +71,7 @@ def api_put_request(url, headers, json_body, max_retries=5):
             time.sleep(wait_time)
 
 def get_filtered_commission_records(timestamp, status, headers, commission_list_url, title=None) -> list:
+    print("TIMESTAMP: ", timestamp)
     request_body = {
         "match": "W_CONTAINS",
         "completionDateBefore": timestamp
@@ -110,14 +111,15 @@ def get_filtered_commission_records(timestamp, status, headers, commission_list_
         print(e)
         raise Exception("An error occurred. Exiting script...")
     # write records to file
-    with open(f"commissions_before{timestamp}.json", "a") as f:
+    unix_timestamp = str(time.time()).split(".")[0]
+    with open(f"commissions_before{timestamp}-{unix_timestamp}.json", "a") as f:
         json.dump(records, f)
     return records
 
-def get_projects(records, headers, timestamp, project_list_url) -> list:
+def get_projects(records, headers, timestamp, project_list_url, unix_timestamp) -> list:
     projects = []
     number_of_records = len(records)
-    with open(f"projects_{timestamp}.json", "w") as f:
+    with open(f"projects_{timestamp}-{unix_timestamp}.json", "w") as f:
         f.write("[")  # start the array
     for i, record in enumerate(records):
         commission_id = record['id']
@@ -132,25 +134,49 @@ def get_projects(records, headers, timestamp, project_list_url) -> list:
             )
 
             for project in json_content["result"]:
+                
                 if project['status'] == "Completed" or project['status'] == "Killed":
                     print(f"Skipping project {project['id']} with status: {project['status']}")
                     continue
+                try:
+                    if project['deletable'] == True and project['deep_archive'] == True:
+                        print(f"Skipping project {project['id']} with deletable: {project['deletable']} and deep_archive: {project['deep_archive']}")
+                        with open(f"check_{timestamp}-{unix_timestamp}.json", "a") as f:
+                            f.write(json.dumps(project))
+                            f.write(",")
+                        continue
+                except KeyError:
+                    with open(f"check_{timestamp}-{unix_timestamp}.json", "a") as f:
+                            f.write(json.dumps(project))
+                            f.write(",")
+                    continue
+                created_timestamp = parse_timestamp(project['created'])
+                parsed_timestamp = parse_timestamp(timestamp)
+                if created_timestamp > parsed_timestamp:
+                    print(f"Skipping project {project['id']} with created date: {project['created']}")
+                    continue
                 print(f"Adding project with id: {project['id']} to list of projects to update")
                 projects += [project]
-                with open(f"projects_{timestamp}.json", "a") as f:
+                with open(f"projects_{timestamp}-{unix_timestamp}.json", "a") as f:
                     f.write(json.dumps(project))
                     f.write(",")  # add a comma between records
         except requests.exceptions.RequestException as e:
             raise Exception(f"An error occurred. {e} Exiting script...")
 
     # remove the trailing comma and end the array
-    with open(f"projects_{timestamp}.json", "rb+") as f:
+    with open(f"projects_{timestamp}-{unix_timestamp}.json", "rb+") as f:
         f.seek(-1, os.SEEK_END)
         f.truncate()
         f.write(b"]")
 
     return projects
 
+def parse_timestamp(timestamp_str):
+    try:
+        dt = datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+    except ValueError:
+        dt = datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=timezone.utc)
+    return dt
 
 def update_project_status(headers, timestamp, update_url) -> None:
     #open projects file
@@ -226,8 +252,9 @@ def main() -> None:
 
     # Set the timestamp to filter records by
     timestamp = args.timestamp or "2022-01-01"
-    timestamp = f"{timestamp}T00:00:00Z"
+    timestamp = f"{timestamp}T00:00:00.0Z"
 
+    unix_timestamp = str(time.time()).split(".")[0]
     
 
     choice = input("(G)et or (U)pdate projects?\n")
@@ -235,11 +262,11 @@ def main() -> None:
         print(f"Get projects with a completion date before {timestamp} that are:")
         status = get_input()
         filtered_records = get_filtered_commission_records(timestamp=timestamp, title=args.title, headers=headers, status=STATUS_STRINGS[status], commission_list_url=commission_list_url)
-        projects = get_projects(filtered_records, headers, timestamp, project_list_url)
+        projects = get_projects(filtered_records, headers, timestamp, project_list_url, unix_timestamp)
         display_projects(projects)
     elif choice.lower() == "u":
         update_project_status(headers, timestamp, update_url)
       
 if __name__ == "__main__":
-    logging.info(f"Starting script at {datetime.datetime.now()}")
+    logging.info(f"Starting script at {datetime.now()}")
     main()
