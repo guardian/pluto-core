@@ -227,7 +227,6 @@ class Application @Inject() (val cc:ControllerComponents,
       val ldapCheck = Success( () ) //dont b0rk on a failing ldap check
       val dbCheck = resultSeq.head
       val ldapMode = config.getOptional[String]("ldap.ldapProtocol").getOrElse("ldap")
-
       if( (ldapMode!="none" && ldapCheck.isFailure) || dbCheck.isFailure){
         if(ldapCheck.isFailure) logger.error(s"LDAP Healthcheck is failing: ${ldapCheck.failed.get.toString}")
         if(dbCheck.isFailure) logger.error(s"DB Healthcheck is failing: ${dbCheck.failed.get.toString}")
