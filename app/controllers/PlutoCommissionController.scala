@@ -2,28 +2,28 @@ package controllers
 
 import akka.actor.ActorRef
 import auth.BearerTokenAuth
-import exceptions.{AlreadyExistsException, BadDataException}
 import helpers.AllowCORSFunctions
-import javax.inject._
 import models._
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.http.{HttpEntity, Status}
+import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
-import play.api.mvc.{ControllerComponents, EssentialAction, Request, ResponseHeader, Result}
+import play.api.mvc.{ControllerComponents, Request, ResponseHeader, Result}
 import services.{CommissionStatusPropagator, CreateOperation, UpdateOperation}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
+import javax.inject._
 import scala.collection.immutable.ListMap
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class PlutoCommissionController @Inject()(override val controllerComponents:ControllerComponents,
+class PlutoCommissionController @Inject()(projectEntryController: ProjectEntryController,
+                                          override val controllerComponents:ControllerComponents,
                                           override val bearerTokenAuth:BearerTokenAuth,
                                           dbConfigProvider:DatabaseConfigProvider,
                                           cacheImpl:SyncCacheApi,
@@ -221,6 +221,36 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
             q.update(newValue)
         }
     }
+
+  override def updateByAnyone(id: Int) = IsAuthenticatedAsync(parse.json) { uid =>
+    request =>
+      internalUpdate(id, request)
+  }
+
+  def internalUpdate(id: Int, request: Request[JsValue]) =
+    this.validate(request).fold(
+      errors => Future(BadRequest(Json.obj("status" -> "error", "detail" -> JsError.toJson(errors)))),
+      validRecord => {
+        val updateResult = this.dbupdate(id, validRecord)
+        updateResult.flatMap { rowsUpdated =>
+          if (validRecord.status != EntryStatus.Held) { // check status before updating project status
+            projectEntryController.updateStatusByCommissionId(Some(id), validRecord.status).map { statusUpdateRows =>
+              if (statusUpdateRows >= 0) {
+                Ok(Json.obj("status" -> "ok", "detail" -> "Record and associated projects updated", "id" -> id))
+              } else {
+                InternalServerError(Json.obj("status" -> "error", "detail" -> s"Project status update failed"))
+              }
+            }.recover {
+              case ex: Exception => InternalServerError(Json.obj("status" -> "error", "detail" -> ex.getMessage))
+            }
+          } else {
+            Future.successful(Ok(Json.obj("status" -> "ok", "detail" -> "Record updated, but project status was not updated due to HELD status", "id" -> id)))
+          }
+        }.recover {
+          case ex: Exception => InternalServerError(Json.obj("status" -> "error", "detail" -> ex.getMessage))
+        }
+      }
+    )
 
     def updateStatus(commissionId: Int) = IsAuthenticatedAsync(parse.json) {uid=> request=>
         import PlutoCommissionStatusUpdateRequestSerializer._

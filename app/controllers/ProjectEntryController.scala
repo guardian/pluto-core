@@ -1,39 +1,39 @@
 package controllers
 
-import java.util.UUID
-import javax.inject.{Inject, Named, Singleton}
 import akka.actor.ActorRef
 import akka.pattern.ask
 import auth.{BearerTokenAuth, Security}
 import exceptions.RecordNotFoundException
 import helpers.{AllowCORSFunctions, S3Helper}
 import models._
+import play.api.Configuration
 import play.api.cache.SyncCacheApi
-import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
 import play.api.inject.Injector
-import play.api.libs.json.{JsError, JsResult, JsValue, Json, Writes}
+import play.api.libs.json._
 import play.api.mvc._
+import services.RabbitMqDeliverable.DeliverableEvent
 import services.RabbitMqPropagator.ChangeEvent
+import services.RabbitMqSend.FixEvent
 import services.actors.Auditor
-import services.{CreateOperation, UpdateOperation, ValidateProject}
-import services.actors.creation.{CreationMessage, GenericCreationActor}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateTransientData}
+import services.actors.creation.{CreationMessage, GenericCreationActor}
+import services.{CreateOperation, UpdateOperation}
 import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile
-import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
-import services.RabbitMqSend.FixEvent
+import slick.lifted.TableQuery
+
+import java.io.File
 import java.nio.file.Paths
 import java.time.ZonedDateTime
-import scala.concurrent.{Await, Future}
+import javax.inject.{Inject, Named, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
-import java.io.File
-import services.RabbitMqDeliverable.DeliverableEvent
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
@@ -51,6 +51,14 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     with UpdateTitleRequestSerializer with FileEntrySerializer
     with Security
 {
+
+
+  def updateStatusByCommissionId(commissionId: Option[Int], status: EntryStatus.Value) = {
+    import EntryStatusMapper._
+    val query = for {p <- TableQuery[ProjectEntryRow] if p.commission === commissionId && p.status =!= EntryStatus.Held && p.status =!= EntryStatus.Killed} yield p.status
+    dbConfig.db.run(query.update(status))
+  }
+
   override implicit val cache:SyncCacheApi = cacheImpl
 
   val dbConfig = dbConfigProvider.get[PostgresProfile]
