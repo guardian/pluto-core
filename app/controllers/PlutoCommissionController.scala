@@ -233,7 +233,6 @@ class PlutoCommissionController @Inject()(projectEntryController: ProjectEntryCo
       validRecord => {
         val updateResult = this.dbupdate(id, validRecord)
         updateResult.flatMap { rowsUpdated =>
-          if (validRecord.status != EntryStatus.Held) { // check status before updating project status
             projectEntryController.updateStatusByCommissionId(Some(id), validRecord.status).map { statusUpdateRows =>
               if (statusUpdateRows >= 0) {
                 Ok(Json.obj("status" -> "ok", "detail" -> "Record and associated projects updated", "id" -> id))
@@ -243,9 +242,6 @@ class PlutoCommissionController @Inject()(projectEntryController: ProjectEntryCo
             }.recover {
               case ex: Exception => InternalServerError(Json.obj("status" -> "error", "detail" -> ex.getMessage))
             }
-          } else {
-            Future.successful(Ok(Json.obj("status" -> "ok", "detail" -> "Record updated, but project status was not updated due to HELD status", "id" -> id)))
-          }
         }.recover {
           case ex: Exception => InternalServerError(Json.obj("status" -> "error", "detail" -> ex.getMessage))
         }
