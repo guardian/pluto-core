@@ -52,7 +52,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     with Security
 {
 
-
   def updateStatusByCommissionId(commissionId: Option[Int], status: EntryStatus.Value) = {
     import EntryStatusMapper._
     val query = for {p <- TableQuery[ProjectEntryRow] if p.commission === commissionId && p.status =!= EntryStatus.Held && p.status =!= EntryStatus.Killed} yield p.status
