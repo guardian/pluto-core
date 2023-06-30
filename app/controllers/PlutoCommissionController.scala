@@ -176,6 +176,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
 
       db.run(TableQuery[PlutoCommissionRow].filter(_.id===itemId).update(newRecord).asTry)
         .map(maybeRows=>{
+          commissionStatusPropagator ! CommissionStatusPropagator.CommissionStatusUpdate(itemId, newRecord.status)
           sendToRabbitMq(UpdateOperation(),newRecord,rabbitMqPropagator)
           maybeRows
         })
