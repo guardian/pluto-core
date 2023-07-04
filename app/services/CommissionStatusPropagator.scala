@@ -60,8 +60,10 @@ object CommissionStatusPropagator {
  * @param configuration
  * @param dbConfigProvider
  */
-class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator")
-                                            implicit val rabbitMqPropagator:ActorRef,
+class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef,
+                                            @Named("rabbitmq-send") rabbitMqSend:ActorRef,
+                                            @Named("auditor") auditor:ActorRef,
+                                            cacheImpl:SyncCacheApi,
                                             configuration:Configuration,
                                             dbConfigProvider:DatabaseConfigProvider)
   extends Actor
@@ -82,6 +84,7 @@ class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator")
   protected val snapshotInterval = configuration.getOptional[Long]("pluto.persistence-snapshot-interval").getOrElse(50L)
   private implicit val db = dbConfigProvider.get[PostgresProfile].db
 
+  override implicit val cache:SyncCacheApi = cacheImpl
   override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
     logger.info(s"Actor is about to restart due to: ${reason.getMessage}. The failed message was: ${message.getOrElse("")}")
     super.preRestart(reason, message)
@@ -327,8 +330,6 @@ override def deleteid(requestedId: Int): Future[Try[Int]] = Future.failed(new No
   override def dbupdate(itemId: Int, entry: ProjectEntry): Future[Try[Int]] = Future.failed(new NotImplementedError("insert method is not implemented"))
 
   override protected def controllerComponents: ControllerComponents = throw new NotImplementedError("controllerComponents is not implemented")
-
-  override implicit val cache: SyncCacheApi = throw new NotImplementedError("cache is not implemented")
 
   override val bearerTokenAuth: BearerTokenAuth = throw new NotImplementedError("bearerTokenAuth is not implemented")
 
