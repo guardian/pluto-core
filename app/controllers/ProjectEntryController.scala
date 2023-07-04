@@ -54,8 +54,29 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
   def updateStatusByCommissionId(commissionId: Option[Int], status: EntryStatus.Value) = {
     import EntryStatusMapper._
-    val query = for {p <- TableQuery[ProjectEntryRow] if p.commission === commissionId && p.status =!= EntryStatus.Held && p.status =!= EntryStatus.Killed} yield p.status
-    dbConfig.db.run(query.update(status))
+
+    // Build a query to find projects with the specified commissionId and status
+    val query = TableQuery[ProjectEntryRow].filter { p =>
+      p.commission === commissionId &&
+        p.status =!= EntryStatus.Held &&
+        p.status =!= EntryStatus.Killed
+    }
+
+    // Run the query to get a list of project IDs that will be updated
+    val projectIdsToUpdate = dbConfig.db.run(query.map(_.id).result)
+
+    // Then use flatMap to sequence the operations
+    projectIdsToUpdate.flatMap { ids =>
+      // Update the status of the projects
+      val updateAction = dbConfig.db.run(query.map(_.status).update(status))
+
+      // Then use map to chain the next operation, sending the messages to RabbitMQ
+      updateAction.map { _ =>
+        ids.foreach { id =>
+          sendToRabbitMq(UpdateOperation(), id, rabbitMqPropagator)
+        }
+      }
+    }
   }
 
   override implicit val cache:SyncCacheApi = cacheImpl
