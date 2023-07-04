@@ -1,6 +1,6 @@
 package services
 
-import akka.actor.{Actor, ActorRef, OneForOneStrategy, Props, SupervisorStrategy}
+import akka.actor.{Actor, ActorRef, Props}
 import auth.BearerTokenAuth
 import controllers.GenericDatabaseObjectControllerWithFilter
 import models._
@@ -144,11 +144,6 @@ class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator")
     super.postStop()
   }
 
-  override val supervisorStrategy = OneForOneStrategy() {
-    case e: Exception =>
-      logger.error("Caught an exception in CommissionStatusPropagator", e)
-      SupervisorStrategy.restart
-  }
   override def receive: Receive = {
     case RetryFromState =>
       if (state.size != 0) logger.warn(s"CommissionStatusPropagator retrying ${state.size} events from state")
