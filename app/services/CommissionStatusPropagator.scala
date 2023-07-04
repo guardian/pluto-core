@@ -82,6 +82,16 @@ class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator")
   protected val snapshotInterval = configuration.getOptional[Long]("pluto.persistence-snapshot-interval").getOrElse(50L)
   private implicit val db = dbConfigProvider.get[PostgresProfile].db
 
+  override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
+    logger.info(s"Actor is about to restart due to: ${reason.getMessage}. The failed message was: ${message.getOrElse("")}")
+    super.preRestart(reason, message)
+  }
+
+  override def postRestart(reason: Throwable): Unit = {
+    logger.info("Actor has been restarted.")
+    super.postRestart(reason)
+  }
+
   /**
    * add an event to the journal, and snapshot if required
    * @param event event to add
@@ -306,15 +316,21 @@ class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator")
     * @return Future of Try of Sequence of record type [[M]]
     */
 
-  override def insert(entry: M, uid: String): Future[Try[Int]] = {
-    Future.failed(new NotImplementedError("insert method is not implemented"))
-  }
 override def selectFiltered(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms): Future[Try[(Int, Seq[ProjectEntry])]] = Future.failed(new NotImplementedError("insert method is not implemented"))
 override def selectid(requestedId: Int): Future[Try[Seq[ProjectEntry]]] = Future.failed(new NotImplementedError("insert method is not implemented"))
 override def deleteid(requestedId: Int): Future[Try[Int]] = Future.failed(new NotImplementedError("insert method is not implemented"))
-override def insert(entry: ProjectEntry, uid: String): Future[Try[Int]] = Future.failed(new NotImplementedError("insert method is not implemented"))
-override def dbupdate(itemId: Int, entry: ProjectEntry): Future[Try[Int]] = Future.failed(new NotImplementedError("insert method is not implemented"))
-override def jstranslate(result: Seq[ProjectEntry]): Json.JsValueWrapper =  throw new NotImplementedError("jstranslate for ProjectEntry is not implemented")
+
+  override def jstranslate(result: Seq[ProjectEntry]): Json.JsValueWrapper = result
+
+  override def jstranslate(result: ProjectEntry): Json.JsValueWrapper = result //implicit translation should handle this
+
+  /*this is pointless because of the override of [[create]] below, so it should not get called,
+   but is needed to conform to the [[GenericDatabaseObjectController]] protocol*/
+  override def insert(entry: ProjectEntry, uid: String) = Future(Failure(new RuntimeException("ProjectEntryController::insert should not have been called")))
+
+
+  override def dbupdate(itemId: Int, entry: ProjectEntry): Future[Try[Int]] = Future.failed(new NotImplementedError("insert method is not implemented"))
+
   override protected def controllerComponents: ControllerComponents = throw new NotImplementedError("controllerComponents is not implemented")
 
   override implicit val cache: SyncCacheApi = throw new NotImplementedError("cache is not implemented")
