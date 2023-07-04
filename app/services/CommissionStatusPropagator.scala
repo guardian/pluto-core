@@ -153,51 +153,56 @@ class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator")
 
       logger.info(s"$uuid: Received notification that commission $commissionId changed to $newStatus")
 
-      val futureResult: Future[Int] = db.run(dbActionForStatusUpdate(newStatus, commissionId))
+      val futureResult: Future[Seq[ProjectEntry]] = db.run(dbActionForStatusUpdate(newStatus, commissionId))
 
       futureResult.onComplete {
         case Failure(err) =>
           logger.error(s"Could not fetch project entries for $commissionId to $newStatus: ", err)
           originalSender ! akka.actor.Status.Failure(err)
-        case Success(count) =>
-          logger.info(s"Project status change to $newStatus for $count projects.")
-          originalSender ! akka.actor.Status.Success(count)
+        case Success(updatedProjects) =>
+          logger.info(s"Project status change to $newStatus for ${updatedProjects.length} projects.")
+          originalSender ! akka.actor.Status.Success(updatedProjects.length)
 
-          if (count > 0) {
-            logger.info(s"Sending $count updates to RabbitMQ.")
+          if (updatedProjects.nonEmpty) {
+            logger.info(s"Sending ${updatedProjects.length} updates to RabbitMQ.")
+            updatedProjects.foreach { project =>
+              sendToRabbitMq(UpdateOperation(), project.id.get, rabbitMqPropagator)
+            }
           }
 
           confirmHandled(evt)
       }
   }
 
-  def dbActionForStatusUpdate(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Int] = newStatus match {
+  def dbActionForStatusUpdate(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Seq[ProjectEntry]] = newStatus match {
     case EntryStatus.Completed | EntryStatus.Killed =>
-      (for {
-        entries <- TableQuery[ProjectEntryRow]
-          .filter(_.commission === commissionId)
-          .filter(_.status =!= EntryStatus.Completed)
-          .filter(_.status =!= EntryStatus.Killed)
-      } yield entries).result.flatMap(entries => DBIO.sequence(entries.collect {
-        case e if e.id.isDefined => updateProjectStatusDBIO(e.id.get, newStatus)
-      })).map(_.sum)
+      val query = TableQuery[ProjectEntryRow]
+        .filter(_.commission === commissionId)
+        .filter(_.status =!= EntryStatus.Completed)
+        .filter(_.status =!= EntryStatus.Killed)
+      query.result.flatMap { projects =>
+        DBIO.seq(projects.map(p => query.filter(_.id === p.id).map(_.status).update(newStatus)): _*).andThen(DBIO.successful(projects))
+      }
     case EntryStatus.Held =>
-      (for {
-        entries <- TableQuery[ProjectEntryRow]
-          .filter(_.commission === commissionId)
-          .filter(_.status =!= EntryStatus.Completed)
-          .filter(_.status =!= EntryStatus.Killed)
-          .filter(_.status =!= EntryStatus.Held)
-      } yield entries).result.flatMap(entries => DBIO.sequence(entries.collect {
-        case e if e.id.isDefined => updateProjectStatusDBIO(e.id.get, newStatus)
-      })).map(_.sum)
-    case _ => DBIO.successful(0)
+      val query = TableQuery[ProjectEntryRow]
+        .filter(_.commission === commissionId)
+        .filter(_.status =!= EntryStatus.Completed)
+        .filter(_.status =!= EntryStatus.Killed)
+        .filter(_.status =!= EntryStatus.Held)
+      query.result.flatMap { projects =>
+        DBIO.seq(projects.map(p => query.filter(_.id === p.id).map(_.status).update(newStatus)): _*).andThen(DBIO.successful(projects))
+      }
+    case _ => DBIO.successful(Seq.empty[ProjectEntry])
   }
 
-  def updateProjectStatusDBIO(projectId: Int, newStatus: EntryStatus.Value): DBIO[Int] = {
+  def updateProjectStatusDBIO(projectId: Int, newStatus: EntryStatus.Value): DBIO[Any] = {
     val query = TableQuery[ProjectEntryRow].filter(_.id === projectId)
-    query.map(_.status).update(newStatus)
+    for {
+      _ <- query.map(_.status).update(newStatus)
+      updatedProject <- query.result.head
+    } yield updatedProject
   }
+
 
 
   //  override def receive: Receive = {
