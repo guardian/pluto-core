@@ -305,17 +305,22 @@ class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator")
     * @param terms   case class of type [[F]] representing the filter terms
     * @return Future of Try of Sequence of record type [[M]]
     */
-override def selectFiltered(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms): Future[Try[(Int, Seq[ProjectEntry])]] = ???
-override def selectid(requestedId: Int): Future[Try[Seq[ProjectEntry]]] = ???
-override def deleteid(requestedId: Int): Future[Try[Int]] = ???
-override def insert(entry: ProjectEntry, uid: String): Future[Try[Int]] = ???
-override def dbupdate(itemId: Int, entry: ProjectEntry): Future[Try[Int]] = ???
-override def jstranslate(result: Seq[ProjectEntry]): Json.JsValueWrapper = ???
-override protected def controllerComponents: ControllerComponents = ???
 
-  override def jstranslate(result: ProjectEntry): Json.JsValueWrapper = ???
+  override def insert(entry: M, uid: String): Future[Try[Int]] = {
+    Future.failed(new NotImplementedError("insert method is not implemented"))
+  }
+override def selectFiltered(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms): Future[Try[(Int, Seq[ProjectEntry])]] = Future.failed(new NotImplementedError("insert method is not implemented"))
+override def selectid(requestedId: Int): Future[Try[Seq[ProjectEntry]]] = Future.failed(new NotImplementedError("insert method is not implemented"))
+override def deleteid(requestedId: Int): Future[Try[Int]] = Future.failed(new NotImplementedError("insert method is not implemented"))
+override def insert(entry: ProjectEntry, uid: String): Future[Try[Int]] = Future.failed(new NotImplementedError("insert method is not implemented"))
+override def dbupdate(itemId: Int, entry: ProjectEntry): Future[Try[Int]] = Future.failed(new NotImplementedError("insert method is not implemented"))
+override def jstranslate(result: Seq[ProjectEntry]): Json.JsValueWrapper =  throw new NotImplementedError("jstranslate for ProjectEntry is not implemented")
+  override protected def controllerComponents: ControllerComponents = throw new NotImplementedError("controllerComponents is not implemented")
 
-  override implicit val cache: SyncCacheApi = ???
-  override val bearerTokenAuth: BearerTokenAuth = ???
-  override implicit val config: Configuration = ???
+  override implicit val cache: SyncCacheApi = throw new NotImplementedError("cache is not implemented")
+
+  override val bearerTokenAuth: BearerTokenAuth = throw new NotImplementedError("bearerTokenAuth is not implemented")
+
+  override implicit val config: Configuration =  throw new NotImplementedError("config is not implemented")
+
 }
