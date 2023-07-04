@@ -62,7 +62,7 @@ object CommissionStatusPropagator {
  */
 
 class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef,
-                                            cacheImpl:SyncCacheApi,
+//                                            cacheImpl:SyncCacheApi,
 
                                             configuration:Configuration,
                                             dbConfigProvider:DatabaseConfigProvider)
@@ -84,7 +84,7 @@ class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator") implic
   protected val snapshotInterval = configuration.getOptional[Long]("pluto.persistence-snapshot-interval").getOrElse(50L)
   private implicit val db = dbConfigProvider.get[PostgresProfile].db
 
-  override implicit val cache:SyncCacheApi = cacheImpl
+//  override implicit val cache:SyncCacheApi = cacheImpl
 
   /**
    * add an event to the journal, and snapshot if required
@@ -137,6 +137,9 @@ class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator") implic
     logger.info("CommissionStatusPropagator stopped")
     super.postStop()
   }
+
+
+  override implicit val cache: SyncCacheApi = throw new NotImplementedError("cache is not implemented")
 
   override def receive: Receive = {
     case RetryFromState =>
