@@ -85,15 +85,6 @@ class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator") implic
   private implicit val db = dbConfigProvider.get[PostgresProfile].db
 
   override implicit val cache:SyncCacheApi = cacheImpl
-  override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
-    logger.info(s"Actor is about to restart due to: ${reason.getMessage}. The failed message was: ${message.getOrElse("")}")
-    super.preRestart(reason, message)
-  }
-
-  override def postRestart(reason: Throwable): Unit = {
-    logger.info("Actor has been restarted.")
-    super.postRestart(reason)
-  }
 
   /**
    * add an event to the journal, and snapshot if required
