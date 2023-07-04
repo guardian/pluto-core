@@ -71,10 +71,11 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       val updateAction = dbConfig.db.run(query.map(_.status).update(status))
 
       // Then use map to chain the next operation, sending the messages to RabbitMQ
-      updateAction.map { _ =>
+      updateAction.map { rowsUpdated =>
         ids.foreach { id =>
           sendToRabbitMq(UpdateOperation(), id, rabbitMqPropagator)
         }
+        rowsUpdated
       }
     }
   }
