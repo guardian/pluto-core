@@ -60,10 +60,12 @@ object CommissionStatusPropagator {
  * @param configuration
  * @param dbConfigProvider
  */
+
 class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef,
                                             @Named("rabbitmq-send") rabbitMqSend:ActorRef,
                                             @Named("auditor") auditor:ActorRef,
                                             cacheImpl:SyncCacheApi,
+
                                             configuration:Configuration,
                                             dbConfigProvider:DatabaseConfigProvider)
   extends Actor
