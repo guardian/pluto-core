@@ -62,8 +62,6 @@ object CommissionStatusPropagator {
  */
 
 class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef,
-                                            @Named("rabbitmq-send") rabbitMqSend:ActorRef,
-                                            @Named("auditor") auditor:ActorRef,
                                             cacheImpl:SyncCacheApi,
 
                                             configuration:Configuration,
