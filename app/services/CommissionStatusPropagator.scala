@@ -61,6 +61,7 @@ object CommissionStatusPropagator {
  * @param dbConfigProvider
  */
 class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator")
+                                            cacheImpl:SyncCacheApi,
                                             implicit val rabbitMqPropagator:ActorRef,
                                             configuration:Configuration,
                                             dbConfigProvider:DatabaseConfigProvider)
@@ -82,6 +83,7 @@ class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator")
   protected val snapshotInterval = configuration.getOptional[Long]("pluto.persistence-snapshot-interval").getOrElse(50L)
   private implicit val db = dbConfigProvider.get[PostgresProfile].db
 
+  override implicit val cache:SyncCacheApi = cacheImpl
   override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
     logger.info(s"Actor is about to restart due to: ${reason.getMessage}. The failed message was: ${message.getOrElse("")}")
     super.preRestart(reason, message)
