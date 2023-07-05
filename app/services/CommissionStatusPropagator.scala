@@ -171,7 +171,6 @@ class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator") implic
               sendToRabbitMq(UpdateOperation(), project.id.get, rabbitMqPropagator)
             }
           }
-
           confirmHandled(evt)
       }
   }
@@ -204,79 +203,6 @@ class CommissionStatusPropagator @Inject() (@Named("rabbitmq-propagator") implic
       updatedProject <- query.result.head
     } yield updatedProject
   }
-
-
-
-  //  override def receive: Receive = {
-//    /**
-//      * re-run any messages stuck in the actor's state. This is sent at 5 minute intervals by ClockSingleton and
-//      * is there to ensure that events get retried (e.g. one instance loses network connectivity before postgres update is sent,
-//      * it is restarted, so another instance will pick up the update)
-//      */
-//    case RetryFromState=>
-//      if(state.size!=0) logger.warn(s"CommissionStatusPropagator retrying ${state.size} events from state")
-//
-//      state.foreach { stateEntry=>
-//        logger.warn(s"Retrying event ${stateEntry._1}")
-//        self ! stateEntry._2
-//      }
-//
-//    case evt@CommissionStatusUpdate(commissionId, newStatus, uuid)=>
-//      val originalSender = sender()
-//
-//        logger.info(s"${uuid}: Received notification that commission $commissionId changed to $newStatus")
-//        val maybeRequiredUpdate = newStatus match {
-//          case EntryStatus.Completed | EntryStatus.Killed=>
-//            val q = for { project <- TableQuery[ProjectEntryRow]
-//                              .filter(_.commission === commissionId)
-//                              .filter(_.status =!= EntryStatus.Completed)
-//                              .filter(_.status =!= EntryStatus.Killed)
-//                          } yield project
-//            Some(q.result)
-//          case EntryStatus.Held=>
-//            val q = for { project <- TableQuery[ProjectEntryRow]
-//                              .filter(_.commission === commissionId)
-//                              .filter(_.status =!= EntryStatus.Completed)
-//                              .filter(_.status =!= EntryStatus.Killed)
-//                              .filter(_.status =!= EntryStatus.Held)
-//                          } yield project
-//            Some(q.result)
-//          case _=>None
-//        }
-//
-//      maybeRequiredUpdate match {
-//        case Some(projectAction) =>
-//          val futureResult: Future[Either[Throwable, Int]] =
-//            db.run(projectAction.transactionally)
-//          . flatMap ({
-//            case Failure(err) =>
-//              logger.error(s"Could not fetch project entries for $commissionId to $newStatus: ", err)
-//              originalSender ! akka.actor.Status.Failure(err)
-//            case Success(projects) =>
-//              projects.foreach { project =>
-//                val update = for {
-//                  p <- TableQuery[ProjectEntryRow].filter(_.id === project.id)
-//                } yield p.status
-//                val updateAction = update.update(newStatus)
-//                db.run(updateAction).onComplete {
-//                  case Failure(updateErr) =>
-//                    logger.error(s"Could not update project status for project ${project.id} to $newStatus: ", updateErr)
-//                  case Success(_) =>
-//                    logger.info(s"Project ${project.id} status change to $newStatus")
-//                    project.id.map { id =>
-//                      sendToRabbitMq(UpdateOperation(), id, rabbitMqPropagator)
-//                    }
-//                }
-//              }
-//              originalSender ! akka.actor.Status.Success(projects.size)
-//              confirmHandled(evt)
-//          })
-//        case None =>
-//          logger.info(s"Commission $commissionId status change to $newStatus did not need any project updates")
-//          originalSender ! akka.actor.Status.Success(0)
-//          confirmHandled(evt)
-//      }
-//      }
 
   /**
     * Implement this method in your subclass to validate that the incoming record (passed in request) does indeed match
