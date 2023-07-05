@@ -1,7 +1,17 @@
 package services
 
+import akka.actor.{Actor, ActorRef, Props}
+import auth.BearerTokenAuth
+import controllers.GenericDatabaseObjectControllerWithFilter
+import models.{ProjectEntryFilterTerms, ProjectEntryFilterTermsSerializer, ProjectEntrySerializer, ProjectRequestSerializer}
+import play.api.cache.SyncCacheApi
+import play.api.libs.json.{JsResult, JsValue, Json}
+import play.api.mvc.{ControllerComponents, Request}
+
 import java.util.UUID
-import akka.actor.{Actor, ActorSystem, Props}
+import javax.inject.Named
+import scala.concurrent.Future
+import scala.util.Try
 //import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
@@ -14,8 +24,8 @@ import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
-import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
 
 object CommissionStatusPropagator {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -49,7 +59,11 @@ object CommissionStatusPropagator {
  * @param configuration
  * @param dbConfigProvider
  */
-class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfigProvider:DatabaseConfigProvider) extends Actor {
+class CommissionStatusPropagator @Inject() (configuration:Configuration, override implicit val config: Configuration, dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, @Named("rabbitmq-propagator") rabbitMqPropagator: ActorRef, override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth) extends Actor with GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
+  with ProjectEntrySerializer
+  with ProjectRequestSerializer
+  with ProjectEntryFilterTermsSerializer
+  {
   import CommissionStatusPropagator._
   import models.EntryStatusMapper._
 
@@ -57,12 +71,68 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
 
   private final var state:CommissionStatusPropagatorState = CommissionStatusPropagatorState(Map())
   private final var restoreCompleted = false
-  val logger = Logger(getClass)
+  override val logger = Logger(getClass)
 
   protected val snapshotInterval = configuration.getOptional[Long]("pluto.persistence-snapshot-interval").getOrElse(50L)
   private implicit val db = dbConfigProvider.get[PostgresProfile].db
 
-  /**
+    override def jstranslate(result: Seq[ProjectEntry]): Json.JsValueWrapper = result
+
+    override def jstranslate(result: ProjectEntry): Json.JsValueWrapper = result //implicit translation should handle this
+
+    /*this is pointless because of the override of [[create]] below, so it should not get called,
+     but is needed to conform to the [[GenericDatabaseObjectController]] protocol*/
+    override def insert(entry: ProjectEntry, uid: String) = Future(Failure(new RuntimeException("ProjectEntryController::insert should not have been called")))
+
+    override def validate(request: Request[JsValue]) = request.body.validate[ProjectEntry]
+
+    override def validateFilterParams(request: Request[JsValue]): JsResult[ProjectEntryFilterTerms] = request.body.validate[ProjectEntryFilterTerms]
+
+    override def selectall(startAt: Int, limit: Int) = dbConfig.db.run(
+      TableQuery[ProjectEntryRow].length.result.zip(
+        TableQuery[ProjectEntryRow].sortBy(_.created.desc).drop(startAt).take(limit).result
+      )
+    ).map(Success(_)).recover(Failure(_))
+
+    val dbConfig = dbConfigProvider.get[PostgresProfile]
+    implicit val implicitConfig = config
+
+    override def deleteid(requestedId: Int) = dbConfig.db.run(
+      TableQuery[ProjectEntryRow].filter(_.id === requestedId).delete.asTry
+    )
+
+    override def selectid(requestedId: Int): Future[Try[Seq[ProjectEntry]]] = dbConfig.db.run(
+      TableQuery[ProjectEntryRow].filter(_.id === requestedId).result.asTry
+    )
+
+    override def selectFiltered(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms): Future[Try[(Int, Seq[ProjectEntry])]] = {
+      val basequery = terms.addFilterTerms {
+        TableQuery[ProjectEntryRow]
+      }
+
+      dbConfig.db.run(
+        basequery.length.result.zip(
+          basequery.sortBy(_.created.desc).drop(startAt).take(limit).result
+        )
+      ).map(Success(_)).recover(Failure(_))
+    }
+
+    override def dbupdate(itemId: Int, entry: ProjectEntry): Future[Try[Int]] = {
+      val newRecord = entry.id match {
+        case Some(id) => entry
+        case None => entry.copy(id = Some(itemId))
+      }
+
+      dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id === itemId).update(newRecord).asTry)
+        .map(rows => {
+          sendToRabbitMq(UpdateOperation(), itemId, rabbitMqPropagator)
+          rows
+        })
+    }
+
+    override implicit val cache:SyncCacheApi = cacheImpl
+
+    /**
    * add an event to the journal, and snapshot if required
    * @param event event to add
    */
@@ -103,59 +173,69 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, dbConfi
 //  }
 
   override def receive: Receive = {
-    /**
-      * re-run any messages stuck in the actor's state. This is sent at 5 minute intervals by ClockSingleton and
-      * is there to ensure that events get retried (e.g. one instance loses network connectivity before postgres update is sent,
-      * it is restarted, so another instance will pick up the update)
-      */
-    case RetryFromState=>
-      if(state.size!=0) logger.warn(s"CommissionStatusPropagator retrying ${state.size} events from state")
+    case RetryFromState =>
+      if (state.size != 0) logger.warn(s"CommissionStatusPropagator retrying ${state.size} events from state")
 
-      state.foreach { stateEntry=>
+      state.foreach { stateEntry =>
         logger.warn(s"Retrying event ${stateEntry._1}")
         self ! stateEntry._2
       }
 
-    case evt@CommissionStatusUpdate(commissionId, newStatus, uuid)=>
+    case evt@CommissionStatusUpdate(commissionId, newStatus, uuid) =>
       val originalSender = sender()
 
-//      persist(evt) { _=>
-        logger.info(s"${uuid}: Received notification that commission $commissionId changed to $newStatus")
-        val maybeRequiredUpdate = newStatus match {
-          case EntryStatus.Completed | EntryStatus.Killed=>
-            val q = for { project <- TableQuery[ProjectEntryRow]
-                              .filter(_.commission === commissionId)
-                              .filter(_.status =!= EntryStatus.Completed)
-                              .filter(_.status =!= EntryStatus.Killed)
-                          } yield project.status
-            Some(q.update(newStatus))
-          case EntryStatus.Held=>
-            val q = for { project <- TableQuery[ProjectEntryRow]
-                              .filter(_.commission === commissionId)
-                              .filter(_.status =!= EntryStatus.Completed)
-                              .filter(_.status =!= EntryStatus.Killed)
-                              .filter(_.status =!= EntryStatus.Held)
-                          } yield project.status
-            Some(q.update(EntryStatus.Held))
-          case _=>None
-        }
+      logger.info(s"$uuid: Received notification that commission $commissionId changed to $newStatus")
 
-        maybeRequiredUpdate match {
-          case Some(requiredUpdate) =>
-            db.run(requiredUpdate).onComplete({
-              case Failure(err) =>
-                logger.error(s"Could not update project status for $commissionId to $newStatus: ", err)
-                originalSender ! akka.actor.Status.Failure(err) //leave it open for retries
-              case Success(updatedRecordCount) =>
-                logger.info(s"Commission $commissionId status change to $newStatus updated the status of $updatedRecordCount contained projects")
-                originalSender ! akka.actor.Status.Success(updatedRecordCount)
-                confirmHandled(evt)
-            })
-          case None=>
-            logger.info(s"Commission $commissionId status change to $newStatus did not need any project updates")
-            originalSender ! akka.actor.Status.Success(0)
+      val futureResult: Future[Seq[ProjectEntry]] = db.run(dbActionForStatusUpdate(newStatus, commissionId))
+
+      futureResult.onComplete {
+        case Failure(err) =>
+          logger.error(s"Could not fetch project entries for $commissionId to $newStatus: ", err)
+          originalSender ! akka.actor.Status.Failure(err)
+        case Success(updatedProjects) =>
+          logger.info(s"Project status change to $newStatus for ${updatedProjects.length} projects.")
+          originalSender ! akka.actor.Status.Success(updatedProjects.length)
+
+          if (updatedProjects.nonEmpty) {
+            logger.info(s"Sending ${updatedProjects.length} updates to RabbitMQ.")
+            updatedProjects.foreach { project => {
+              project.id match {
+                case Some(projectId) => sendToRabbitMq(UpdateOperation(), projectId, rabbitMqPropagator)
+                case None =>
+              }
+            }
+            }
+          }
             confirmHandled(evt)
-        }
+  }}
+
+  def dbActionForStatusUpdate(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Seq[ProjectEntry]] = newStatus match {
+    case EntryStatus.Completed | EntryStatus.Killed =>
+      val query = TableQuery[ProjectEntryRow]
+        .filter(_.commission === commissionId)
+        .filter(_.status =!= EntryStatus.Completed)
+        .filter(_.status =!= EntryStatus.Killed)
+      query.result.flatMap { projects =>
+        DBIO.seq(projects.map(p => query.filter(_.id === p.id).map(_.status).update(newStatus)): _*).andThen(DBIO.successful(projects))
       }
+    case EntryStatus.Held =>
+      val query = TableQuery[ProjectEntryRow]
+        .filter(_.commission === commissionId)
+        .filter(_.status =!= EntryStatus.Completed)
+        .filter(_.status =!= EntryStatus.Killed)
+        .filter(_.status =!= EntryStatus.Held)
+      query.result.flatMap { projects =>
+        DBIO.seq(projects.map(p => query.filter(_.id === p.id).map(_.status).update(newStatus)): _*).andThen(DBIO.successful(projects))
+      }
+    case _ => DBIO.successful(Seq.empty[ProjectEntry])
+  }
+
+  def updateProjectStatusDBIO(projectId: Int, newStatus: EntryStatus.Value): DBIO[Any] = {
+    val query = TableQuery[ProjectEntryRow].filter(_.id === projectId)
+    for {
+      _ <- query.map(_.status).update(newStatus)
+      updatedProject <- query.result.head
+    } yield updatedProject
+  }
   //}
 }
