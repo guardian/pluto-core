@@ -121,6 +121,7 @@ jobs:
           DEFAULT_DB_URL: jdbc:postgresql://localhost:5432/projectlocker?user=projectlocker
           TEST_DB_PROPERTIES_URL: jdbc:postgresql://localhost:5432/projectlocker_test?user=projectlocker&password=projectlocker&connectTimeout=30
           DEFAULT_DB_PROPERTIES_URL: jdbc:postgresql://localhost:5432/postgres?user=projectlocker&password=projectlocker
+          CI: 1
         run: sbt -v "test; docker:publishLocal"
 
       - name: Publish Unit Test Results
