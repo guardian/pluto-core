@@ -180,6 +180,33 @@ class CommissionStatusPropagator @Inject() (projectdb:ProjectEntryController, co
         logger.warn(s"Retrying event ${stateEntry._1}")
         self ! stateEntry._2
       }
+
+
+    case evt@CommissionStatusUpdate(commissionId, newStatus, uuid) =>
+      val originalSender = sender()
+
+      logger.info(s"$uuid: Received notification that commission $commissionId changed to $newStatus")
+
+      val futureResult: Future[Seq[Try[Int]]] = projectdb.updateCommissionProjects(newStatus, commissionId)
+
+      futureResult.onComplete {
+        case Failure(err) =>
+          logger.error(s"Could not fetch project entries for $commissionId to $newStatus: ", err)
+          originalSender ! akka.actor.Status.Failure(err)
+        case Success(updatedProjects) =>
+          val successfulProjects = updatedProjects.collect { case Success(project) => project }
+          logger.info(s"Project status change to $newStatus for ${successfulProjects.length} projects.")
+          originalSender ! akka.actor.Status.Success(successfulProjects.length)
+
+          if (successfulProjects.nonEmpty) {
+            logger.info(s"Sending ${successfulProjects.length} updates to RabbitMQ.")
+            successfulProjects.foreach { projectId => {
+              sendToRabbitMq(UpdateOperation(), projectId, rabbitMqPropagator)
+              }
+            }
+            }
+          }
+          confirmHandled(evt)
   }
 
   def dbActionForStatusUpdate(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Seq[ProjectEntry]] = newStatus match {
