@@ -3,7 +3,7 @@ package controllers
 import org.junit.runner._
 import org.specs2.runner._
 import play.api.test._
-import utils.MockedCacheApi
+import utils.BuildMyApp
 
 /**
  * Add your spec here.
@@ -12,11 +12,11 @@ import utils.MockedCacheApi
  */
 
 @RunWith(classOf[JUnitRunner])
-class ApplicationSpec extends PlaySpecification with MockedCacheApi {
+class ApplicationSpec extends PlaySpecification with BuildMyApp {
   sequential
   tag("controllers")
     "Application" should {
-      "render the index page" in new WithApplication {
+      "render the index page" in new WithApplication(buildApp) {
         val home = route(app, FakeRequest(GET, "/")).get
 
         status(home) must equalTo(OK)
