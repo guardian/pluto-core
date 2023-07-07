@@ -2,7 +2,7 @@ package services
 
 import akka.actor.{Actor, ActorRef, Props}
 import auth.BearerTokenAuth
-import controllers.GenericDatabaseObjectControllerWithFilter
+import controllers.{GenericDatabaseObjectControllerWithFilter, ProjectEntryController}
 import models.{ProjectEntryFilterTerms, ProjectEntryFilterTermsSerializer, ProjectEntrySerializer, ProjectRequestSerializer}
 import play.api.cache.SyncCacheApi
 import play.api.libs.json.{JsResult, JsValue, Json}
@@ -59,7 +59,7 @@ object CommissionStatusPropagator {
  * @param configuration
  * @param dbConfigProvider
  */
-class CommissionStatusPropagator @Inject() (configuration:Configuration, override implicit val config: Configuration, dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, @Named("rabbitmq-propagator") rabbitMqPropagator: ActorRef, override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth) extends Actor with GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
+class CommissionStatusPropagator @Inject() (projectdb:ProjectEntryController, configuration:Configuration, override implicit val config: Configuration, dbConfigProvider:DatabaseConfigProvider, cacheImpl:SyncCacheApi, @Named("rabbitmq-propagator") rabbitMqPropagator: ActorRef, override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth) extends Actor with GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
   with ProjectEntrySerializer
   with ProjectRequestSerializer
   with ProjectEntryFilterTermsSerializer
@@ -180,34 +180,7 @@ class CommissionStatusPropagator @Inject() (configuration:Configuration, overrid
         logger.warn(s"Retrying event ${stateEntry._1}")
         self ! stateEntry._2
       }
-
-    case evt@CommissionStatusUpdate(commissionId, newStatus, uuid) =>
-      val originalSender = sender()
-
-      logger.info(s"$uuid: Received notification that commission $commissionId changed to $newStatus")
-
-      val futureResult: Future[Seq[ProjectEntry]] = db.run(dbActionForStatusUpdate(newStatus, commissionId))
-
-      futureResult.onComplete {
-        case Failure(err) =>
-          logger.error(s"Could not fetch project entries for $commissionId to $newStatus: ", err)
-          originalSender ! akka.actor.Status.Failure(err)
-        case Success(updatedProjects) =>
-          logger.info(s"Project status change to $newStatus for ${updatedProjects.length} projects.")
-          originalSender ! akka.actor.Status.Success(updatedProjects.length)
-
-          if (updatedProjects.nonEmpty) {
-            logger.info(s"Sending ${updatedProjects.length} updates to RabbitMQ.")
-            updatedProjects.foreach { project => {
-              project.id match {
-                case Some(projectId) => sendToRabbitMq(UpdateOperation(), projectId, rabbitMqPropagator)
-                case None =>
-              }
-            }
-            }
-          }
-            confirmHandled(evt)
-  }}
+  }
 
   def dbActionForStatusUpdate(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Seq[ProjectEntry]] = newStatus match {
     case EntryStatus.Completed | EntryStatus.Killed =>

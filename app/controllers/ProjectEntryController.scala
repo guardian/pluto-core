@@ -1,39 +1,39 @@
 package controllers
 
-import java.util.UUID
-import javax.inject.{Inject, Named, Singleton}
 import akka.actor.ActorRef
 import akka.pattern.ask
 import auth.{BearerTokenAuth, Security}
 import exceptions.RecordNotFoundException
 import helpers.{AllowCORSFunctions, S3Helper}
 import models._
+import play.api.Configuration
 import play.api.cache.SyncCacheApi
-import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
 import play.api.inject.Injector
-import play.api.libs.json.{JsError, JsResult, JsValue, Json, Writes}
+import play.api.libs.json._
 import play.api.mvc._
+import services.RabbitMqDeliverable.DeliverableEvent
 import services.RabbitMqPropagator.ChangeEvent
+import services.RabbitMqSend.FixEvent
 import services.actors.Auditor
-import services.{CreateOperation, UpdateOperation, ValidateProject}
-import services.actors.creation.{CreationMessage, GenericCreationActor}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateTransientData}
+import services.actors.creation.{CreationMessage, GenericCreationActor}
+import services.{CreateOperation, UpdateOperation}
 import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile
-import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
-import services.RabbitMqSend.FixEvent
+import slick.lifted.TableQuery
+
+import java.io.File
 import java.nio.file.Paths
 import java.time.ZonedDateTime
-import scala.concurrent.{Await, Future}
+import javax.inject.{Inject, Named, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
-import java.io.File
-import services.RabbitMqDeliverable.DeliverableEvent
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
@@ -94,6 +94,48 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             Some(userAgent)
           )
         }
+    }
+  }
+
+  def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int): Future[Seq[Try[Int]]] = {
+    val action: DBIO[Seq[(Int, ProjectEntry)]] = dbActionForStatusUpdate(newStatus, commissionId)
+    dbConfig.db.run(action).flatMap { projectTuples =>
+      Future.sequence(projectTuples.map { case (id, project) => dbupdate(id, project) })
+    }
+  }
+
+  def dbActionForStatusUpdate(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Seq[(Int, ProjectEntry)]] = {
+    import EntryStatusMapper._
+
+    newStatus match {
+      case EntryStatus.Completed | EntryStatus.Killed =>
+        val query = TableQuery[ProjectEntryRow]
+          .filter(_.commission === commissionId)
+          .filter(_.status =!= EntryStatus.Completed)
+          .filter(_.status =!= EntryStatus.Killed)
+
+        query.result.flatMap { projects =>
+          val ids = projects.map(_.id.getOrElse(-1))
+          val updateActions = projects.map(p => query.filter(_.id === p.id).map(_.status).update(newStatus).map(_ => p))
+
+          DBIO.sequence(updateActions).map(updatedProjects => ids.zip(updatedProjects))
+        }
+
+      case EntryStatus.Held =>
+        val query = TableQuery[ProjectEntryRow]
+          .filter(_.commission === commissionId)
+          .filter(_.status =!= EntryStatus.Completed)
+          .filter(_.status =!= EntryStatus.Killed)
+          .filter(_.status =!= EntryStatus.Held)
+
+        query.result.flatMap { projects =>
+          val ids = projects.map(_.id.getOrElse(-1))
+          val updateActions = projects.map(p => query.filter(_.id === p.id).map(_.status).update(newStatus).map(_ => p))
+
+          DBIO.sequence(updateActions).map(updatedProjects => ids.zip(updatedProjects))
+        }
+
+      case _ => DBIO.successful(Seq.empty[(Int, ProjectEntry)])
     }
   }
 
