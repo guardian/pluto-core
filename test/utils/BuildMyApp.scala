@@ -34,7 +34,7 @@ trait BuildMyApp extends MockedCacheApi {
   def buildAppWithMockedProjectHelper = new GuiceApplicationBuilder().disable(classOf[EhCacheModule])
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .overrides(bind[SyncCacheApi].toInstance(mockedSyncCacheApi))
-    .overrides(bind[ActorRef].qualifiedWith("rabbit-propagator").toProvider(classOf[ActorRefProvider]))
+    .overrides(bind[ActorRef].qualifiedWith("rabbitmq-propagator").toProvider(classOf[ActorRefProvider]))
     .configure("akka.persistence.journal.plugin"->"akka.persistence.journal.inmem")
     .configure("akka.persistence.journal.auto-start-journals"->Seq())
     .configure("akka.persistence.snapshot-store.plugin"->"akka.persistence.snapshot-store.local")
