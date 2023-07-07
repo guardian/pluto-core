@@ -80,8 +80,8 @@ class ProjectMetadataSpec extends Specification with BuildMyApp {
       result must beNone
     }
   }
-  if (!sys.env.contains("CI")) {
-    "ProjectMetadata.allMetadataFor" should {
+
+  "ProjectMetadata.allMetadataFor" should {
       "return all of the metadata keys for the given project" in new WithApplication(buildApp) {
         private val injector = app.injector
 
@@ -98,9 +98,6 @@ class ProjectMetadataSpec extends Specification with BuildMyApp {
         returnedSeq(1).projectRef mustEqual 2
         returnedSeq(1).key mustEqual "second_key"
         returnedSeq(1).value must beSome("second value")
-      }
     }
-
   }
-
 }

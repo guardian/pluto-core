@@ -15,7 +15,6 @@ import utils.MockedCacheApi
 class ApplicationSpec extends PlaySpecification with MockedCacheApi {
   sequential
   tag("controllers")
-  if (!sys.env.contains("CI")){
     "Application" should {
       "render the index page" in new WithApplication {
         val home = route(app, FakeRequest(GET, "/")).get
@@ -26,4 +25,3 @@ class ApplicationSpec extends PlaySpecification with MockedCacheApi {
       }
     }
   }
-}

@@ -1,5 +1,6 @@
 package utils
 
+import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.Materializer
 import akka.testkit.TestProbe
 import play.api.cache.SyncCacheApi
@@ -7,15 +8,18 @@ import play.api.cache.ehcache.EhCacheModule
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.libs.json.Json
-import services.actors.ProjectCreationActor
 import testHelpers.TestDatabase
 
-import scala.concurrent.Future
+import javax.inject.Provider
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 trait BuildMyApp extends MockedCacheApi {
+  class ActorRefProvider(implicit actorSystem: ActorSystem) extends Provider[ActorRef] {
+    override def get(): ActorRef = TestProbe().ref
+  }
+
   def buildApp = new GuiceApplicationBuilder().disable(classOf[EhCacheModule])
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .overrides(bind[SyncCacheApi].toInstance(mockedSyncCacheApi))
@@ -30,6 +34,7 @@ trait BuildMyApp extends MockedCacheApi {
   def buildAppWithMockedProjectHelper = new GuiceApplicationBuilder().disable(classOf[EhCacheModule])
     .overrides(bind[DatabaseConfigProvider].to[TestDatabase.testDbProvider])
     .overrides(bind[SyncCacheApi].toInstance(mockedSyncCacheApi))
+    .overrides(bind[ActorRef].qualifiedWith("rabbit-propagator").toProvider(classOf[ActorRefProvider]))
     .configure("akka.persistence.journal.plugin"->"akka.persistence.journal.inmem")
     .configure("akka.persistence.journal.auto-start-journals"->Seq())
     .configure("akka.persistence.snapshot-store.plugin"->"akka.persistence.snapshot-store.local")
