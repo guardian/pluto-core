@@ -98,44 +98,9 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   }
 
   def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int): Future[Seq[Try[Int]]] = {
-    val action: DBIO[Seq[(Int, ProjectEntry)]] = dbActionForStatusUpdate(newStatus, commissionId)
+    val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.dbActionForStatusUpdate(newStatus, commissionId)
     dbConfig.db.run(action).flatMap { projectTuples =>
       Future.sequence(projectTuples.map { case (id, project) => dbupdate(id, project) })
-    }
-  }
-
-  def dbActionForStatusUpdate(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Seq[(Int, ProjectEntry)]] = {
-    import EntryStatusMapper._
-
-    newStatus match {
-      case EntryStatus.Completed | EntryStatus.Killed =>
-        val query = TableQuery[ProjectEntryRow]
-          .filter(_.commission === commissionId)
-          .filter(_.status =!= EntryStatus.Completed)
-          .filter(_.status =!= EntryStatus.Killed)
-
-        query.result.flatMap { projects =>
-          val ids = projects.map(_.id.getOrElse(-1))
-          val updateActions = projects.map(p => query.filter(_.id === p.id).map(_.status).update(newStatus).map(_ => p))
-
-          DBIO.sequence(updateActions).map(updatedProjects => ids.zip(updatedProjects))
-        }
-
-      case EntryStatus.Held =>
-        val query = TableQuery[ProjectEntryRow]
-          .filter(_.commission === commissionId)
-          .filter(_.status =!= EntryStatus.Completed)
-          .filter(_.status =!= EntryStatus.Killed)
-          .filter(_.status =!= EntryStatus.Held)
-
-        query.result.flatMap { projects =>
-          val ids = projects.map(_.id.getOrElse(-1))
-          val updateActions = projects.map(p => query.filter(_.id === p.id).map(_.status).update(newStatus).map(_ => p))
-
-          DBIO.sequence(updateActions).map(updatedProjects => ids.zip(updatedProjects))
-        }
-
-      case _ => DBIO.successful(Seq.empty[(Int, ProjectEntry)])
     }
   }
 

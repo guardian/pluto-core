@@ -50,7 +50,7 @@ object CommissionStatusPropagator {
  * @param configuration
  * @param dbConfigProvider
  */
-class CommissionStatusPropagator @Inject() (projectdb:ProjectEntryController) extends Actor
+class CommissionStatusPropagator @Inject() (projectDb:ProjectEntryController) extends Actor
   {
   import CommissionStatusPropagator._
 
@@ -83,7 +83,7 @@ class CommissionStatusPropagator @Inject() (projectdb:ProjectEntryController) ex
 
       logger.info(s"$uuid: Received notification that commission $commissionId changed to $newStatus")
 
-      val futureResult: Future[Seq[Try[Int]]] = projectdb.updateCommissionProjects(newStatus, commissionId)
+      val futureResult: Future[Seq[Try[Int]]] = projectDb.updateCommissionProjects(newStatus, commissionId)
 
       futureResult.onComplete {
         case Failure(err) =>

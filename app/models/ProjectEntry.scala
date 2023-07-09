@@ -21,6 +21,7 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
                          commissionId: Option[Int], deletable: Option[Boolean], deep_archive: Option[Boolean],
                          sensitive: Option[Boolean], status:EntryStatus.Value, productionOffice: ProductionOffice.Value, isObitProject:Option[String])
 extends PlutoModel{
+
   def projectDefaultStorage(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Option[StorageEntry]] = {
     import cats.implicits._
     for {
@@ -229,6 +230,42 @@ trait ProjectEntrySerializer extends TimestampSerialization {
 }
 
 object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean], EntryStatus.Value, ProductionOffice.Value, Option[String])=>ProjectEntry) {
+
+  def dbActionForStatusUpdate(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Seq[(Int, ProjectEntry)]] = {
+    import EntryStatusMapper._
+
+    newStatus match {
+      case EntryStatus.Completed | EntryStatus.Killed =>
+        val query = TableQuery[ProjectEntryRow]
+          .filter(_.commission === commissionId)
+          .filter(_.status =!= EntryStatus.Completed)
+          .filter(_.status =!= EntryStatus.Killed)
+
+        query.result.flatMap { projects =>
+          val ids = projects.map(_.id.getOrElse(-1))
+          val updateActions = projects.map(p => query.filter(_.id === p.id).map(_.status).update(newStatus).map(_ => p))
+
+          DBIO.sequence(updateActions).map(updatedProjects => ids.zip(updatedProjects))
+        }
+
+      case EntryStatus.Held =>
+        val query = TableQuery[ProjectEntryRow]
+          .filter(_.commission === commissionId)
+          .filter(_.status =!= EntryStatus.Completed)
+          .filter(_.status =!= EntryStatus.Killed)
+          .filter(_.status =!= EntryStatus.Held)
+
+        query.result.flatMap { projects =>
+          val ids = projects.map(_.id.getOrElse(-1))
+          val updateActions = projects.map(p => query.filter(_.id === p.id).map(_.status).update(newStatus).map(_ => p))
+
+          DBIO.sequence(updateActions).map(updatedProjects => ids.zip(updatedProjects))
+        }
+
+      case _ => DBIO.successful(Seq.empty[(Int, ProjectEntry)])
+    }
+  }
+
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String],
                      deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value, isObitProject:Option[String])
