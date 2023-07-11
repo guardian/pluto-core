@@ -1,8 +1,5 @@
 package controllers
 
-import java.sql.Timestamp
-import java.time.LocalDateTime
-
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import models._
@@ -10,13 +7,13 @@ import org.specs2.matcher.ThrownExpectations
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.JsValue
 import play.api.test.Helpers._
 import play.api.test._
 import slick.jdbc.JdbcProfile
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 
 class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp with ThrownExpectations with Mockito with ProjectEntrySerializer {
   sequential
@@ -57,6 +54,40 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
 //      status(response) must equalTo(OK)
 //    }
 //  }
+
+//  "ProjectEntryController.updateCommissionProjects" should {
+//    "update project statuses correctly" in new WithApplication(buildApp) {
+//      implicit val system: ActorSystem = app.actorSystem
+//      implicit val materializer: Materializer = Materializer(system)
+//
+//      //needed for database access
+//      private val dbConfigProvider = mock[DatabaseConfigProvider]
+//      private val dbConfig = mock[DatabaseConfig[JdbcProfile]]
+//      private val db = mock[Database]
+//      private val action = mock[DBIO[Seq[(Int, ProjectEntry)]]]
+//      private val projectEntry = mock[ProjectEntry]
+//
+//      dbConfigProvider.get[JdbcProfile] returns dbConfig
+//      dbConfig.db returns db
+//      ProjectEntry.dbActionForStatusUpdate(any[EntryStatus.Value], anyInt) returns action
+//      val projectTuple: Seq[(Int, ProjectEntry)] = Seq((1, projectEntry))
+//      db.run(action) returns Future.successful(projectTuple)
+//      val updatedEntries = Seq(Try(1))
+//      projectEntryController.dbupdate(anyInt, any[ProjectEntry]) returns Future.successful(updatedEntries.head)
+//
+//      // Construct your controller here with the necessary parameters
+//      val projectEntryController = new ProjectEntryController(dbConfigProvider)
+//
+//      val result = Await.result(projectEntryController.updateCommissionProjects(EntryStatus.Running, 1), 5.seconds)
+//      result must equalTo(updatedEntries)
+//
+//      there was one(dbConfigProvider).get[JdbcProfile]
+//      there was one(dbConfig).db
+//      there was one(db).run(action)
+//      there was one(projectEntryController).dbupdate(1, projectEntry)
+//    }
+//  }
+
 
   "ProjectEntryController.listFiltered" should {
     "show projectentry items filtered by title" in new WithApplication(buildApp){

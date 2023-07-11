@@ -1,22 +1,24 @@
 package services
 
-import akka.actor.{Actor, Props}
-import controllers.ProjectEntryController
-
-import java.util.UUID
-import scala.concurrent.Future
-import scala.util.Try
-//import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
+import akka.actor.{Actor, ActorRef, Props}
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
 import com.google.inject.Inject
-import models.EntryStatus
+import models.{EntryStatus, ProjectEntry}
 import org.slf4j.LoggerFactory
 import play.api.Logger
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json.Json
+import play.api.libs.json.Json.JsValueWrapper
+import services.RabbitMqPropagator._
+import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 
+import java.util.UUID
+import javax.inject.Named
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success}
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
 object CommissionStatusPropagator {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -50,15 +52,19 @@ object CommissionStatusPropagator {
  * @param configuration
  * @param dbConfigProvider
  */
-class CommissionStatusPropagator @Inject() (projectDb:ProjectEntryController) extends Actor
+class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProvider,@Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef) extends Actor
   {
   import CommissionStatusPropagator._
 
   private final var state:CommissionStatusPropagatorState = CommissionStatusPropagatorState(Map())
   private final var restoreCompleted = false
-  val logger = Logger(getClass)
+    val logger = Logger(getClass)
+    val dbConfig = dbConfigProvider.get[PostgresProfile]
+    implicit val projectWrites = Json.writes[ProjectEntry]
 
-  /**
+
+
+    /**
    * Logs to the journal that this event has been handled, so it won't be re-tried
    * @param evtAsObject event object
    */
@@ -83,7 +89,7 @@ class CommissionStatusPropagator @Inject() (projectDb:ProjectEntryController) ex
 
       logger.info(s"$uuid: Received notification that commission $commissionId changed to $newStatus")
 
-      val futureResult: Future[Seq[Try[Int]]] = projectDb.updateCommissionProjects(newStatus, commissionId)
+      val futureResult: Future[Seq[Try[Int]]] = updateCommissionProjects(newStatus, commissionId)
 
       futureResult.onComplete {
         case Failure(err) =>
@@ -100,4 +106,18 @@ class CommissionStatusPropagator @Inject() (projectDb:ProjectEntryController) ex
           }
           confirmHandled(evt)
   }
-}
+
+    def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int): Future[Seq[Try[Int]]] = {
+      val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.dbActionForStatusUpdate(newStatus, commissionId)
+      dbConfig.db.run(action).map { projectTuples =>
+        projectTuples.map { case (id, project) =>
+          Try {
+            rabbitMqPropagator ! ChangeEvent(Seq(Json.toJson(project): JsValueWrapper), Some("project"), UpdateOperation())
+            id
+          }
+        }
+      }
+    }
+  }
+
+
