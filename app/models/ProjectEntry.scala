@@ -234,12 +234,8 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
   def dbActionForStatusUpdate(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Seq[(Int, ProjectEntry)]] = {
     import EntryStatusMapper._
 
-    def updateProjects(query: Query[ProjectEntryRow, ProjectEntry, Seq]) = {
-      query.result.flatMap { projects =>
-        val ids = projects.map(_.id.getOrElse(-1))
-        val updateActions = projects.map(p => query.filter(_.id === p.id).map(_.status).update(newStatus).map(_ => p))
-        DBIO.sequence(updateActions).map(updatedProjects => ids.zip(updatedProjects))
-      }
+    def getProjects(query: Query[ProjectEntryRow, ProjectEntry, Seq]) = {
+      query.result.map(projects => projects.map(p => (p.id.getOrElse(-1), p)))
     }
 
     val baseQuery = TableQuery[ProjectEntryRow].filter(_.commission === commissionId)
@@ -249,14 +245,14 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
         val filteredQuery = baseQuery
           .filter(_.status =!= EntryStatus.Completed)
           .filter(_.status =!= EntryStatus.Killed)
-        updateProjects(filteredQuery)
+        getProjects(filteredQuery)
 
       case EntryStatus.Held =>
         val filteredQuery = baseQuery
           .filter(_.status =!= EntryStatus.Completed)
           .filter(_.status =!= EntryStatus.Killed)
           .filter(_.status =!= EntryStatus.Held)
-        updateProjects(filteredQuery)
+        getProjects(filteredQuery)
 
       case _ => DBIO.successful(Seq.empty[(Int, ProjectEntry)])
     }
