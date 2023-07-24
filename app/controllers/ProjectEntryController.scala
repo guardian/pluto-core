@@ -69,6 +69,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   )
 
   override def dbupdate(itemId:Int, entry:ProjectEntry) :Future[Try[Int]] = {
+    logger.info(s"Updating project ID ${itemId} and status ${entry.status}")
     val newRecord = entry.id match {
       case Some(id)=>entry
       case None=>entry.copy(id=Some(itemId))
@@ -98,13 +99,16 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   }
 
   def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int): Future[Seq[Try[Int]]] = {
-    val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.dbActionForStatusUpdate(newStatus, commissionId)
+    logger.info(s"CommissionId ${commissionId}, newStatus ${newStatus}")
+    val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.getProjectsEligibleForStatusChange(newStatus, commissionId)
     dbConfig.db.run(action).flatMap { projectTuples =>
       Future.sequence(projectTuples.map { case (id, project) =>
         val updatedProject = project.copy(status = newStatus)
-        dbupdate(id, updatedProject) })
+        dbupdate(id, updatedProject)
+      })
     }
   }
+
 
   /**
     * Fully generic container method to process an update request
