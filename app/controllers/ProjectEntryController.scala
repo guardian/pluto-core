@@ -100,7 +100,9 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int): Future[Seq[Try[Int]]] = {
     val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.dbActionForStatusUpdate(newStatus, commissionId)
     dbConfig.db.run(action).flatMap { projectTuples =>
-      Future.sequence(projectTuples.map { case (id, project) => dbupdate(id, project) })
+      Future.sequence(projectTuples.map { case (id, project) =>
+        val updatedProject = project.copy(status = newStatus)
+        dbupdate(id, updatedProject) })
     }
   }
 
