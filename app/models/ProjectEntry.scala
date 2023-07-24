@@ -231,7 +231,7 @@ trait ProjectEntrySerializer extends TimestampSerialization {
 
 object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean], EntryStatus.Value, ProductionOffice.Value, Option[String])=>ProjectEntry) {
 
-  def dbActionForStatusUpdate(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Seq[(Int, ProjectEntry)]] = {
+  def getProjectsEligibleForStatusChange(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Seq[(Int, ProjectEntry)]] = {
     import EntryStatusMapper._
 
     def getProjects(query: Query[ProjectEntryRow, ProjectEntry, Seq]) = {

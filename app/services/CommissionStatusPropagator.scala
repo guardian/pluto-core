@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
 import com.google.inject.Inject
-import models.{EntryStatus, ProjectEntry}
+import models.{EntryStatus, ProjectEntry, ProjectEntryRow}
 import org.slf4j.LoggerFactory
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
@@ -108,14 +108,25 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
   }
 
     def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int): Future[Seq[Try[Int]]] = {
-      val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.dbActionForStatusUpdate(newStatus, commissionId)
-      dbConfig.db.run(action).map { projectTuples =>
-        projectTuples.map { case (id, project) =>
-          Try {
-            rabbitMqPropagator ! ChangeEvent(Seq(Json.toJson(project): JsValueWrapper), Some("project"), UpdateOperation())
-            id
+      val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.getProjectsEligibleForStatusChange(newStatus, commissionId)
+
+      dbConfig.db.run(action).flatMap { projectTuples =>
+        // Map over each tuple, update the project's status and then update it in the database
+        val updateActions = projectTuples.map { case (id, project) =>
+          val updatedProject = project.copy(status = newStatus)
+          val dbUpdateAction = dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id === id).update(updatedProject))
+
+          // Convert the DB update future to a Try and then send the updated project to RabbitMQ
+          dbUpdateAction.transformWith {
+            case Success(_) =>
+              rabbitMqPropagator ! ChangeEvent(Seq(Json.toJson(updatedProject): JsValueWrapper), Some("project"), UpdateOperation())
+              Future.successful(Success(id))
+            case Failure(err) => Future.successful(Failure(err))
           }
         }
+
+        // Execute all update actions concurrently using Future.sequence
+        Future.sequence(updateActions)
       }
     }
   }
