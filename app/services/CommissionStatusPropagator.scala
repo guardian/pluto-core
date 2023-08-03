@@ -132,7 +132,7 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
             "status" -> updatedProject.status.toString,
             "productionOffice" -> updatedProject.productionOffice
           )
-          val dbUpdateAction = dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id === id).update(updatedProject))
+          val dbUpdateAction = dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id === id).update(transformedJson))
 
           // Convert the DB update future to a Try and then send the updated project to RabbitMQ
           dbUpdateAction.transformWith {
