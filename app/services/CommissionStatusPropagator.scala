@@ -8,7 +8,7 @@ import models.{EntryStatus, ProjectEntry, ProjectEntryRow}
 import org.slf4j.LoggerFactory
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.libs.json.Json.JsValueWrapper
 import services.RabbitMqPropagator._
 import slick.jdbc.PostgresProfile
@@ -111,9 +111,26 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
       val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.getProjectsEligibleForStatusChange(newStatus, commissionId)
 
       dbConfig.db.run(action).flatMap { projectTuples =>
+
         // Map over each tuple, update the project's status and then update it in the database
         val updateActions = projectTuples.map { case (id, project) =>
+
           val updatedProject = project.copy(status = newStatus)
+          val transformedJson: JsValue = Json.obj(
+            "id" -> updatedProject.id,
+            "projectTypeId" -> updatedProject.projectTypeId,
+            "title" -> updatedProject.projectTitle, // Renaming to 'title' here
+            "created" -> Instant.ofEpochMilli(updatedProject.created).toString,
+            "updated" -> Instant.ofEpochMilli(updatedProject.updated).toString,
+            "user" -> updatedProject.user,
+            "workingGroupId" -> updatedProject.workingGroupId,
+            "commissionId" -> updatedProject.commissionId,
+            "deletable" -> updatedProject.deletable,
+            "deep_archive" -> updatedProject.deep_archive,
+            "sensitive" -> updatedProject.sensitive,
+            "status" -> updatedProject.status.toString,
+            "productionOffice" -> updatedProject.productionOffice
+          )
           val dbUpdateAction = dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id === id).update(updatedProject))
 
           // Convert the DB update future to a Try and then send the updated project to RabbitMQ
