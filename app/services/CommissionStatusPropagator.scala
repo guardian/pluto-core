@@ -4,12 +4,11 @@ import akka.actor.{Actor, ActorRef, Props}
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
 import com.google.inject.Inject
-import models.{EntryStatus, ProjectEntry, ProjectEntryRow}
+import models.{EntryStatus, ProjectEntry, ProjectEntryRow, ProjectEntrySerializer}
 import org.slf4j.LoggerFactory
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.Json
-import play.api.libs.json.Json.JsValueWrapper
+import play.api.libs.json.Writes
 import services.RabbitMqPropagator._
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
@@ -59,9 +58,6 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
   private final var restoreCompleted = false
     val logger = Logger(getClass)
     val dbConfig = dbConfigProvider.get[PostgresProfile]
-    implicit val projectWrites = Json.writes[ProjectEntry]
-
-
 
     /**
    * Logs to the journal that this event has been handled, so it won't be re-tried
@@ -74,7 +70,7 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
 //    }
   }
 
-  override def receive: Receive = {
+    override def receive: Receive = {
     case RetryFromState =>
       if (state.size != 0) logger.warn(s"CommissionStatusPropagator retrying ${state.size} events from state")
 
@@ -115,16 +111,16 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
         val updateActions = projectTuples.map { case (id, project) =>
           val updatedProject = project.copy(status = newStatus)
           val dbUpdateAction = dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id === id).update(updatedProject))
-
           // Convert the DB update future to a Try and then send the updated project to RabbitMQ
           dbUpdateAction.transformWith {
             case Success(_) =>
-              rabbitMqPropagator ! ChangeEvent(Seq(Json.toJson(updatedProject): JsValueWrapper), Some("project"), UpdateOperation())
+              val projectSerializer = new ProjectEntrySerializer {}
+              implicit val projectsWrites: Writes[ProjectEntry] = projectSerializer.projectEntryWrites
+              rabbitMqPropagator ! ChangeEvent(Seq(projectsWrites.writes(updatedProject)), Some("project"), UpdateOperation())
               Future.successful(Success(id))
             case Failure(err) => Future.successful(Failure(err))
           }
         }
-
         // Execute all update actions concurrently using Future.sequence
         Future.sequence(updateActions)
       }
