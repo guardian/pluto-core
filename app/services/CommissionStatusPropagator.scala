@@ -19,6 +19,7 @@ import javax.inject.Named
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
+import java.time.Instant
 
 object CommissionStatusPropagator {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -120,8 +121,8 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
             "id" -> updatedProject.id,
             "projectTypeId" -> updatedProject.projectTypeId,
             "title" -> updatedProject.projectTitle, // Renaming to 'title' here
-            "created" -> Instant.ofEpochMilli(updatedProject.created).toString,
-            "updated" -> Instant.ofEpochMilli(updatedProject.updated).toString,
+            "created" -> Instant.ofEpochMilli(updatedProject.created.getTime).toString,
+            "updated" -> Instant.ofEpochMilli(updatedProject.updated.getTime).toString,
             "user" -> updatedProject.user,
             "workingGroupId" -> updatedProject.workingGroupId,
             "commissionId" -> updatedProject.commissionId,
