@@ -69,7 +69,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   )
 
   override def dbupdate(itemId:Int, entry:ProjectEntry) :Future[Try[Int]] = {
-    logger.info(s"Updating project ID ${itemId} and status ${entry.status}")
+    logger.info(s"Updating project id ${itemId} and status ${entry.status}")
     val newRecord = entry.id match {
       case Some(id)=>entry
       case None=>entry.copy(id=Some(itemId))
