@@ -71,11 +71,11 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
   }
 
     override def receive: Receive = {
-      /**
-        * re-run any messages stuck in the actor's state. This is sent at 5 minute intervals by ClockSingleton and
-        * is there to ensure that events get retried (e.g. one instance loses network connectivity before postgres update is sent,
-        * it is restarted, so another instance will pick up the update)
-        */
+    /**
+      * re-run any messages stuck in the actor's state. This is sent at 5 minute intervals by ClockSingleton and
+      * is there to ensure that events get retried (e.g. one instance loses network connectivity before postgres update is sent,
+      * it is restarted, so another instance will pick up the update)
+      */
     case RetryFromState =>
       if (state.size != 0) logger.warn(s"CommissionStatusPropagator retrying ${state.size} events from state")
 
