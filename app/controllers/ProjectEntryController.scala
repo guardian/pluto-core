@@ -11,7 +11,7 @@ import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
 import play.api.inject.Injector
-import play.api.libs.json._
+import play.api.libs.json.{JsError, JsResult, JsValue, Json, Writes}
 import play.api.mvc._
 import services.RabbitMqDeliverable.DeliverableEvent
 import services.RabbitMqPropagator.ChangeEvent
