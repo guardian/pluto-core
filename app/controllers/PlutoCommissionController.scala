@@ -3,6 +3,7 @@ package controllers
 import akka.actor.ActorRef
 import auth.BearerTokenAuth
 import helpers.AllowCORSFunctions
+import javax.inject._
 import models._
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
@@ -15,11 +16,10 @@ import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
-import javax.inject._
 import scala.collection.immutable.ListMap
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class PlutoCommissionController @Inject()(override val controllerComponents:ControllerComponents,
