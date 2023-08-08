@@ -21,7 +21,6 @@ case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId
                          commissionId: Option[Int], deletable: Option[Boolean], deep_archive: Option[Boolean],
                          sensitive: Option[Boolean], status:EntryStatus.Value, productionOffice: ProductionOffice.Value, isObitProject:Option[String])
 extends PlutoModel{
-
   def projectDefaultStorage(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Option[StorageEntry]] = {
     import cats.implicits._
     for {

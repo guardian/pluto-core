@@ -98,18 +98,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
-  def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int): Future[Seq[Try[Int]]] = {
-    logger.info(s"CommissionId ${commissionId}, newStatus ${newStatus}")
-    val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.getProjectsEligibleForStatusChange(newStatus, commissionId)
-    dbConfig.db.run(action).flatMap { projectTuples =>
-      Future.sequence(projectTuples.map { case (id, project) =>
-        val updatedProject = project.copy(status = newStatus)
-        dbupdate(id, updatedProject)
-      })
-    }
-  }
-
-
   /**
     * Fully generic container method to process an update request
     * @param requestedId an ID to identify what should be updated, this is passed to `selector`
