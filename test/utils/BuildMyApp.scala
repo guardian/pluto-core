@@ -12,8 +12,8 @@ import play.api.libs.json.Json
 import testHelpers.TestDatabase
 
 import javax.inject.Provider
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 trait BuildMyApp extends MockedCacheApi {
   class ActorRefProvider(implicit actorSystem: ActorSystem) extends Provider[ActorRef] {
