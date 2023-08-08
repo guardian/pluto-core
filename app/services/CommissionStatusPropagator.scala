@@ -1,5 +1,6 @@
 package services
 
+import java.util.UUID
 import akka.actor.{Actor, ActorRef, Props}
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
@@ -13,7 +14,6 @@ import services.RabbitMqPropagator._
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 
-import java.util.UUID
 import javax.inject.Named
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
