@@ -2,16 +2,15 @@ package controllers
 
 import akka.actor.ActorRef
 import auth.BearerTokenAuth
-import exceptions.{AlreadyExistsException, BadDataException}
 import helpers.AllowCORSFunctions
 import javax.inject._
 import models._
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.http.{HttpEntity, Status}
+import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
-import play.api.mvc.{ControllerComponents, EssentialAction, Request, ResponseHeader, Result}
+import play.api.mvc.{ControllerComponents, Request, ResponseHeader, Result}
 import services.{CommissionStatusPropagator, CreateOperation, UpdateOperation}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
@@ -177,6 +176,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
 
       db.run(TableQuery[PlutoCommissionRow].filter(_.id===itemId).update(newRecord).asTry)
         .map(maybeRows=>{
+          commissionStatusPropagator ! CommissionStatusPropagator.CommissionStatusUpdate(itemId, newRecord.status)
           sendToRabbitMq(UpdateOperation(),newRecord,rabbitMqPropagator)
           maybeRows
         })

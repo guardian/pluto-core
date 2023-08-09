@@ -229,6 +229,35 @@ trait ProjectEntrySerializer extends TimestampSerialization {
 }
 
 object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean], EntryStatus.Value, ProductionOffice.Value, Option[String])=>ProjectEntry) {
+
+  def getProjectsEligibleForStatusChange(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Seq[(Int, ProjectEntry)]] = {
+    import EntryStatusMapper._
+
+    def getProjects(query: Query[ProjectEntryRow, ProjectEntry, Seq]) = {
+      query.result.map(projects => projects.map(p => (p.id.getOrElse(-1), p)))
+    }
+
+    val baseQuery = TableQuery[ProjectEntryRow].filter(_.commission === commissionId)
+
+    newStatus match {
+      case EntryStatus.Completed | EntryStatus.Killed =>
+        val filteredQuery = baseQuery
+          .filter(_.status =!= EntryStatus.Completed)
+          .filter(_.status =!= EntryStatus.Killed)
+        getProjects(filteredQuery)
+
+      case EntryStatus.Held =>
+        val filteredQuery = baseQuery
+          .filter(_.status =!= EntryStatus.Completed)
+          .filter(_.status =!= EntryStatus.Killed)
+          .filter(_.status =!= EntryStatus.Held)
+        getProjects(filteredQuery)
+
+      case _ => DBIO.successful(Seq.empty[(Int, ProjectEntry)])
+    }
+  }
+
+
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String],
                      deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value, isObitProject:Option[String])

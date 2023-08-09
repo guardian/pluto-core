@@ -82,22 +82,22 @@ class ProjectMetadataSpec extends Specification with BuildMyApp {
   }
 
   "ProjectMetadata.allMetadataFor" should {
-    "return all of the metadata keys for the given project" in new WithApplication(buildApp){
-      private val injector = app.injector
+      "return all of the metadata keys for the given project" in new WithApplication(buildApp) {
+        private val injector = app.injector
 
-      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-      protected implicit val db = dbConfigProvider.get[PostgresProfile].db
+        protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+        protected implicit val db = dbConfigProvider.get[PostgresProfile].db
 
-      val result = Await.result(ProjectMetadata.allMetadataFor(2), 10 seconds)
-      result must beSuccessfulTry
-      val returnedSeq = result.get
-      returnedSeq.length mustEqual 2
-      returnedSeq.head.projectRef mustEqual 2
-      returnedSeq.head.key mustEqual "first_key"
-      returnedSeq.head.value must beSome("first value")
-      returnedSeq(1).projectRef mustEqual 2
-      returnedSeq(1).key mustEqual "second_key"
-      returnedSeq(1).value must beSome("second value")
+        val result = Await.result(ProjectMetadata.allMetadataFor(2), 10 seconds)
+        result must beSuccessfulTry
+        val returnedSeq = result.get
+        returnedSeq.length mustEqual 2
+        returnedSeq.head.projectRef mustEqual 2
+        returnedSeq.head.key mustEqual "first_key"
+        returnedSeq.head.value must beSome("first value")
+        returnedSeq(1).projectRef mustEqual 2
+        returnedSeq(1).key mustEqual "second_key"
+        returnedSeq(1).value must beSome("second value")
     }
   }
 }
