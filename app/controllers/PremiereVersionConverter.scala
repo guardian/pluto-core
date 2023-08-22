@@ -4,7 +4,8 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
 import auth.{BearerTokenAuth, Security}
 import helpers.PostrunDataCache
-import models.{DisplayedVersion, FileEntry, FileEntryDAO, FileEntrySerializer, PremiereVersionTranslation, PremiereVersionTranslationDAO, ProjectEntry}
+import models.PremiereVersionTranslationCodec._
+import models._
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -14,12 +15,9 @@ import postrun.{AdobeXml, ExtractPremiereVersion}
 import slick.jdbc.PostgresProfile
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
-import models.PremiereVersionTranslationCodec._
-import services.NewProjectBackup
-
 import scala.annotation.switch
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 @Singleton
 class PremiereVersionConverter @Inject()(override val controllerComponents:ControllerComponents,
