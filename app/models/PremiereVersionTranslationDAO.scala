@@ -34,6 +34,12 @@ class PremiereVersionTranslationDAO @Inject() (dbConfigProvider:DatabaseConfigPr
     TableQuery[PremiereVersionTranslationRow].filter(_.displayedVersion===displayedVersion).result
   }
 
+  def findDisplayedVersionByMajor(majorVersion: Int) = db.run {
+  TableQuery[PremiereVersionTranslationRow]
+    .filter(_.displayedVersion.like(s"$majorVersion.%"))
+    .result
+}
+
   /**
     * Writes the given record into the table, updating an existing record if there is one or creating a new one otherwise
     * @param record PremiereVersionTranslation to write

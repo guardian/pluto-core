@@ -86,18 +86,22 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
     }
   }
 
-  def lookupClientVersion(clientVersionString:String) = IsAuthenticatedAsync { uid=> request=>
-    DisplayedVersion(clientVersionString) match {
-      case Some(clientVersion) =>
-        premiereVersionTranslationDAO
-          .findDisplayedVersion(clientVersion)
-          .map(results=>{
-            Ok(Json.obj("status"->"ok", "count"->results.length, "result"->results))
-          })
-      case None =>
-        Future(BadRequest(Json.obj("status" -> "error", "detail" -> "Invalid version string, should be of the form x.y.z")))
-    }
+def lookupClientVersion(clientVersionString:String) = IsAuthenticatedAsync { uid => request =>
+  DisplayedVersion(clientVersionString) match {
+    case Some(clientVersion) =>
+      premiereVersionTranslationDAO
+        .findDisplayedVersionByMajor(clientVersion.major)
+        .map(results => {
+          if (results.isEmpty) {
+            BadRequest(Json.obj("status" -> "error", "detail" -> s"We did not recognise your installed version of Premiere, $clientVersionString. Please report this to Multimedia tech."))
+          } else {
+            Ok(Json.obj("status" -> "ok", "count" -> results.length, "result" -> results))
+          }
+        })
+    case None =>
+      Future(BadRequest(Json.obj("status" -> "error", "detail" -> "Invalid version string, should be of the form x.y.z")))
   }
+}
 
   def lookupInternalVersion(internalVersion:Int) = IsAuthenticatedAsync { uid=> request=>
     premiereVersionTranslationDAO
