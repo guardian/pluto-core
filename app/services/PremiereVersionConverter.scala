@@ -4,7 +4,7 @@ import akka.stream.{IOResult, Materializer}
 import akka.stream.alpakka.xml.scaladsl.{XmlParsing, XmlWriting}
 import akka.stream.alpakka.xml.{Attribute, StartElement}
 import akka.stream.scaladsl.{Compression, FileIO, Keep}
-import models._
+import models.{DisplayedVersion, FileEntry, FileEntryDAO, FileEntrySerializer, PremiereVersionTranslation, PremiereVersionTranslationDAO, ProjectEntry}
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import play.api.db.slick.DatabaseConfigProvider

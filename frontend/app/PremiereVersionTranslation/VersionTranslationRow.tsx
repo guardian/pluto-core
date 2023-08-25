@@ -75,7 +75,7 @@ const VersionTranslationRow: React.FC<VersionTranslationRowProps> = (props) => {
     }
   }, [name]);
 
-  const displayVersionValidator = /^\d+(\.\d+)?(\.\d+)?$/;
+  const displayVersionValidator = /^\d+\.\d+\.\d+$/;
 
   useEffect(() => {
     setDisplayedVersionValid(displayVersionValidator.test(displayedVersion));

@@ -5,7 +5,7 @@ import akka.stream.scaladsl.{Keep, Sink}
 import auth.{BearerTokenAuth, Security}
 import helpers.PostrunDataCache
 import models.PremiereVersionTranslationCodec._
-import models._
+import models.{FileEntry, FileEntryDAO, PremiereVersionTranslation, ProjectEntry, StorageEntry, StorageEntryHelper}
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
