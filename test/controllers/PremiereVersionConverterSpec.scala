@@ -59,7 +59,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
 
       val translation = PremiereVersionTranslation(36, "Some test", DisplayedVersion(1, 2, 3))
       val mockedTranslationDAO = mock[PremiereVersionTranslationDAO]
-      mockedTranslationDAO.findDisplayedVersion(any) returns Future(Seq(translation))
+      mockedTranslationDAO.findDisplayedVersionByMajor(any) returns Future(Seq(translation))
 
       new WithApplication(buildAppWithMockedConverter(mockedConverter, mockedDAO, mockedTranslationDAO)) {
         val response = route(app, FakeRequest(
@@ -78,7 +78,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
 
         status(response) mustEqual 200
 
-        there was one(mockedTranslationDAO).findDisplayedVersion(DisplayedVersion(1, 2, 3))
+        there was one(mockedTranslationDAO).findDisplayedVersionByMajor(1)
         there was one(mockedConverter).backupFile(fakeFileEntry)
         there was one(mockedConverter).checkExistingVersion(fakeFileEntry, translation)
         there was one(mockedConverter).tweakProjectVersionStreaming(mockedSourceFile, mockedBackupFile, 34, translation)
@@ -110,7 +110,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
       mockedDAO.saveSimple(any) answers ((args: Array[AnyRef]) => Future(args.head.asInstanceOf[FileEntry]))
 
       val mockedTranslationDAO = mock[PremiereVersionTranslationDAO]
-      mockedTranslationDAO.findDisplayedVersion(any) returns Future(Seq())
+      mockedTranslationDAO.findDisplayedVersionByMajor(any) returns Future(Seq())
 
       new WithApplication(buildAppWithMockedConverter(mockedConverter, mockedDAO, mockedTranslationDAO)) {
         val response = route(app, FakeRequest(
@@ -128,7 +128,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
 
         status(response) mustEqual 400
 
-        there was one(mockedTranslationDAO).findDisplayedVersion(DisplayedVersion(1, 2, 3))
+        there was one(mockedTranslationDAO).findDisplayedVersionByMajor(1)
         there was no(mockedConverter).backupFile(any)
         there was no(mockedConverter).checkExistingVersion(any, any)
         there was no(mockedConverter).tweakProjectVersionStreaming(any, any, any, any)
@@ -158,7 +158,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
 
       val translation = PremiereVersionTranslation(36, "Some test", DisplayedVersion(1, 2, 3))
       val mockedTranslationDAO = mock[PremiereVersionTranslationDAO]
-      mockedTranslationDAO.findDisplayedVersion(any) returns Future(Seq(translation))
+      mockedTranslationDAO.findDisplayedVersionByMajor(any) returns Future(Seq(translation))
 
       new WithApplication(buildAppWithMockedConverter(mockedConverter, mockedDAO, mockedTranslationDAO)) {
         val response = route(app, FakeRequest(
@@ -176,7 +176,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
 
         status(response) mustEqual 400
 
-        there was one(mockedTranslationDAO).findDisplayedVersion(DisplayedVersion(1, 2, 3))
+        there was one(mockedTranslationDAO).findDisplayedVersionByMajor(1)
         there was no(mockedConverter).backupFile(any)
         there was no(mockedConverter).checkExistingVersion(any, any)
         there was no(mockedConverter).tweakProjectVersionStreaming(any, any, any, any)
@@ -206,7 +206,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
 
       val translation = PremiereVersionTranslation(36, "Some test", DisplayedVersion(1, 2, 3))
       val mockedTranslationDAO = mock[PremiereVersionTranslationDAO]
-      mockedTranslationDAO.findDisplayedVersion(any) returns Future(Seq(translation))
+      mockedTranslationDAO.findDisplayedVersionByMajor(any) returns Future(Seq(translation))
 
       new WithApplication(buildAppWithMockedConverter(mockedConverter, mockedDAO, mockedTranslationDAO)) {
         val response = route(app, FakeRequest(
@@ -223,7 +223,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
 
         status(response) mustEqual 400
 
-        there was one(mockedTranslationDAO).findDisplayedVersion(DisplayedVersion(1, 2, 3))
+        there was one(mockedTranslationDAO).findDisplayedVersionByMajor(1)
         there was no(mockedConverter).backupFile(any)
         there was one(mockedConverter).checkExistingVersion(fakeFileEntry, translation)
         there was no(mockedConverter).tweakProjectVersionStreaming(any, any, any, any)
@@ -253,7 +253,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
 
       val translation = PremiereVersionTranslation(36, "Some test", DisplayedVersion(1, 2, 3))
       val mockedTranslationDAO = mock[PremiereVersionTranslationDAO]
-      mockedTranslationDAO.findDisplayedVersion(any) returns Future(Seq(translation))
+      mockedTranslationDAO.findDisplayedVersionByMajor(any) returns Future(Seq(translation))
 
       new WithApplication(buildAppWithMockedConverter(mockedConverter, mockedDAO, mockedTranslationDAO)) {
         val response = route(app, FakeRequest(
@@ -271,7 +271,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
 
         status(response) mustEqual 400
 
-        there was one(mockedTranslationDAO).findDisplayedVersion(DisplayedVersion(1, 2, 3))
+        there was one(mockedTranslationDAO).findDisplayedVersionByMajor(1)
         there was one(mockedConverter).backupFile(fakeFileEntry)
         there was one(mockedConverter).checkExistingVersion(fakeFileEntry, translation)
         there was no(mockedConverter).tweakProjectVersionStreaming(any, any, any, any)
@@ -300,7 +300,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
 
       val translation = PremiereVersionTranslation(36, "Some test", DisplayedVersion(1, 2, 3))
       val mockedTranslationDAO = mock[PremiereVersionTranslationDAO]
-      mockedTranslationDAO.findDisplayedVersion(any) returns Future(Seq(translation))
+      mockedTranslationDAO.findDisplayedVersionByMajor(any) returns Future(Seq(translation))
 
       new WithApplication(buildAppWithMockedConverter(mockedConverter, mockedDAO, mockedTranslationDAO)) {
         val response = route(app, FakeRequest(
@@ -316,7 +316,7 @@ class PremiereVersionConverterSpec extends Specification with Mockito with Build
         (jsondata \ "status").as[String] mustEqual "error"
         status(response) mustEqual 400
 
-        there was one(mockedTranslationDAO).findDisplayedVersion(DisplayedVersion(1, 2, 3))
+        there was one(mockedTranslationDAO).findDisplayedVersionByMajor(1)
         there was one(mockedConverter).backupFile(fakeFileEntry)
         there was one(mockedConverter).checkExistingVersion(fakeFileEntry, translation)
         there was one(mockedConverter).tweakProjectVersionStreaming(mockedSourceFile, mockedBackupFile, 34, translation)
