@@ -39,7 +39,7 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
       case Some(newVersion)=>
         val resultFut = for {
           targetVersion <- premiereVersionTranslationDAO
-            .findDisplayedVersionByMajor(newVersion)
+            .findDisplayedVersionByMajor(newVersion.major)
             .flatMap(results=>{
               if(results.isEmpty) {
                 Future.failed(new RuntimeException("Version number is not recognised"))
