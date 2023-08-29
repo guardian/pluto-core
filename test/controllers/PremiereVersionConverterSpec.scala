@@ -1,6 +1,6 @@
 package controllers
 
-import models.{DisplayedVersion, FileEntry, FileEntryDAO, PremiereVersionTranslation, PremiereVersionTranslationDAO}
+import models._
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import play.api.cache.SyncCacheApi
@@ -9,20 +9,18 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json._
-import play.api.test.Helpers.route
-import play.api.test.{FakeHeaders, FakeRequest, WithApplication}
-import testHelpers.TestDatabase
-import utils.BuildMyApp
 import play.api.test.Helpers._
 import play.api.test._
+import testHelpers.TestDatabase
+import utils.BuildMyApp
 
-import scala.concurrent.duration._
 import java.io.File
 import java.nio.file.Path
 import java.sql.Timestamp
 import java.time.Instant
-import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 class PremiereVersionConverterSpec extends Specification with Mockito with BuildMyApp {
   sequential
