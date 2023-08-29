@@ -4,7 +4,8 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
 import auth.{BearerTokenAuth, Security}
 import helpers.PostrunDataCache
-import models.{DisplayedVersion, FileEntry, FileEntryDAO, FileEntrySerializer, PremiereVersionTranslation, PremiereVersionTranslationDAO, ProjectEntry}
+import models.PremiereVersionTranslationCodec._
+import models._
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -14,12 +15,9 @@ import postrun.{AdobeXml, ExtractPremiereVersion}
 import slick.jdbc.PostgresProfile
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
-import models.PremiereVersionTranslationCodec._
-import services.NewProjectBackup
-
 import scala.annotation.switch
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 @Singleton
 class PremiereVersionConverter @Inject()(override val controllerComponents:ControllerComponents,
@@ -41,7 +39,7 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
       case Some(newVersion)=>
         val resultFut = for {
           targetVersion <- premiereVersionTranslationDAO
-            .findDisplayedVersion(newVersion)
+            .findDisplayedVersionByMajor(newVersion.major)
             .flatMap(results=>{
               if(results.isEmpty) {
                 Future.failed(new RuntimeException("Version number is not recognised"))
@@ -86,18 +84,23 @@ class PremiereVersionConverter @Inject()(override val controllerComponents:Contr
     }
   }
 
-  def lookupClientVersion(clientVersionString:String) = IsAuthenticatedAsync { uid=> request=>
-    DisplayedVersion(clientVersionString) match {
-      case Some(clientVersion) =>
-        premiereVersionTranslationDAO
-          .findDisplayedVersion(clientVersion)
-          .map(results=>{
-            Ok(Json.obj("status"->"ok", "count"->results.length, "result"->results))
-          })
-      case None =>
-        Future(BadRequest(Json.obj("status" -> "error", "detail" -> "Invalid version string, should be of the form x.y.z")))
-    }
+def lookupClientVersion(clientVersionString:String) = IsAuthenticatedAsync { uid => request =>
+  DisplayedVersion(clientVersionString) match {
+    case Some(clientVersion) =>
+      premiereVersionTranslationDAO
+        .findDisplayedVersionByMajor(clientVersion.major)
+        .map(results => {
+          if (results.isEmpty) {
+            BadRequest(Json.obj("status" -> "error", "detail" -> s"We did not recognise your installed version of Premiere, $clientVersionString. Please report this to Multimedia tech."))
+          } else {
+            Ok(Json.obj("status" -> "ok", "count" -> results.length, "result" -> results))
+          }
+        })
+    case None =>
+      Future(BadRequest(Json.obj("status" -> "error", "detail" -> "Invalid version string, should be of the form x.y.z")))
   }
+}
+
 
   def lookupInternalVersion(internalVersion:Int) = IsAuthenticatedAsync { uid=> request=>
     premiereVersionTranslationDAO
