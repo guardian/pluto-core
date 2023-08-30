@@ -198,7 +198,9 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
         <title>Change Premiere project version</title>
       </Helmet>
       <Paper elevation={3}>
-        <Typography variant="h2">Change Premiere project's version</Typography>
+        <Typography variant="h2" style={{ textAlign: "center" }}>
+          Change Premiere project's version
+        </Typography>
         {loading || conversionInProgress ? <LinearProgress /> : undefined}
         {lastError ? (
           <Typography className={classes.centered}>
@@ -273,7 +275,10 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
               <CheckCircle className={classes.success} />
             </Grid>
             <Grid item>
-              <Typography className={classes.centered}>
+              <Typography
+                className={classes.centered}
+                style={{ fontWeight: "bold", fontSize: "1.5em" }}
+              >
                 Ready to go! Please click{" "}
                 <Button
                   variant="contained"
