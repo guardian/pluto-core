@@ -300,7 +300,7 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
         ) : undefined}
         {newOpenUrl || lastError ? (
           <Typography className={classes.centered}>
-            You can now close this tab, or press the reload button to try again
+            You can now close this tab
           </Typography>
         ) : undefined}
       </Paper>
