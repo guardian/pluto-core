@@ -43,6 +43,7 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
 
   const [conversionInProgress, setConversionInProgress] = useState(false);
   const [newOpenUrl, setNewOpenUrl] = useState<string | undefined>(undefined);
+  const [popupBlocked, setPopupBlocked] = useState(false);
 
   const history = useHistory();
 
@@ -180,7 +181,15 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
    * try to open the new file once we have it
    */
   useEffect(() => {
-    if (newOpenUrl && newOpenUrl != "") window.open(newOpenUrl, "_blank");
+    if (newOpenUrl && newOpenUrl !== "") {
+      const newWindow = window.open(newOpenUrl, "_blank");
+      if (!newWindow) {
+        setPopupBlocked(true);
+      } else {
+        // Successfully opened a new window, close this one.
+        window.close();
+      }
+    }
   }, [newOpenUrl]);
 
   return (
@@ -251,7 +260,7 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
             </Grid>
           </Grid>
         ) : undefined}
-        {newOpenUrl ? (
+        {popupBlocked ? (
           <Grid container direction="column" spacing={2}>
             <Grid
               item
@@ -269,7 +278,12 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={() => window.open(newOpenUrl)}
+                  onClick={() => {
+                    const newWindow = window.open(newOpenUrl);
+                    if (newWindow) {
+                      window.close();
+                    }
+                  }}
                   style={{ cursor: "pointer" }}
                 >
                   here
