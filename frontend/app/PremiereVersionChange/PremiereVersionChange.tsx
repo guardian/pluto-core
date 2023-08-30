@@ -265,15 +265,16 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
             </Grid>
             <Grid item>
               <Typography className={classes.centered}>
-                Ready to go! The project should open automatically in a few
-                moments. If it does not, try clicking{" "}
-                <Link
+                Ready to go! Please click{" "}
+                <Button
+                  variant="contained"
+                  color="primary"
                   onClick={() => window.open(newOpenUrl)}
                   style={{ cursor: "pointer" }}
                 >
                   here
-                </Link>{" "}
-                to open it manually
+                </Button>{" "}
+                to open project
               </Typography>
             </Grid>
           </Grid>
