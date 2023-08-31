@@ -84,6 +84,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [errorDialog, setErrorDialog] = useState<boolean>(false);
   const [projectTypeData, setProjectTypeData] = useState<any>({});
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [initialProject, setInitialProject] = useState<Project | null>(null);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -94,11 +95,19 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       console.error("Could not load project type information: ", err);
     }
   };
+
+  const hasChanges = () => {
+    // Perform deep equality check
+    return JSON.stringify(initialProject) !== JSON.stringify(project);
+  };
+
   // Fetch project from URL path
   useEffect(() => {
     // No need to fetch data if we navigated from the project list.
     // Only fetch data if loading this URL "directly".
     if (projectFromList) {
+      setProject(projectFromList);
+      setInitialProject(projectFromList);
       return;
     }
 
@@ -115,6 +124,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             : await getProject(id);
           if (isMounted) {
             setProject(project);
+            setInitialProject(project);
           }
           await getProjectTypeData(project.projectTypeId);
         } catch (error) {
@@ -192,6 +202,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           `Successfully updated Project "${project.title}"`
         );
         history.goBack();
+        setInitialProject({ ...project });
       } catch {
         SystemNotification.open(
           SystemNotifcationKind.Error,
@@ -214,7 +225,6 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     const fetchProjectTypeData = async () => {
       try {
         const projectTypeData = await getSimpleProjectTypeData();
-        console.log(projectTypeData);
         setProjectTypeData(projectTypeData);
       } catch (error) {
         console.error("Could get project type data:", error);
@@ -413,16 +423,11 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             </Grid>
           </Grid>
           <div className={classes.formButtons}>
-            <Button
-              className="cancel"
-              variant="outlined"
-              onClick={() => history.goBack()}
-            >
-              Back
-            </Button>
-            <Button type="submit" variant="outlined">
-              Update
-            </Button>
+            {hasChanges() && ( // Only render if changes have been made
+              <Button type="submit" variant="outlined" color="secondary">
+                Save changes
+              </Button>
+            )}
           </div>
         </form>
       </Paper>
