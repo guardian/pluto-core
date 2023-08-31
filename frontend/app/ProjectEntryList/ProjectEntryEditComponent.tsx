@@ -422,9 +422,9 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
               />
             </Grid>
           </Grid>
-          <div className={classes.formButtons}>
+          <div style={{ height: "48px" }} className={classes.formButtons}>
             {hasChanges() && ( // Only render if changes have been made
-              <Button type="submit" variant="outlined" color="secondary">
+              <Button type="submit" color="secondary" variant="contained">
                 Save changes
               </Button>
             )}
