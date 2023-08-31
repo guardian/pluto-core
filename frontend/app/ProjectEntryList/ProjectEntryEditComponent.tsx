@@ -396,7 +396,6 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 onChange={(evt: any) => fieldChanged(evt, "productionOffice")}
               />
             </Grid>
-
             <Grid item xs={6}>
               <TextField
                 disabled={true}
