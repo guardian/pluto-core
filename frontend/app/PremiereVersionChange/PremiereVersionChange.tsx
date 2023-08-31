@@ -43,6 +43,7 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
 
   const [conversionInProgress, setConversionInProgress] = useState(false);
   const [newOpenUrl, setNewOpenUrl] = useState<string | undefined>(undefined);
+  const [popupBlocked, setPopupBlocked] = useState(false);
 
   const history = useHistory();
 
@@ -180,7 +181,15 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
    * try to open the new file once we have it
    */
   useEffect(() => {
-    if (newOpenUrl && newOpenUrl != "") window.open(newOpenUrl, "_blank");
+    if (newOpenUrl && newOpenUrl !== "") {
+      const newWindow = window.open(newOpenUrl, "_blank");
+      if (!newWindow) {
+        setPopupBlocked(true);
+      } else {
+        // Successfully opened a new window, close this one.
+        window.close();
+      }
+    }
   }, [newOpenUrl]);
 
   return (
@@ -189,7 +198,9 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
         <title>Change Premiere project version</title>
       </Helmet>
       <Paper elevation={3}>
-        <Typography variant="h2">Change Premiere project's version</Typography>
+        <Typography variant="h2" style={{ textAlign: "center" }}>
+          Change Premiere project's version
+        </Typography>
         {loading || conversionInProgress ? <LinearProgress /> : undefined}
         {lastError ? (
           <Typography className={classes.centered}>
@@ -251,7 +262,7 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
             </Grid>
           </Grid>
         ) : undefined}
-        {newOpenUrl ? (
+        {popupBlocked ? (
           <Grid container direction="column" spacing={2}>
             <Grid
               item
@@ -264,23 +275,32 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
               <CheckCircle className={classes.success} />
             </Grid>
             <Grid item>
-              <Typography className={classes.centered}>
-                Ready to go! The project should open automatically in a few
-                moments. If it does not, try clicking{" "}
-                <Link
-                  onClick={() => window.open(newOpenUrl)}
+              <Typography
+                className={classes.centered}
+                style={{ fontWeight: "bold", fontSize: "1.5em" }}
+              >
+                Ready to go! Please click{" "}
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => {
+                    const newWindow = window.open(newOpenUrl);
+                    if (newWindow) {
+                      window.close();
+                    }
+                  }}
                   style={{ cursor: "pointer" }}
                 >
                   here
-                </Link>{" "}
-                to open it manually
+                </Button>{" "}
+                to open project
               </Typography>
             </Grid>
           </Grid>
         ) : undefined}
         {newOpenUrl || lastError ? (
           <Typography className={classes.centered}>
-            You can now close this tab, or press the reload button to try again
+            You can now close this tab
           </Typography>
         ) : undefined}
       </Paper>
