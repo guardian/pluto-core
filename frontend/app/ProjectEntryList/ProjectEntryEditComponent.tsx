@@ -461,5 +461,4 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     </>
   );
 };
-
 export default ProjectEntryEditComponent;
