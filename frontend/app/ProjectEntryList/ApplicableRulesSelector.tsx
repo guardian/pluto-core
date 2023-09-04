@@ -20,23 +20,27 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
   const { deletable, deep_archive, sensitive, onChange } = props;
 
   const handleDeletableChange = () => {
-    const newDeletableState = !deletable;
-    onChange("deletable", newDeletableState);
-    if (!newDeletableState) {
+    if (deep_archive) {
       onChange("deep_archive", false);
+      onChange("deletable", true);
+    } else if (!deletable) {
+      // If 'deletable' is not checked, then check it
+      onChange("deletable", true);
     }
   };
 
   const handleDeepArchiveChange = () => {
-    const newDeepArchiveState = !deep_archive;
-    onChange("deep_archive", newDeepArchiveState);
-    if (!newDeepArchiveState) {
+    if (deletable) {
       onChange("deletable", false);
+      onChange("deep_archive", true);
+    } else if (!deep_archive) {
+      // If 'deep_archive' is not checked, then check it
+      onChange("deep_archive", true);
     }
   };
 
   const handleSensitiveChange = () => {
-    onChange("sensitive", sensitive);
+    onChange("sensitive", !sensitive);
   };
 
   return (
