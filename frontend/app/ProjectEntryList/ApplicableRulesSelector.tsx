@@ -17,17 +17,24 @@ interface ApplicableRulesSelectorProps {
 const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
   props
 ) => {
+  const { deletable, deep_archive, sensitive, onChange } = props;
+
   const handleDeletableChange = () => {
-    if (!props.deletable) {
-      props.onChange("deep_archive", false);
+    onChange("deletable", !deletable);
+    if (!deletable) {
+      onChange("deep_archive", false);
     }
-    props.onChange("deletable", !props.deletable);
   };
+
   const handleDeepArchiveChange = () => {
-    if (!props.deep_archive) {
-      props.onChange("deletable", false);
+    onChange("deep_archive", !deep_archive);
+    if (!deep_archive) {
+      onChange("deletable", false);
     }
-    props.onChange("deep_archive", !props.deep_archive);
+  };
+
+  const handleSensitiveChange = () => {
+    onChange("sensitive", !sensitive);
   };
 
   return (
@@ -37,7 +44,7 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
         <FormControlLabel
           control={
             <Checkbox
-              checked={props.deletable}
+              checked={deletable}
               onChange={handleDeletableChange}
               name="deletable"
               color="primary"
@@ -50,7 +57,7 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
         <FormControlLabel
           control={
             <Checkbox
-              checked={props.deep_archive}
+              checked={deep_archive}
               onChange={handleDeepArchiveChange}
               name="deep_archive"
               color="primary"
@@ -63,8 +70,8 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
         <FormControlLabel
           control={
             <Checkbox
-              checked={props.sensitive}
-              onChange={() => props.onChange("sensitive", props.sensitive)}
+              checked={sensitive}
+              onChange={handleSensitiveChange}
               name="sensitive"
               color="primary"
             />
