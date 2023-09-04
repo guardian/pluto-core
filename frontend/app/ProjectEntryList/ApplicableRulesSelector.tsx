@@ -23,6 +23,8 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
     if (!deletable || deep_archive) {
       onChange("deletable", true);
       onChange("deep_archive", false);
+    } else {
+      onChange("deletable", true);
     }
   };
 
@@ -30,6 +32,8 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
     if (!deep_archive || deletable) {
       onChange("deep_archive", true);
       onChange("deletable", false);
+    } else {
+      onChange("deep_archive", true);
     }
   };
 
