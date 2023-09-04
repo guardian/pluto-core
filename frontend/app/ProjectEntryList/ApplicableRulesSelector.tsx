@@ -16,6 +16,19 @@ interface ApplicableRulesSelectorProps {
 const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
   props
 ) => {
+  const handleDeletableChange = () => {
+    if (!props.deletable) {
+      props.onChange("deep_archive", true);
+    }
+    props.onChange("deletable", props.deletable);
+  };
+  const handleDeepArchiveChange = () => {
+    if (!props.deep_archive) {
+      props.onChange("deletable", true);
+    }
+    props.onChange("deep_archive", props.deep_archive);
+  };
+
   return (
     <>
       <Typography>Applicable rules</Typography>
@@ -23,7 +36,7 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
         control={
           <Checkbox
             checked={props.deletable}
-            onChange={() => props.onChange("deletable", props.deletable)}
+            onChange={handleDeletableChange}
             name="deletable"
             color="primary"
           />
@@ -34,7 +47,7 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
         control={
           <Checkbox
             checked={props.deep_archive}
-            onChange={() => props.onChange("deep_archive", props.deep_archive)}
+            onChange={handleDeepArchiveChange}
             name="deep_archive"
             color="primary"
           />
