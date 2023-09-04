@@ -19,21 +19,19 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
 ) => {
   const { deletable, deep_archive, sensitive, onChange } = props;
 
-  const handleDeletableChange = () => {
-    if (!deletable || deep_archive) {
-      onChange("deletable", true);
-      onChange("deep_archive", false);
-    } else {
-      onChange("deletable", true);
+  const handleDeletableChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked;
+    if (isChecked || (!isChecked && deep_archive)) {
+      onChange("deletable", isChecked);
+      onChange("deep_archive", !isChecked);
     }
   };
 
-  const handleDeepArchiveChange = () => {
-    if (!deep_archive || deletable) {
-      onChange("deep_archive", true);
-      onChange("deletable", false);
-    } else {
-      onChange("deep_archive", true);
+  const handleDeepArchiveChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked;
+    if (isChecked || (!isChecked && deletable)) {
+      onChange("deep_archive", isChecked);
+      onChange("deletable", !isChecked);
     }
   };
 
