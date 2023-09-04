@@ -18,15 +18,15 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
 ) => {
   const handleDeletableChange = () => {
     if (!props.deletable) {
-      props.onChange("deep_archive", true);
+      props.onChange("deep_archive", false);
     }
-    props.onChange("deletable", props.deletable);
+    props.onChange("deletable", !props.deletable);
   };
   const handleDeepArchiveChange = () => {
     if (!props.deep_archive) {
-      props.onChange("deletable", true);
+      props.onChange("deletable", false);
     }
-    props.onChange("deep_archive", props.deep_archive);
+    props.onChange("deep_archive", !props.deep_archive);
   };
 
   return (
