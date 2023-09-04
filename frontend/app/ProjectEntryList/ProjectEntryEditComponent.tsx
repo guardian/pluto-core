@@ -177,7 +177,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   };
 
   const checkboxChanged = (field: keyof Project, checked: boolean): void => {
-    setProject({ ...project, [field]: !checked });
+    setProject({ ...project, [field]: checked });
   };
 
   const subComponentErrored = (errorDesc: string) => {
