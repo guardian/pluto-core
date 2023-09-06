@@ -693,31 +693,35 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             if (assetFolderString == "") {
               logger.warn(s"No asset folder found for project. Can not attempt to delete data from S3.")
             } else {
-              logger.info(s"About to attempt to delete any data in the S3 bucket: ${bucket}")
               implicit lazy val s3helper: S3Helper = helpers.S3Helper.createFromBucketName(bucket).toOption.get
               val assetFolderBasePath = config.get[String]("postrun.assetFolder.basePath")
               val keyForSearch = assetFolderString.replace(s"$assetFolderBasePath/", "")
-              val bucketObjectData = s3helper.listBucketObjects(keyForSearch)
-              for (s3Object <- bucketObjectData) {
-                if (s"$keyForSearch/" != s3Object.key) {
-                  logger.info(s"Found S3 key: ${s3Object.key}")
-                  val objectVersions = s3helper.listObjectsVersions(s3Object)
-                  for (version <- objectVersions) {
-                    logger.info(s"Found version: ${version.versionId()} for key: ${version.key()}")
-                    val deleteOutcome = s3helper.deleteObject(s3Object, version.versionId())
-                    logger.info(s"Delete response was: $deleteOutcome")
+              if (!keyForSearch.matches(".*?\\/.*?\\/.*?\\_.*?")) {
+                logger.warn(s"Key for search does not match the expected format. Can not attempt to delete data from S3.")
+              } else {
+                logger.info(s"About to attempt to delete any data in the S3 bucket: ${bucket}")
+                val bucketObjectData = s3helper.listBucketObjects(keyForSearch)
+                for (s3Object <- bucketObjectData) {
+                  if (s"$keyForSearch/" != s3Object.key) {
+                    logger.info(s"Found S3 key: ${s3Object.key}")
+                    val objectVersions = s3helper.listObjectsVersions(s3Object)
+                    for (version <- objectVersions) {
+                      logger.info(s"Found version: ${version.versionId()} for key: ${version.key()}")
+                      val deleteOutcome = s3helper.deleteObject(s3Object, version.versionId())
+                      logger.info(s"Delete response was: $deleteOutcome")
+                    }
                   }
                 }
-              }
-              val bucketObjectDataFolder = s3helper.listBucketObjects(keyForSearch)
-              for (s3Object <- bucketObjectDataFolder) {
-                if (s"$keyForSearch/" == s3Object.key) {
-                  logger.info(s"Found S3 key: ${s3Object.key}")
-                  val objectVersionsFolder = s3helper.listObjectsVersions(s3Object)
-                  for (version <- objectVersionsFolder) {
-                    logger.info(s"Found version: ${version.versionId()} for key: ${version.key()}")
-                    val deleteOutcomeFolder = s3helper.deleteObject(s3Object, version.versionId())
-                    logger.info(s"Delete response was: $deleteOutcomeFolder")
+                val bucketObjectDataFolder = s3helper.listBucketObjects(keyForSearch)
+                for (s3Object <- bucketObjectDataFolder) {
+                  if (s"$keyForSearch/" == s3Object.key) {
+                    logger.info(s"Found S3 key: ${s3Object.key}")
+                    val objectVersionsFolder = s3helper.listObjectsVersions(s3Object)
+                    for (version <- objectVersionsFolder) {
+                      logger.info(s"Found version: ${version.versionId()} for key: ${version.key()}")
+                      val deleteOutcomeFolder = s3helper.deleteObject(s3Object, version.versionId())
+                      logger.info(s"Delete response was: $deleteOutcomeFolder")
+                    }
                   }
                 }
               }
