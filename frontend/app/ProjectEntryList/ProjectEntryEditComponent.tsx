@@ -418,7 +418,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 deep_archive={project.deep_archive}
                 sensitive={project.sensitive}
                 onChange={checkboxChanged}
-                disabled={!isAdmin}
+                disabled={isAdmin}
               />
             </Grid>
           </Grid>
