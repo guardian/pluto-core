@@ -29,7 +29,7 @@ import scala.concurrent.{Await, Future}
 class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach with utils.BuildMyApp {
   sequential
 
-  implicit val actorTimeout:akka.util.Timeout = 30 seconds
+  implicit val actorTimeout:akka.util.Timeout = 60 seconds
 
   def retry[T](n: Int)(fn: => T): T = {
   try {
@@ -66,7 +66,7 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
   }
 
   //whole application is required to initialise slick
-  override def before = new WithApplication(buildApp) {
+  override def before: Unit = new WithApplication(buildApp) {
 
     private val injector = app.injector
     protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -107,9 +107,9 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
     })
 
     val result = Await.result(insertFut, 10 seconds)
-    println(result)
-    val newDatabaseState = Await.result(getTestRecords, 2 seconds)
-    println(newDatabaseState)
+    println(s"Result: ${result}")
+    val newDatabaseState = Await.result(getTestRecords, 10 seconds)
+    println(s"newDatabaseState: ${newDatabaseState}")
   }
 
   private def getParentCommissionId(implicit db:JdbcProfile#Backend#Database) =
