@@ -6,6 +6,7 @@ import {
   Tooltip,
   Typography,
 } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core/styles";
 
 interface ApplicableRulesSelectorProps {
   deletable: boolean;
@@ -15,12 +16,22 @@ interface ApplicableRulesSelectorProps {
   disabled: boolean;
 }
 
+const useStyles = makeStyles((theme) => ({
+  disabledText: {
+    color: "grey",
+  },
+}));
+
 const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
   props
 ) => {
+  const classes = useStyles();
+
   return (
     <>
-      <Typography>Media management settings</Typography>
+      <Typography className={props.disabled ? classes.disabledText : ""}>
+        Media management settings
+      </Typography>
       <Tooltip title="This option will backup the data to long-term storage">
         <FormControlLabel
           control={
