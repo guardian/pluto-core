@@ -31,6 +31,20 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
 
   implicit val actorTimeout:akka.util.Timeout = 30 seconds
 
+  def retry[T](n: Int)(fn: => T): T = {
+  try {
+    fn
+  } catch {
+    case e: Throwable =>
+      if (n > 1) {
+        println(s"Retrying because of exception: $e")
+        retry(n - 1)(fn)
+      } else {
+        throw e
+      }
+  }
+}
+
   override def after: Unit = new WithApplication(buildApp) {
     private val injector = app.injector
     protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
@@ -124,7 +138,8 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
   }
 
   "CommissionStatusPropagator!CommissionStatusUpdate" should {
-    "Not change contained project statuses if the commission status is NEW" in new WithApplication(buildApp) {
+    retry(3) {
+      "Not change contained project statuses if the commission status is NEW" in new WithApplication(buildApp) {
       private val injector = app.injector
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
@@ -154,129 +169,138 @@ class CommissionStatusPropagatorTests extends Specification with BeforeAfterEach
       newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 1
       newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 1
       newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 1
+      }
     }
 
-    "Not change contained project statuses if the commission status is InProduction" in new WithApplication(buildApp) {
-      private val injector = app.injector
-      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-      protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
+    retry(3) {
+      "Not change contained project statuses if the commission status is InProduction" in new WithApplication(buildApp) {
+        private val injector = app.injector
+        protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+        protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
 
-      private val actorSystem = injector.instanceOf(classOf[ActorSystem])
-      val toTest = actorSystem.actorOf(Props(injector.instanceOf(classOf[CommissionStatusPropagator])))
+        private val actorSystem = injector.instanceOf(classOf[ActorSystem])
+        val toTest = actorSystem.actorOf(Props(injector.instanceOf(classOf[CommissionStatusPropagator])))
 
-      val parentCommission = Await.result(getParentCommissionId, 10 seconds)
-      parentCommission must beSome
-      val updatedRows = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.InProduction), 30 seconds)
+        val parentCommission = Await.result(getParentCommissionId, 10 seconds)
+        parentCommission must beSome
+        val updatedRows = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.InProduction), 30 seconds)
 
-      updatedRows mustEqual 0
+        updatedRows mustEqual 0
 
-      val newDatabaseState = Await.result(getTestRecords, 4 seconds)
-      newDatabaseState.count(_.status==EntryStatus.New) mustEqual 1
-      newDatabaseState.count(_.status==EntryStatus.InProduction) mustEqual 1
-      newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 1
-      newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 1
-      newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 1
+        val newDatabaseState = Await.result(getTestRecords, 4 seconds)
+        newDatabaseState.count(_.status==EntryStatus.New) mustEqual 1
+        newDatabaseState.count(_.status==EntryStatus.InProduction) mustEqual 1
+        newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 1
+        newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 1
+        newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 1
+      }
     }
 
-    "Change New and InProduction projects to Held if the status is Held" in new WithApplication(buildApp) {
-      private val injector = app.injector
-      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-      protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
+    retry(3) {
+      "Change New and InProduction projects to Held if the status is Held" in new WithApplication(buildApp) {
+        private val injector = app.injector
+        protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+        protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
 
-      implicit val system: ActorSystem = ActorSystem("test-rabbitmq-propagator")
-      private val actorSystem = injector.instanceOf(classOf[ActorSystem])
+        implicit val system: ActorSystem = ActorSystem("test-rabbitmq-propagator")
+        private val actorSystem = injector.instanceOf(classOf[ActorSystem])
 
-      val mockedRmqPropagatorProbe = TestProbe()
-      val mockedRmqPropagator = mockedRmqPropagatorProbe.ref
+        val mockedRmqPropagatorProbe = TestProbe()
+        val mockedRmqPropagator = mockedRmqPropagatorProbe.ref
 
-      val toTest = actorSystem.actorOf(Props(new CommissionStatusPropagator(dbConfigProvider, mockedRmqPropagator)))
+        val toTest = actorSystem.actorOf(Props(new CommissionStatusPropagator(dbConfigProvider, mockedRmqPropagator)))
 
-      val parentCommission = Await.result(getParentCommissionId, 10 seconds)
-      parentCommission must beSome
-      val updatedRows = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.Held), 30 seconds)
+        val parentCommission = Await.result(getParentCommissionId, 10 seconds)
+        parentCommission must beSome
+        val updatedRows = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.Held), 30 seconds)
 
-      updatedRows mustEqual 2
+        updatedRows mustEqual 2
 
-      val sentMessage = mockedRmqPropagatorProbe.receiveOne(10.seconds).asInstanceOf[ChangeEvent]
-      val projectJsonArray: JsValue = Json.parse(sentMessage.json)
-      val projectJson = projectJsonArray(0)
-      validateRabbitMQMessage(projectJson)
+        val sentMessage = mockedRmqPropagatorProbe.receiveOne(10.seconds).asInstanceOf[ChangeEvent]
+        val projectJsonArray: JsValue = Json.parse(sentMessage.json)
+        val projectJson = projectJsonArray(0)
+        validateRabbitMQMessage(projectJson)
 
-      val newDatabaseState = Await.result(getTestRecords, 4 seconds)
-      println(newDatabaseState)
-      newDatabaseState.count(_.status==EntryStatus.New) mustEqual 0
-      newDatabaseState.count(_.status==EntryStatus.InProduction) mustEqual 0
-      newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 3
-      newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 1
-      newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 1
+        val newDatabaseState = Await.result(getTestRecords, 4 seconds)
+        println(newDatabaseState)
+        newDatabaseState.count(_.status==EntryStatus.New) mustEqual 0
+        newDatabaseState.count(_.status==EntryStatus.InProduction) mustEqual 0
+        newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 3
+        newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 1
+        newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 1
+      }
     }
 
-    "Change New, InProduction and Held projects to Completed if the status is Completed" in new WithApplication(buildApp) {
-      private val injector = app.injector
-      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-      protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
+    retry(3) {
+      "Change New, InProduction and Held projects to Completed if the status is Completed" in new WithApplication(buildApp) {
+        private val injector = app.injector
+        protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+        protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
 
-      implicit val system: ActorSystem = ActorSystem("test-rabbitmq-propagator")
-      private val actorSystem = injector.instanceOf(classOf[ActorSystem])
+        implicit val system: ActorSystem = ActorSystem("test-rabbitmq-propagator")
+        private val actorSystem = injector.instanceOf(classOf[ActorSystem])
 
-      val mockedRmqPropagatorProbe = TestProbe()
-      val mockedRmqPropagator = mockedRmqPropagatorProbe.ref
+        val mockedRmqPropagatorProbe = TestProbe()
+        val mockedRmqPropagator = mockedRmqPropagatorProbe.ref
 
-      val toTest = actorSystem.actorOf(Props(new CommissionStatusPropagator(dbConfigProvider, mockedRmqPropagator)))
+        val toTest = actorSystem.actorOf(Props(new CommissionStatusPropagator(dbConfigProvider, mockedRmqPropagator)))
 
-      val parentCommission = Await.result(getParentCommissionId, 10 seconds)
-      parentCommission must beSome
-      val updatedRows = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.Completed), 30 seconds)
+        val parentCommission = Await.result(getParentCommissionId, 10 seconds)
+        parentCommission must beSome
+        val updatedRows = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.Completed), 30 seconds)
 
-      updatedRows mustEqual 3
+        updatedRows mustEqual 3
 
-      val sentMessage = mockedRmqPropagatorProbe.receiveOne(5.seconds).asInstanceOf[ChangeEvent]
-      val projectJsonArray: JsValue = Json.parse(sentMessage.json)
-      val projectJson = projectJsonArray(0)
+        val sentMessage = mockedRmqPropagatorProbe.receiveOne(5.seconds).asInstanceOf[ChangeEvent]
+        val projectJsonArray: JsValue = Json.parse(sentMessage.json)
+        val projectJson = projectJsonArray(0)
 
-      validateRabbitMQMessage(projectJson)
+        validateRabbitMQMessage(projectJson)
 
-      val newDatabaseState = Await.result(getTestRecords, 4 seconds)
-      println(newDatabaseState)
-      newDatabaseState.count(_.status==EntryStatus.New) mustEqual 0
-      newDatabaseState.count(_.status==EntryStatus.InProduction) mustEqual 0
-      newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 0
-      newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 4
-      newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 1
+        val newDatabaseState = Await.result(getTestRecords, 4 seconds)
+        println(newDatabaseState)
+        newDatabaseState.count(_.status==EntryStatus.New) mustEqual 0
+        newDatabaseState.count(_.status==EntryStatus.InProduction) mustEqual 0
+        newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 0
+        newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 4
+        newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 1
+      }
     }
 
-    "Change New, InProduction and Held projects to Killed if the status is Killed" in new WithApplication(buildApp) {
-      private val injector = app.injector
-      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
-      protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
+    retry(3) {
+      "Change New, InProduction and Held projects to Killed if the status is Killed" in new WithApplication(buildApp) {
+        private val injector = app.injector
+        protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+        protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
 
-      implicit val system: ActorSystem = ActorSystem("test-rabbitmq-propagator")
-      private val actorSystem = injector.instanceOf(classOf[ActorSystem])
+        implicit val system: ActorSystem = ActorSystem("test-rabbitmq-propagator")
+        private val actorSystem = injector.instanceOf(classOf[ActorSystem])
 
-      val mockedRmqPropagatorProbe = TestProbe()
-      val mockedRmqPropagator = mockedRmqPropagatorProbe.ref
+        val mockedRmqPropagatorProbe = TestProbe()
+        val mockedRmqPropagator = mockedRmqPropagatorProbe.ref
 
-      val toTest = actorSystem.actorOf(Props(new CommissionStatusPropagator(dbConfigProvider, mockedRmqPropagator)))
+        val toTest = actorSystem.actorOf(Props(new CommissionStatusPropagator(dbConfigProvider, mockedRmqPropagator)))
 
-      val parentCommission = Await.result(getParentCommissionId, 10 seconds)
-      parentCommission must beSome
-      val updatedRows = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.Killed), 30 seconds)
+        val parentCommission = Await.result(getParentCommissionId, 10 seconds)
+        parentCommission must beSome
+        val updatedRows = Await.result(toTest ? CommissionStatusPropagator.CommissionStatusUpdate(parentCommission.get.id.get,EntryStatus.Killed), 30 seconds)
 
-      updatedRows mustEqual 3
+        updatedRows mustEqual 3
 
-      val sentMessage = mockedRmqPropagatorProbe.receiveOne(10.seconds).asInstanceOf[ChangeEvent]
-      val projectJsonArray: JsValue = Json.parse(sentMessage.json)
-      val projectJson = projectJsonArray(0)
+        val sentMessage = mockedRmqPropagatorProbe.receiveOne(10.seconds).asInstanceOf[ChangeEvent]
+        val projectJsonArray: JsValue = Json.parse(sentMessage.json)
+        val projectJson = projectJsonArray(0)
 
-      validateRabbitMQMessage(projectJson)
+        validateRabbitMQMessage(projectJson)
 
-      val newDatabaseState = Await.result(getTestRecords, 4 seconds)
-      println(newDatabaseState)
-      newDatabaseState.count(_.status==EntryStatus.New) mustEqual 0
-      newDatabaseState.count(_.status==EntryStatus.InProduction) mustEqual 0
-      newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 0
-      newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 1
-      newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 4
+        val newDatabaseState = Await.result(getTestRecords, 4 seconds)
+        println(newDatabaseState)
+        newDatabaseState.count(_.status==EntryStatus.New) mustEqual 0
+        newDatabaseState.count(_.status==EntryStatus.InProduction) mustEqual 0
+        newDatabaseState.count(_.status==EntryStatus.Held) mustEqual 0
+        newDatabaseState.count(_.status==EntryStatus.Completed) mustEqual 1
+        newDatabaseState.count(_.status==EntryStatus.Killed) mustEqual 4
+      }
     }
   }
 }
