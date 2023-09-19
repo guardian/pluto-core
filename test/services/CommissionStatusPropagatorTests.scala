@@ -16,7 +16,6 @@ import slick.jdbc.PostgresProfile.api._
 import akka.pattern.ask
 import akka.testkit.TestActor.Message
 import akka.testkit.TestProbe
-import com.typesafe.sslconfig.ssl.Equal
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.verify
 import play.api.libs.json.{JsValue, Json}
