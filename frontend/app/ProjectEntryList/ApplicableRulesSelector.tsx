@@ -32,7 +32,7 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
       <Typography className={props.disabled ? classes.disabledText : ""}>
         Media management settings
       </Typography>
-      <Tooltip title="This option will backup the data to long-term storage">
+      <Tooltip title="Data will be backed up to long-term storage">
         <FormControlLabel
           control={
             <Checkbox
@@ -48,7 +48,7 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
           label="Deep Archive"
         />
       </Tooltip>
-      <Tooltip title="Selecting this option means that the data will not be backed up. Once the project is set to 'Completed', it will be permanently deleted.">
+      <Tooltip title="Data will not be backed up. Once the project is set to 'Completed', it will be permanently deleted.">
         <FormControlLabel
           control={
             <Checkbox
