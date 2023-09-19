@@ -59,11 +59,11 @@ resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.3.3",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-slick
-  "com.typesafe.play" %% "play-slick" % "5.1.0",
-  "com.typesafe.play" %% "play-slick-evolutions" % "5.1.0",
+  "com.typesafe.play" %% "play-slick" % "4.0.2",
+  "com.typesafe.play" %% "play-slick-evolutions" % "4.0.2",
   "commons-io" % "commons-io" % "2.7",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-json-joda
-  "com.typesafe.play" %% "play-json-joda" % "2.9.4",
+  "com.typesafe.play" %% "play-json-joda" % "2.7.4",
   "commons-codec" % "commons-codec" % "1.13",
   "com.github.scopt" %% "scopt" % "4.0.1"
 )
