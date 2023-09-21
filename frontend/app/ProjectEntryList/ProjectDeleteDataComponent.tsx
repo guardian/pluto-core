@@ -240,30 +240,30 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                     name="s3"
                   />
                   {s3 ? (
-                      <>
-                        <br />
-                        Buckets
-                        <br />
-                        {buckets
-                            ? buckets.map((bucket, ix) => {
-                              return (
-                                  <>
-                                    {bucket}
-                                    <Checkbox
-                                        checked={bucketBooleans[ix]}
-                                        onChange={() => {
-                                          let booleansCopy = [...bucketBooleans];
-                                          booleansCopy[ix] = !bucketBooleans[ix];
-                                          updateBucketBooleans(booleansCopy);
-                                        }}
-                                        name={bucket}
-                                    />
-                                    <br />
-                                  </>
-                              );
-                            })
-                            : null}
-                      </>
+                    <>
+                      <br />
+                      Buckets
+                      <br />
+                      {buckets
+                        ? buckets.map((bucket, ix) => {
+                            return (
+                              <>
+                                {bucket}
+                                <Checkbox
+                                  checked={bucketBooleans[ix]}
+                                  onChange={() => {
+                                    let booleansCopy = [...bucketBooleans];
+                                    booleansCopy[ix] = !bucketBooleans[ix];
+                                    updateBucketBooleans(booleansCopy);
+                                  }}
+                                  name={bucket}
+                                />
+                                <br />
+                              </>
+                            );
+                          })
+                        : null}
+                    </>
                   ) : null}
                 </Grid>
               </Grid>
