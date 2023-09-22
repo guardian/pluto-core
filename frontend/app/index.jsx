@@ -340,8 +340,8 @@ class App extends React.Component {
                       )}
                     />
                     <Route
-                        path="/commission/:commissionId/deletedata"
-                        component={CommissionDeleteDataComponent}
+                      path="/commission/:commissionId/deletedata"
+                      component={CommissionDeleteDataComponent}
                     />
                     <Route
                       path="/commission/:commissionId"
