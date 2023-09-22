@@ -784,6 +784,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             rabbitMqSAN ! SANEvent(onlineOutputMessage)
           }
         })
+        Thread.sleep(1000)
         DeleteJobDAO.getOrCreate(projectId, "Finished")
       }
     }
@@ -971,19 +972,21 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             logger.info(s"Found project ${project.id.get}.")
             deleteDataRunner(project.id.get, 400, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
           })
-          Thread.sleep(1400)
+          if (request.body.asJson.get("commission").toString().toBoolean) {
+            Thread.sleep(1400)
 
-          PlutoCommission.forId(commissionId).map({
-            case Some(plutoCommission: PlutoCommission) =>
-              plutoCommission.removeFromDatabase.map({
-                case Success(_) =>
-                  logger.info(s"Attempt at removing commission record worked.")
-                case Failure(error) =>
-                  logger.error(s"Attempt at removing commission record failed with error: ${error}")
-              })
-            case None =>
-              logger.error(s"Could not look up commission entry for ${commissionId}: ")
-          })
+            PlutoCommission.forId(commissionId).map({
+              case Some(plutoCommission: PlutoCommission) =>
+                plutoCommission.removeFromDatabase.map({
+                  case Success(_) =>
+                    logger.info(s"Attempt at removing commission record worked.")
+                  case Failure(error) =>
+                    logger.error(s"Attempt at removing commission record failed with error: ${error}")
+                })
+              case None =>
+                logger.error(s"Could not look up commission entry for ${commissionId}: ")
+            })
+          }
         case Failure(error)=>
           logger.error(error.toString)
       })

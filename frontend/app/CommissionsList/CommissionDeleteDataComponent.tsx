@@ -2,7 +2,10 @@ import React, { useEffect, useState } from "react";
 import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
 import { Button, Checkbox, Grid, Paper } from "@material-ui/core";
 import { getBuckets, getDeleteJob } from "../ProjectEntryList/helpers";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import { Helmet } from "react-helmet";
 import { useGuardianStyles } from "~/misc/utils";
 import { isLoggedIn } from "~/utils/api";
