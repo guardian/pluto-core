@@ -45,7 +45,7 @@ object AkkaHttpHelpers {
 
   def contentBodyToJson[T: io.circe.Decoder](contentBody: Future[String])(implicit mat:Materializer, ec:ExecutionContext) = contentBody
     .map(io.circe.parser.parse)
-    .map(_.map(json => (json \\ "result").headOption.getOrElse(json))) //if the actual object is hidden under a "result" field take that
+    .map(_.map(json => (json \\ "result").headOption.getOrElse(json))) //If the actual object is hidden under a "result" field take that
     .map(_.flatMap(_.as[T]))
     .map({
       case Left(err) =>

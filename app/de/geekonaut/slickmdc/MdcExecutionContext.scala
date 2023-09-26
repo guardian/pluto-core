@@ -1,8 +1,5 @@
 package de.geekonaut.slickmdc
-/*
-From https://github.com/AVGP/slickmdc/blob/master/src/main/scala/de/geekonaut/slickmdc/MdcExecutionContext.scala, there is
-no maven build for Scala 2.13
- */
+
 import org.slf4j.MDC
 import scala.concurrent.ExecutionContext
 
@@ -14,12 +11,12 @@ class MdcExecutionContext(executionContext: ExecutionContext) extends ExecutionC
     val callerMdc = MDC.getCopyOfContextMap
     executionContext.execute(new Runnable {
       def run(): Unit = {
-        // copy caller thread diagnostic context to execution thread
+        // Copy caller thread diagnostic context to execution thread
         if(callerMdc != null) MDC.setContextMap(callerMdc)
         try {
           runnable.run()
         } finally {
-          // the thread might be reused, so we clean up for the next use
+          // The thread might be reused, so we clean up for the next use
           MDC.clear()
         }
       }
