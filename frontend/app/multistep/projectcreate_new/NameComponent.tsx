@@ -141,7 +141,7 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
             </td>
           </tr>
           {console.log("IsAdmin: ", isAdmin)}
-          {!isAdmin && (
+          {isAdmin && (
             <>
               <tr>
                 <td>
