@@ -559,3 +559,8 @@ table tbody th {
   margin-right: 0.5em;
   margin-top: 0.57em;
 }
+
+#projectNameInput::placeholder {
+  color: grey;
+  font-style: italic;
+}

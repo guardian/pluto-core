@@ -136,6 +136,7 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
                 onChange={(event) =>
                   props.projectNameDidChange(event.target.value)
                 }
+                placeholder="Type a good descriptive project name here"
                 value={props.projectName}
               />
             </td>
