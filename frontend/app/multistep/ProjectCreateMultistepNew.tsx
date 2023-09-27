@@ -144,11 +144,6 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
 
   useEffect(() => {
     console.log("User context changed, new value: ", context);
-    if (projectName == "") {
-      setProjectName(
-        context?.userName ? `${context.userName}'s project` : "My project"
-      );
-    }
   }, [context]);
 
   /**
