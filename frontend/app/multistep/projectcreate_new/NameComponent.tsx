@@ -16,6 +16,8 @@ import {
 import StorageSelector from "../../Selectors/StorageSelector";
 import { getProjectsDefaultStorageId } from "./ProjectStorageService";
 import { useGuardianStyles } from "~/misc/utils";
+import { isLoggedIn } from "~/utils/api";
+import ObituarySelector from "../../common/ObituarySelector";
 
 interface NameComponentProps {
   projectName: string;
@@ -33,6 +35,7 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
   const classes = useGuardianStyles();
 
   const userContext = useContext(UserContext);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   const loadStorages = async () => {
     setLoading(true);
@@ -103,6 +106,17 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
     }
   }, [knownStorages]);
 
+  const fetchWhoIsLoggedIn = async () => {
+    try {
+      const loggedIn = await isLoggedIn();
+      setIsAdmin(loggedIn.isAdmin);
+    } catch {
+      setIsAdmin(false);
+    }
+  };
+
+  fetchWhoIsLoggedIn();
+
   return (
     <div className={classes.common_box_size}>
       <Typography variant="h3">Name your project</Typography>
@@ -126,64 +140,69 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
               />
             </td>
           </tr>
-          <tr>
-            <td>
-              <Typography>File name</Typography>
-            </td>
-            <td>
-              <Input
-                className={classes.inputBox}
-                id="fileNameInput"
-                onChange={(event) =>
-                  props.fileNameDidChange(event.target.value)
-                }
-                value={props.fileName}
-                disabled={autoName}
-              />
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <Typography>Automatically name file (recommended)</Typography>
-            </td>
-            <td>
-              <Switch
-                id="autoNameCheck"
-                checked={autoName}
-                onChange={(event) => setAutoName(event.target.checked)}
-              />
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <Typography>Project storage</Typography>
-            </td>
-            <td>
-              <Grid direction="row" container>
-                <Grid item>
-                  <StorageSelector
-                    storageList={knownStorages}
-                    enabled={userContext?.isAdmin}
-                    selectionUpdated={(newValue: number) =>
-                      props.storageIdDidChange(newValue)
+          {console.log("IsAdmin: ", isAdmin)}
+          {!isAdmin && (
+            <>
+              <tr>
+                <td>
+                  <Typography>File name</Typography>
+                </td>
+                <td>
+                  <Input
+                    className={classes.inputBox}
+                    id="fileNameInput"
+                    onChange={(event) =>
+                      props.fileNameDidChange(event.target.value)
                     }
-                    selectedStorage={props.selectedStorageId}
+                    value={props.fileName}
+                    disabled={autoName}
                   />
-                  {userContext?.isAdmin ? undefined : (
-                    <Typography className={classes.secondary}>
-                      Only administrators can change the project storage
-                      location
-                    </Typography>
-                  )}
-                </Grid>
-                <Grid item>
-                  {loading ? (
-                    <CircularProgress style={{ height: "0.8em" }} />
-                  ) : undefined}
-                </Grid>
-              </Grid>
-            </td>
-          </tr>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <Typography>Automatically name file (recommended)</Typography>
+                </td>
+                <td>
+                  <Switch
+                    id="autoNameCheck"
+                    checked={autoName}
+                    onChange={(event) => setAutoName(event.target.checked)}
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <Typography>Project storage</Typography>
+                </td>
+                <td>
+                  <Grid container direction="row">
+                    <Grid item>
+                      <StorageSelector
+                        storageList={knownStorages}
+                        enabled={userContext?.isAdmin}
+                        selectionUpdated={(newValue: number) =>
+                          props.storageIdDidChange(newValue)
+                        }
+                        selectedStorage={props.selectedStorageId}
+                      />
+                      {!userContext?.isAdmin && (
+                        <Typography className={classes.secondary}>
+                          Only administrators can change the project storage
+                          location
+                        </Typography>
+                      )}
+                    </Grid>
+                    <Grid item>
+                      {loading && (
+                        <CircularProgress style={{ height: "0.8em" }} />
+                      )}
+                    </Grid>
+                  </Grid>
+                </td>
+              </tr>
+            </>
+          )}
         </tbody>
       </table>
     </div>
