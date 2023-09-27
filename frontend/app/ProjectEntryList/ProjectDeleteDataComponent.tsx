@@ -316,6 +316,12 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                 may reference items from this project. If this is used to delete
                 items which are referenced by other projects, the other projects
                 will not be able to load the items.
+                <br />
+                <br />
+                Please note: due to a limitation of the pluto-storagetier
+                software, which this software relies on, this software will only
+                attempt to delete from the one Object Matrix vault that
+                pluto-storagetier is configured to access.
               </div>
               <div className={classes.formButtons}>
                 <Button
