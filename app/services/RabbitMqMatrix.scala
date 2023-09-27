@@ -69,7 +69,7 @@ class RabbitMqMatrix @Inject()(configuration:Configuration, system:ActorSystem) 
       }
       projectIdsString = projectIdsString.dropRight(1)
       projectIdsString = s"$projectIdsString]"
-      val messageToSend: String = s"""{"mediaTier":"${event.message.mediaTier}","projectIds":${projectIdsString},"originalFilePath":"$originalPath","fileSize":$fileSize,"vidispineItemId":"$vidispineItemId","nearlineId":"${nearlineId}","mediaCategory":"${event.message.mediaCategory}"}"""
+      val messageToSend: String = s"""{"mediaTier":"${event.message.mediaTier}","projectIds":${projectIdsString},"originalFilePath":"$originalPath","fileSize":$fileSize,"vidispineItemId":"$vidispineItemId","nearlineId":"${nearlineId}","mediaCategory":"${event.message.mediaCategory}","forceDelete":true}"""
       val msgProps = new BasicProperties.Builder()
         .contentType("application/json")
         .contentEncoding("UTF-8")
