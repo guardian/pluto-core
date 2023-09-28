@@ -194,6 +194,12 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             fileNameDidChange={(newName) => setFilename(newName)}
             selectedStorageId={selectedStorageId}
             storageIdDidChange={(newValue) => setSelectedStorageId(newValue)}
+            valueDidChange={(newValue: string) => setObituaryName(newValue)}
+            checkBoxDidChange={(newValue: boolean) => setObituary(newValue)}
+            value={obituaryName ?? ""}
+            isObituary={isObituary}
+            valueWasSet={(newValue) => setProductionOffice(newValue)}
+            productionOfficeValue={productionOffice}
           />
         ) : null}
         {activeStep == 2 ? (
@@ -213,12 +219,12 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
           />
         ) : null}
 
-        {activeStep == 4 ? (
-          <ProductionOfficeComponent
-            valueWasSet={(newValue) => setProductionOffice(newValue)}
-            value={productionOffice}
-          />
-        ) : null}
+        {/* {activeStep == 4 ? (
+          // <ProductionOfficeComponent
+          //   valueWasSet={(newValue) => setProductionOffice(newValue)}
+          //   value={productionOffice}
+          // />
+        ) : null} */}
         {activeStep == 5 ? (
           <MediaRulesComponent
             deletable={deletable}

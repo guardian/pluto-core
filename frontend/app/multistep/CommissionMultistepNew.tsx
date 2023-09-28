@@ -169,7 +169,7 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
       {activeStep == 2 ? (
         <ProductionOfficeComponent
           valueWasSet={(newValue) => setProductionOffice(newValue)}
-          value={productionOffice}
+          productionOfficeValue={productionOffice}
         />
       ) : undefined}
       {activeStep == 3 ? (

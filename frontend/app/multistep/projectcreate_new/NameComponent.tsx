@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { ChangeEvent, useContext, useEffect, useState } from "react";
 import {
   CircularProgress,
   Grid,
@@ -17,7 +17,8 @@ import StorageSelector from "../../Selectors/StorageSelector";
 import { getProjectsDefaultStorageId } from "./ProjectStorageService";
 import { useGuardianStyles } from "~/misc/utils";
 import { isLoggedIn } from "~/utils/api";
-import ObituarySelector from "../../common/ObituarySelector";
+import ObituaryComponent from "./ObituaryComponent";
+import ProductionOfficeComponent from "./ProductionOfficeComponent";
 
 interface NameComponentProps {
   projectName: string;
@@ -26,6 +27,15 @@ interface NameComponentProps {
   fileNameDidChange: (newValue: string) => void;
   selectedStorageId: number | undefined;
   storageIdDidChange: (newValue: number) => void;
+
+  valueDidChange: (newValue: string) => void;
+  checkBoxDidChange: (newValue: boolean) => void;
+  value: string;
+  isObituary: boolean;
+
+  valueWasSet: (newValue: ProductionOffice) => void;
+  productionOfficeValue: string;
+  extraText?: string;
 }
 
 const NameComponent: React.FC<NameComponentProps> = (props) => {
@@ -119,93 +129,91 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
 
   return (
     <div className={classes.common_box_size}>
-      <Typography variant="h3">Name your project</Typography>
+      <Typography variant="h2">Project configuration</Typography>
       <Typography>
         Now, we need a descriptive name for your new project
       </Typography>
-      <table>
-        <tbody>
-          <tr>
-            <td>
-              <Typography>Project Name</Typography>
-            </td>
-            <td>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Typography>Project Name</Typography>
+          <Input
+            className={classes.inputBox}
+            id="projectNameInput"
+            onChange={(event) => props.projectNameDidChange(event.target.value)}
+            placeholder="Type a good descriptive project name here"
+            value={props.projectName}
+          />
+        </Grid>
+        {console.log("isAdmin: ", isAdmin)}
+        {isAdmin && (
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={6}>
+              <Typography>File name</Typography>
+            </Grid>
+            <Grid item xs={6}>
               <Input
                 className={classes.inputBox}
-                id="projectNameInput"
+                id="fileNameInput"
                 onChange={(event) =>
-                  props.projectNameDidChange(event.target.value)
+                  props.fileNameDidChange(event.target.value)
                 }
-                placeholder="Type a good descriptive project name here"
-                value={props.projectName}
+                value={props.fileName}
+                disabled={autoName}
               />
-            </td>
-          </tr>
-          {console.log("IsAdmin: ", isAdmin)}
-          {isAdmin && (
-            <>
-              <tr>
-                <td>
-                  <Typography>File name</Typography>
-                </td>
-                <td>
-                  <Input
-                    className={classes.inputBox}
-                    id="fileNameInput"
-                    onChange={(event) =>
-                      props.fileNameDidChange(event.target.value)
+            </Grid>
+            <Grid item xs={6}>
+              <Typography>Automatically name file (recommended)</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Switch
+                id="autoNameCheck"
+                checked={autoName}
+                onChange={(event) => setAutoName(event.target.checked)}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <Typography>Project storage</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Grid container direction="row" alignItems="center">
+                <Grid item>
+                  <StorageSelector
+                    storageList={knownStorages}
+                    enabled={userContext?.isAdmin}
+                    selectionUpdated={(newValue: number) =>
+                      props.storageIdDidChange(newValue)
                     }
-                    value={props.fileName}
-                    disabled={autoName}
+                    selectedStorage={props.selectedStorageId}
                   />
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <Typography>Automatically name file (recommended)</Typography>
-                </td>
-                <td>
-                  <Switch
-                    id="autoNameCheck"
-                    checked={autoName}
-                    onChange={(event) => setAutoName(event.target.checked)}
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <Typography>Project storage</Typography>
-                </td>
-                <td>
-                  <Grid container direction="row">
-                    <Grid item>
-                      <StorageSelector
-                        storageList={knownStorages}
-                        enabled={userContext?.isAdmin}
-                        selectionUpdated={(newValue: number) =>
-                          props.storageIdDidChange(newValue)
-                        }
-                        selectedStorage={props.selectedStorageId}
-                      />
-                      {!userContext?.isAdmin && (
-                        <Typography className={classes.secondary}>
-                          Only administrators can change the project storage
-                          location
-                        </Typography>
-                      )}
-                    </Grid>
-                    <Grid item>
-                      {loading && (
-                        <CircularProgress style={{ height: "0.8em" }} />
-                      )}
-                    </Grid>
-                  </Grid>
-                </td>
-              </tr>
-            </>
-          )}
-        </tbody>
-      </table>
+                  {!userContext?.isAdmin && (
+                    <Typography className={classes.secondary}>
+                      Only administrators can change the project storage
+                      location
+                    </Typography>
+                  )}
+                </Grid>
+                <Grid item>
+                  {loading && <CircularProgress style={{ height: "0.8em" }} />}
+                </Grid>
+              </Grid>
+            </Grid>
+          </Grid>
+        )}
+        <Grid item xs={12}>
+          <ObituaryComponent
+            valueDidChange={props.valueDidChange}
+            value={props.value}
+            isObituary={props.isObituary}
+            checkBoxDidChange={props.checkBoxDidChange}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <ProductionOfficeComponent
+            productionOfficeValue={props.productionOfficeValue}
+            valueWasSet={props.valueWasSet}
+          />
+        </Grid>
+      </Grid>
     </div>
   );
 };

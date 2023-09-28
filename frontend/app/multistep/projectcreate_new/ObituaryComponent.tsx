@@ -20,7 +20,7 @@ const ObituaryComponent = ({
 
   return (
     <div className={classes.common_box_size}>
-      <Typography variant="h3">Obituary</Typography>
+      {/* <Typography variant="h3">Obituary</Typography> */}
       <FormControlLabel
         control={
           <Checkbox
