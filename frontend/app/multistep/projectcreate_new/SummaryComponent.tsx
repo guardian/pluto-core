@@ -29,7 +29,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
 
   return (
     <div className={classes.common_box_size}>
-      <Typography variant="h2">Create new edit project</Typography>
+      <Typography variant="h3">Create new edit project</Typography>
       <Typography>
         We will create a new project with the information below.
         <br />

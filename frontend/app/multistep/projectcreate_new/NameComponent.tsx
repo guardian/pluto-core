@@ -129,10 +129,10 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
 
   return (
     <div className={classes.common_box_size}>
-      <Typography variant="h2">Project configuration</Typography>
-      <Typography>
+      <Typography variant="h3">Project configuration</Typography>
+      {/* <Typography>
         Now, we need a descriptive name for your new project
-      </Typography>
+      </Typography> */}
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Typography>Project Name</Typography>

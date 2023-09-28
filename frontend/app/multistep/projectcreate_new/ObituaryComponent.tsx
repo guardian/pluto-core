@@ -19,7 +19,7 @@ const ObituaryComponent = ({
   const classes = useGuardianStyles();
 
   return (
-    <div className={classes.common_box_size}>
+    <div>
       {/* <Typography variant="h3">Obituary</Typography> */}
       <FormControlLabel
         control={
