@@ -145,7 +145,7 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
           />
         </Grid>
         {console.log("isAdmin: ", isAdmin)}
-        {isAdmin && (
+        {!isAdmin && (
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={6}>
               <Typography>File name</Typography>
