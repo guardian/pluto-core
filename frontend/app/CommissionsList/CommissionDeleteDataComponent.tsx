@@ -323,7 +323,7 @@ const CommissionDeleteDataComponent: React.FC<CommissionDeleteDataComponentProps
                       />
                     </Grid>
                     <Grid item>
-                      Storage Area Network Data
+                      Storage Area Network Data and Vidispine Items
                       <Checkbox
                         checked={sAN}
                         onChange={() => setSAN(!sAN)}

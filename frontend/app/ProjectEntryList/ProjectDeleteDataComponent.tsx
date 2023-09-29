@@ -255,7 +255,7 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                   />
                 </Grid>
                 <Grid item>
-                  Storage Area Network Data
+                  Storage Area Network Data and Vidispine Items
                   <Checkbox
                     checked={sAN}
                     onChange={() => setSAN(!sAN)}
