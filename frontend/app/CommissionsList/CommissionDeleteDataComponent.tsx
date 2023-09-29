@@ -390,6 +390,19 @@ const CommissionDeleteDataComponent: React.FC<CommissionDeleteDataComponentProps
                     Please note: Any attempt to delete the commission record
                     will fail unless the project records are also set to be
                     deleted.
+                    <br />
+                    <br />
+                    Please note: due to a limitation of the pluto-storagetier
+                    software, which this software relies on, this software will
+                    only attempt to delete from the one Object Matrix vault that
+                    pluto-storagetier is configured to access.
+                    <br />
+                    <br />
+                    Please note: deletion from the Object Matrix system does not
+                    take into account that projects in other commissions may
+                    reference items from projects in this commission. If this is
+                    used to delete items which are referenced by other projects,
+                    the other projects will not be able to load the items.
                   </div>
                   <div className={classes.formButtons}>
                     <Button
