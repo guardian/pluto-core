@@ -3,7 +3,9 @@ import {
   CircularProgress,
   Grid,
   Input,
+  Paper,
   Switch,
+  TextField,
   Typography,
 } from "@material-ui/core";
 import { format } from "date-fns";
@@ -19,8 +21,12 @@ import { useGuardianStyles } from "~/misc/utils";
 import { isLoggedIn } from "~/utils/api";
 import ObituaryComponent from "./ObituaryComponent";
 import ProductionOfficeComponent from "./ProductionOfficeComponent";
+import TemplateComponent from "./TemplateComponent";
 
 interface NameComponentProps {
+  templateValue?: number;
+  templateValueDidChange: (newValue: number) => void;
+
   projectName: string;
   projectNameDidChange: (newValue: string) => void;
   fileName: string;
@@ -130,27 +136,29 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
   return (
     <div className={classes.common_box_size}>
       <Typography variant="h3">Project configuration</Typography>
-      {/* <Typography>
-        Now, we need a descriptive name for your new project
-      </Typography> */}
-      <Grid container spacing={3}>
+      <br />
+      <Paper>
         <Grid item xs={12}>
-          <Typography>Project Name</Typography>
-          <Input
+          {/* <Typography>Project Name</Typography> */}
+          <TextField
             className={classes.inputBox}
+            label="Project title"
+            placeholder="Project title"
+            helperText="Enter a good descriptive project name"
+            fullWidth
+            margin="normal"
             id="projectNameInput"
             onChange={(event) => props.projectNameDidChange(event.target.value)}
-            placeholder="Type a good descriptive project name here"
             value={props.projectName}
           />
         </Grid>
         {console.log("isAdmin: ", isAdmin)}
-        {isAdmin && (
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={6}>
+        {!isAdmin && (
+          <Grid container spacing={4} alignItems="center">
+            <Grid item xs={2}>
               <Typography>File name</Typography>
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={2}>
               <Input
                 className={classes.inputBox}
                 id="fileNameInput"
@@ -161,20 +169,20 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
                 disabled={autoName}
               />
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={2}>
               <Typography>Automatically name file (recommended)</Typography>
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={2}>
               <Switch
                 id="autoNameCheck"
                 checked={autoName}
                 onChange={(event) => setAutoName(event.target.checked)}
               />
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={2}>
               <Typography>Project storage</Typography>
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={2}>
               <Grid container direction="row" alignItems="center">
                 <Grid item>
                   <StorageSelector
@@ -199,6 +207,17 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
             </Grid>
           </Grid>
         )}
+      </Paper>
+      <Paper>
+        <Grid item xs={12}>
+          <TemplateComponent
+            templateValue={props.templateValue}
+            templateValueDidChange={props.templateValueDidChange}
+          />
+        </Grid>
+      </Paper>
+
+      <Paper>
         <Grid item xs={12}>
           <ObituaryComponent
             valueDidChange={props.valueDidChange}
@@ -207,13 +226,15 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
             checkBoxDidChange={props.checkBoxDidChange}
           />
         </Grid>
+      </Paper>
+      <Paper>
         <Grid item xs={12}>
           <ProductionOfficeComponent
             productionOfficeValue={props.productionOfficeValue}
             valueWasSet={props.valueWasSet}
           />
         </Grid>
-      </Grid>
+      </Paper>
     </div>
   );
 };

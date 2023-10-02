@@ -70,7 +70,6 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   const classes = useGuardianStyles();
 
   const steps = [
-    "Select project template",
     "Project configuration",
     "Working Group & Commission",
     "Media Rules",
@@ -100,7 +99,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   }, [location]);
 
   const createClicked = async () => {
-    setActiveStep(5);
+    setActiveStep(4);
     setCreationInProgress(true);
     setCreationFailed(undefined);
 
@@ -178,14 +177,18 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
       isObituary={isObituary}
     >
       <>
-        {activeStep == 0 ? (
+        {/* {activeStep == 0 ? (
           <TemplateComponent
-            valueDidChange={(newTemplate) => setSelectedTemplateId(newTemplate)}
-            value={selectedTemplateId}
+            templateValueDidChange={(newTemplate) => setSelectedTemplateId(newTemplate)}
+            templateValue={selectedTemplateId}
           />
-        ) : null}
-        {activeStep == 1 ? (
+        ) : null} */}
+        {activeStep == 0 ? (
           <NameComponent
+            templateValueDidChange={(newTemplate) =>
+              setSelectedTemplateId(newTemplate)
+            }
+            templateValue={selectedTemplateId}
             projectName={projectName}
             projectNameDidChange={(newName) => setProjectName(newName)}
             fileName={filename}
@@ -200,7 +203,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             productionOfficeValue={productionOffice}
           />
         ) : null}
-        {activeStep == 2 ? (
+        {activeStep == 1 ? (
           <PlutoLinkageComponent
             commissionIdDidChange={(newValue) => setCommissionId(newValue)}
             workingGroupIdDidChange={(newValue) => setWorkingGroupId(newValue)}
@@ -208,7 +211,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             workingGroupId={workingGroupId}
           />
         ) : null}
-        {activeStep == 3 ? (
+        {activeStep == 2 ? (
           <MediaRulesComponent
             deletable={deletable}
             deepArchive={deepArchive}
@@ -221,7 +224,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             sensitiveChanged={(newValue) => setSensitive(newValue)}
           />
         ) : null}
-        {activeStep == 4 ? (
+        {activeStep == 3 ? (
           <SummaryComponent
             projectName={projectName}
             fileName={filename}
@@ -237,7 +240,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             sensitive={sensitive}
           />
         ) : null}
-        {activeStep == 5 ? (
+        {activeStep == 4 ? (
           <InProgressComponent
             didFail={creationFailed !== undefined}
             errorMessage={creationFailed}

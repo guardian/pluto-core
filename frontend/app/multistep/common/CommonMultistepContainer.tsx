@@ -116,7 +116,7 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
                       !canComplete() ||
                       creationInProgress ||
                       creationFailed !== undefined ||
-                      activeStep > 6 ||
+                      activeStep > 4 ||
                       (isObituary && !obituaryName)
                     }
                     endIcon={<CheckCircle />}
