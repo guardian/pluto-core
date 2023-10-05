@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
-import { Button, Checkbox, Grid, Paper } from "@material-ui/core";
+import {
+  Button,
+  Checkbox,
+  Grid,
+  IconButton,
+  Paper,
+  Tooltip,
+} from "@material-ui/core";
 import {
   getProject,
   getProjectByVsid,
@@ -16,6 +23,7 @@ import {
 import { Helmet } from "react-helmet";
 import { useGuardianStyles } from "~/misc/utils";
 import { isLoggedIn } from "~/utils/api";
+import { PermMedia } from "@material-ui/icons";
 
 declare var deploymentRootPath: string;
 
@@ -55,7 +63,7 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
   );
   const [errorDialog, setErrorDialog] = useState<boolean>(false);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [pluto, setPluto] = useState<boolean>(true);
+  const [pluto, setPluto] = useState<boolean>(false);
   const [file, setFile] = useState<boolean>(true);
   const [backups, setBackups] = useState<boolean>(true);
   const [pTR, setPTR] = useState<boolean>(true);
@@ -309,29 +317,47 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                 Please note the following: -
                 <br />
                 <br />
-                1. Some parts of the Pluto system where not designed to be
+                1. If you have 'Project Record' enabled it will break deletion
+                from Vidispine, the Storage Area Network, and the Object Matrix
+                system.
+                <br />
+                <br />
+                2. Some parts of the Pluto system where not designed to be
                 tolerant of data removal. Certain undesirable consequences may
                 occur if you remove data from the system.
                 <br />
                 <br />
-                2. Deletion from the Amazon Web Services Simple Storage Service
+                3. Deletion from the Amazon Web Services Simple Storage Service
                 does not take into account that other projects may reference
                 items from this project. If this is used to delete items which
                 are referenced by other projects, the other projects will not be
                 able to load the items.
                 <br />
                 <br />
-                3. Due to a limitation of the pluto-storagetier software, which
+                4. Due to a limitation of the pluto-storagetier software, which
                 this software relies on, this software will only attempt to
                 delete from the one Object Matrix vault that pluto-storagetier
                 is configured to access.
                 <br />
                 <br />
-                4: Deletion from the Object Matrix system does not take into
+                5. Deletion from the Object Matrix system does not take into
                 account that other projects may reference items from this
                 project. If this is used to delete items which are referenced by
                 other projects, the other projects will not be able to load the
                 items.
+                <br />
+                <br />
+                6. Deletion from Vidispine does not take into account that other
+                projects which are currently archived may reference files from
+                this project. If this is used to delete files which are
+                referenced by other projects, the other projects will not be
+                able to load the files.
+                <br />
+                <br />
+                7. This software will not delete the database backups for
+                Vidispine, pluto-core, and pluto-deliverables. Data such as
+                titles, owners, and file names from this project will remain
+                present in these backups.
               </div>
               <div className={classes.formButtons}>
                 <Button
@@ -341,6 +367,15 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                 >
                   Back
                 </Button>
+                <Tooltip title="See project's media">
+                  <IconButton
+                    onClick={() =>
+                      window.location.assign(`/vs/project/${project.id}`)
+                    }
+                  >
+                    <PermMedia />
+                  </IconButton>
+                </Tooltip>
                 <Button type="submit" variant="contained" color="secondary">
                   Submit Delete Request
                 </Button>
@@ -361,7 +396,8 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                   {deleteJobStatus == "Started" ? <>Job running...</> : null}
                   {deleteJobStatus == "Finished" ? (
                     <>
-                      Job finished
+                      Deletion instructions sent to RabbitMQ. Please check there
+                      for progress.
                       {itemsNotDeleted.length > 0 ? (
                         <>
                           <br />
