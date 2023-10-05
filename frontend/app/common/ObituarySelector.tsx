@@ -92,8 +92,8 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
   }
 
   return (
-    <Grid container direction="column" alignItems="stretch" spacing={2}>
-      <Grid item xs>
+    <Grid container direction="column" alignItems="stretch" spacing={1}>
+      <Grid item xs={12}>
         <Box minWidth={"400px"} width={"100%"} display="flex">
           {inputValue != "" ? (
             <Autocomplete
@@ -137,7 +137,7 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
         </Box>
       </Grid>
       {validationFailed && props.shouldValidate && (
-        <Grid item xs>
+        <Grid item xs={12}>
           <Alert
             variant="outlined"
             severity="error"

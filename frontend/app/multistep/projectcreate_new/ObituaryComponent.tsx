@@ -20,7 +20,6 @@ const ObituaryComponent = ({
 
   return (
     <div>
-      {/* <Typography variant="h3">Obituary</Typography> */}
       <FormControlLabel
         control={
           <Checkbox
@@ -32,7 +31,9 @@ const ObituaryComponent = ({
       />
       {isObituary ? (
         <>
-          <Typography>Start typing a person's name below</Typography>
+          <Typography style={{ fontSize: "0.75rem" }} paragraph={false}>
+            Start typing a person's name below
+          </Typography>
           <ObituarySelector
             label="Obituary"
             value={value}
@@ -41,7 +42,7 @@ const ObituaryComponent = ({
           />
         </>
       ) : (
-        <Typography className={classes.secondaryText} style={{ width: 400 }}>
+        <Typography style={{ fontSize: "0.75rem" }}>
           Select the check box to select the person for whom the obituary is
           intended.
         </Typography>

@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { RouteComponentProps, useLocation } from "react-router-dom";
 import { Typography } from "@material-ui/core";
-import NameComponent from "./projectcreate_new/NameComponent";
+import ConfigurationComponent from "./projectcreate_new/ConfigurationComponent";
 import TemplateComponent from "./projectcreate_new/TemplateComponent";
 import UserContext from "../UserContext";
 import PlutoLinkageComponent from "./projectcreate_new/PlutoLinkageComponent";
@@ -177,14 +177,8 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
       isObituary={isObituary}
     >
       <>
-        {/* {activeStep == 0 ? (
-          <TemplateComponent
-            templateValueDidChange={(newTemplate) => setSelectedTemplateId(newTemplate)}
-            templateValue={selectedTemplateId}
-          />
-        ) : null} */}
         {activeStep == 0 ? (
-          <NameComponent
+          <ConfigurationComponent
             templateValueDidChange={(newTemplate) =>
               setSelectedTemplateId(newTemplate)
             }
@@ -247,14 +241,14 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             description="Creating your project, please wait..."
           />
         ) : null}
-        {activeStep == 6 && createdProjectId && commissionId ? (
+        {activeStep == 5 && createdProjectId && commissionId ? (
           <ProjectCreatedComponent
             projectId={createdProjectId}
             commissionId={commissionId}
             title={projectName}
           />
         ) : null}
-        {activeStep == 6 && (!createdProjectId || !commissionId) ? (
+        {activeStep == 5 && (!createdProjectId || !commissionId) ? (
           <div>
             <Typography className={classes.warning} variant="h3">
               Well this is strange

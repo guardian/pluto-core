@@ -25,14 +25,7 @@ const ProductionOfficeComponent: React.FC<ProductionOfficeComponentProps> = (
   ];
 
   return (
-    <div className={guardianClasses.common_box_size}>
-      {/* <Typography variant="h3">Where are you working from</Typography> */}
-      {/* <Typography>
-        Which production office you are working out of?
-        <br />
-        (i.e. where the commissioner who green-lit this project usually works.)
-        {props.extraText ? props.extraText : ""}
-      </Typography> */}
+    <div>
       <div>
         <TextField
           select

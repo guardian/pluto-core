@@ -23,7 +23,7 @@ import ObituaryComponent from "./ObituaryComponent";
 import ProductionOfficeComponent from "./ProductionOfficeComponent";
 import TemplateComponent from "./TemplateComponent";
 
-interface NameComponentProps {
+interface ConfigurationComponentProps {
   templateValue?: number;
   templateValueDidChange: (newValue: number) => void;
 
@@ -44,7 +44,9 @@ interface NameComponentProps {
   extraText?: string;
 }
 
-const NameComponent: React.FC<NameComponentProps> = (props) => {
+const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
+  props
+) => {
   const [autoName, setAutoName] = useState(true);
   const [knownStorages, setKnownStorages] = useState<PlutoStorage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -133,110 +135,120 @@ const NameComponent: React.FC<NameComponentProps> = (props) => {
 
   fetchWhoIsLoggedIn();
 
+  const paperStyle = {
+    marginBottom: "15px",
+    minHeight: "120px",
+    height: "120px",
+    width: "100%",
+    padding: "20px, 0px, 0px, 0px",
+  };
+
   return (
     <div className={classes.common_box_size}>
       <Typography variant="h3">Project configuration</Typography>
-      <br />
-      <Paper>
-        <Grid item xs={12}>
-          {/* <Typography>Project Name</Typography> */}
-          <TextField
-            className={classes.inputBox}
-            label="Project title"
-            placeholder="Project title"
-            helperText="Enter a good descriptive project name"
-            fullWidth
-            margin="normal"
-            id="projectNameInput"
-            onChange={(event) => props.projectNameDidChange(event.target.value)}
-            value={props.projectName}
-          />
-        </Grid>
-        {console.log("isAdmin: ", isAdmin)}
-        {!isAdmin && (
-          <Grid container spacing={4} alignItems="center">
-            <Grid item xs={2}>
-              <Typography>File name</Typography>
-            </Grid>
-            <Grid item xs={2}>
-              <Input
-                className={classes.inputBox}
-                id="fileNameInput"
-                onChange={(event) =>
-                  props.fileNameDidChange(event.target.value)
-                }
-                value={props.fileName}
-                disabled={autoName}
-              />
-            </Grid>
-            <Grid item xs={2}>
-              <Typography>Automatically name file (recommended)</Typography>
-            </Grid>
-            <Grid item xs={2}>
-              <Switch
-                id="autoNameCheck"
-                checked={autoName}
-                onChange={(event) => setAutoName(event.target.checked)}
-              />
-            </Grid>
-            <Grid item xs={2}>
-              <Typography>Project storage</Typography>
-            </Grid>
-            <Grid item xs={2}>
-              <Grid container direction="row" alignItems="center">
-                <Grid item>
-                  <StorageSelector
-                    storageList={knownStorages}
-                    enabled={userContext?.isAdmin}
-                    selectionUpdated={(newValue: number) =>
-                      props.storageIdDidChange(newValue)
-                    }
-                    selectedStorage={props.selectedStorageId}
-                  />
-                  {!userContext?.isAdmin && (
-                    <Typography className={classes.secondary}>
-                      Only administrators can change the project storage
-                      location
-                    </Typography>
-                  )}
-                </Grid>
-                <Grid item>
-                  {loading && <CircularProgress style={{ height: "0.8em" }} />}
+      <Grid container direction="column">
+        <Paper style={paperStyle}>
+          <Grid item xs={12}>
+            <TextField
+              label="Project title"
+              placeholder="Project title"
+              helperText="Enter a good descriptive project name"
+              // fullWidth
+              margin="normal"
+              id="projectNameInput"
+              onChange={(event) =>
+                props.projectNameDidChange(event.target.value)
+              }
+              value={props.projectName}
+            />
+          </Grid>
+          {console.log("isAdmin: ", isAdmin)}
+          {!isAdmin && (
+            <Grid container spacing={4} alignItems="center">
+              <Grid item xs={2}>
+                <Typography>File name</Typography>
+              </Grid>
+              <Grid item xs={2}>
+                <TextField
+                  id="fileNameInput"
+                  onChange={(event) =>
+                    props.fileNameDidChange(event.target.value)
+                  }
+                  value={props.fileName}
+                  disabled={autoName}
+                />
+              </Grid>
+              <Grid item xs={2}>
+                <Typography>Automatically name file (recommended)</Typography>
+              </Grid>
+              <Grid item xs={2}>
+                <Switch
+                  id="autoNameCheck"
+                  checked={autoName}
+                  onChange={(event) => setAutoName(event.target.checked)}
+                />
+              </Grid>
+              <Grid item xs={2}>
+                <Typography>Project storage</Typography>
+              </Grid>
+              <Grid item xs={2}>
+                <Grid container direction="row" alignItems="center">
+                  <Grid item>
+                    <StorageSelector
+                      storageList={knownStorages}
+                      enabled={userContext?.isAdmin}
+                      selectionUpdated={(newValue: number) =>
+                        props.storageIdDidChange(newValue)
+                      }
+                      selectedStorage={props.selectedStorageId}
+                    />
+                    {!userContext?.isAdmin && (
+                      <Typography className={classes.secondary}>
+                        Only administrators can change the project storage
+                        location
+                      </Typography>
+                    )}
+                  </Grid>
+                  <Grid item>
+                    {loading && (
+                      <CircularProgress style={{ height: "0.8em" }} />
+                    )}
+                  </Grid>
                 </Grid>
               </Grid>
             </Grid>
+          )}
+        </Paper>
+        <Paper style={paperStyle}>
+          <Grid item xs={12}>
+            <TemplateComponent
+              templateValue={props.templateValue}
+              templateValueDidChange={props.templateValueDidChange}
+            />
           </Grid>
-        )}
-      </Paper>
-      <Paper>
-        <Grid item xs={12}>
-          <TemplateComponent
-            templateValue={props.templateValue}
-            templateValueDidChange={props.templateValueDidChange}
-          />
-        </Grid>
-      </Paper>
+        </Paper>
 
-      <Paper>
-        <Grid item xs={12}>
-          <ObituaryComponent
-            valueDidChange={props.valueDidChange}
-            value={props.value}
-            isObituary={props.isObituary}
-            checkBoxDidChange={props.checkBoxDidChange}
-          />
-        </Grid>
-      </Paper>
-      <Paper>
-        <Grid item xs={12}>
-          <ProductionOfficeComponent
-            productionOfficeValue={props.productionOfficeValue}
-            valueWasSet={props.valueWasSet}
-          />
-        </Grid>
-      </Paper>
+        <Paper style={paperStyle}>
+          <Grid item xs={12}>
+            <ObituaryComponent
+              valueDidChange={props.valueDidChange}
+              value={props.value}
+              isObituary={props.isObituary}
+              checkBoxDidChange={props.checkBoxDidChange}
+            />
+          </Grid>
+        </Paper>
+        <Paper style={paperStyle}>
+          <Grid item xs={12}>
+            <ProductionOfficeComponent
+              productionOfficeValue={props.productionOfficeValue}
+              valueWasSet={props.valueWasSet}
+            />
+          </Grid>
+        </Paper>
+      </Grid>
     </div>
   );
 };
 
-export default NameComponent;
+export default ConfigurationComponent;
