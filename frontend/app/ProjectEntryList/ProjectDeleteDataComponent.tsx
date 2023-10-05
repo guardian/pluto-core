@@ -306,29 +306,32 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                 </Grid>
               </Grid>
               <div>
-                Please note: some parts of the Pluto system where not designed
-                to be tolerant of data removal. Certain undesirable consequences
-                may occur if you remove data from the system.
+                Please note the following: -
                 <br />
                 <br />
-                Please note: deletion from the Amazon Web Services Simple
-                Storage Service does not take into account that other projects
-                may reference items from this project. If this is used to delete
-                items which are referenced by other projects, the other projects
-                will not be able to load the items.
+                1. Some parts of the Pluto system where not designed to be
+                tolerant of data removal. Certain undesirable consequences may
+                occur if you remove data from the system.
                 <br />
                 <br />
-                Please note: due to a limitation of the pluto-storagetier
-                software, which this software relies on, this software will only
-                attempt to delete from the one Object Matrix vault that
-                pluto-storagetier is configured to access.
-                <br />
-                <br />
-                Please note: deletion from the Object Matrix system does not
-                take into account that other projects may reference items from
-                this project. If this is used to delete items which are
-                referenced by other projects, the other projects will not be
+                2. Deletion from the Amazon Web Services Simple Storage Service
+                does not take into account that other projects may reference
+                items from this project. If this is used to delete items which
+                are referenced by other projects, the other projects will not be
                 able to load the items.
+                <br />
+                <br />
+                3. Due to a limitation of the pluto-storagetier software, which
+                this software relies on, this software will only attempt to
+                delete from the one Object Matrix vault that pluto-storagetier
+                is configured to access.
+                <br />
+                <br />
+                4: Deletion from the Object Matrix system does not take into
+                account that other projects may reference items from this
+                project. If this is used to delete items which are referenced by
+                other projects, the other projects will not be able to load the
+                items.
               </div>
               <div className={classes.formButtons}>
                 <Button
