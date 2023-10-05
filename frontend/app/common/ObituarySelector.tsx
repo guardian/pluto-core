@@ -107,6 +107,7 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
   }
 
   return (
+<<<<<<< HEAD
     <Grid
       container
       direction="column"
@@ -114,6 +115,9 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
       spacing={1}
       className={classes.root}
     >
+=======
+    <Grid container direction="column" alignItems="stretch" spacing={1}>
+>>>>>>> 449747c (Reduce number of project creation steps)
       <Grid item xs={12}>
         <Box minWidth={"400px"} width={"100%"} display="flex">
           {inputValue != "" ? (
