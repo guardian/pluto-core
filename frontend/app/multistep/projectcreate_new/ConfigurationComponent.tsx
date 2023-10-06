@@ -1,24 +1,6 @@
-import React, { ChangeEvent, useContext, useEffect, useState } from "react";
-import {
-  Box,
-  CircularProgress,
-  Grid,
-  Input,
-  Paper,
-  Switch,
-  TextField,
-  Typography,
-  makeStyles,
-} from "@material-ui/core";
+import React, { useEffect, useState } from "react";
+import { Grid, Paper, Switch, TextField, Typography } from "@material-ui/core";
 import { format } from "date-fns";
-import UserContext from "../../UserContext";
-import axios from "axios";
-import {
-  SystemNotification,
-  SystemNotifcationKind,
-} from "@guardian/pluto-headers";
-import StorageSelector from "../../Selectors/StorageSelector";
-import { getProjectsDefaultStorageId } from "./ProjectStorageService";
 import { useGuardianStyles } from "~/misc/utils";
 import { isLoggedIn } from "~/utils/api";
 import ObituaryComponent from "./ObituaryComponent";
@@ -51,34 +33,9 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
 ) => {
   const [autoName, setAutoName] = useState(true);
   const [knownStorages, setKnownStorages] = useState<PlutoStorage[]>([]);
-  const [loading, setLoading] = useState(false);
   const classes = useGuardianStyles();
 
-  const userContext = useContext(UserContext);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-
-  const loadStorages = async () => {
-    setLoading(true);
-    const response = await axios.get<PlutoStorageListResponse>("/api/storage", {
-      validateStatus: () => true,
-    });
-    switch (response.status) {
-      case 200:
-        setKnownStorages(response.data.result);
-        setLoading(false);
-        break;
-      default:
-        setLoading(false);
-        console.error(
-          `Could not load in storages: ${response.status} ${response.statusText}`,
-          response.data
-        );
-        SystemNotification.open(
-          SystemNotifcationKind.Error,
-          `Could not load in storages, server error ${response.status}. More details in the browser console.`
-        );
-    }
-  };
 
   const makeAutoFilename = (title: string) => {
     const sanitizer = /[^\w\d_]+/g;
@@ -95,41 +52,11 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
     }
   }, [props.projectName]);
 
-  useEffect(() => {
-    loadStorages();
-  }, []);
-
-  useEffect(() => {
-    if (!props.selectedStorageId && knownStorages.length) {
-      getProjectsDefaultStorageId()
-        .then((id) => props.storageIdDidChange(id))
-        .catch((error) => {
-          console.error("Could not get default storage id: ", error);
-          if (error.response && error.response.status === 404) {
-            SystemNotification.open(
-              SystemNotifcationKind.Error,
-              "No default project storage has been set"
-            );
-          } else if (!error.hasOwnProperty("response")) {
-            SystemNotification.open(
-              SystemNotifcationKind.Error,
-              "Could not understand response for default storage, check the console"
-            );
-          } else {
-            SystemNotification.open(
-              SystemNotifcationKind.Error,
-              "Server error loading the default storage id, please try again in a couple of minutes"
-            );
-          }
-          props.storageIdDidChange(knownStorages[0].id);
-        });
-    }
-  }, [knownStorages]);
-
   const fetchWhoIsLoggedIn = async () => {
     try {
       console.log("Checking if user is admin");
       const loggedIn = await isLoggedIn();
+      console.log("loggedin data: ", loggedIn);
       setIsAdmin(loggedIn.isAdmin);
     } catch {
       console.log("User is not logged in");
@@ -139,7 +66,7 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
 
   useEffect(() => {
     fetchWhoIsLoggedIn();
-  }, [isAdmin]);
+  }, []);
 
   return (
     <div className={classes.common_box_size}>
@@ -163,9 +90,6 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
             </Grid>
             {isAdmin && (
               <>
-                {/* <Grid item xs={2} sm={2} alignItems="center">
-                                <Typography>File name</Typography>
-                            </Grid> */}
                 <Grid
                   container
                   item
