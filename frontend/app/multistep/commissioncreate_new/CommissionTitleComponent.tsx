@@ -1,5 +1,5 @@
 import React from "react";
-import { Input, Typography } from "@material-ui/core";
+import { Grid, Input, TextField, Typography } from "@material-ui/core";
 import DateFnsUtils from "@date-io/date-fns";
 import {
   MuiPickersUtilsProvider,
@@ -7,12 +7,15 @@ import {
   KeyboardDatePicker,
 } from "@material-ui/pickers";
 import { useGuardianStyles } from "~/misc/utils";
+import ProductionOfficeComponent from "../projectcreate_new/ProductionOfficeComponent";
 
 interface CommissionTitleComponentProps {
   title: string;
   expiration: Date;
   onTitleChanged: (newValue: string) => void;
   onExpirationChanged: (newValue: Date) => void;
+  valueWasSet: (newValue: ProductionOffice) => void;
+  productionOfficeValue: string;
 }
 
 const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
@@ -23,8 +26,8 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
   return (
     <div className={classes.common_box_size}>
       <MuiPickersUtilsProvider utils={DateFnsUtils}>
-        <Typography variant="h3">Name your commission</Typography>
-        <Typography>
+        <Typography variant="h3">Commission Configuration</Typography>
+        {/* <Typography>
           Now, we need a descriptive name for your new commission and we need to
           know when it is scheduled to be completed.
         </Typography>
@@ -36,8 +39,44 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
           at some point in the future MM Tech will conclude that your commission
           was actually finished long ago and archive it; so please try to be
           accurate.
-        </Typography>
-        <table>
+        </Typography> */}
+        <Grid container direction="column">
+          <Grid item xs={6} sm={6}>
+            <TextField
+              style={{ width: "100%" }}
+              label="Commission title"
+              placeholder="Commission title"
+              helperText="Enter a good descriptive Commission titlee"
+              margin="normal"
+              id="commissionNameInput"
+              onChange={(event) => props.onTitleChanged(event.target.value)}
+              value={props.title}
+            />
+          </Grid>
+          <Grid item xs={6} sm={6}>
+            <KeyboardDatePicker
+              className={classes.inputBox}
+              disableToolbar
+              variant="inline"
+              format="dd/MM/yyyy"
+              margin="normal"
+              label="Scheduled completion"
+              helperText="This value can be updated at any time in the future, so don't worry
+                  too much about setting something very long now."
+              value={props.expiration}
+              onChange={(newValue) =>
+                newValue ? props.onExpirationChanged(newValue) : undefined
+              }
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <ProductionOfficeComponent
+              valueWasSet={props.valueWasSet}
+              productionOfficeValue={props.productionOfficeValue}
+            />
+          </Grid>
+        </Grid>
+        {/* <table>
           <tbody>
             <tr>
               <td>Commission name</td>
@@ -68,7 +107,7 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
               </td>
             </tr>
           </tbody>
-        </table>
+        </table> */}
       </MuiPickersUtilsProvider>
     </div>
   );
