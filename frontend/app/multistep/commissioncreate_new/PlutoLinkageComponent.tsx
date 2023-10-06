@@ -25,7 +25,7 @@ const PlutoLinkageComponent: React.FC<PlutoLinkageComponentProps> = (props) => {
   return (
     <div className={classes.common_box_size}>
       <Typography variant="h3">Select Working Group</Typography>
-      <Typography style={{ textAlign: "center" }}>
+      <Typography style={{ textAlign: "left" }}>
         We need to know which working group is undertaking this project.
         <br />
         If you are unsure which to choose, please ask your commissioning editor.
