@@ -130,9 +130,9 @@ export const useGuardianStyles = makeStyles((theme) => ({
   },
   paperWithPadding: {
     "&&": {
-      marginBottom: "16px",
+      marginBottom: "12px",
       minHeight: "120px",
-      height: "120px",
+      height: "115px",
       width: "100%",
       padding: "0px 0px 0px 20px",
     },

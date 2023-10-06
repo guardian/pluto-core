@@ -70,7 +70,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   const classes = useGuardianStyles();
 
   const steps = [
-    "Project configuration",
+    "Project Configuration",
     "Working Group & Commission",
     "Media Rules",
     "Review",

@@ -70,15 +70,15 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
 
   return (
     <div className={classes.common_box_size}>
-      <Typography variant="h3">Project configuration</Typography>
+      <Typography variant="h3">Project Configuration</Typography>
       <Grid container direction="column">
         <Paper className={classes.paperWithPadding}>
           <Grid container spacing={4} alignItems="center">
             <Grid item xs={6} sm={6}>
               <TextField
                 style={{ width: "100%" }}
-                label="Project title"
-                placeholder="Project title"
+                label="Project Title"
+                placeholder="Project Title"
                 helperText="Enter a good descriptive project name"
                 margin="normal"
                 id="projectNameInput"
