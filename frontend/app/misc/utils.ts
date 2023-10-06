@@ -25,6 +25,7 @@ export const useGuardianStyles = makeStyles((theme) => ({
     "& .MuiFormControl-root": {
       width: "100%",
       marginBottom: "1rem",
+      padding: "20",
     },
     "& form": {
       padding: "0.6em",
@@ -126,6 +127,15 @@ export const useGuardianStyles = makeStyles((theme) => ({
   paper: {
     width: "100%",
     marginBottom: theme.spacing(2),
+  },
+  paperWithPadding: {
+    "&&": {
+      marginBottom: "16px",
+      minHeight: "120px",
+      height: "120px",
+      width: "100%",
+      padding: "0px 0px 0px 20px",
+    },
   },
   //ChipsWithWarning.tsx
   //CommissionEntryDeliverablesComponent.tsx

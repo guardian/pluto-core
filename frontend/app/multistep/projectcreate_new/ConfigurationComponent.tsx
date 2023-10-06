@@ -1,5 +1,6 @@
 import React, { ChangeEvent, useContext, useEffect, useState } from "react";
 import {
+  Box,
   CircularProgress,
   Grid,
   Input,
@@ -7,6 +8,7 @@ import {
   Switch,
   TextField,
   Typography,
+  makeStyles,
 } from "@material-ui/core";
 import { format } from "date-fns";
 import UserContext from "../../UserContext";
@@ -126,100 +128,77 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
 
   const fetchWhoIsLoggedIn = async () => {
     try {
+      console.log("Checking if user is admin");
       const loggedIn = await isLoggedIn();
       setIsAdmin(loggedIn.isAdmin);
     } catch {
+      console.log("User is not logged in");
       setIsAdmin(false);
     }
   };
 
-  fetchWhoIsLoggedIn();
-
-  const paperStyle = {
-    marginBottom: "15px",
-    minHeight: "120px",
-    height: "120px",
-    width: "100%",
-    padding: "20px, 0px, 0px, 0px",
-  };
+  useEffect(() => {
+    fetchWhoIsLoggedIn();
+  }, [isAdmin]);
 
   return (
     <div className={classes.common_box_size}>
       <Typography variant="h3">Project configuration</Typography>
       <Grid container direction="column">
-        <Paper style={paperStyle}>
-          <Grid item xs={12}>
-            <TextField
-              label="Project title"
-              placeholder="Project title"
-              helperText="Enter a good descriptive project name"
-              // fullWidth
-              margin="normal"
-              id="projectNameInput"
-              onChange={(event) =>
-                props.projectNameDidChange(event.target.value)
-              }
-              value={props.projectName}
-            />
-          </Grid>
-          {console.log("isAdmin: ", isAdmin)}
-          {!isAdmin && (
-            <Grid container spacing={4} alignItems="center">
-              <Grid item xs={2}>
-                <Typography>File name</Typography>
-              </Grid>
-              <Grid item xs={2}>
-                <TextField
-                  id="fileNameInput"
-                  onChange={(event) =>
-                    props.fileNameDidChange(event.target.value)
-                  }
-                  value={props.fileName}
-                  disabled={autoName}
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <Typography>Automatically name file (recommended)</Typography>
-              </Grid>
-              <Grid item xs={2}>
-                <Switch
-                  id="autoNameCheck"
-                  checked={autoName}
-                  onChange={(event) => setAutoName(event.target.checked)}
-                />
-              </Grid>
-              <Grid item xs={2}>
-                <Typography>Project storage</Typography>
-              </Grid>
-              <Grid item xs={2}>
-                <Grid container direction="row" alignItems="center">
-                  <Grid item>
-                    <StorageSelector
-                      storageList={knownStorages}
-                      enabled={userContext?.isAdmin}
-                      selectionUpdated={(newValue: number) =>
-                        props.storageIdDidChange(newValue)
-                      }
-                      selectedStorage={props.selectedStorageId}
+        <Paper className={classes.paperWithPadding}>
+          <Grid container spacing={4} alignItems="center">
+            <Grid item xs={6} sm={6}>
+              <TextField
+                style={{ width: "100%" }}
+                label="Project title"
+                placeholder="Project title"
+                helperText="Enter a good descriptive project name"
+                margin="normal"
+                id="projectNameInput"
+                onChange={(event) =>
+                  props.projectNameDidChange(event.target.value)
+                }
+                value={props.projectName}
+              />
+            </Grid>
+            {isAdmin && (
+              <>
+                {/* <Grid item xs={2} sm={2} alignItems="center">
+                                <Typography>File name</Typography>
+                            </Grid> */}
+                <Grid
+                  container
+                  item
+                  xs={6}
+                  sm={6}
+                  alignItems="center"
+                  justifyContent="flex-end"
+                >
+                  <Grid item xs={2}>
+                    <Switch
+                      id="autoNameCheck"
+                      checked={autoName}
+                      onChange={(event) => setAutoName(event.target.checked)}
                     />
-                    {!userContext?.isAdmin && (
-                      <Typography className={classes.secondary}>
-                        Only administrators can change the project storage
-                        location
-                      </Typography>
-                    )}
                   </Grid>
-                  <Grid item>
-                    {loading && (
-                      <CircularProgress style={{ height: "0.8em" }} />
-                    )}
+                  <Grid item xs={8}>
+                    <TextField
+                      style={{ width: "100%" }}
+                      id="fileNameInput"
+                      onChange={(event) =>
+                        props.fileNameDidChange(event.target.value)
+                      }
+                      value={props.fileName}
+                      disabled={autoName}
+                    />
                   </Grid>
                 </Grid>
-              </Grid>
-            </Grid>
-          )}
+              </>
+            )}
+          </Grid>
         </Paper>
-        <Paper style={paperStyle}>
+
+        <Paper className={classes.paperWithPadding}>
           <Grid item xs={12}>
             <TemplateComponent
               templateValue={props.templateValue}
@@ -227,8 +206,7 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
             />
           </Grid>
         </Paper>
-
-        <Paper style={paperStyle}>
+        <Paper className={classes.paperWithPadding}>
           <Grid item xs={12}>
             <ObituaryComponent
               valueDidChange={props.valueDidChange}
@@ -238,7 +216,8 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
             />
           </Grid>
         </Paper>
-        <Paper style={paperStyle}>
+
+        <Paper className={classes.paperWithPadding}>
           <Grid item xs={12}>
             <ProductionOfficeComponent
               productionOfficeValue={props.productionOfficeValue}
