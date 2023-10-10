@@ -6,6 +6,12 @@ import { isLoggedIn } from "~/utils/api";
 import ObituaryComponent from "./ObituaryComponent";
 import ProductionOfficeComponent from "./ProductionOfficeComponent";
 import TemplateComponent from "./TemplateComponent";
+import { getProjectsDefaultStorageId } from "./ProjectStorageService";
+import {
+  SystemNotifcationKind,
+  SystemNotification,
+} from "@guardian/pluto-headers";
+import axios from "axios";
 
 interface ConfigurationComponentProps {
   templateValue?: number;
@@ -37,6 +43,32 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
 
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
+  const [loading, setLoading] = useState(false);
+
+  const loadStorages = async () => {
+    console.log("Loading in storages...");
+    setLoading(true);
+    const response = await axios.get<PlutoStorageListResponse>("/api/storage", {
+      validateStatus: () => true,
+    });
+    switch (response.status) {
+      case 200:
+        setKnownStorages(response.data.result);
+        setLoading(false);
+        break;
+      default:
+        setLoading(false);
+        console.error(
+          `Could not load in storages: ${response.status} ${response.statusText}`,
+          response.data
+        );
+        SystemNotification.open(
+          SystemNotifcationKind.Error,
+          `Could not load in storages, server error ${response.status}. More details in the browser console.`
+        );
+    }
+  };
+
   const makeAutoFilename = (title: string) => {
     const sanitizer = /[^\w\d_]+/g;
     return (
@@ -45,6 +77,10 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
       title.substring(0, 32).replace(sanitizer, "_").toLowerCase()
     );
   };
+
+  useEffect(() => {
+    loadStorages();
+  }, []);
 
   useEffect(() => {
     if (autoName) {
