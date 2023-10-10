@@ -1,5 +1,10 @@
 import React from "react";
-import { Checkbox, FormControlLabel, Typography } from "@material-ui/core";
+import {
+  Checkbox,
+  FormControlLabel,
+  Typography,
+  useTheme,
+} from "@material-ui/core";
 import ObituarySelector from "../../common/ObituarySelector";
 import { useGuardianStyles } from "~/misc/utils";
 
@@ -17,7 +22,7 @@ const ObituaryComponent = ({
   checkBoxDidChange,
 }: Props) => {
   const classes = useGuardianStyles();
-
+  const theme = useTheme();
   return (
     <div>
       <FormControlLabel
@@ -31,7 +36,10 @@ const ObituaryComponent = ({
       />
       {isObituary ? (
         <>
-          <Typography style={{ fontSize: "0.75rem" }} paragraph={false}>
+          <Typography
+            style={{ fontSize: "0.75rem", color: theme.palette.text.secondary }}
+            paragraph={false}
+          >
             Start typing a person's name below
           </Typography>
           <ObituarySelector
@@ -42,9 +50,10 @@ const ObituaryComponent = ({
           />
         </>
       ) : (
-        <Typography style={{ fontSize: "0.75rem" }}>
-          Select the check box to select the person for whom the obituary is
-          intended.
+        <Typography
+          style={{ fontSize: "0.75rem", color: theme.palette.text.secondary }}
+        >
+          Select to choose person for whom the obituary is intended.
         </Typography>
       )}
     </div>
