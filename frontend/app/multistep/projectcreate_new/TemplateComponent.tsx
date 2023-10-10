@@ -116,6 +116,7 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
         {props.templateValue ? (
           <TextField
             select
+            style={{ width: 300 }}
             label="Project template"
             helperText="Please select a project template"
             value={props.templateValue}

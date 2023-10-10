@@ -76,9 +76,9 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
           <Grid container spacing={4} alignItems="center">
             <Grid item xs={6} sm={6}>
               <TextField
-                style={{ width: "100%" }}
-                label="Project Title"
-                placeholder="Project Title"
+                style={{ width: 300 }}
+                label="Project title"
+                placeholder="My project title"
                 helperText="Enter a good descriptive project name"
                 margin="normal"
                 id="projectNameInput"

@@ -29,6 +29,7 @@ const ProductionOfficeComponent: React.FC<ProductionOfficeComponentProps> = (
       <div>
         <TextField
           select
+          style={{ width: 300 }}
           label="Production Office"
           helperText="Production office you are working from"
           value={props.productionOfficeValue}

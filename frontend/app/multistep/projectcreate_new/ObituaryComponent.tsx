@@ -43,8 +43,7 @@ const ObituaryComponent = ({
         </>
       ) : (
         <Typography style={{ fontSize: "0.75rem" }}>
-          Select the check box to select the person for whom the obituary is
-          intended.
+          Select to choose person for whom the obituary is intended.
         </Typography>
       )}
     </div>
