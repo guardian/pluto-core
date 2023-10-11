@@ -377,48 +377,52 @@ const CommissionDeleteDataComponent: React.FC<CommissionDeleteDataComponentProps
                     Please note the following: -
                     <br />
                     <br />
-                    1. If you have 'Project Records' enabled it will break deletion
-                    from Vidispine, the Storage Area Network, and the Object Matrix
-                    system.
+                    1. If you have 'Project Records' enabled it will break
+                    deletion from Vidispine, the Storage Area Network, and the
+                    Object Matrix system.
                     <br />
                     <br />
                     2. Some parts of the Pluto system where not designed to be
-                    tolerant of data removal. Certain undesirable consequences may
-                    occur if you remove data from the system.
+                    tolerant of data removal. Certain undesirable consequences
+                    may occur if you remove data from the system.
                     <br />
                     <br />
-                    3. Deletion from the Amazon Web Services Simple Storage Service does not take into account that projects in
-                    other commissions may reference items from projects in this
-                    commission. If this is used to delete items which are referenced by other projects, the other projects will not be
+                    3. Deletion from the Amazon Web Services Simple Storage
+                    Service does not take into account that projects in other
+                    commissions may reference items from projects in this
+                    commission. If this is used to delete items which are
+                    referenced by other projects, the other projects will not be
                     able to load the items.
                     <br />
                     <br />
-                    4. Due to a limitation of the pluto-storagetier software, which
-                    this software relies on, this software will only attempt to
-                    delete from the one Object Matrix vault that pluto-storagetier
-                    is configured to access.
+                    4. Due to a limitation of the pluto-storagetier software,
+                    which this software relies on, this software will only
+                    attempt to delete from the one Object Matrix vault that
+                    pluto-storagetier is configured to access.
                     <br />
                     <br />
-                    5. Deletion from the Object Matrix system does not take into account that projects in other commissions may
-                    reference items from projects in this commission. If this is
-                    used to delete items which are referenced by other projects,
-                    the other projects will not be able to load the items.
+                    5. Deletion from the Object Matrix system does not take into
+                    account that projects in other commissions may reference
+                    items from projects in this commission. If this is used to
+                    delete items which are referenced by other projects, the
+                    other projects will not be able to load the items.
                     <br />
                     <br />
-                    6. Deletion from Vidispine does not take into account that other
-                    commissions which are currently archived may reference files from projects in
-                    this commission. If this is used to delete files which are
-                    referenced by other projects, the other projects will not be
-                    able to load the files.
+                    6. Deletion from Vidispine does not take into account that
+                    other commissions which are currently archived may reference
+                    files from projects in this commission. If this is used to
+                    delete files which are referenced by other projects, the
+                    other projects will not be able to load the files.
                     <br />
                     <br />
                     7. This software will not delete the database backups for
                     Vidispine, pluto-core, and pluto-deliverables. Data such as
-                    titles, owners, and file names from this commission will remain
-                    present in these backups.
+                    titles, owners, and file names from this commission will
+                    remain present in these backups.
                     <br />
                     <br />
-                    8. Any attempt to delete the commission record will fail unless the project records are also set to be deleted.
+                    8. Any attempt to delete the commission record will fail
+                    unless the project records are also set to be deleted.
                   </div>
                   <div className={classes.formButtons}>
                     <Button
