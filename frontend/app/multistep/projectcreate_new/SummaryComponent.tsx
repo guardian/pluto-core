@@ -26,21 +26,34 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
   const classes = useGuardianStyles();
 
   const userContext = useContext(UserContext);
+  const cellGapStyle = {
+    paddingRight: "100px",
+  };
+
+  const italicTextStyle = {
+    fontStyle: "italic",
+  };
+
+  const smallFontStyle = {
+    fontSize: "0.75rem",
+  };
 
   return (
     <div className={classes.common_box_size}>
       <Typography variant="h3">Create new edit project</Typography>
-      <Typography>
-        We will create a new project with the information below.
+      <Typography style={smallFontStyle}>
+        A new project will be created with the information below.
         <br />
-        Press "Create" to go ahead, or Back if you need to amend any details.
+        Press "Create" to proceed, or "Back" if you need to amend any details.
       </Typography>
+      <br />
 
       <table>
         <tbody>
           <tr>
-            <td>New project's name</td>
-            <td>{props.projectName}</td>
+            <td style={cellGapStyle}>Pluto Project Name</td>
+            <td>{"⟶"}</td>
+            <td style={italicTextStyle}>{props.projectName}</td>
             <td>
               {props.projectName == "" ? (
                 <Typography className={classes.warning}>
@@ -59,14 +72,16 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
             </td>
           </tr>
           <tr>
-            <td>New file name</td>
-            <td>{props.fileName}</td>
+            <td style={cellGapStyle}>File Name</td>
+            <td>{"⟶"}</td>
+            <td style={italicTextStyle}>{props.fileName}</td>
           </tr>
           {props.isObituary && (
             <>
               {props.obituaryName && (
                 <tr>
                   <td>Obituary</td>
+                  <td>{"⟶"}</td>
                   <td className={classes.title_case_text}>
                     {props.obituaryName}
                   </td>
@@ -74,7 +89,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
               )}
               {!props.obituaryName && (
                 <tr>
-                  <td>Obituary</td>
+                  <td style={cellGapStyle}>Obituary</td>
                   <td>
                     <Typography className={classes.warning}>
                       You need to pick a name for the obituary.
@@ -85,8 +100,9 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
             </>
           )}
           <tr>
-            <td>Project template</td>
-            <td>
+            <td style={cellGapStyle}>Project Template</td>
+            <td>{"⟶"}</td>
+            <td style={italicTextStyle}>
               {props.projectTemplateId ? (
                 <ProjectTemplateEntryView entryId={props.projectTemplateId} />
               ) : (
@@ -96,9 +112,10 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
               )}
             </td>
           </tr>
-          <tr>
-            <td>Storage</td>
-            <td>
+          {/* <tr>
+            <td style={cellGapStyle}>Storage</td>
+            <td>{'⟶'}</td>
+            <td style={italicTextStyle}>
               {props.destinationStorageId ? (
                 <StorageEntryView entryId={props.destinationStorageId} />
               ) : (
@@ -108,10 +125,11 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
                 </Typography>
               )}
             </td>
-          </tr>
+          </tr> */}
           <tr>
-            <td>Working Group</td>
-            <td>
+            <td style={cellGapStyle}>Working Group</td>
+            <td>{"⟶"}</td>
+            <td style={italicTextStyle}>
               {props.workingGroupId ? (
                 <WorkingGroupEntryView entryId={props.workingGroupId} />
               ) : (
@@ -122,12 +140,14 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
             </td>
           </tr>
           <tr>
-            <td>Production Office</td>
-            <td>{props.productionOffice}</td>
+            <td style={cellGapStyle}>Production Office</td>
+            <td>{"⟶"}</td>
+            <td style={italicTextStyle}>{props.productionOffice}</td>
           </tr>
           <tr>
-            <td>Commission</td>
-            <td>
+            <td style={cellGapStyle}>Commission</td>
+            <td>{"⟶"}</td>
+            <td style={italicTextStyle}>
               {props.commissionId ? (
                 <CommissionEntryView entryId={props.commissionId} />
               ) : (
@@ -138,8 +158,9 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
             </td>
           </tr>
           <tr>
-            <td>Media Rules</td>
-            <td>
+            <td style={cellGapStyle}>Media Rules</td>
+            <td>{"⟶"}</td>
+            <td style={italicTextStyle}>
               <Grid container spacing={3} direction="row">
                 {props.deletable ? (
                   <Grid item>
