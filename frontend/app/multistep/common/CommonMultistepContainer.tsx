@@ -7,6 +7,8 @@ import {
   StepLabel,
   Stepper,
   Tooltip,
+  useMediaQuery,
+  useTheme,
 } from "@material-ui/core";
 import StepContent from "./StepContent";
 import { CheckCircle } from "@material-ui/icons";
@@ -65,6 +67,9 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("xs"));
+
   return (
     <div id={props.id}>
       <Helmet>
@@ -88,9 +93,10 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
       <StepContent activeStep={activeStep} className={classes.stepContainer}>
         {props.children}
         <hr />
-        <Grid justifyContent="space-between" container>
+        <Grid justifyContent="space-between" container wrap="wrap">
           <Grid item>
             <Button
+              size={isSmallScreen ? "small" : "medium"}
               variant="outlined"
               disabled={activeStep == 0 || creationInProgress || activeStep > 6}
               onClick={handleBack}
@@ -111,6 +117,7 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
                   {" "}
                   {/* the <span> wrapper is required to get mouseover events when the button is in a "disabled" state*/}
                   <Button
+                    size={isSmallScreen ? "small" : "medium"}
                     variant="contained"
                     disabled={
                       !canComplete() ||
@@ -127,7 +134,11 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
                 </span>
               </Tooltip>
             ) : (
-              <Button variant="contained" onClick={handleNext}>
+              <Button
+                variant="contained"
+                onClick={handleNext}
+                size={isSmallScreen ? "small" : "medium"}
+              >
                 Next
               </Button>
             )}
