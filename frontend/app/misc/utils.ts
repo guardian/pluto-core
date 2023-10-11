@@ -128,15 +128,7 @@ export const useGuardianStyles = makeStyles((theme) => ({
     width: "100%",
     marginBottom: theme.spacing(2),
   },
-  paperWithPadding: {
-    "&&": {
-      marginBottom: "12px",
-      minHeight: "120px",
-      height: "115px",
-      width: "100%",
-      padding: "0px 0px 0px 20px",
-    },
-  },
+  paperWithPadding: {},
   //ChipsWithWarning.tsx
   //CommissionEntryDeliverablesComponent.tsx
   //CommissionEntryEditComponent.tsx
@@ -355,13 +347,21 @@ export const useGuardianStyles = makeStyles((theme) => ({
   visibilityIcon: {},
   //CommonMultiStepContainer.tsx
   stepContainer: {
-    width: "fit-content",
-    padding: "3em",
-    paddingTop: "0.5em",
-    paddingBottom: "1em",
-    marginLeft: "auto",
-    marginRight: "auto",
-    marginTop: "3em",
+    width: "100%",
+    maxWidth: "1000px",
+    minWidth: "400px",
+    padding: "2rem 3rem",
+    margin: "3rem auto",
+
+    "& $paperWithPadding": {
+      marginBottom: "12px",
+      minHeight: "120px",
+      height: "115px",
+      maxWidth: "1000px",
+      minWidth: "400px",
+      width: "100%",
+      padding: "0px 0px 0px 20px",
+    },
   },
   information: {
     color: theme.palette.info.main,
@@ -408,7 +408,9 @@ export const useGuardianStyles = makeStyles((theme) => ({
     textTransform: "capitalize",
   },
   common_box_size: {
-    width: "1000px",
+    maxWidth: "1000px",
+    minWidth: "400px",
     height: "570px",
+    boxSizing: "border-box",
   },
 }));
