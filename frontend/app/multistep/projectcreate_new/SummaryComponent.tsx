@@ -51,7 +51,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
       </Typography>
       <br />
 
-      <table style={{ maxWidth: "560px" }}>
+      <table style={{ maxWidth: "760px" }}>
         <tbody>
           <tr>
             <td style={cellGapStyle}>Pluto Project Name</td>

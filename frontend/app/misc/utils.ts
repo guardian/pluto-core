@@ -409,8 +409,7 @@ export const useGuardianStyles = makeStyles((theme) => ({
   },
   common_box_size: {
     maxWidth: "1000px",
-    minWidth: "400px",
-    width: "900px",
+    minWidth: "300px",
     height: "570px",
     boxSizing: "border-box",
   },
