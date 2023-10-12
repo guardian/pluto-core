@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { Grid, Typography } from "@material-ui/core";
+import { Grid, Paper, Typography } from "@material-ui/core";
 import ProjectTemplateEntryView from "../../EntryViews/ProjectTemplateEntryView";
 import StorageEntryView from "../../EntryViews/StorageEntryView";
 import WorkingGroupEntryView from "../../EntryViews/WorkingGroupEntryView";
@@ -39,7 +39,10 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
   };
 
   return (
-    <div className={classes.common_box_size}>
+    <Paper
+      className={classes.common_box_size}
+      style={{ padding: "40px", display: "flex", flexDirection: "column" }}
+    >
       <Typography variant="h3">Create new edit project</Typography>
       <Typography style={smallFontStyle}>
         A new project will be created with the information below.
@@ -48,7 +51,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
       </Typography>
       <br />
 
-      <table>
+      <table style={{ maxWidth: "560px" }}>
         <tbody>
           <tr>
             <td style={cellGapStyle}>Pluto Project Name</td>
@@ -112,20 +115,6 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
               )}
             </td>
           </tr>
-          {/* <tr>
-            <td style={cellGapStyle}>Storage</td>
-            <td>{'⟶'}</td>
-            <td style={italicTextStyle}>
-              {props.destinationStorageId ? (
-                <StorageEntryView entryId={props.destinationStorageId} />
-              ) : (
-                <Typography className={classes.error}>
-                  We can't create a project without anywhere to put it. You must
-                  select a storage.
-                </Typography>
-              )}
-            </td>
-          </tr> */}
           <tr>
             <td style={cellGapStyle}>Working Group</td>
             <td>{"⟶"}</td>
@@ -189,7 +178,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
           </tr>
         </tbody>
       </table>
-    </div>
+    </Paper>
   );
 };
 

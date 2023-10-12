@@ -408,7 +408,7 @@ export const useGuardianStyles = makeStyles((theme) => ({
     textTransform: "capitalize",
   },
   common_box_size: {
-    width: "1000px",
+    width: "900px",
     height: "570px",
   },
 }));
