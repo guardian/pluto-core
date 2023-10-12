@@ -7,6 +7,7 @@ import {
   StepLabel,
   Stepper,
   Tooltip,
+  makeStyles,
   useMediaQuery,
   useTheme,
 } from "@material-ui/core";
@@ -94,55 +95,62 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
         {props.children}
         <hr />
         <Grid justifyContent="space-between" container wrap="wrap">
-          <Grid item>
-            <Button
-              size={isSmallScreen ? "small" : "medium"}
-              variant="outlined"
-              disabled={activeStep == 0 || creationInProgress || activeStep > 6}
-              onClick={handleBack}
-            >
-              Back
-            </Button>
-          </Grid>
-          <Grid item>
-            {activeStep >= steps.length - 1 ? (
-              <Tooltip
-                title={
-                  canComplete()
-                    ? "Go ahead and create"
-                    : "You need to supply some more information, check above for details"
-                }
-              >
-                <span>
-                  {" "}
-                  {/* the <span> wrapper is required to get mouseover events when the button is in a "disabled" state*/}
-                  <Button
-                    size={isSmallScreen ? "small" : "medium"}
-                    variant="contained"
-                    disabled={
-                      !canComplete() ||
-                      creationInProgress ||
-                      creationFailed !== undefined ||
-                      activeStep > 4 ||
-                      (isObituary && !obituaryName)
+          {activeStep < 5 && (
+            <>
+              <Grid item>
+                <Button
+                  size={isSmallScreen ? "small" : "medium"}
+                  variant="outlined"
+                  disabled={
+                    activeStep == 0 || creationInProgress || activeStep > 4
+                  }
+                  onClick={handleBack}
+                >
+                  Back
+                </Button>
+              </Grid>
+              <Grid item>
+                {activeStep >= steps.length - 1 ? (
+                  <Tooltip
+                    title={
+                      canComplete()
+                        ? "Go ahead and create"
+                        : "You need to supply some more information, check above for details"
                     }
-                    endIcon={<CheckCircle />}
-                    onClick={createClicked}
                   >
-                    {props.createButtonLabel ?? "Create"}
+                    <span>
+                      {" "}
+                      {/* the <span> wrapper is required to get mouseover events when the button is in a "disabled" state*/}
+                      <Button
+                        className={classes.createButtonHover}
+                        size={isSmallScreen ? "small" : "medium"}
+                        variant="contained"
+                        disabled={
+                          !canComplete() ||
+                          creationInProgress ||
+                          creationFailed !== undefined ||
+                          activeStep > 4 ||
+                          (isObituary && !obituaryName)
+                        }
+                        endIcon={<CheckCircle />}
+                        onClick={createClicked}
+                      >
+                        {props.createButtonLabel ?? "Create"}
+                      </Button>
+                    </span>
+                  </Tooltip>
+                ) : (
+                  <Button
+                    variant="contained"
+                    onClick={handleNext}
+                    size={isSmallScreen ? "small" : "medium"}
+                  >
+                    Next
                   </Button>
-                </span>
-              </Tooltip>
-            ) : (
-              <Button
-                variant="contained"
-                onClick={handleNext}
-                size={isSmallScreen ? "small" : "medium"}
-              >
-                Next
-              </Button>
-            )}
-          </Grid>
+                )}
+              </Grid>
+            </>
+          )}
         </Grid>
       </StepContent>
     </div>
