@@ -104,6 +104,31 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
     fetchWhoIsLoggedIn();
   }, []);
 
+  useEffect(() => {
+    getProjectsDefaultStorageId()
+      .then((id) => props.storageIdDidChange(id))
+      .catch((error) => {
+        console.error("Could not get default storage id: ", error);
+        if (error.response && error.response.status === 404) {
+          SystemNotification.open(
+            SystemNotifcationKind.Error,
+            "No default project storage has been set"
+          );
+        } else if (!error.hasOwnProperty("response")) {
+          SystemNotification.open(
+            SystemNotifcationKind.Error,
+            "Could not understand response for default storage, check the console"
+          );
+        } else {
+          SystemNotification.open(
+            SystemNotifcationKind.Error,
+            "Server error loading the default storage id, please try again in a couple of minutes"
+          );
+        }
+        props.storageIdDidChange(knownStorages[0].id);
+      });
+  }, [knownStorages]);
+
   return (
     <div className={classes.common_box_size}>
       <Typography variant="h3">Project Configuration</Typography>
