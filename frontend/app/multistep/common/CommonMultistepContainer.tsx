@@ -12,7 +12,8 @@ import {
   useTheme,
 } from "@material-ui/core";
 import StepContent from "./StepContent";
-import { CheckCircle } from "@material-ui/icons";
+import { CheckCircle, Cancel } from "@material-ui/icons";
+
 import { useGuardianStyles } from "~/misc/utils";
 
 interface CommonMultistepContainerProps {
@@ -119,7 +120,6 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
                     }
                   >
                     <span>
-                      {" "}
                       {/* the <span> wrapper is required to get mouseover events when the button is in a "disabled" state*/}
                       <Button
                         className={classes.createButtonHover}
@@ -141,7 +141,17 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
                           activeStep > 4 ||
                           (isObituary && !obituaryName)
                         }
-                        endIcon={<CheckCircle />}
+                        endIcon={
+                          !canComplete() ||
+                          creationInProgress ||
+                          creationFailed !== undefined ||
+                          activeStep > 4 ||
+                          (isObituary && !obituaryName) ? (
+                            <Cancel />
+                          ) : (
+                            <CheckCircle />
+                          )
+                        }
                         onClick={createClicked}
                       >
                         {props.createButtonLabel ?? "Create"}
