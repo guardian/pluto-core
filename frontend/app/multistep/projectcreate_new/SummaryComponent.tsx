@@ -59,7 +59,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
       <Divider />
 
       <Grid container spacing={3} style={{ marginTop: "20px" }}>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           Pluto Project Name
         </Grid>
         <Grid item xs={12} sm={6} style={italicTextStyle}>
@@ -69,7 +69,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
             <span style={{ color: "red" }}>Not provided</span>
           )}
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           File Name
         </Grid>
         <Grid item xs={12} sm={6} style={italicTextStyle}>
@@ -81,7 +81,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
         </Grid>
 
         {props.isObituary && (
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={4}>
             Obituary
           </Grid>
         )}
@@ -95,7 +95,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
           </Grid>
         )}
 
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           Project Template
         </Grid>
         <Grid item xs={12} sm={6} style={italicTextStyle}>
@@ -106,7 +106,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
           )}
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           Working Group
         </Grid>
         <Grid item xs={12} sm={6} style={italicTextStyle}>
@@ -117,7 +117,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
           )}
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           Production Office
         </Grid>
         <Grid item xs={12} sm={6} style={italicTextStyle}>
@@ -126,7 +126,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
           )}
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           Commission
         </Grid>
         <Grid item xs={12} sm={6} style={italicTextStyle}>
@@ -137,7 +137,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
           )}
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           Media Rules
         </Grid>
 
