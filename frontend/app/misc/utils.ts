@@ -25,6 +25,7 @@ export const useGuardianStyles = makeStyles((theme) => ({
     "& .MuiFormControl-root": {
       width: "100%",
       marginBottom: "1rem",
+      padding: "20",
     },
     "& form": {
       padding: "0.6em",
@@ -126,6 +127,15 @@ export const useGuardianStyles = makeStyles((theme) => ({
   paper: {
     width: "100%",
     marginBottom: theme.spacing(2),
+  },
+  paperWithPadding: {
+    "&&": {
+      marginBottom: "12px",
+      minHeight: "120px",
+      height: "115px",
+      width: "100%",
+      padding: "0px 0px 0px 20px",
+    },
   },
   //ChipsWithWarning.tsx
   //CommissionEntryDeliverablesComponent.tsx
@@ -398,7 +408,7 @@ export const useGuardianStyles = makeStyles((theme) => ({
     textTransform: "capitalize",
   },
   common_box_size: {
-    width: "1000px",
+    width: "900px",
     height: "570px",
   },
 }));

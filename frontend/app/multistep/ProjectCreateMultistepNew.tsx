@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { RouteComponentProps, useLocation } from "react-router-dom";
 import { Typography } from "@material-ui/core";
-import NameComponent from "./projectcreate_new/NameComponent";
+import ConfigurationComponent from "./projectcreate_new/ConfigurationComponent";
 import TemplateComponent from "./projectcreate_new/TemplateComponent";
 import UserContext from "../UserContext";
 import PlutoLinkageComponent from "./projectcreate_new/PlutoLinkageComponent";
@@ -70,11 +70,8 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   const classes = useGuardianStyles();
 
   const steps = [
-    "Select project template",
-    "Name your project",
-    "Obituary",
+    "Project Configuration",
     "Working Group & Commission",
-    "Production Office",
     "Media Rules",
     "Review",
   ];
@@ -102,7 +99,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
   }, [location]);
 
   const createClicked = async () => {
-    setActiveStep(7);
+    setActiveStep(4);
     setCreationInProgress(true);
     setCreationFailed(undefined);
 
@@ -181,30 +178,26 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
     >
       <>
         {activeStep == 0 ? (
-          <TemplateComponent
-            valueDidChange={(newTemplate) => setSelectedTemplateId(newTemplate)}
-            value={selectedTemplateId}
-          />
-        ) : null}
-        {activeStep == 1 ? (
-          <NameComponent
+          <ConfigurationComponent
+            templateValueDidChange={(newTemplate) =>
+              setSelectedTemplateId(newTemplate)
+            }
+            templateValue={selectedTemplateId}
             projectName={projectName}
             projectNameDidChange={(newName) => setProjectName(newName)}
             fileName={filename}
             fileNameDidChange={(newName) => setFilename(newName)}
             selectedStorageId={selectedStorageId}
             storageIdDidChange={(newValue) => setSelectedStorageId(newValue)}
-          />
-        ) : null}
-        {activeStep == 2 ? (
-          <ObituaryComponent
             valueDidChange={(newValue: string) => setObituaryName(newValue)}
             checkBoxDidChange={(newValue: boolean) => setObituary(newValue)}
             value={obituaryName ?? ""}
             isObituary={isObituary}
+            valueWasSet={(newValue) => setProductionOffice(newValue)}
+            productionOfficeValue={productionOffice}
           />
         ) : null}
-        {activeStep == 3 ? (
+        {activeStep == 1 ? (
           <PlutoLinkageComponent
             commissionIdDidChange={(newValue) => setCommissionId(newValue)}
             workingGroupIdDidChange={(newValue) => setWorkingGroupId(newValue)}
@@ -212,14 +205,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             workingGroupId={workingGroupId}
           />
         ) : null}
-
-        {activeStep == 4 ? (
-          <ProductionOfficeComponent
-            valueWasSet={(newValue) => setProductionOffice(newValue)}
-            value={productionOffice}
-          />
-        ) : null}
-        {activeStep == 5 ? (
+        {activeStep == 2 ? (
           <MediaRulesComponent
             deletable={deletable}
             deepArchive={deepArchive}
@@ -232,7 +218,7 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             sensitiveChanged={(newValue) => setSensitive(newValue)}
           />
         ) : null}
-        {activeStep == 6 ? (
+        {activeStep == 3 ? (
           <SummaryComponent
             projectName={projectName}
             fileName={filename}
@@ -248,21 +234,21 @@ const ProjectCreateMultistepNew: React.FC<RouteComponentProps> = (props) => {
             sensitive={sensitive}
           />
         ) : null}
-        {activeStep == 7 ? (
+        {activeStep == 4 ? (
           <InProgressComponent
             didFail={creationFailed !== undefined}
             errorMessage={creationFailed}
             description="Creating your project, please wait..."
           />
         ) : null}
-        {activeStep == 8 && createdProjectId && commissionId ? (
+        {activeStep == 5 && createdProjectId && commissionId ? (
           <ProjectCreatedComponent
             projectId={createdProjectId}
             commissionId={commissionId}
             title={projectName}
           />
         ) : null}
-        {activeStep == 8 && (!createdProjectId || !commissionId) ? (
+        {activeStep == 5 && (!createdProjectId || !commissionId) ? (
           <div>
             <Typography className={classes.warning} variant="h3">
               Well this is strange

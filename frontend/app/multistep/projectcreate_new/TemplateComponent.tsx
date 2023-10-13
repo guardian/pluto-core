@@ -8,14 +8,15 @@ import {
   LinearProgress,
   MenuItem,
   Select,
+  TextField,
   Typography,
 } from "@material-ui/core";
 import { projectCreateStyles } from "./CommonStyles";
 import { useGuardianStyles } from "~/misc/utils";
 
 interface TemplateComponentProps {
-  value?: number;
-  valueDidChange: (newValue: number) => void;
+  templateValue?: number;
+  templateValueDidChange: (newValue: number) => void;
 }
 
 const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
@@ -102,35 +103,38 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
 
   //ensure that we have _a_ current value set if the known projects change
   useEffect(() => {
-    if (!props.value && knownProjectTemplates.length > 0) {
+    if (!props.templateValue && knownProjectTemplates.length > 0) {
       const defaultValue =
         defaultProjectTemplate ?? knownProjectTemplates[0].id;
-      props.valueDidChange(defaultValue);
+      props.templateValueDidChange(defaultValue);
     }
   }, [knownProjectTemplates]);
 
   return (
-    <div className={guardianClasses.common_box_size}>
-      <Typography variant={"h3"}>Select project template</Typography>
-      <Typography>
-        The first piece of information we need is a template to base your new
-        project on.
-      </Typography>
-      <div className={classes.floatCentre}>
-        {props.value ? (
-          <Select
-            value={props.value}
-            onChange={(evt) => props.valueDidChange(evt.target.value as number)}
+    <div>
+      <div>
+        {props.templateValue ? (
+          <TextField
+            select
+            style={{ width: 300 }}
+            label="Project template"
+            helperText="Please select a project template"
+            value={props.templateValue}
+            onChange={(evt) =>
+              props.templateValueDidChange(
+                (evt.target.value as unknown) as number
+              )
+            }
           >
             {knownProjectTemplates.map((template, idx) => (
               <MenuItem value={template.id} key={idx}>
                 {template.name}
               </MenuItem>
             ))}
-          </Select>
+          </TextField>
         ) : null}
         {loading ? <LinearProgress /> : null}
-        {!loading && !props.value ? (
+        {!loading && !props.templateValue ? (
           <Typography>No project templates available</Typography>
         ) : null}
       </div>

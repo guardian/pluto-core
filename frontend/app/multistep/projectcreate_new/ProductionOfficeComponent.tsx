@@ -1,11 +1,11 @@
 import React from "react";
-import { MenuItem, Select, Typography } from "@material-ui/core";
+import { MenuItem, Select, TextField, Typography } from "@material-ui/core";
 import { projectCreateStyles } from "./CommonStyles";
 import { useGuardianStyles } from "~/misc/utils";
 
 interface ProductionOfficeComponentProps {
   valueWasSet: (newValue: ProductionOffice) => void;
-  value: string;
+  productionOfficeValue: string;
   extraText?: string;
 }
 
@@ -25,17 +25,14 @@ const ProductionOfficeComponent: React.FC<ProductionOfficeComponentProps> = (
   ];
 
   return (
-    <div className={guardianClasses.common_box_size}>
-      <Typography variant="h3">Where are you working from</Typography>
-      <Typography>
-        We need to know which production office you are working out of,
-        <br />
-        i.e. where the commissioner who green-lit this project usually works.
-        {props.extraText ? props.extraText : ""}
-      </Typography>
-      <div className={classes.floatCentre}>
-        <Select
-          value={props.value}
+    <div>
+      <div>
+        <TextField
+          select
+          style={{ width: 300 }}
+          label="Production Office"
+          helperText="Production office you are working from"
+          value={props.productionOfficeValue}
           onChange={(evt) =>
             props.valueWasSet(evt.target.value as ProductionOffice)
           }
@@ -45,7 +42,7 @@ const ProductionOfficeComponent: React.FC<ProductionOfficeComponentProps> = (
               {productionOfficeNames[idx]}
             </MenuItem>
           ))}
-        </Select>
+        </TextField>
       </div>
     </div>
   );
