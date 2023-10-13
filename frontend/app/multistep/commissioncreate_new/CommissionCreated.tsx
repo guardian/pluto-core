@@ -2,7 +2,7 @@ import React from "react";
 import { useHistory } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { CheckCircle, ChevronRight } from "@material-ui/icons";
-import { Button, Typography } from "@material-ui/core";
+import { Button, Grid, Typography } from "@material-ui/core";
 import { useGuardianStyles } from "~/misc/utils";
 
 interface CommissionCreatedProps {
@@ -25,64 +25,47 @@ const CommissionCreated: React.FC<CommissionCreatedProps> = (props) => {
       </div>
 
       <Typography className={classes.bannerText}>
-        Your commission has been created.
-        <br />
-        Would you like to....
+        Your commission has been created! <br />
       </Typography>
 
-      <table>
-        <tbody>
-          <tr>
-            <td>
-              <Typography>Create a project</Typography>
-            </td>
-            <td>
-              <Button
-                variant="contained"
-                color="primary"
-                endIcon={<ChevronRight />}
-                onClick={() =>
-                  history.push(
-                    `/project/new?commissionId=${props.commissionId}&workingGroupId=${props.workingGroupId}`
-                  )
-                }
-              >
-                New Project
-              </Button>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <Typography>Go to the new commission's page</Typography>
-            </td>
-            <td>
-              <Button
-                endIcon={<ChevronRight />}
-                variant="outlined"
-                onClick={() =>
-                  history.push(`/commission/${props.commissionId}`)
-                }
-              >
-                Open Commission
-              </Button>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <Typography>Return to the commission list</Typography>
-            </td>
-            <td>
-              <Button
-                variant="outlined"
-                endIcon={<ChevronRight />}
-                onClick={() => history.push("/commission/")}
-              >
-                Commissions list
-              </Button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <Grid container spacing={3}>
+        <Grid item xs={8}>
+          <Typography>Create a project</Typography>
+        </Grid>
+        <Grid item xs={4}>
+          <Button
+            endIcon={<ChevronRight />}
+            variant="outlined"
+            onClick={() => history.push(`/commission/${props.commissionId}`)}
+          >
+            Open Commission
+          </Button>
+        </Grid>
+        <Grid item xs={8}>
+          <Typography>Go to the new commission's page</Typography>
+        </Grid>
+        <Grid item xs={4}>
+          <Button
+            endIcon={<ChevronRight />}
+            variant="outlined"
+            onClick={() => history.push(`/commission/${props.commissionId}`)}
+          >
+            Open Commission
+          </Button>
+        </Grid>
+        <Grid item xs={8}>
+          <Typography>Return to the commission list</Typography>
+        </Grid>
+        <Grid item xs={4}>
+          <Button
+            variant="outlined"
+            endIcon={<ChevronRight />}
+            onClick={() => history.push("/commission/")}
+          >
+            Commissions list
+          </Button>
+        </Grid>
+      </Grid>
     </div>
   );
 };
