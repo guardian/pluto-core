@@ -125,6 +125,15 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
                         className={classes.createButtonHover}
                         size={isSmallScreen ? "small" : "medium"}
                         variant="contained"
+                        color={
+                          !canComplete() ||
+                          creationInProgress ||
+                          creationFailed !== undefined ||
+                          activeStep > 4 ||
+                          (isObituary && !obituaryName)
+                            ? "default"
+                            : "primary"
+                        }
                         disabled={
                           !canComplete() ||
                           creationInProgress ||
