@@ -14,10 +14,12 @@ describe("SummaryComponent", () => {
       />
     );
 
-    expect(rendered.find("td#scheduled-completion-value").text()).toEqual(
-      "Thursday, 2nd Jan 2020"
+    expect(
+      rendered.find("Typography#scheduled-completion-value").text()
+    ).toEqual("Thursday, 2nd Jan 2020");
+    expect(rendered.find("Typography#title-value").text()).toEqual("test");
+    expect(rendered.find("Typography#productionoffice-value").text()).toEqual(
+      "UK"
     );
-    expect(rendered.find("td#title-value").text()).toEqual("test");
-    expect(rendered.find("td#productionoffice-value").text()).toEqual("UK");
   });
 });

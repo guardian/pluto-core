@@ -56,46 +56,52 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
           Commission name
         </Grid>
         <Grid item xs={12} sm={6} style={italicTextStyle}>
-          {props.title ? (
-            props.title
-          ) : (
-            <span style={{ color: "red" }}>Not provided</span>
-          )}
+          <Typography id="title-value">
+            {props.title ? (
+              props.title
+            ) : (
+              <span style={{ color: "red" }}>Not provided</span>
+            )}
+          </Typography>
         </Grid>
 
         <Grid item xs={12} sm={4}>
           Scheduled completion
         </Grid>
         <Grid item xs={12} sm={6} style={italicTextStyle}>
-          {props.scheduledCompetion &&
-          !isBefore(props.scheduledCompetion, new Date()) &&
-          !isAfter(props.scheduledCompetion, addYears(new Date(), 1)) ? (
-            format(props.scheduledCompetion, "iiii, do MMM yyyy")
-          ) : !props.scheduledCompetion ? (
-            <span style={{ color: "red" }}>Not provided</span>
-          ) : isBefore(props.scheduledCompetion, new Date()) ? (
-            <span style={{ color: "red" }}>
-              You can't create a commission with a completion date in the past
-            </span>
-          ) : isAfter(props.scheduledCompetion, addYears(new Date(), 1)) ? (
-            <span style={{ color: "red" }}>
-              This is a long way in the future, you should change it to
-              something more realistic
-            </span>
-          ) : (
-            <span style={{ color: "red" }}>Something went wrong</span>
-          )}
+          <Typography id="scheduled-completion-value">
+            {props.scheduledCompetion &&
+            !isBefore(props.scheduledCompetion, new Date()) &&
+            !isAfter(props.scheduledCompetion, addYears(new Date(), 1)) ? (
+              format(props.scheduledCompetion, "iiii, do MMM yyyy")
+            ) : !props.scheduledCompetion ? (
+              <span style={{ color: "red" }}>Not provided</span>
+            ) : isBefore(props.scheduledCompetion, new Date()) ? (
+              <span style={{ color: "red" }}>
+                You can't create a commission with a completion date in the past
+              </span>
+            ) : isAfter(props.scheduledCompetion, addYears(new Date(), 1)) ? (
+              <span style={{ color: "red" }}>
+                This is a long way in the future, you should change it to
+                something more realistic
+              </span>
+            ) : (
+              <span style={{ color: "red" }}>Something went wrong</span>
+            )}
+          </Typography>
         </Grid>
 
         <Grid item xs={12} sm={4}>
           Production office
         </Grid>
         <Grid item xs={12} sm={6} style={italicTextStyle}>
-          {props.productionOffice ? (
-            props.productionOffice
-          ) : (
-            <span style={{ color: "red" }}>Not provided</span>
-          )}
+          <Typography id="productionoffice-value">
+            {props.productionOffice ? (
+              props.productionOffice
+            ) : (
+              <span style={{ color: "red" }}>Not provided</span>
+            )}
+          </Typography>
         </Grid>
 
         <Grid item xs={12} sm={4}>
