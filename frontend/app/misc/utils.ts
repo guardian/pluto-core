@@ -413,16 +413,16 @@ export const useGuardianStyles = makeStyles((theme) => ({
     boxSizing: "border-box",
   },
   createButtonHover: {
-    backgroundColor: "lightgreen !important",
+    backgroundColor: "green !important",
     color: "black", // black text for default and hover
     "&:hover": {
-      backgroundColor: "green !important",
+      backgroundColor: "#397739 !important",
     },
     "&:disabled": {
-      backgroundColor: "red !important", // red background when disabled
-      color: "white !important", // white text when disabled
+      backgroundColor: "grey !important",
+      color: "white !important",
       "&:hover": {
-        backgroundColor: "darkred !important", // remains red on hover when disabled
+        backgroundColor: "grey !important",
       },
     },
   },
