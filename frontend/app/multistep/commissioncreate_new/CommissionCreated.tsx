@@ -15,6 +15,11 @@ const CommissionCreated: React.FC<CommissionCreatedProps> = (props) => {
   const classes = useGuardianStyles();
   const history = useHistory();
 
+  const buttonStyle = {
+    minWidth: "175px",
+    minHeight: "50px",
+  };
+
   return (
     <div className={classes.container}>
       <Helmet>
@@ -34,11 +39,16 @@ const CommissionCreated: React.FC<CommissionCreatedProps> = (props) => {
         </Grid>
         <Grid item xs={4}>
           <Button
-            endIcon={<ChevronRight />}
-            variant="outlined"
-            onClick={() => history.push(`/commission/${props.commissionId}`)}
+            style={buttonStyle}
+            color="primary"
+            variant="contained"
+            onClick={() =>
+              history.push(
+                `/project/new?commissionId=${props.commissionId}&workingGroupId=${props.workingGroupId}`
+              )
+            }
           >
-            Open Commission
+            New Project
           </Button>
         </Grid>
         <Grid item xs={8}>
@@ -46,8 +56,8 @@ const CommissionCreated: React.FC<CommissionCreatedProps> = (props) => {
         </Grid>
         <Grid item xs={4}>
           <Button
-            endIcon={<ChevronRight />}
-            variant="outlined"
+            style={buttonStyle}
+            variant="contained"
             onClick={() => history.push(`/commission/${props.commissionId}`)}
           >
             Open Commission
@@ -58,8 +68,8 @@ const CommissionCreated: React.FC<CommissionCreatedProps> = (props) => {
         </Grid>
         <Grid item xs={4}>
           <Button
+            style={buttonStyle}
             variant="outlined"
-            endIcon={<ChevronRight />}
             onClick={() => history.push("/commission/")}
           >
             Commissions list
