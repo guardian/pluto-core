@@ -349,7 +349,7 @@ export const useGuardianStyles = makeStyles((theme) => ({
   stepContainer: {
     width: "100%",
     maxWidth: "1000px",
-    minWidth: "400px",
+    minWidth: "500px",
     padding: "2rem 3rem",
     margin: "3rem auto",
 
@@ -408,7 +408,8 @@ export const useGuardianStyles = makeStyles((theme) => ({
     textTransform: "capitalize",
   },
   common_box_size: {
-    width: "900px",
+    maxWidth: "1000px",
+    minWidth: "300px",
     height: "570px",
     boxSizing: "border-box",
   },
