@@ -57,7 +57,7 @@ const CommissionCreated: React.FC<CommissionCreatedProps> = (props) => {
         <Grid item xs={4}>
           <Button
             style={buttonStyle}
-            variant="contained"
+            variant="outlined"
             onClick={() => history.push(`/commission/${props.commissionId}`)}
           >
             Open Commission
