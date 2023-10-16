@@ -46,7 +46,7 @@ const SummaryComponent: React.FC<SummaryComponentProps> = (props) => {
         </Grid>
         <Grid item xs={12} sm={6} style={italicTextStyle}>
           {props.workingGroupId ? (
-            props.workingGroupId
+            <WorkingGroupEntryView entryId={props.workingGroupId} />
           ) : (
             <span style={{ color: "red" }}>Not provided</span>
           )}
