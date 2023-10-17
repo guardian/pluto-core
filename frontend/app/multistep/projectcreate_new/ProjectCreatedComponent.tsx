@@ -58,11 +58,10 @@ const ProjectCreatedComponent: React.FC<ProjectCreatedComponentProps> = (
       <Box display="flex" justifyContent="center" marginBottom={3}>
         <CheckCircle className={classes.success} />
       </Box>
-      <br />
       <Typography className={classes.bannerText} align="center" gutterBottom>
         Your project has been created! <br />
       </Typography>
-
+      <br />
       <Grid container spacing={3}>
         <Grid item xs={8}>
           <Typography>
