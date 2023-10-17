@@ -420,15 +420,16 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 onChange={checkboxChanged}
                 disabled={!isAdmin}
               />
+
+              <div style={{ height: "48px" }} className={classes.formButtons}>
+                {hasChanges() && ( // Only render if changes have been made
+                  <Button type="submit" color="secondary" variant="contained">
+                    Save changes
+                  </Button>
+                )}
+              </div>
             </Grid>
           </Grid>
-          <div style={{ height: "48px" }} className={classes.formButtons}>
-            {hasChanges() && ( // Only render if changes have been made
-              <Button type="submit" color="secondary" variant="contained">
-                Save changes
-              </Button>
-            )}
-          </div>
         </form>
       </Paper>
       {project === EMPTY_PROJECT ? null : (

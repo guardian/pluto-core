@@ -62,12 +62,26 @@ interface CommissionEntryFormProps {
 const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
   const history = useHistory();
   const classes = useGuardianStyles();
+  const [commission, setCommission] = useState<CommissionFullRecord | null>(
+    null
+  );
+  const [
+    initialCommission,
+    setInitialCommission,
+  ] = useState<CommissionFullRecord | null>(null);
+  const [hasChanges, setHasChanges] = React.useState(false);
 
   const fieldValueChanged = (
     value: string | null,
     field: keyof CommissionFullRecord
   ): void => {
-    props.onChange({ ...props.commission, [field]: value });
+    const updatedCommission = { ...props.commission, [field]: value };
+    props.onChange(updatedCommission);
+    console.log("Updated commission:::", updatedCommission);
+    console.log("Initial Commission:::", initialCommission);
+    setHasChanges(
+      JSON.stringify(updatedCommission) !== JSON.stringify(initialCommission)
+    );
   };
 
   const fieldChanged = (
@@ -81,6 +95,12 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
   ): void => {
     fieldValueChanged(event.target.value, field);
   };
+
+  useEffect(() => {
+    if (initialCommission === null) {
+      setInitialCommission(props.commission);
+    }
+  }, [props.commission]);
 
   let createdTime: string | undefined = undefined;
   let timeValue;
@@ -205,20 +225,19 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
           ) : null}
 
           <div className={classes.formButtons}>
+            {hasChanges ? (
+              <Button
+                type="submit"
+                variant="contained"
+                color="secondary"
+                disabled={props.isSaving}
+              >
+                Save changes
+              </Button>
+            ) : null}
             {props.isSaving ? (
               <CircularProgress style={{ width: "18px", height: "18px" }} />
             ) : null}
-            <Button
-              className="cancel"
-              variant="outlined"
-              onClick={() => history.goBack()}
-              disabled={props.isSaving}
-            >
-              Back
-            </Button>
-            <Button type="submit" variant="outlined" disabled={props.isSaving}>
-              Update
-            </Button>
           </div>
         </Grid>
       </Grid>
