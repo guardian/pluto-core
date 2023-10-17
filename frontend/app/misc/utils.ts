@@ -427,4 +427,9 @@ export const useGuardianStyles = makeStyles((theme) => ({
       },
     },
   },
+  noHoverEffect: {
+    "&:hover": {
+      backgroundColor: "transparent",
+    },
+  },
 }));

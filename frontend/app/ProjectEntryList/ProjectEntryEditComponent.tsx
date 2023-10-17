@@ -12,6 +12,7 @@ import {
   Paper,
   TextField,
   Tooltip,
+  makeStyles,
 } from "@material-ui/core";
 import {
   getProject,
@@ -294,7 +295,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             >
               Open project
             </Button>
-            <div style={{ marginRight: "8px", minWidth: "129px" }}>
+            <div style={{ marginRight: "-6px", minWidth: "129px" }}>
               <AssetFolderLink projectId={project.id} />
             </div>
             <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
@@ -329,9 +330,11 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             ) : null}
             <Tooltip
               title="View backups"
-              style={{ marginRight: "8px", minWidth: "129px" }}
+              style={{ marginRight: "-42px", minWidth: "129px" }}
             >
               <IconButton
+                disableRipple
+                className={classes.noHoverEffect}
                 onClick={() => history.push(`/project/${project.id}/backups`)}
               >
                 <FileCopy />
@@ -340,6 +343,8 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
             <Tooltip title="See project's media">
               <IconButton
+                disableRipple
+                className={classes.noHoverEffect}
                 onClick={() =>
                   window.location.assign(`/vs/project/${project.id}`)
                 }
