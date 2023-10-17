@@ -260,87 +260,84 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           <title>[{project.title}] Details</title>
         </Helmet>
       ) : null}
-      <Grid
-        container
-        justifyContent="space-between"
-        style={{ marginBottom: "0.8em" }}
-        spacing={3}
-      >
-        <Grid item>
+      <Grid container spacing={3}>
+        <Grid item xs={9} md={6}>
           <Breadcrumb
             projectId={project.id}
             plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
           />
         </Grid>
-        <Grid item xs={5}>
-          <Box display="flex" justifyContent="flex-end">
-            <div style={{ marginRight: "1em" }}>
+        <Grid item xs={12} md={8}>
+          <Box display="flex" flexDirection="row" alignItems="center">
+            <Button
+              style={{ marginRight: "8px", minWidth: "129px" }}
+              className={classes.openProjectButton}
+              variant="contained"
+              color="primary"
+              onClick={async () => {
+                try {
+                  await openProject(project.id);
+                } catch (error) {
+                  SystemNotification.open(
+                    SystemNotifcationKind.Error,
+                    `An error occurred when attempting to open the project.`
+                  );
+                  console.error(error);
+                }
+
+                try {
+                  await updateProjectOpenedStatus(project.id);
+                } catch (error) {
+                  console.error(error);
+                }
+              }}
+            >
+              Open project
+            </Button>
+            <div style={{ marginRight: "8px", minWidth: "129px" }}>
+              <AssetFolderLink projectId={project.id} />
+            </div>
+            <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
               <Button
-                className={classes.openProjectButton}
-                variant="contained"
-                color="primary"
+                style={{ marginRight: "8px", minWidth: "129px" }}
                 onClick={async () => {
                   try {
-                    await openProject(project.id);
+                    await fixPermissions(project.id);
                   } catch (error) {
                     SystemNotification.open(
                       SystemNotifcationKind.Error,
-                      `An error occurred when attempting to open the project.`
+                      `An error occurred when attempting to fix permissions.`
                     );
                     console.error(error);
                   }
-
-                  try {
-                    await updateProjectOpenedStatus(project.id);
-                  } catch (error) {
-                    console.error(error);
-                  }
                 }}
+                variant="contained"
               >
-                Open project
+                Fix&nbsp;Permissions
               </Button>
-            </div>
-            <div style={{ marginRight: "2em" }}>
-              <AssetFolderLink projectId={project.id} />
-            </div>
-            <div style={{ marginRight: "2em" }}>
-              <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
-                <Button
-                  onClick={async () => {
-                    try {
-                      await fixPermissions(project.id);
-                    } catch (error) {
-                      SystemNotification.open(
-                        SystemNotifcationKind.Error,
-                        `An error occurred when attempting to fix permissions.`
-                      );
-                      console.error(error);
-                    }
-                  }}
-                  variant="contained"
-                >
-                  Fix&nbsp;Permissions
-                </Button>
-              </Tooltip>
-            </div>
+            </Tooltip>
+
             {isAdmin ? (
-              <div style={{ marginRight: "1em" }}>
-                <Button
-                  href={"/pluto-core/project/" + project.id + "/deletedata"}
-                  color="secondary"
-                  variant="contained"
-                >
-                  Delete&nbsp;Data
-                </Button>
-              </div>
+              <Button
+                style={{ marginRight: "8px", minWidth: "129px" }}
+                href={"/pluto-core/project/" + project.id + "/deletedata"}
+                color="secondary"
+                variant="contained"
+              >
+                Delete&nbsp;Data
+              </Button>
             ) : null}
-            <Tooltip title="View backups">
+            <Tooltip
+              title="View backups"
+              style={{ marginRight: "8px", minWidth: "129px" }}
+            >
               <IconButton
                 onClick={() => history.push(`/project/${project.id}/backups`)}
               >
                 <FileCopy />
               </IconButton>
             </Tooltip>
+
             <Tooltip title="See project's media">
               <IconButton
                 onClick={() =>
