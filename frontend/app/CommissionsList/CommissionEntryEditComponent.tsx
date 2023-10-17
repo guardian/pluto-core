@@ -177,30 +177,33 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
             multiline={true}
             onChange={(evt) => fieldChanged(evt, "notes")}
           />
-          <div>
-            View Documents
-            <br />
-            {props.commission.googleFolder ? (
-              <Tooltip title="Open commission folder in Google Drive" arrow>
-                <a href={props.commission.googleFolder} target="_blank">
-                  <img
-                    className="smallicon"
-                    src="/pluto-core/assets/images/google-drive-folder-icon.png"
-                  />
-                </a>
-              </Tooltip>
-            ) : (
-              <div>
-                <div className={classes.noGoogleText}>None</div>
-                <Tooltip
-                  title="We have not implemented the functionality to create Google Drive folders due to some limitations and technical issues. If you would like the functionality please request it from multimediatech@theguardian.com"
-                  arrow
-                >
-                  <HelpIcon className={classes.warningIcon} />
+          {props.commission.googleFolder ? (
+            <div>
+              View Documents
+              <br />
+              {props.commission.googleFolder ? (
+                <Tooltip title="Open commission folder in Google Drive" arrow>
+                  <a href={props.commission.googleFolder} target="_blank">
+                    <img
+                      className="smallicon"
+                      src="/pluto-core/assets/images/google-drive-folder-icon.png"
+                    />
+                  </a>
                 </Tooltip>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div>
+                  <div className={classes.noGoogleText}>None</div>
+                  <Tooltip
+                    title="We have not implemented the functionality to create Google Drive folders due to some limitations and technical issues. If you would like the functionality please request it from multimediatech@theguardian.com"
+                    arrow
+                  >
+                    <HelpIcon className={classes.warningIcon} />
+                  </Tooltip>
+                </div>
+              )}
+            </div>
+          ) : null}
+
           <div className={classes.formButtons}>
             {props.isSaving ? (
               <CircularProgress style={{ width: "18px", height: "18px" }} />
@@ -398,6 +401,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
           <title>[{commissionData.title}] Details</title>
         </Helmet>
       ) : null}
+
       <Breadcrumb
         commissionId={commissionId}
         plutoCoreBaseUri={
