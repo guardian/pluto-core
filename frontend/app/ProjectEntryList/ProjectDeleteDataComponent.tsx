@@ -1,11 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
-import { Button, Checkbox, Grid, Paper } from "@material-ui/core";
+import {
+  Button,
+  Checkbox,
+  Grid,
+  IconButton,
+  Paper,
+  Tooltip,
+} from "@material-ui/core";
 import {
   getProject,
   getProjectByVsid,
   startDelete,
   getBuckets,
+  getDeleteJob,
+  getItemsNotDeleted,
 } from "./helpers";
 import {
   SystemNotification,
@@ -14,6 +23,7 @@ import {
 import { Helmet } from "react-helmet";
 import { useGuardianStyles } from "~/misc/utils";
 import { isLoggedIn } from "~/utils/api";
+import { PermMedia } from "@material-ui/icons";
 
 declare var deploymentRootPath: string;
 
@@ -53,16 +63,29 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
   );
   const [errorDialog, setErrorDialog] = useState<boolean>(false);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [pluto, setPluto] = useState<boolean>(true);
+  const [pluto, setPluto] = useState<boolean>(false);
   const [file, setFile] = useState<boolean>(true);
   const [backups, setBackups] = useState<boolean>(true);
   const [pTR, setPTR] = useState<boolean>(true);
   const [deliverables, setDeliverables] = useState<boolean>(true);
-  const [sAN, setSAN] = useState<boolean>(false);
-  const [matrix, setMatrix] = useState<boolean>(false);
+  const [sAN, setSAN] = useState<boolean>(true);
+  const [matrix, setMatrix] = useState<boolean>(true);
   const [s3, setS3] = useState<boolean>(true);
   const [buckets, setBuckets] = useState<string[]>([]);
   const [bucketBooleans, updateBucketBooleans] = useState<boolean[]>([]);
+  const [deleteJobStatus, setDeleteJobStatus] = useState<string>("");
+  const [itemsNotDeleted, setItemsNotDeleted] = useState<ItemsNotDeleted[]>([]);
+  const [refreshInterval, setRefreshInterval] = useState<any>();
+
+  const getDeleteItemData = async () => {
+    try {
+      const id = Number(props.match.params.itemid);
+      const returnedItems = await getItemsNotDeleted(id);
+      setItemsNotDeleted(returnedItems);
+    } catch {
+      console.log("Could not load items that where not deleted.");
+    }
+  };
 
   useEffect(() => {
     if (projectFromList) {
@@ -118,8 +141,26 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
 
     getBucketData();
 
+    const getDeleteJobData = async () => {
+      try {
+        const id = Number(props.match.params.itemid);
+        const returnedStatus = await getDeleteJob(id);
+        setDeleteJobStatus(returnedStatus);
+      } catch {
+        console.log("Could not load delete job status.");
+      }
+    };
+
+    getDeleteJobData();
+
+    const interval = setInterval(() => getDeleteJobData(), 10000);
+    setRefreshInterval(interval);
+
+    getDeleteItemData();
+
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -156,6 +197,13 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
       }
     }
   };
+
+  useEffect(() => {
+    if (deleteJobStatus == "Finished") {
+      getDeleteItemData();
+      clearInterval(refreshInterval);
+    }
+  }, [deleteJobStatus]);
 
   return (
     <>
@@ -214,24 +262,22 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                     name="deliverables"
                   />
                 </Grid>
-                {/*
-                    <Grid item>
-                      Storage Area Network Data
-                      <Checkbox
-                          checked={sAN}
-                          onChange={() => setSAN(!sAN)}
-                          name="san"
-                      />
-                    </Grid>
-                    <Grid item>
-                      Object Matrix Data
-                      <Checkbox
-                          checked={matrix}
-                          onChange={() => setMatrix(!matrix)}
-                          name="matrix"
-                      />
-                    </Grid>
-                    */}
+                <Grid item>
+                  Storage Area Network Data and Vidispine Items
+                  <Checkbox
+                    checked={sAN}
+                    onChange={() => setSAN(!sAN)}
+                    name="san"
+                  />
+                </Grid>
+                <Grid item>
+                  Object Matrix Data
+                  <Checkbox
+                    checked={matrix}
+                    onChange={() => setMatrix(!matrix)}
+                    name="matrix"
+                  />
+                </Grid>
                 <Grid item>
                   Amazon Web Services Simple Storage Service Data
                   <Checkbox
@@ -268,16 +314,50 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                 </Grid>
               </Grid>
               <div>
-                Please note: some parts of the Pluto system where not designed
-                to be tolerant of data removal. Certain undesirable consequences
-                may occur if you remove data from the system.
+                Please note the following: -
                 <br />
                 <br />
-                Please note: deletion from the Amazon Web Services Simple
-                Storage Service does not take into account that other projects
-                may reference items from this project. If this is used to delete
-                items which are referenced by other projects, the other projects
-                will not be able to load the items.
+                1. If you have 'Project Record' enabled it will break deletion
+                from Vidispine, the Storage Area Network, and the Object Matrix
+                system.
+                <br />
+                <br />
+                2. Some parts of the Pluto system where not designed to be
+                tolerant of data removal. Certain undesirable consequences may
+                occur if you remove data from the system.
+                <br />
+                <br />
+                3. Deletion from the Amazon Web Services Simple Storage Service
+                does not take into account that other projects may reference
+                items from this project. If this is used to delete items which
+                are referenced by other projects, the other projects will not be
+                able to load the items.
+                <br />
+                <br />
+                4. Due to a limitation of the pluto-storagetier software, which
+                this software relies on, this software will only attempt to
+                delete from the one Object Matrix vault that pluto-storagetier
+                is configured to access.
+                <br />
+                <br />
+                5. Deletion from the Object Matrix system does not take into
+                account that other projects may reference items from this
+                project. If this is used to delete items which are referenced by
+                other projects, the other projects will not be able to load the
+                items.
+                <br />
+                <br />
+                6. Deletion from Vidispine does not take into account that other
+                projects which are currently archived may reference files from
+                this project. If this is used to delete files which are
+                referenced by other projects, the other projects will not be
+                able to load the files.
+                <br />
+                <br />
+                7. This software will not delete the database backups for
+                Vidispine, pluto-core, and pluto-deliverables. Data such as
+                titles, owners, and file names from this project will remain
+                present in these backups.
               </div>
               <div className={classes.formButtons}>
                 <Button
@@ -287,12 +367,65 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                 >
                   Back
                 </Button>
+                <Tooltip title="See project's media">
+                  <IconButton
+                    onClick={() =>
+                      window.location.assign(`/vs/project/${project.id}`)
+                    }
+                  >
+                    <PermMedia />
+                  </IconButton>
+                </Tooltip>
                 <Button type="submit" variant="contained" color="secondary">
                   Submit Delete Request
                 </Button>
               </div>
             </form>
           </Paper>
+          {deleteJobStatus != "" ? (
+            <Paper
+              className={classes.root}
+              elevation={3}
+              style={{ marginTop: "40px" }}
+            >
+              <Grid container xs={12} direction="row" spacing={3}>
+                <Grid item xs={12} style={{ fontSize: "1.6em" }}>
+                  Storage Area Network Data Delete Job Outcome
+                </Grid>
+                <Grid item xs={12}>
+                  {deleteJobStatus == "Started" ? <>Job running...</> : null}
+                  {deleteJobStatus == "Finished" ? (
+                    <>
+                      Deletion instructions sent to RabbitMQ. Please check there
+                      for progress.
+                      {itemsNotDeleted.length > 0 ? (
+                        <>
+                          <br />
+                          <br />
+                          No attempt to delete the following items was made due
+                          to them being in more than one project:-
+                          <br />
+                        </>
+                      ) : null}
+                      {itemsNotDeleted
+                        ? itemsNotDeleted.map((vidispine_item) => {
+                            const { id, projectEntry, item } = vidispine_item;
+                            return (
+                              <>
+                                <a href={"/vs/item/" + item} target="_blank">
+                                  {item}
+                                </a>
+                                <br />
+                              </>
+                            );
+                          })
+                        : null}
+                    </>
+                  ) : null}
+                </Grid>
+              </Grid>
+            </Paper>
+          ) : null}
         </>
       ) : (
         <div>You do not have access to this page.</div>

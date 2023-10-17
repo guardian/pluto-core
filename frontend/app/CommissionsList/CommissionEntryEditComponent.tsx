@@ -19,6 +19,7 @@ import {
   DialogActions,
   Input,
   InputLabel,
+  Box,
 } from "@material-ui/core";
 import {
   KeyboardDatePicker,
@@ -274,6 +275,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   const [deliverablesSearchString, setDeliverablesSearchString] = useState<
     string
   >("");
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   let commissionId: number;
   try {
@@ -371,6 +373,17 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
         });
     };
     doLoadIn();
+
+    const fetchWhoIsLoggedIn = async () => {
+      try {
+        const loggedIn = await isLoggedIn();
+        setIsAdmin(loggedIn.isAdmin);
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+
+    fetchWhoIsLoggedIn();
   }, []);
 
   /**
@@ -420,15 +433,40 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
           <title>[{commissionData.title}] Details</title>
         </Helmet>
       ) : null}
-
-      <Breadcrumb
-        commissionId={commissionId}
-        plutoCoreBaseUri={
-          deploymentRootPath.endsWith("/")
-            ? deploymentRootPath.substr(0, deploymentRootPath.length - 1)
-            : deploymentRootPath
-        }
-      />
+      <Grid
+        container
+        justifyContent="space-between"
+        style={{ marginBottom: "0.2em" }}
+        spacing={3}
+      >
+        <Grid item>
+          <Breadcrumb
+            commissionId={commissionId}
+            plutoCoreBaseUri={
+              deploymentRootPath.endsWith("/")
+                ? deploymentRootPath.substr(0, deploymentRootPath.length - 1)
+                : deploymentRootPath
+            }
+          />
+        </Grid>
+        <Grid item xs={5}>
+          <Box display="flex" justifyContent="flex-end">
+            {isAdmin ? (
+              <div>
+                <Button
+                  href={
+                    "/pluto-core/commission/" + commissionId + "/deletedata"
+                  }
+                  color="secondary"
+                  variant="contained"
+                >
+                  Delete&nbsp;Data
+                </Button>
+              </div>
+            ) : null}
+          </Box>
+        </Grid>
+      </Grid>
       <Paper elevation={3}>
         {isLoading ? (
           <Grid

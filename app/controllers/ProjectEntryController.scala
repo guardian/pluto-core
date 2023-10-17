@@ -29,11 +29,27 @@ import java.io.File
 import java.nio.file.Paths
 import java.time.ZonedDateTime
 import javax.inject.{Inject, Named, Singleton}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
+import vidispine.{VSOnlineOutputMessage, VidispineCommunicator, VidispineConfig}
+import mes.OnlineOutputMessage
+import mess.InternalOnlineOutputMessage
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+import java.util.concurrent.Executors
+import de.geekonaut.slickmdc.MdcExecutionContext
+import services.RabbitMqSAN.SANEvent
+import com.om.mxs.client.japi.Vault
+import akka.stream.scaladsl.{Keep, Sink, Source}
+import mxscopy.streamcomponents.OMFastContentSearchSource
+import mxscopy.models.ObjectMatrixEntry
+import matrixstore.MatrixStoreEnvironmentConfigProvider
+import mxscopy.MXSConnectionBuilderImpl
+import mxscopy.MXSConnectionBuilder
+import services.RabbitMqMatrix.MatrixEvent
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
@@ -43,9 +59,11 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         @Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef,
                                         @Named("rabbitmq-send") rabbitMqSend:ActorRef,
                                         @Named("rabbitmq-deliverable") rabbitMqDeliverable:ActorRef,
+                                        @Named("rabbitmq-san") rabbitMqSAN:ActorRef,
+                                        @Named("rabbitmq-matrix") rabbitMqMatrix:ActorRef,
                                         @Named("auditor") auditor:ActorRef,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
-                                       (implicit fileEntryDAO:FileEntryDAO, injector: Injector)
+                                       (implicit fileEntryDAO:FileEntryDAO, injector: Injector, mat: Materializer)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
     with UpdateTitleRequestSerializer with FileEntrySerializer
@@ -569,7 +587,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     Future(Ok(Json.obj("status"->"ok","detail"->"Fix permissions run.")))
   }
 
-  def deleteDataRunner(projectId: Int, pluto: Boolean, file: Boolean, backups: Boolean, pTR: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean, buckets: Array[String], bucketBooleans: Array[Boolean]): Unit = {
+  def deleteDataRunner(projectId: Int, delay: Int, pluto: Boolean, file: Boolean, backups: Boolean, pTR: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean, buckets: Array[String], bucketBooleans: Array[Boolean]): Unit = {
     def deleteFileJob() = Future {
       if (file) {
         implicit val db = dbConfig.db
@@ -731,13 +749,131 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       }
     }
 
+    def onlineFilesByProject(vidispineCommunicator: VidispineCommunicator, projectId: Int): Future[Seq[OnlineOutputMessage]] = {
+      vidispineCommunicator.getFilesOfProject(projectId)
+        .map(_.filterNot(isBranding).map(InternalOnlineOutputMessage.toOnlineOutputMessage))
+    }
+
+    def isBranding(item: VSOnlineOutputMessage): Boolean = item.mediaCategory.toLowerCase match {
+      case "branding" => true // Case insensitive
+      case _ => false
+    }
+
+    def deleteSAN() = Future {
+      if (sAN) {
+        Thread.sleep(delay)
+        logger.info(s"About to attempt to delete any SAN data present for project ${projectId}")
+        implicit val db = dbConfig.db
+        DeleteJobDAO.getOrCreate(projectId, "Started")
+        lazy val vidispineConfig = VidispineConfig.fromEnvironment.toOption.get
+        implicit lazy val executionContext = new MdcExecutionContext(
+          ExecutionContext.fromExecutor(
+            Executors.newWorkStealingPool(10)
+          )
+        )
+        implicit lazy val actorSystem:ActorSystem = ActorSystem("pluto-core-delete", defaultExecutionContext=Some(executionContext))
+        implicit lazy val mat:Materializer = Materializer(actorSystem)
+        implicit lazy val vidispineCommunicator = new VidispineCommunicator(vidispineConfig)
+        val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 120.seconds)
+        vidispineMethodOut.map(onlineOutputMessage => {
+          if (onlineOutputMessage.projectIds.length > 2) {
+            logger.info(s"Refusing to attempt to delete Vidispine item ${onlineOutputMessage.vidispineItemId.get} as it is referenced by more than one project.")
+            ItemDeleteDataDAO.getOrCreate(projectId, onlineOutputMessage.vidispineItemId.get)
+          } else {
+            logger.info(s"About to attempt to send a message to delete Vidispine item ${onlineOutputMessage.vidispineItemId.get}")
+            rabbitMqSAN ! SANEvent(onlineOutputMessage)
+          }
+        })
+        Thread.sleep(1000)
+        DeleteJobDAO.getOrCreate(projectId, "Finished")
+      }
+    }
+
+    def nearlineFilesByProject(vault: Vault, projectId: String): Future[Seq[OnlineOutputMessage]] = {
+      val sinkFactory = Sink.seq[OnlineOutputMessage]
+      Source.fromGraph(new OMFastContentSearchSource(vault,
+        s"""GNM_PROJECT_ID:\"$projectId\"""",
+        Array("MXFS_PATH", "MXFS_FILENAME", "GNM_PROJECT_ID", "GNM_TYPE", "__mxs__length")
+      )
+      ).filterNot(isBrandingMatrix)
+        .map(InternalOnlineOutputMessage.toOnlineOutputMessage)
+        .toMat(sinkFactory)(Keep.right)
+        .run()
+    }
+
+    def isBrandingMatrix(entry: ObjectMatrixEntry): Boolean = entry.stringAttribute("GNM_TYPE") match {
+      case Some(gnmType) =>
+        gnmType.toLowerCase match {
+          case "branding" => true // Case insensitive
+          case _ => false
+        }
+      case _ => false
+    }
+
+    def searchAssociatedNearlineMedia(projectId: Int, vault: Vault): Future[Seq[OnlineOutputMessage]] = {
+      nearlineFilesByProject(vault, projectId.toString)
+    }
+
+    def getNearlineResults(projectId: Int, nearlineVaultId: String, matrixStore: MXSConnectionBuilderImpl): Future[Either[String, Seq[OnlineOutputMessage]]] =
+      matrixStore.withVaultFuture(nearlineVaultId) { vault =>
+        searchAssociatedNearlineMedia(projectId, vault).map(Right.apply)
+      }
+
+    def deleteMatrix() = Future {
+      if (matrix) {
+        Thread.sleep(delay)
+        logger.info(s"About to attempt to delete any Object Matrix data present for project ${projectId}")
+        implicit val db = dbConfig.db
+        MatrixDeleteJobDAO.getOrCreate(projectId, "Started")
+        lazy val matrixStoreConfig = new MatrixStoreEnvironmentConfigProvider().get() match {
+          case Left(err)=>
+            logger.error(s"Could not initialise due to incorrect matrix-store config: $err")
+            sys.exit(1)
+          case Right(config)=>config
+        }
+        implicit lazy val executionContext = new MdcExecutionContext(
+          ExecutionContext.fromExecutor(
+            Executors.newWorkStealingPool(10)
+          )
+        )
+        implicit lazy val actorSystem:ActorSystem = ActorSystem("pluto-core-delete-matrix", defaultExecutionContext=Some(executionContext))
+        implicit lazy val mat:Materializer = Materializer(actorSystem)
+        val connectionIdleTime = sys.env.getOrElse("CONNECTION_MAX_IDLE", "750").toInt
+        implicit val matrixStore = new MXSConnectionBuilderImpl(
+          hosts = matrixStoreConfig.hosts,
+          accessKeyId = matrixStoreConfig.accessKeyId,
+          accessKeySecret = matrixStoreConfig.accessKeySecret,
+          clusterId = matrixStoreConfig.clusterId,
+          maxIdleSeconds = connectionIdleTime
+        )
+        val matrixMethodOut = Await.result(getNearlineResults(projectId, matrixStoreConfig.nearlineVaultId, matrixStore), 120.seconds)
+        matrixMethodOut match {
+          case Right(nearlineResults) =>
+            nearlineResults.map(onlineOutputMessage => {
+              if (onlineOutputMessage.projectIds.length > 2) {
+                logger.info(s"Refusing to attempt to delete Object Matrix data for object ${onlineOutputMessage.nearlineId.get} as it is referenced by more than one project.")
+                MatrixDeleteDataDAO.getOrCreate(projectId, onlineOutputMessage.nearlineId.get)
+              } else {
+                logger.info(s"About to attempt to send a message to delete Object Matrix data for object ${onlineOutputMessage.nearlineId.get}")
+                rabbitMqMatrix ! MatrixEvent(onlineOutputMessage)
+              }
+            })
+          case Left(something) =>
+            logger.info(s"No Object Matrix data was found to process.")
+        }
+        MatrixDeleteJobDAO.getOrCreate(projectId, "Finished")
+      }
+    }
+
     val f = for {
       f1 <- deletePTRJob()
       f2 <- deleteFileJob()
       f3 <- deleteBackupsJob()
       f4 <- deleteDeliverables()
       f5 <- deleteS3()
-    } yield List(f1, f2, f3, f4, f5)
+      f6 <- deleteMatrix()
+      f7 <- deleteSAN()
+    } yield List(f1, f2, f3, f4, f5, f6, f7)
     if (pluto) {
       Thread.sleep(800)
       implicit val db = dbConfig.db
@@ -775,7 +911,86 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
     logger.info(s"Buckets value is: ${request.body.asJson.get("buckets")}")
     logger.info(s"Bucket Booleans value is: ${request.body.asJson.get("bucketBooleans")}")
-    deleteDataRunner(projectId, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
+    deleteDataRunner(projectId, 0, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
     Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
+  }
+
+  def deleteJob(projectId: Int) = IsAdminAsync { uid => request =>
+    dbConfig.db.run(
+      TableQuery[DeleteJob].filter(_.projectEntry===projectId).result
+    ).map(_.headOption match {
+    case Some(jobRecord)=>
+      Ok(Json.obj("status"->"ok","job_status"->jobRecord.status))
+    case None=>
+      NotFound(Json.obj("status"->"notfound","detail"->s"No job with project id: $projectId"))
+    }).recover({
+      case err:Throwable=>
+        logger.error(s"Could not look up project $projectId: ", err)
+        InternalServerError(Json.obj("status"->"error","detail"->"Database error looking up job, see server logs"))
+    })
+  }
+
+  def matrixDeleteJob(projectId: Int) = IsAdminAsync { uid => request =>
+    dbConfig.db.run(
+      TableQuery[MatrixDeleteJob].filter(_.projectEntry===projectId).result
+    ).map(_.headOption match {
+      case Some(jobRecord)=>
+        Ok(Json.obj("status"->"ok","job_status"->jobRecord.status))
+      case None=>
+        NotFound(Json.obj("status"->"notfound","detail"->s"No job with project id: $projectId"))
+    }).recover({
+      case err:Throwable=>
+        logger.error(s"Could not look up project $projectId: ", err)
+        InternalServerError(Json.obj("status"->"error","detail"->"Database error looking up job, see server logs"))
+    })
+  }
+
+  def getProjectsForCommission(commission: Int) = dbConfig.db.run(
+    TableQuery[ProjectEntryRow].filter(_.commission===commission).sortBy(_.created.desc).result
+  ).map(Success(_)).recover(Failure(_))
+
+  def deleteCommissionData(commissionId: Int) = IsAdmin { uid =>
+    request =>
+      logger.info(s"Got a delete data request for commission ${commissionId}.")
+      logger.info(s"Commission value is: ${request.body.asJson.get("commission")}")
+      logger.info(s"Pluto value is: ${request.body.asJson.get("pluto")}")
+      logger.info(s"File value is: ${request.body.asJson.get("file")}")
+      logger.info(s"Backups value is: ${request.body.asJson.get("backups")}")
+      logger.info(s"PTR value is: ${request.body.asJson.get("PTR")}")
+      logger.info(s"Deliverables value is: ${request.body.asJson.get("deliverables")}")
+      logger.info(s"SAN value is: ${request.body.asJson.get("SAN")}")
+      logger.info(s"Matrix value is: ${request.body.asJson.get("matrix")}")
+      logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
+      logger.info(s"Buckets value is: ${request.body.asJson.get("buckets")}")
+      logger.info(s"Bucket Booleans value is: ${request.body.asJson.get("bucketBooleans")}")
+
+      implicit val db = dbConfig.db
+
+      getProjectsForCommission(commissionId).map({
+        case Success(result)=>
+          result.map((project) => {
+            logger.info(s"Found project ${project.id.get}.")
+            deleteDataRunner(project.id.get, 400, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
+          })
+          if (request.body.asJson.get("commission").toString().toBoolean) {
+            Thread.sleep(1400)
+
+            PlutoCommission.forId(commissionId).map({
+              case Some(plutoCommission: PlutoCommission) =>
+                plutoCommission.removeFromDatabase.map({
+                  case Success(_) =>
+                    logger.info(s"Attempt at removing commission record worked.")
+                  case Failure(error) =>
+                    logger.error(s"Attempt at removing commission record failed with error: ${error}")
+                })
+              case None =>
+                logger.error(s"Could not look up commission entry for ${commissionId}: ")
+            })
+          }
+        case Failure(error)=>
+          logger.error(error.toString)
+      })
+
+      Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
   }
 }

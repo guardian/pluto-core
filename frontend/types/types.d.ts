@@ -361,3 +361,9 @@ interface PlutoApiResponseWithCount<T> {
   result: T;
   count: number;
 }
+
+interface ItemsNotDeleted {
+  id?: number;
+  projectEntry?: number;
+  item?: string;
+}
