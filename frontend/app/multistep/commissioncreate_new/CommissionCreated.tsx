@@ -25,14 +25,20 @@ const CommissionCreated: React.FC<CommissionCreatedProps> = (props) => {
       <Helmet>
         <title>Commission created - Pluto</title>
       </Helmet>
-      <div style={{ marginLeft: "auto", marginRight: "auto", width: "100px" }}>
-        <CheckCircle className={classes.success} />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center",
+          marginBottom: "50px",
+        }}
+      >
+        <CheckCircle className={classes.success} style={{ width: "80px" }} />
+        <Typography className={classes.bannerText} gutterBottom>
+          Your commission has been created! <br />
+        </Typography>
       </div>
-
-      <Typography className={classes.bannerText}>
-        Your commission has been created! <br />
-      </Typography>
-
+      <br />
       <Grid container spacing={3}>
         <Grid item xs={8}>
           <Typography>Create a project</Typography>
