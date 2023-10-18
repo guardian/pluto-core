@@ -301,7 +301,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
               <Button
                 style={{
-                  marginLeft: "8px",
+                  marginLeft: "14px",
                   marginRight: "8px",
                   minWidth: "129px",
                 }}
