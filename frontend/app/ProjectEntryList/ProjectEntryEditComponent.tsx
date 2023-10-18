@@ -300,7 +300,11 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             </div>
             <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
               <Button
-                style={{ marginRight: "8px", minWidth: "129px" }}
+                style={{
+                  marginLeft: "8px",
+                  marginRight: "8px",
+                  minWidth: "129px",
+                }}
                 onClick={async () => {
                   try {
                     await fixPermissions(project.id);
