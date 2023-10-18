@@ -7,9 +7,13 @@ import {
   StepLabel,
   Stepper,
   Tooltip,
+  makeStyles,
+  useMediaQuery,
+  useTheme,
 } from "@material-ui/core";
 import StepContent from "./StepContent";
-import { CheckCircle } from "@material-ui/icons";
+import { CheckCircle, Cancel } from "@material-ui/icons";
+
 import { useGuardianStyles } from "~/misc/utils";
 
 interface CommonMultistepContainerProps {
@@ -65,6 +69,9 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("xs"));
+
   return (
     <div id={props.id}>
       <Helmet>
@@ -88,50 +95,81 @@ const CommonMultistepContainer: React.FC<CommonMultistepContainerProps> = (
       <StepContent activeStep={activeStep} className={classes.stepContainer}>
         {props.children}
         <hr />
-        <Grid justifyContent="space-between" container>
-          <Grid item>
-            <Button
-              variant="outlined"
-              disabled={activeStep == 0 || creationInProgress || activeStep > 6}
-              onClick={handleBack}
-            >
-              Back
-            </Button>
-          </Grid>
-          <Grid item>
-            {activeStep >= steps.length - 1 ? (
-              <Tooltip
-                title={
-                  canComplete()
-                    ? "Go ahead and create"
-                    : "You need to supply some more information, check above for details"
-                }
-              >
-                <span>
-                  {" "}
-                  {/* the <span> wrapper is required to get mouseover events when the button is in a "disabled" state*/}
+        <Grid justifyContent="space-between" container wrap="wrap">
+          {activeStep < 5 && (
+            <>
+              <Grid item>
+                <Button
+                  size={isSmallScreen ? "small" : "medium"}
+                  variant="outlined"
+                  disabled={
+                    activeStep == 0 || creationInProgress || activeStep > 4
+                  }
+                  onClick={handleBack}
+                >
+                  Back
+                </Button>
+              </Grid>
+              <Grid item>
+                {activeStep >= steps.length - 1 ? (
+                  <Tooltip
+                    title={
+                      canComplete()
+                        ? "Go ahead and create"
+                        : "You need to supply some more information, check above for details"
+                    }
+                  >
+                    <span>
+                      {/* the <span> wrapper is required to get mouseover events when the button is in a "disabled" state*/}
+                      <Button
+                        className={classes.createButtonHover}
+                        size={isSmallScreen ? "small" : "medium"}
+                        variant="contained"
+                        color={
+                          !canComplete() ||
+                          creationInProgress ||
+                          creationFailed !== undefined ||
+                          activeStep > 4 ||
+                          (isObituary && !obituaryName)
+                            ? "default"
+                            : "primary"
+                        }
+                        disabled={
+                          !canComplete() ||
+                          creationInProgress ||
+                          creationFailed !== undefined ||
+                          activeStep > 4 ||
+                          (isObituary && !obituaryName)
+                        }
+                        endIcon={
+                          !canComplete() ||
+                          creationInProgress ||
+                          creationFailed !== undefined ||
+                          activeStep > 4 ||
+                          (isObituary && !obituaryName) ? (
+                            <Cancel />
+                          ) : (
+                            <CheckCircle />
+                          )
+                        }
+                        onClick={createClicked}
+                      >
+                        {props.createButtonLabel ?? "Create"}
+                      </Button>
+                    </span>
+                  </Tooltip>
+                ) : (
                   <Button
                     variant="contained"
-                    disabled={
-                      !canComplete() ||
-                      creationInProgress ||
-                      creationFailed !== undefined ||
-                      activeStep > 4 ||
-                      (isObituary && !obituaryName)
-                    }
-                    endIcon={<CheckCircle />}
-                    onClick={createClicked}
+                    onClick={handleNext}
+                    size={isSmallScreen ? "small" : "medium"}
                   >
-                    {props.createButtonLabel ?? "Create"}
+                    Next
                   </Button>
-                </span>
-              </Tooltip>
-            ) : (
-              <Button variant="contained" onClick={handleNext}>
-                Next
-              </Button>
-            )}
-          </Grid>
+                )}
+              </Grid>
+            </>
+          )}
         </Grid>
       </StepContent>
     </div>
