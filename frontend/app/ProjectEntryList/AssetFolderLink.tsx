@@ -70,7 +70,7 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
       ) : (
         <Button
           startIcon={<FolderIcon />}
-          style={{ minWidth: "160px", minHeight: "38px" }}
+          style={{ minWidth: "160px", minHeight: "35px" }}
           href={`pluto:openfolder:${assetFolderPath}`}
           variant="contained"
         >
