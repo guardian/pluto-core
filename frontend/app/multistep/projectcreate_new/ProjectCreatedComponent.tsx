@@ -55,14 +55,20 @@ const ProjectCreatedComponent: React.FC<ProjectCreatedComponentProps> = (
         <title>Edit project created - Pluto</title>
       </Helmet>
 
-      <Box display="flex" justifyContent="center" marginBottom={3}>
-        <CheckCircle className={classes.success} />
-      </Box>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center",
+          marginBottom: "50px",
+        }}
+      >
+        <CheckCircle className={classes.success} style={{ width: "80px" }} />
+        <Typography className={classes.bannerText} gutterBottom>
+          Your project has been created! <br />
+        </Typography>
+      </div>
       <br />
-      <Typography className={classes.bannerText} align="center" gutterBottom>
-        Your project has been created! <br />
-      </Typography>
-
       <Grid container spacing={3}>
         <Grid item xs={8}>
           <Typography>

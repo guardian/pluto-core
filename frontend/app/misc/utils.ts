@@ -25,7 +25,7 @@ export const useGuardianStyles = makeStyles((theme) => ({
     "& .MuiFormControl-root": {
       width: "100%",
       marginBottom: "1rem",
-      padding: "20",
+      padding: "5",
     },
     "& form": {
       padding: "0.6em",
@@ -425,6 +425,11 @@ export const useGuardianStyles = makeStyles((theme) => ({
       "&:hover": {
         backgroundColor: "grey !important",
       },
+    },
+  },
+  noHoverEffect: {
+    "&:hover": {
+      backgroundColor: "transparent",
     },
   },
 }));
