@@ -57,9 +57,10 @@ const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
   isAdmin = false,
 }) => (
   <IconButton
-    onClick={(event) =>
-      window.open(`${deploymentRootPath}project/${id}`, "_blank")
-    }
+    onClick={(event) => {
+      event.stopPropagation();
+      window.open(`${deploymentRootPath}project/${id}`, "_blank");
+    }}
   >
     <EditIcon />
   </IconButton>
@@ -242,6 +243,9 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                       projectTypeData[projectTypeId]
                     ),
                   }}
+                  onClick={() =>
+                    window.open(`${deploymentRootPath}project/${id}`, "_blank")
+                  }
                 >
                   <TableCell>{title}</TableCell>
                   <TableCell>
@@ -261,19 +265,19 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                     <img src={imagePath(projectTypeData[projectTypeId])} />
                   </TableCell>
                   <TableCell>
-                    <Box width="100px">
-                      <span className="icons">
-                        <ActionIcons id={id} isAdmin={props.isAdmin ?? false} />
-                        <IconButton
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setUpdatingProject(id);
-                            setOpenDialog(true);
-                          }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </span>
+                    <Box width="50px">
+                      {/* <span className="icons"> */}
+                      {/* <ActionIcons id={id} isAdmin={props.isAdmin ?? false} /> */}
+                      <IconButton
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setUpdatingProject(id);
+                          setOpenDialog(true);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                      {/* </span> */}
                     </Box>
                   </TableCell>
                   <TableCell>
@@ -281,7 +285,8 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                       className={classes.openProjectButton}
                       variant="contained"
                       color="primary"
-                      onClick={async () => {
+                      onClick={async (event) => {
+                        event.stopPropagation();
                         try {
                           await openProject(id);
                         } catch (error) {
