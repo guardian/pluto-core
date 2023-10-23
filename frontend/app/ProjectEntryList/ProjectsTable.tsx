@@ -236,6 +236,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
               } = project;
               return (
                 <TableRow
+                  className={classes.hoverRow}
                   key={id}
                   hover
                   style={{
