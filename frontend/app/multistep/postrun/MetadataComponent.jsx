@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import CommonMultistepComponent from "../common/CommonMultistepComponent.jsx";
+import { Input, TextField } from "@material-ui/core";
 
 class MetadataComponent extends CommonMultistepComponent {
   static propTypes = {
@@ -30,24 +31,28 @@ class MetadataComponent extends CommonMultistepComponent {
             <tr>
               <td>Action Name</td>
               <td>
-                <input
+                <Input
                   id="title-input"
                   value={this.props.title}
                   onChange={(event) =>
                     this.props.valueWasSet({ title: event.target.value })
                   }
+                  style={{ width: 300 }}
                 />
               </td>
             </tr>
             <tr>
               <td>Description</td>
               <td>
-                <textarea
+                <TextField
                   id="description-input"
                   onChange={(event) =>
                     this.props.valueWasSet({ description: event.target.value })
                   }
                   value={this.props.description}
+                  multiline
+                  rows={3}
+                  style={{ width: 300 }}
                 />
               </td>
             </tr>
