@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Button, Typography, IconButton, Tooltip } from "@material-ui/core";
+import {
+  Button,
+  Typography,
+  IconButton,
+  Tooltip,
+  makeStyles,
+} from "@material-ui/core";
 import ReplayIcon from "@material-ui/icons/Replay";
 import FolderIcon from "@material-ui/icons/Folder";
 
@@ -14,7 +20,16 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [assetFolderPath, setAssetFolderPath] = useState<string>("");
   const [showCreate, setShowCreate] = useState<boolean>(false);
-
+  const useStyles = makeStyles((theme) => ({
+    button: {
+      minWidth: "160px",
+      minHeight: "35px",
+      "&:hover": {
+        backgroundColor: "#A9A9A9",
+      },
+    },
+  }));
+  const classes = useStyles();
   const loadData = async () => {
     setLoading(true);
 
@@ -74,7 +89,7 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
       ) : (
         <Button
           startIcon={<FolderIcon />}
-          style={{ minWidth: "160px", minHeight: "35px" }}
+          className={classes.button}
           href={`pluto:openfolder:${assetFolderPath}`}
           variant="contained"
           onClick={props.onClick}
