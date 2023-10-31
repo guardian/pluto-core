@@ -432,9 +432,4 @@ export const useGuardianStyles = makeStyles((theme) => ({
       backgroundColor: "transparent",
     },
   },
-  hoverRow: {
-    "&:hover": {
-      backgroundColor: theme.palette.action.hover, // You can replace this with any color you prefer
-    },
-  },
 }));
