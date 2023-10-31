@@ -17,6 +17,7 @@ import {
   TableSortLabel,
   Box,
   useTheme,
+  makeStyles,
 } from "@material-ui/core";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
@@ -29,6 +30,7 @@ import {
   getSimpleProjectTypeData,
 } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
+import Color from "color";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
 import {
@@ -180,6 +182,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
       Prelude: "#5e382c",
       Audition: "#2d533d",
       Migrated: "#414141",
+      defaultType: "#A9A9A9",
     };
     const lightColours: any = {
       Cubase: "#ffd8e3",
@@ -188,6 +191,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
       Prelude: "#ffdccf",
       Audition: "#d1ffe5",
       Migrated: "#ffffff",
+      defaultType: "#A9A9A9",
     };
     if (detectDarkTheme()) {
       return darkColours[typeName];
@@ -234,15 +238,25 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                 user: projectUser,
                 projectTypeId,
               } = project;
+
+              const backgroundColour = backgroundColourForType(
+                projectTypeData[projectTypeId] || "defaultType"
+              );
+
               return (
                 <TableRow
-                  className={classes.hoverRow}
-                  key={id}
-                  hover
                   style={{
-                    backgroundColor: backgroundColourForType(
-                      projectTypeData[projectTypeId]
-                    ),
+                    backgroundColor: backgroundColour,
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = Color(
+                      backgroundColour
+                    )
+                      .darken(0.1)
+                      .string();
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = backgroundColour;
                   }}
                   onClick={() =>
                     window.open(`${deploymentRootPath}project/${id}`, "_blank")
