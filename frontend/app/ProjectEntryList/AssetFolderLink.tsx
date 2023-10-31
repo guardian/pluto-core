@@ -6,6 +6,7 @@ import FolderIcon from "@material-ui/icons/Folder";
 
 interface AssetFolderLinkProps {
   projectId: number;
+  onClick: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
 }
 
 const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
@@ -45,7 +46,10 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
     loadData();
   }, [props.projectId]);
 
-  const requestNewAssetFolder = async () => {
+  const requestNewAssetFolder = async (event: {
+    stopPropagation: () => void;
+  }) => {
+    event.stopPropagation();
     loadData();
   };
 
@@ -59,7 +63,7 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
             No asset folder found
             <Tooltip title="Check again">
               <IconButton
-                onClick={requestNewAssetFolder}
+                onClick={(event) => requestNewAssetFolder(event)}
                 style={{ marginLeft: "1em" }}
               >
                 <ReplayIcon />
@@ -73,6 +77,7 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
           style={{ minWidth: "160px", minHeight: "35px" }}
           href={`pluto:openfolder:${assetFolderPath}`}
           variant="contained"
+          onClick={props.onClick}
         >
           Asset&nbsp;folder
         </Button>

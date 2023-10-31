@@ -325,7 +325,12 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                     </Button>
                   </TableCell>
                   <TableCell>
-                    <AssetFolderLink projectId={id} />
+                    <AssetFolderLink
+                      projectId={id}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                      }}
+                    />
                   </TableCell>
                 </TableRow>
               );

@@ -296,7 +296,12 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
               Open project
             </Button>
             <div style={{ marginRight: "-6px", minWidth: "129px" }}>
-              <AssetFolderLink projectId={project.id} />
+              <AssetFolderLink
+                projectId={project.id}
+                onClick={(event) => {
+                  event.stopPropagation();
+                }}
+              />
             </div>
             <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
               <Button
