@@ -1,5 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
+import { Select } from "@material-ui/core";
 
 class TemplateSelector extends React.Component {
   static propTypes = {
@@ -21,7 +22,7 @@ class TemplateSelector extends React.Component {
 
   render() {
     return (
-      <select
+      <Select
         id="project_template_selector"
         value={this.props.selectedTemplate ?? undefined}
         onChange={(event) => this.props.selectionUpdated(event.target.value)}
@@ -33,7 +34,7 @@ class TemplateSelector extends React.Component {
               {name}
             </option>
           ))}
-      </select>
+      </Select>
     );
   }
 }

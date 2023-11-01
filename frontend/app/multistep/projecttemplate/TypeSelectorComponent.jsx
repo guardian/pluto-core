@@ -2,6 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import CommonMultistepComponent from "../common/CommonMultistepComponent.jsx";
 import PlutoProjectTypeSelector from "../../Selectors/PlutoProjectTypeSelector.jsx";
+import { Input, Select } from "@material-ui/core";
 
 class TypeSelectorComponent extends CommonMultistepComponent {
   static propTypes = {
@@ -78,30 +79,33 @@ class TypeSelectorComponent extends CommonMultistepComponent {
           The first pieces of information we need are what kind of project this
           template represents and what it should be called. Please select from
           the list below. If the right type of project is not present, please{" "}
-          <a href="/type/new">add</a> it and then come back to this form.
+          <a href="/pluto-core/type/new">add</a> it and then come back to this
+          form.
         </p>
         <ul style={{ listStyle: "none" }}>
           <li>
             <label htmlFor="project_type_selector">Project type:</label>
-            <select
+            <Select
               id="project_type_selector"
               value={this.props.selectedType}
               onChange={this.selectorValueChanged}
+              style={{ marginLeft: 20 }}
             >
               {this.props.projectTypes.map((projectInfo, index) => (
                 <option key={index} value={projectInfo.id}>
                   {projectInfo.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </li>
           <li>
             <label htmlFor="projectNameSelector">Template name:</label>
-            <input
+            <Input
               type="text"
               id="projectNameSelector"
               value={this.state.name}
               onChange={(event) => this.setState({ name: event.target.value })}
+              style={{ marginLeft: 20, width: 300 }}
             />
           </li>
           <li>
@@ -113,6 +117,7 @@ class TypeSelectorComponent extends CommonMultistepComponent {
               onChange={(event) =>
                 this.setState({ deprecated: event.target.checked })
               }
+              style={{ marginLeft: 20 }}
             />
           </li>
         </ul>
