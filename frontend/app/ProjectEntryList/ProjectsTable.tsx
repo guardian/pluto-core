@@ -17,6 +17,7 @@ import {
   TableSortLabel,
   Box,
   useTheme,
+  makeStyles,
 } from "@material-ui/core";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
@@ -29,6 +30,7 @@ import {
   getSimpleProjectTypeData,
 } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
+import Color from "color";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
 import {
@@ -57,9 +59,10 @@ const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
   isAdmin = false,
 }) => (
   <IconButton
-    onClick={(event) =>
-      window.open(`${deploymentRootPath}project/${id}`, "_blank")
-    }
+    onClick={(event) => {
+      event.stopPropagation();
+      window.open(`${deploymentRootPath}project/${id}`, "_blank");
+    }}
   >
     <EditIcon />
   </IconButton>
@@ -179,6 +182,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
       Prelude: "#5e382c",
       Audition: "#2d533d",
       Migrated: "#414141",
+      defaultType: "#A9A9A9",
     };
     const lightColours: any = {
       Cubase: "#ffd8e3",
@@ -187,6 +191,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
       Prelude: "#ffdccf",
       Audition: "#d1ffe5",
       Migrated: "#ffffff",
+      defaultType: "#A9A9A9",
     };
     if (detectDarkTheme()) {
       return darkColours[typeName];
@@ -233,15 +238,29 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                 user: projectUser,
                 projectTypeId,
               } = project;
+
+              const backgroundColour = backgroundColourForType(
+                projectTypeData[projectTypeId] || "defaultType"
+              );
+
               return (
                 <TableRow
-                  key={id}
-                  hover
                   style={{
-                    backgroundColor: backgroundColourForType(
-                      projectTypeData[projectTypeId]
-                    ),
+                    backgroundColor: backgroundColour,
                   }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = Color(
+                      backgroundColour
+                    )
+                      .darken(0.1)
+                      .string();
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = backgroundColour;
+                  }}
+                  onClick={() =>
+                    window.open(`${deploymentRootPath}project/${id}`, "_blank")
+                  }
                 >
                   <TableCell>{title}</TableCell>
                   <TableCell>
@@ -261,19 +280,16 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                     <img src={imagePath(projectTypeData[projectTypeId])} />
                   </TableCell>
                   <TableCell>
-                    <Box width="100px">
-                      <span className="icons">
-                        <ActionIcons id={id} isAdmin={props.isAdmin ?? false} />
-                        <IconButton
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setUpdatingProject(id);
-                            setOpenDialog(true);
-                          }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </span>
+                    <Box width="50px">
+                      <IconButton
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setUpdatingProject(id);
+                          setOpenDialog(true);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
                     </Box>
                   </TableCell>
                   <TableCell>
@@ -281,7 +297,8 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                       className={classes.openProjectButton}
                       variant="contained"
                       color="primary"
-                      onClick={async () => {
+                      onClick={async (event) => {
+                        event.stopPropagation();
                         try {
                           await openProject(id);
                         } catch (error) {
@@ -305,7 +322,12 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                     </Button>
                   </TableCell>
                   <TableCell>
-                    <AssetFolderLink projectId={id} />
+                    <AssetFolderLink
+                      projectId={id}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                      }}
+                    />
                   </TableCell>
                 </TableRow>
               );

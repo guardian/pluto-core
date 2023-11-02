@@ -76,7 +76,12 @@ const ProjectCreatedComponent: React.FC<ProjectCreatedComponentProps> = (
           </Typography>
         </Grid>
         <Grid item xs={4}>
-          <AssetFolderLink projectId={props.projectId} />
+          <AssetFolderLink
+            projectId={props.projectId}
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+          />
         </Grid>
         <Grid item xs={8}>
           <Typography>Start work on the project</Typography>

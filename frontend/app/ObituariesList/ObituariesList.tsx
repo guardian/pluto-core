@@ -280,7 +280,12 @@ const ObituariesList = () => {
                     >
                       Open project
                     </Button>
-                    <AssetFolderLink projectId={project.id} />
+                    <AssetFolderLink
+                      projectId={project.id}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                      }}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
