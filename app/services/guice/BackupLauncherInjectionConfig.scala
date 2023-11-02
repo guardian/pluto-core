@@ -22,6 +22,8 @@ class BackupLauncherInjectionConfig extends AbstractModule with AkkaGuiceSupport
     bindActor[CommissionStatusPropagator]("commission-status-propagator")
     bindActor[RabbitMqSend]("rabbitmq-send")
     bindActor[RabbitMqDeliverable]("rabbitmq-deliverable")
+    bindActor[RabbitMqSAN]("rabbitmq-san")
+    bindActor[RabbitMqMatrix]("rabbitmq-matrix")
     bindActor[Auditor]("auditor")
 
     bind(classOf[MXSConnectionManager]).asEagerSingleton()
