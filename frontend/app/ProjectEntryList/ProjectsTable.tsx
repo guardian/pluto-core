@@ -281,8 +281,6 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                   </TableCell>
                   <TableCell>
                     <Box width="50px">
-                      {/* <span className="icons"> */}
-                      {/* <ActionIcons id={id} isAdmin={props.isAdmin ?? false} /> */}
                       <IconButton
                         onClick={(event) => {
                           event.stopPropagation();
@@ -292,7 +290,6 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                       >
                         <DeleteIcon />
                       </IconButton>
-                      {/* </span> */}
                     </Box>
                   </TableCell>
                   <TableCell>
