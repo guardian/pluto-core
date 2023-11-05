@@ -1,32 +1,32 @@
 package controllers
 
 import akka.stream.Materializer
+import akka.util.ByteString
 import auth.BearerTokenAuth
-
-import javax.inject.Inject
 import exceptions.{AlreadyExistsException, BadDataException}
 import helpers.StorageHelper
-import play.api.{Configuration, Logger}
+import models._
+import play.api.Configuration
+import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json._
 import play.api.mvc._
 import slick.jdbc.PostgresProfile
-import play.api.libs.json._
 import slick.jdbc.PostgresProfile.api._
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import models._
-import play.api.cache.SyncCacheApi
-import play.api.inject.Injector
 import slick.lifted.TableQuery
 
+import java.nio.file.Files
+import java.security.MessageDigest
 import java.time.format.DateTimeFormatter
-import scala.concurrent.{CanAwait, Future}
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 
-class Files @Inject() (override val controllerComponents:ControllerComponents,
+
+
+class Files @Inject() (temporaryFileCreator: play.api.libs.Files.TemporaryFileCreator, override val controllerComponents:ControllerComponents,
                        override val bearerTokenAuth:BearerTokenAuth,
                        override implicit val config: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi, storageHelper:StorageHelper)
                       (implicit mat:Materializer, fileEntryDAO:FileEntryDAO)
@@ -153,6 +153,58 @@ class Files @Inject() (override val controllerComponents:ControllerComponents,
         Future(BadRequest(Json.obj("status" -> "error", "detail" -> "No upload payload")))
     }
   }}
+
+
+  def updateContent(requestedId: Int) = IsAuthenticatedAsync(parse.multipartFormData) { uid => { request =>
+    implicit val db = dbConfig.db
+
+    val sha256Option = request.body.dataParts.get("sha256").flatMap(_.headOption)
+
+    def calculateSha256(bytes: Array[Byte]): Future[String] = {
+      val md = MessageDigest.getInstance("SHA-256")
+      val hashBytes = md.digest(bytes)
+      Future.successful(hashBytes.map("%02x".format(_)).mkString)
+    }
+
+    request.body.file("file") match {
+      case Some(filePart) =>
+        val fileBytes = Files.readAllBytes(filePart.ref.path)
+        calculateSha256(fileBytes).flatMap { calculatedSha =>
+          if (sha256Option.contains(calculatedSha)) {
+            val tempFile = temporaryFileCreator.create("temp", "upload")
+            Files.write(tempFile.path, fileBytes)
+            val playTempFile = temporaryFileCreator.create("prefix", "suffix")
+            Files.write(playTempFile.path, fileBytes) // Write bytes to the temporary file created by TemporaryFileCreator
+            val fileSize = fileBytes.length // Get the size of the file in bytes
+            val buffer = new play.api.mvc.RawBuffer(fileSize, temporaryFileCreator, ByteString(fileBytes))
+
+            db.run(
+              TableQuery[FileEntryRow].filter(_.id === requestedId).result.asTry
+            ).flatMap {
+              case Success(rows: Seq[FileEntry]) =>
+                if (rows.isEmpty) {
+                  Future(NotFound(Json.obj("status" -> "error", "detail" -> s"File with ID $requestedId not found")))
+                } else {
+                  val fileRef = rows.head
+                  fileEntryDAO.writeToFile(fileRef, buffer).map { _ =>
+                    Ok(Json.obj("status" -> "ok", "detail" -> "File content has been updated."))
+                  }.recover { case error: Throwable =>
+                    InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString))
+                  }
+                }
+              case Failure(error) =>
+                Future(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
+            }
+          } else {
+            Future(BadRequest(Json.obj("status" -> "error", "detail" -> s"SHA256 checksum does not match - $sha256Option - $calculatedSha")))
+          }
+        }
+
+      case None =>
+        Future(BadRequest(Json.obj("status" -> "error", "detail" -> "No file provided")))
+    }
+  }
+  }
 
   def deleteFromDisk(requestedId:Int, targetFile:FileEntry, deleteReferenced: Boolean, isRetry:Boolean=false):Future[Result] = deleteid(requestedId).flatMap({
     case Success(rowCount)=>
@@ -283,5 +335,8 @@ class Files @Inject() (override val controllerComponents:ControllerComponents,
         Future(InternalServerError(Json.obj("status" -> "error", "detail" -> s"Could not look up file: ${error.toString}")))
     })
   }}
+
 }
+
+case class RenameFileRequest(newName: String)
 
