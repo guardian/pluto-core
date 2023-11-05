@@ -11,11 +11,12 @@ import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.mvc._
+import services.NewProjectBackup
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 import java.security.MessageDigest
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -26,7 +27,7 @@ import scala.util.{Failure, Success, Try}
 
 
 
-class Files @Inject() (temporaryFileCreator: play.api.libs.Files.TemporaryFileCreator, override val controllerComponents:ControllerComponents,
+class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: play.api.libs.Files.TemporaryFileCreator, override val controllerComponents:ControllerComponents,
                        override val bearerTokenAuth:BearerTokenAuth,
                        override implicit val config: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi, storageHelper:StorageHelper)
                       (implicit mat:Materializer, fileEntryDAO:FileEntryDAO)
@@ -171,27 +172,29 @@ class Files @Inject() (temporaryFileCreator: play.api.libs.Files.TemporaryFileCr
         val fileBytes = Files.readAllBytes(filePart.ref.path)
         calculateSha256(fileBytes).flatMap { calculatedSha =>
           if (sha256Option.contains(calculatedSha)) {
-            val tempFile = temporaryFileCreator.create("temp", "upload")
-            Files.write(tempFile.path, fileBytes)
-            val playTempFile = temporaryFileCreator.create("prefix", "suffix")
-            Files.write(playTempFile.path, fileBytes) // Write bytes to the temporary file created by TemporaryFileCreator
-            val fileSize = fileBytes.length // Get the size of the file in bytes
-            val buffer = new play.api.mvc.RawBuffer(fileSize, temporaryFileCreator, ByteString(fileBytes))
-
             db.run(
-              TableQuery[FileEntryRow].filter(_.id === requestedId).result.asTry
+              TableQuery[FileEntryRow].filter(_.id === requestedId).result.headOption.asTry
             ).flatMap {
-              case Success(rows: Seq[FileEntry]) =>
-                if (rows.isEmpty) {
-                  Future(NotFound(Json.obj("status" -> "error", "detail" -> s"File with ID $requestedId not found")))
-                } else {
-                  val fileRef = rows.head
-                  fileEntryDAO.writeToFile(fileRef, buffer).map { _ =>
+              case Success(Some(fileEntry: FileEntry)) =>
+                // First, attempt to backup the file
+                backupFile(fileEntry).flatMap { backupPath =>
+                  // Now that the backup has succeeded, proceed with the update
+                  val tempFile = temporaryFileCreator.create("temp", "upload")
+                  Files.write(tempFile.path, fileBytes)
+
+                  val playTempFile = temporaryFileCreator.create("prefix", "suffix")
+                  Files.write(playTempFile.path, fileBytes) // Write bytes to the temporary file created by TemporaryFileCreator
+                  val fileSize = fileBytes.length // Get the size of the file in bytes
+                  val buffer = new play.api.mvc.RawBuffer(fileSize, temporaryFileCreator, ByteString(fileBytes))
+
+                  fileEntryDAO.writeToFile(fileEntry, buffer).map { _ =>
                     Ok(Json.obj("status" -> "ok", "detail" -> "File content has been updated."))
-                  }.recover { case error: Throwable =>
-                    InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString))
                   }
+                }.recover { case error: Throwable =>
+                  InternalServerError(Json.obj("status" -> "error", "detail" -> s"Backup failed: ${error.toString}"))
                 }
+              case Success(None) =>
+                Future(NotFound(Json.obj("status" -> "error", "detail" -> s"File with ID $requestedId not found")))
               case Failure(error) =>
                 Future(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
             }
@@ -205,6 +208,42 @@ class Files @Inject() (temporaryFileCreator: play.api.libs.Files.TemporaryFileCr
     }
   }
   }
+
+  def backupFile(fileEntry: FileEntry) = {
+    logger.warn("starting backupFile")
+    Future.sequence(Seq(
+      backupFileToStorage(fileEntry)
+    ))
+      .map(results => {
+        logger.warn(s"backupFile completed, results were $results")
+        results
+      })
+      .map(_.head.asInstanceOf[Path])
+  }
+
+  def backupFileToStorage(fileEntry: FileEntry) = {
+    implicit val db = dbConfigProvider.get[PostgresProfile].db
+    logger.warn("in backupFileToStorage")
+    for {
+      projectStorage <- StorageEntryHelper.entryFor(fileEntry.storageId)
+      backupStorage <- projectStorage.flatMap(_.backsUpTo).map(StorageEntryHelper.entryFor).getOrElse(Future(None))
+      result <- backupStorage match {
+        case Some(actualBackupStorage) =>
+          logger.info(s"Creating an incremental backup for ${fileEntry.filepath} on storage ${actualBackupStorage.storageType} ${actualBackupStorage.id}")
+          for {
+            maybeProjectEntry <- ProjectEntry.projectForFileEntry(fileEntry)
+            mostRecentBackup <- if (maybeProjectEntry.isDefined) maybeProjectEntry.get.mostRecentBackup else Future(None)
+            result <- backupService.performBackup(fileEntry, mostRecentBackup, actualBackupStorage).map(Some.apply)
+          } yield result
+        case None =>
+          logger.warn(s"Project for ${fileEntry.filepath} is on a storage which has no backup configured. Cannot make an incremental backup for it.")
+          Future(None)
+      }
+    } yield result
+  }.map(result => {
+    logger.warn(s"completed backupFileToStorage, result was $result")
+    result
+  })
 
   def deleteFromDisk(requestedId:Int, targetFile:FileEntry, deleteReferenced: Boolean, isRetry:Boolean=false):Future[Result] = deleteid(requestedId).flatMap({
     case Success(rowCount)=>
