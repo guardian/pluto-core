@@ -1,7 +1,6 @@
 package controllers
 
-import akka.stream.scaladsl.FileIO
-import akka.stream.{IOResult, Materializer}
+import akka.stream.Materializer
 import akka.util.ByteString
 import auth.BearerTokenAuth
 import exceptions.{AlreadyExistsException, BadDataException}
@@ -17,8 +16,7 @@ import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
-import java.io.File
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.Files
 import java.security.MessageDigest
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -211,17 +209,19 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
   }
   }
 
+
   def backupFile(fileEntry: FileEntry) = {
     logger.warn("starting backupFile")
     Future.sequence(Seq(
-      backupFileToTemp(fileEntry),
       backupFileToStorage(fileEntry)
     ))
       .map(results => {
         logger.warn(s"backupFile completed, results were $results")
         results
-      })
-      .map(_.head.asInstanceOf[Path])
+      }).map {
+      case Some((_, path)) :: _ => path // Extract the Path from the tuple inside the Some
+      case _ => throw new Exception("No backup path found")
+    }
   }
 
   def backupFileToStorage(fileEntry: FileEntry) = {
@@ -247,32 +247,6 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
     logger.warn(s"completed backupFileToStorage, result was $result")
     result
   })
-
-  def backupFileToTemp(fileEntry: FileEntry): Future[Path] = {
-    logger.warn("in backupFileToTemp")
-    for {
-      inPath <- fileEntryDAO.getJavaPath(fileEntry)
-      outPath <- Future({
-        val tempFile = File.createTempFile(fileEntry.filepath, ".bak")
-        Paths.get(tempFile.getPath)
-      })
-      result <- {
-        logger.warn(s"about to run newCopyFile from $inPath to $outPath")
-        newCopyFile(inPath, outPath)
-          .map(result => {
-            logger.warn(s"newCopyFile completed with result $result")
-            result
-          })
-      }
-      _ <- Future.fromTry(result.status)
-      rtn <- if (Files.size(inPath) != Files.size(outPath)) Future.failed(new RuntimeException(s"Local cache copy failed, expected length ${Files.size(inPath)} but got ${Files.size(outPath)}")) else Future(outPath)
-    } yield rtn
-  }
-
-  def newCopyFile(fromFile: Path, toFile: Path)(implicit mat: Materializer): Future[IOResult] = {
-    import java.nio.file.StandardOpenOption._
-    FileIO.fromPath(fromFile).runWith(FileIO.toPath(toFile, Set(WRITE, TRUNCATE_EXISTING, SYNC)))
-  }
 
   def deleteFromDisk(requestedId:Int, targetFile:FileEntry, deleteReferenced: Boolean, isRetry:Boolean=false):Future[Result] = deleteid(requestedId).flatMap({
     case Success(rowCount)=>
