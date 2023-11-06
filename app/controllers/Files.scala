@@ -220,10 +220,8 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
       .map(results => {
         logger.warn(s"backupFile completed, results were $results")
         results
-      }).map {
-      case Some((_, path)) :: _ => path // Extract the Path from the tuple inside the Some
-      case _ => throw new Exception("No backup path found")
-    }
+      })
+      .map(_.head.asInstanceOf[Path])
   }
 
   def backupFileToStorage(fileEntry: FileEntry) = {
