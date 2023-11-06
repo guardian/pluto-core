@@ -16,7 +16,7 @@ import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
 import java.security.MessageDigest
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -186,7 +186,7 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
                   Files.write(playTempFile.path, fileBytes) // Write bytes to the temporary file created by TemporaryFileCreator
                   val fileSize = fileBytes.length // Get the size of the file in bytes
                   val buffer = new play.api.mvc.RawBuffer(fileSize, temporaryFileCreator, ByteString(fileBytes))
-
+                  logger.info("About to update file...")
                   fileEntryDAO.writeToFile(fileEntry, buffer).map { _ =>
                     Ok(Json.obj("status" -> "ok", "detail" -> "File content has been updated."))
                   }
@@ -217,8 +217,10 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
       .map(results => {
         logger.warn(s"backupFile completed, results were $results")
         results
-      })
-      .map(_.head.asInstanceOf[Path])
+      }).map {
+      case Some((_, path)) :: _ => path // Extract the Path from the tuple inside the Some
+      case _ => throw new Exception("No backup path found")
+    }
   }
 
   def backupFileToStorage(fileEntry: FileEntry) = {
