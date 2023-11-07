@@ -36,12 +36,13 @@ import ProductionOfficeSelector from "../common/ProductionOfficeSelector";
 import StatusSelector from "../common/StatusSelector";
 import { Helmet } from "react-helmet";
 import ProjectEntryVaultComponent from "./ProjectEntryVaultComponent";
-import { FileCopy, PermMedia } from "@material-ui/icons";
+import { FileCopy, PermMedia, CloudUpload } from "@material-ui/icons";
 import UsersAutoComplete from "../common/UsersAutoComplete";
 import { useGuardianStyles } from "~/misc/utils";
 import ObituarySelector from "~/common/ObituarySelector";
 import AssetFolderLink from "~/ProjectEntryList/AssetFolderLink";
 import { isLoggedIn } from "~/utils/api";
+import ProjectFileUpload from "./ProjectFileUpload";
 
 declare var deploymentRootPath: string;
 
@@ -256,6 +257,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
   return (
     <>
+      {console.log("project id is", project.id)}
       {project ? (
         <Helmet>
           <title>[{project.title}] Details</title>
@@ -361,6 +363,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 <PermMedia />
               </IconButton>
             </Tooltip>
+            <ProjectFileUpload projectId={project.id}></ProjectFileUpload>
           </Box>
         </Grid>
       </Grid>
