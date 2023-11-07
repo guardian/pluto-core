@@ -123,6 +123,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     * @return a Future containing a FileEntry to write to.  This should be saved to the database before proceeding to write.
     */
   def ascertainTarget(maybeSourceFileEntry:Option[FileEntry], maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = {
+    logger.warn(s"In ascertainTarget. maybePrevDestEntry - ${maybePrevDestEntry}")
     (maybeSourceFileEntry, maybePrevDestEntry) match {
       case (Some(sourceEntry), Some(prevDestEntry))=>
         logger.debug(s"${sourceEntry.filepath}: prevDestEntry is $prevDestEntry")
@@ -133,7 +134,8 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
             mtime=Timestamp.from(Instant.now()),
             atime=Timestamp.from(Instant.now()),
             hasContent = false,
-            hasLink = true)
+            hasLink = true,
+            backupOf = sourceEntry.id)
           findAvailableVersion(destStorage, intendedTarget)
             .map(correctedTarget=>{
               logger.debug(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${correctedTarget.version+1}")
