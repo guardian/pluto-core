@@ -177,6 +177,7 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
             ).flatMap {
               case Success(Some(fileEntry: FileEntry)) =>
                 // First, attempt to backup the file
+                logger.warn(s"updateContent: fileEntry: ${fileEntry}")
                 backupFile(fileEntry).flatMap { backupPath =>
                   // Now that the backup has succeeded, proceed with the update
                   val tempFile = temporaryFileCreator.create("temp", "upload")
