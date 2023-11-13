@@ -98,7 +98,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
           target.validatePathExistsDirect.flatMap({
             case true=>
               logger.debug(s"${target.filepath} ${target.version} exists on ${destStorage}, trying next version")
-              findAvailable(target.copy(version = target.version+1))
+              findAvailable(target.copy(version = target.version))
             case false=>
               logger.debug(s"${target.filepath} ${target.version} does not exist on $destStorage")
               Future(target)
@@ -130,12 +130,12 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         if(destStorage.supportsVersions) {
           val intendedTarget = prevDestEntry.copy(id=None,
             storageId=destStorage.id.get,
-            version = prevDestEntry.version+1,
+            version = prevDestEntry.version,
             mtime=Timestamp.from(Instant.now()),
             atime=Timestamp.from(Instant.now()),
             hasContent = false,
             hasLink = true,
-            backupOf = sourceEntry.id)
+            backupOf = sourceEntry.id) // check
           findAvailableVersion(destStorage, intendedTarget)
             .map(correctedTarget=>{
               logger.debug(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${correctedTarget.version+1}")
@@ -175,8 +175,8 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     * @return a Future, with an Option contianing the number of changed rows if an action was taken.
     */
   def makeProjectLink(sourceEntry:FileEntry, destEntry:FileEntry) = {
-    import slick.jdbc.PostgresProfile.api._
     import cats.implicits._
+    import slick.jdbc.PostgresProfile.api._
 
     def addRow(forProjectId:Int) = db.run {
       TableQuery[FileAssociationRow] += (forProjectId, destEntry.id.get)

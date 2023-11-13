@@ -226,7 +226,7 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
 
   def backupFileToStorage(fileEntry: FileEntry) = {
     implicit val db = dbConfigProvider.get[PostgresProfile].db
-    logger.warn("in backupFileToStorage")
+    logger.warn(s"in backupFileToStorage. fileEntry: ${fileEntry}")
     for {
       projectStorage <- StorageEntryHelper.entryFor(fileEntry.storageId)
       backupStorage <- projectStorage.flatMap(_.backsUpTo).map(StorageEntryHelper.entryFor).getOrElse(Future(None))
@@ -237,7 +237,7 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
           for {
             maybeProjectEntry <- ProjectEntry.projectForFileEntry(fileEntry)
             mostRecentBackup <- if (maybeProjectEntry.isDefined) maybeProjectEntry.get.mostRecentBackup else Future(None)
-            _ <- Future(logger.warn(s"In backupStorage inner for: maybeProjectEntry: ${maybeProjectEntry} mostRecentBackup: ${mostRecentBackup}"))
+            _ <- Future(logger.warn(s"In backupStorage inner for: maybeProjectEntry: ${maybeProjectEntry} mostRecentBackup: ${mostRecentBackup} maybeProjectEntry mostRecentBackup: ${maybeProjectEntry.get.mostRecentBackup}"))
             result <- backupService.performBackup(fileEntry, mostRecentBackup, actualBackupStorage).map(Some.apply)
           } yield result
         case None =>
