@@ -198,6 +198,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
   }
 
   private def getTargetFileEntry(sourceEntry:FileEntry, maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = {
+    logger.warn(s"In getTargetFileEntry. maybePrevDestEntry: ${maybePrevDestEntry}")
     for {
       targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)  //if our destStorage supports versioning, then we get a new entry here
       updatedEntryTry <- fileEntryDAO.save(targetDestEntry) //make sure that we get the updated database id of the file
@@ -232,6 +233,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     *         fails on error.
     */
   def performBackup(sourceEntry:FileEntry, maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry) = {
+    logger.warn(s"maybePrevDestEntry: ${maybePrevDestEntry}")
     for {
       updatedDestEntry <- getTargetFileEntry(sourceEntry, maybePrevDestEntry, destStorage)
       results <- {

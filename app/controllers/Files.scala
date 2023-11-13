@@ -230,12 +230,14 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
     for {
       projectStorage <- StorageEntryHelper.entryFor(fileEntry.storageId)
       backupStorage <- projectStorage.flatMap(_.backsUpTo).map(StorageEntryHelper.entryFor).getOrElse(Future(None))
+      _ <- Future(logger.warn(s"In backupStorage for. projectStorage: ${projectStorage}, backupStorage: ${backupStorage}"))
       result <- backupStorage match {
         case Some(actualBackupStorage) =>
-          logger.info(s"Creating an incremental backup for ${fileEntry.filepath} on storage ${actualBackupStorage.storageType} ${actualBackupStorage.id}")
+          logger.warn(s"Creating an incremental backup for ${fileEntry.filepath} on storage ${actualBackupStorage.storageType} ${actualBackupStorage.id}")
           for {
             maybeProjectEntry <- ProjectEntry.projectForFileEntry(fileEntry)
             mostRecentBackup <- if (maybeProjectEntry.isDefined) maybeProjectEntry.get.mostRecentBackup else Future(None)
+            _ <- Future(logger.warn(s"In backupStorage inner for: maybeProjectEntry: ${maybeProjectEntry} mostRecentBackup: ${mostRecentBackup}"))
             result <- backupService.performBackup(fileEntry, mostRecentBackup, actualBackupStorage).map(Some.apply)
           } yield result
         case None =>
