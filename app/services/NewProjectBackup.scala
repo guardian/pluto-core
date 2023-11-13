@@ -130,7 +130,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         if(destStorage.supportsVersions) {
           val intendedTarget = prevDestEntry.copy(id=None,
             storageId=destStorage.id.get,
-            version = prevDestEntry.version,
+            version = prevDestEntry.version+1,
             mtime=Timestamp.from(Instant.now()),
             atime=Timestamp.from(Instant.now()),
             hasContent = false,
