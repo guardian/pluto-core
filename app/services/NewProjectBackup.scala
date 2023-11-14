@@ -135,7 +135,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
             atime=Timestamp.from(Instant.now()),
             hasContent = false,
             hasLink = true,
-//            backupOf = sourceEntry.id) // check
+            backupOf = sourceEntry.id) // check
           findAvailableVersion(destStorage, intendedTarget)
             .map(correctedTarget=>{
               logger.debug(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${correctedTarget.version+1}")
