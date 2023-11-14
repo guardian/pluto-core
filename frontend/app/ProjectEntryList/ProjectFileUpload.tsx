@@ -126,10 +126,10 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
     <>
       {/* Confirmation Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Confirm Upload</DialogTitle>
+        <DialogTitle>Confirm Update</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to upload this file?
+            Are you sure you want to upload a new Premiere Pro project file?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
