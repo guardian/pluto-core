@@ -98,7 +98,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
           target.validatePathExistsDirect.flatMap({
             case true=>
               logger.debug(s"${target.filepath} ${target.version} exists on ${destStorage}, trying next version")
-              findAvailable(target.copy(version = target.version))
+              findAvailable(target.copy(version = target.version+1))
             case false=>
               logger.debug(s"${target.filepath} ${target.version} does not exist on $destStorage")
               Future(target)
