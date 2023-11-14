@@ -237,10 +237,7 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
           logger.warn(s"Creating an incremental backup for ${fileEntry.filepath} on storage ${actualBackupStorage.storageType} ${actualBackupStorage.id}")
           for {
             maybeProjectEntry <- ProjectEntry.projectForFileEntry(fileEntry)
-            // Update the logic here to pass None if the version is 1
-            mostRecentBackup <- if (fileEntry.version == 1) Future(None)
-            else if (maybeProjectEntry.isDefined) maybeProjectEntry.get.mostRecentBackup
-            else Future(None)
+            mostRecentBackup <- if (maybeProjectEntry.isDefined) maybeProjectEntry.get.mostRecentBackup else Future(None)
             _ <- Future(logger.warn(s"In backupStorage inner for: maybeProjectEntry: ${maybeProjectEntry} mostRecentBackup: ${mostRecentBackup} maybeProjectEntry mostRecentBackup: ${maybeProjectEntry.get.mostRecentBackup}"))
             result <- backupService.performBackup(fileEntry, mostRecentBackup, actualBackupStorage).map(Some.apply)
           } yield result
