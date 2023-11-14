@@ -6,6 +6,16 @@ import { makeStyles } from "@material-ui/core/styles";
 import axios from "axios";
 import { createHash } from "crypto";
 import { getFileData } from "./helpers";
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Snackbar,
+} from "@material-ui/core";
+import { Alert } from "@material-ui/lab";
 
 const API = "/api";
 const API_PROJECTS = `${API}/project`;
@@ -27,6 +37,38 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [checksum, setChecksum] = useState<string>("");
   const [fileData, setFileData] = useState<FileEntry[]>([]);
+
+  const [openDialog, setOpenDialog] = useState(false);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    "error" | "warning" | "info" | "success"
+  >("info");
+
+  const handleClickOpenDialog = () => {
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleConfirmUpload = () => {
+    handleCloseDialog();
+    handleUploadClick();
+  };
+
+  const handleUploadSuccess = (message: React.SetStateAction<string>) => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity("success");
+    setOpenSnackbar(true);
+  };
+
+  const handleUploadError = (errorMessage: string) => {
+    setSnackbarMessage("Error uploading file: " + errorMessage);
+    setSnackbarSeverity("error");
+    setOpenSnackbar(true);
+  };
 
   useEffect(() => {
     getFileData(props.projectId).then(setFileData);
@@ -52,7 +94,6 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
         hash.update(new Uint8Array(contents));
         const calculatedChecksum = hash.digest("hex");
 
-        // Now we can upload the file along with the checksum
         const formData = new FormData();
         formData.append("file", file);
         formData.append("sha256", calculatedChecksum);
@@ -68,10 +109,12 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
               },
             });
             console.log(response.data);
-            // Handle response here
+            handleUploadSuccess("File uploaded successfully!");
           } catch (error) {
             console.error("Error uploading file:", error);
-            // Handle error here
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
+            handleUploadError("Error uploading file: " + errorMessage);
           }
         }
       };
@@ -80,23 +123,45 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
   };
 
   return (
-    // console.log("File data: ", fileData[0].id),
     <>
-      <Tooltip title="Update Premiere Pro project file">
-        <IconButton
-          disableRipple
-          className={classes.noHoverEffect}
-          onClick={handleUploadClick}
+      {/* Confirmation Dialog */}
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Confirm Upload</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to upload this file?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmUpload} color="primary">
+            Upload
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={() => setOpenSnackbar(false)}
+      >
+        <Alert
+          onClose={() => setOpenSnackbar(false)}
+          severity={snackbarSeverity}
         >
-          <CloudUpload />
-        </IconButton>
-      </Tooltip>
-      <input
-        type="file"
-        style={{ display: "none" }}
-        ref={fileInputRef}
-        onChange={handleFileChange}
-      />
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+
+      <IconButton
+        disableRipple
+        className={classes.noHoverEffect}
+        onClick={handleClickOpenDialog}
+      >
+        <CloudUpload />
+      </IconButton>
     </>
   );
 };
