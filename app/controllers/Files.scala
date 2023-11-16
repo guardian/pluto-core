@@ -1,7 +1,6 @@
 package controllers
 
 import akka.stream.Materializer
-import akka.util.ByteString
 import auth.BearerTokenAuth
 import exceptions.{AlreadyExistsException, BadDataException}
 import helpers.StorageHelper
@@ -16,7 +15,7 @@ import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
-import java.nio.file.Files
+import java.io.{BufferedInputStream, FileInputStream}
 import java.security.MessageDigest
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -158,54 +157,71 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
 
   def updateContent(requestedId: Int) = IsAuthenticatedAsync(parse.multipartFormData) { uid => { request =>
     implicit val db = dbConfig.db
+    logger.debug(s"updateContent called with requestedId: $requestedId")
 
     val sha256Option = request.body.dataParts.get("sha256").flatMap(_.headOption)
-
-    def calculateSha256(bytes: Array[Byte]): Future[String] = {
+    logger.debug(s"SHA256 option received: $sha256Option")
+    def calculateSha256(fileInputStream: FileInputStream): Future[String] = Future {
       val md = MessageDigest.getInstance("SHA-256")
-      val hashBytes = md.digest(bytes)
-      Future.successful(hashBytes.map("%02x".format(_)).mkString)
+      val stream = new BufferedInputStream(fileInputStream)
+
+      try {
+        val buffer = new Array[Byte](8192)
+        Stream.continually(stream.read(buffer)).takeWhile(_ != -1).foreach { bytesRead =>
+          md.update(buffer, 0, bytesRead)
+        }
+        val sha256 = md.digest().map("%02x".format(_)).mkString
+        logger.debug(s"Calculated SHA256: $sha256")
+        sha256
+      } catch {
+        case e: Exception =>
+          logger.error("Error calculating SHA256", e)
+          throw e
+      }
+      finally {
+        stream.close()
+      }
     }
 
     request.body.file("file") match {
       case Some(filePart) =>
-        val fileBytes = Files.readAllBytes(filePart.ref.path)
-        calculateSha256(fileBytes).flatMap { calculatedSha =>
+        logger.info(s"File found: ${filePart.filename}, size: ${filePart.fileSize}")
+        val fileInputStream = new FileInputStream(filePart.ref.path.toFile)
+        calculateSha256(fileInputStream).flatMap { calculatedSha =>
+          logger.debug(s"SHA256 comparison: received $sha256Option, calculated $calculatedSha")
           if (sha256Option.contains(calculatedSha)) {
             db.run(
               TableQuery[FileEntryRow].filter(_.id === requestedId).result.headOption.asTry
             ).flatMap {
               case Success(Some(fileEntry: FileEntry)) =>
-                // First, attempt to backup the file
-                logger.warn(s"updateContent: fileEntry: ${fileEntry}")
+                logger.info(s"File entry found: $fileEntry")
                 backupFile(fileEntry).flatMap { backupPath =>
+                  logger.info(s"Backup successful: $backupPath")
                   // Now that the backup has succeeded, proceed with the update
-                  val tempFile = temporaryFileCreator.create("temp", "upload")
-                  Files.write(tempFile.path, fileBytes)
-
-                  val playTempFile = temporaryFileCreator.create("prefix", "suffix")
-                  Files.write(playTempFile.path, fileBytes) // Write bytes to the temporary file created by TemporaryFileCreator
-                  val fileSize = fileBytes.length // Get the size of the file in bytes
-                  val buffer = new play.api.mvc.RawBuffer(fileSize, temporaryFileCreator, ByteString(fileBytes))
                   logger.info("About to update file...")
-                  fileEntryDAO.writeToFile(fileEntry, buffer).map { _ =>
+                  fileEntryDAO.writeStreamToFile(fileEntry, new FileInputStream(filePart.ref.path.toFile)).map { _ =>
+                    logger.info("File content update successful")
                     Ok(Json.obj("status" -> "ok", "detail" -> "File content has been updated."))
                   }
                 }.recover { case error: Throwable =>
+                  logger.error("Backup failed", error)
                   InternalServerError(Json.obj("status" -> "error", "detail" -> s"Backup failed: ${error.toString}"))
                 }
               case Success(None) =>
-                Future(NotFound(Json.obj("status" -> "error", "detail" -> s"File with ID $requestedId not found")))
+                logger.warn(s"No file entry found for ID $requestedId")
+                Future.successful(NotFound(Json.obj("status" -> "error", "detail" -> s"File with ID $requestedId not found")))
               case Failure(error) =>
-                Future(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
+                logger.error("Database query failed", error)
+                Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
             }
           } else {
-            Future(BadRequest(Json.obj("status" -> "error", "detail" -> s"SHA256 checksum does not match - $sha256Option - $calculatedSha")))
+            logger.warn("SHA256 checksum does not match")
+            Future.successful(BadRequest(Json.obj("status" -> "error", "detail" -> s"SHA256 checksum does not match - $sha256Option - $calculatedSha")))
           }
         }
-
       case None =>
-        Future(BadRequest(Json.obj("status" -> "error", "detail" -> "No file provided")))
+        logger.warn("No file provided in the request")
+        Future.successful(BadRequest(Json.obj("status" -> "error", "detail" -> "No file provided")))
     }
   }
   }

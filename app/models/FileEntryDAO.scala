@@ -1,6 +1,6 @@
 package models
 
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.Source
 import drivers.StorageDriver
 import org.slf4j.LoggerFactory
 import play.api.Logger
@@ -8,14 +8,14 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import play.api.mvc.RawBuffer
 import slick.jdbc.PostgresProfile
+import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
-import java.io.{File, FileInputStream}
-import java.nio.file.{Files, Path, Paths}
+import java.io.{File, FileInputStream, InputStream}
+import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import slick.jdbc.PostgresProfile.api._
 
 @Singleton
 class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit ec:ExecutionContext, injector:Injector) {
@@ -175,6 +175,36 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
       case None=>
         Future(Failure(new RuntimeException("Can't update a file record that has not been saved")))
     }
+
+
+  def writeStreamToFile(entry: FileEntry, inputStream: InputStream): Future[Unit] = {
+    storage(entry).flatMap {
+      case Some(storage) =>
+        storage.getStorageDriver match {
+          case Some(storageDriver) =>
+            val outputPath = Paths.get(entry.filepath)
+            logger.info(s"Writing to $outputPath with $storageDriver")
+
+            Future {
+              try {
+                // Use Files.copy to stream data directly to the destination
+                Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING)
+                updateFileHasContent(entry)
+                logger.info(s"File written to $outputPath successfully.")
+              } finally {
+                inputStream.close() // Ensure the stream is closed after use
+              }
+            }
+
+          case None =>
+            logger.error(s"No storage driver available for storage ${entry.storageId}")
+            Future.failed(new RuntimeException(s"No storage driver available for storage ${entry.storageId}"))
+        }
+      case None =>
+        logger.error(s"No storage could be found for ID ${entry.storageId}")
+        Future.failed(new RuntimeException(s"No storage could be found for ID ${entry.storageId}"))
+    }
+  }
 
   /* Asynchronously writes the given buffer to this file*/
   def writeToFile(entry:FileEntry, buffer: RawBuffer):Future[Unit] = {
