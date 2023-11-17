@@ -43,6 +43,7 @@ import ObituarySelector from "~/common/ObituarySelector";
 import AssetFolderLink from "~/ProjectEntryList/AssetFolderLink";
 import { isLoggedIn } from "~/utils/api";
 import ProjectFileUpload from "./ProjectFileUpload";
+import FolderIcon from "@material-ui/icons/Folder";
 
 declare var deploymentRootPath: string;
 
@@ -307,10 +308,11 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             </div>
             <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
               <Button
+                startIcon={<FolderIcon />}
                 style={{
                   marginLeft: "14px",
                   marginRight: "8px",
-                  minWidth: "129px",
+                  minWidth: "170px",
                 }}
                 onClick={async () => {
                   try {
@@ -340,7 +342,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
               </Button>
             ) : null}
             <Tooltip
-              title="View backups"
+              title="View Project File Backups"
               style={{ marginRight: "-42px", minWidth: "129px" }}
             >
               <IconButton
