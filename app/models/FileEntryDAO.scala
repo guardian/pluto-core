@@ -178,31 +178,49 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
 
 
   def writeStreamToFile(entry: FileEntry, inputStream: InputStream): Future[Unit] = {
+    logger.debug(s"writeStreamToFile called for entry: ${entry.id}")
+
     storage(entry).flatMap {
       case Some(storage) =>
         storage.getStorageDriver match {
           case Some(storageDriver) =>
             val outputPath = Paths.get(entry.filepath)
-            logger.info(s"Writing to $outputPath with $storageDriver")
+            logger.info(s"Preparing to write to $outputPath with storage driver $storageDriver")
 
             Future {
               try {
+                logger.debug("Initiating file copy process...")
                 // Use Files.copy to stream data directly to the destination
                 Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING)
+                logger.debug("File copy completed. Updating file content status...")
+
                 updateFileHasContent(entry)
-                logger.info(s"File written to $outputPath successfully.")
+                logger.info(s"File successfully written to $outputPath and content status updated.")
+              } catch {
+                case e: Exception =>
+                  logger.error(s"Error occurred during file writing to $outputPath", e)
+                  throw e
               } finally {
-                inputStream.close() // Ensure the stream is closed after use
+                try {
+                  inputStream.close() // Ensure the stream is closed after use
+                  logger.debug("Input stream closed after file writing process.")
+                } catch {
+                  case e: Exception =>
+                    logger.error("Error occurred while closing input stream", e)
+                }
               }
             }
 
           case None =>
-            logger.error(s"No storage driver available for storage ${entry.storageId}")
-            Future.failed(new RuntimeException(s"No storage driver available for storage ${entry.storageId}"))
+            val errorMsg = s"No storage driver available for storage ${entry.storageId}"
+            logger.error(errorMsg)
+            Future.failed(new RuntimeException(errorMsg))
         }
+
       case None =>
-        logger.error(s"No storage could be found for ID ${entry.storageId}")
-        Future.failed(new RuntimeException(s"No storage could be found for ID ${entry.storageId}"))
+        val errorMsg = s"No storage could be found for ID ${entry.storageId}"
+        logger.error(errorMsg)
+        Future.failed(new RuntimeException(errorMsg))
     }
   }
 

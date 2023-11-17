@@ -204,7 +204,7 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
                     Ok(Json.obj("status" -> "ok", "detail" -> "File content has been updated."))
                   }
                 }.recover { case error: Throwable =>
-                  logger.error("Backup failed", error)
+                  logger.error(s"Backup failed: ${error}")
                   InternalServerError(Json.obj("status" -> "error", "detail" -> s"Backup failed: ${error.toString}"))
                 }
               case Success(None) =>

@@ -4,20 +4,19 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
 import drivers.{StorageDriver, StorageMetadata}
 import helpers.StorageHelper
-import models.{EntryStatus, FileAssociationRow, FileEntry, FileEntryDAO, ProjectEntry, StorageEntry, StorageEntryHelper}
+import models._
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import slick.jdbc.PostgresProfile
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.PostgresProfile.api._
 
 import java.sql.Timestamp
 import java.time.{Duration, Instant}
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 @Singleton
