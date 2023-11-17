@@ -1,5 +1,6 @@
 package models
 
+import akka.stream.impl.Stages.DefaultAttributes.buffer
 import akka.stream.scaladsl.Source
 import drivers.StorageDriver
 import org.slf4j.LoggerFactory
@@ -189,25 +190,26 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
 
             Future {
               try {
-                logger.debug("Initiating file copy process...")
-                // Use Files.copy to stream data directly to the destination
-                Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING)
-                logger.debug("File copy completed. Updating file content status...")
+                logger.debug("Initiating file write process using storageDriver...")
+
+                // Using storageDriver to write data from inputStream to the path
+                val result = storageDriver.writeDataToPath(outputPath.toString, entry.version, inputStream)
+                inputStream.close() // Close the stream after writing
+                logger.debug("File write process completed. Updating file content status...")
 
                 updateFileHasContent(entry)
                 logger.info(s"File successfully written to $outputPath and content status updated.")
+                result
               } catch {
                 case e: Exception =>
                   logger.error(s"Error occurred during file writing to $outputPath", e)
+                  try {
+                    inputStream.close()
+                  } catch {
+                    case closeError: Exception =>
+                      logger.error("Error occurred while closing input stream", closeError)
+                  }
                   throw e
-              } finally {
-                try {
-                  inputStream.close() // Ensure the stream is closed after use
-                  logger.debug("Input stream closed after file writing process.")
-                } catch {
-                  case e: Exception =>
-                    logger.error("Error occurred while closing input stream", e)
-                }
               }
             }
 
@@ -223,6 +225,7 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
         Future.failed(new RuntimeException(errorMsg))
     }
   }
+  
 
   /* Asynchronously writes the given buffer to this file*/
   def writeToFile(entry:FileEntry, buffer: RawBuffer):Future[Unit] = {
