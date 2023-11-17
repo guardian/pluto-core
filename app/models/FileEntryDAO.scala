@@ -1,6 +1,5 @@
 package models
 
-import akka.stream.impl.Stages.DefaultAttributes.buffer
 import akka.stream.scaladsl.Source
 import drivers.StorageDriver
 import org.slf4j.LoggerFactory
@@ -13,7 +12,7 @@ import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
 import java.io.{File, FileInputStream, InputStream}
-import java.nio.file.{Files, Path, Paths, StandardCopyOption}
+import java.nio.file.{Files, Path, Paths}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -225,7 +224,7 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
         Future.failed(new RuntimeException(errorMsg))
     }
   }
-  
+
 
   /* Asynchronously writes the given buffer to this file*/
   def writeToFile(entry:FileEntry, buffer: RawBuffer):Future[Unit] = {
