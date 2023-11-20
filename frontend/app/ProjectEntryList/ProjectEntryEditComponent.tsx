@@ -258,9 +258,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
   return (
     <>
-      {console.log("project id is", project.id)}
       {project ? (
         <Helmet>
+          {console.log("project type is: ", project.projectTypeId)}
+          {console.log(
+            "projectTypeData[project.projectTypeId]",
+            projectTypeData[project.projectTypeId]
+          )}
           <title>[{project.title}] Details</title>
         </Helmet>
       ) : null}
@@ -365,7 +369,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 <PermMedia />
               </IconButton>
             </Tooltip>
-            {project.projectTypeId == 4 ? (
+            {projectTypeData[project.projectTypeId] == "Premiere" ? (
               <ProjectFileUpload projectId={project.id}></ProjectFileUpload>
             ) : null}
           </Box>
