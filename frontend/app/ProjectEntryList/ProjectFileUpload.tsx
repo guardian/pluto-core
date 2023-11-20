@@ -141,7 +141,7 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
         <DialogContent>
           <DialogContentText>
             Are you sure you want to upload a new Project file to replace the
-            main existing project file that is on Pluto?
+            existing project file that is on Pluto?
             <Tooltip
               title="Use this option if you have worked on this project file outside of Pluto such as on a laptop or elsewhere, and you now want to update the Pluto project file with a newer version. The replaced Project file will be backed up"
               placement="right"
@@ -163,7 +163,20 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
       </Dialog>
 
       {isUploading && (
-        <div style={{ textAlign: "center" }}>
+        <div
+          style={{
+            position: "fixed", // Use fixed to position relative to the viewport
+            top: "50%", // 50% from the top
+            left: "50%", // 50% from the left
+            transform: "translate(-50%, -50%)", // Adjust to perfectly center
+            textAlign: "center", // Center the text inside the div
+            zIndex: 1000, // Ensure it's on top of other elements
+            background: "white", // Optional: for better visibility
+            padding: "20px", // Optional: some padding around the content
+            borderRadius: "10px", // Optional: rounded corners
+            boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.5)", // Optional: drop shadow for a floating eff
+          }}
+        >
           <CircularProgress />
           <p>Uploading file...</p>
         </div>
@@ -179,6 +192,8 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             {resultDialogMessage}
+            <br />
+            Please contact multimediatech@guardian.co.uk
           </DialogContentText>
         </DialogContent>
         <DialogActions>
