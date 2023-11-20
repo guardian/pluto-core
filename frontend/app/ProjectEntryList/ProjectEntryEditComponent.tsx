@@ -365,7 +365,9 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 <PermMedia />
               </IconButton>
             </Tooltip>
-            <ProjectFileUpload projectId={project.id}></ProjectFileUpload>
+            {project.projectTypeId == 4 ? (
+              <ProjectFileUpload projectId={project.id}></ProjectFileUpload>
+            ) : null}
           </Box>
         </Grid>
       </Grid>
