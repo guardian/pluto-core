@@ -204,13 +204,13 @@ class App extends React.Component {
   componentDidUpdate(prevProps, prevState, snapshot) {
     setTimeout(() => {
       if (
-          this.state.haveChecked &&
-          !this.state.isLoggedIn &&
-          window.location.pathname !== "/"
+        this.state.haveChecked &&
+        !this.state.isLoggedIn &&
+        window.location.pathname !== "/"
       ) {
         console.log("Not logged in, redirecting to pluto-start.");
         window.location.assign(
-            "/refreshLogin?returnTo=" + window.location.pathname
+          "/refreshLogin?returnTo=" + window.location.pathname
         );
       }
     }, 3000);
