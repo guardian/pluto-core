@@ -55,7 +55,11 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
   };
 
   const handleUploadError = (errorMessage: string) => {
-    setResultDialogMessage("Error uploading file: " + errorMessage);
+    setResultDialogMessage(
+      "Error uploading file: " +
+        errorMessage +
+        "\nPlease contact multimediatech@guardian.co.uk"
+    );
     setShowResultDialog(true);
   };
 
@@ -124,7 +128,7 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
             console.error("Error uploading file:", error);
             const errorMessage =
               error instanceof Error ? error.message : String(error);
-            handleUploadError("Error uploading file: " + errorMessage);
+            handleUploadError(errorMessage);
             setIsUploading(false);
           }
         }
@@ -192,8 +196,6 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             {resultDialogMessage}
-            <br />
-            Please contact multimediatech@guardian.co.uk
           </DialogContentText>
         </DialogContent>
         <DialogActions>
