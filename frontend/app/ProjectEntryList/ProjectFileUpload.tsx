@@ -109,6 +109,11 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
 
         const formData = new FormData();
         formData.append("file", file);
+        if (!file.name.endsWith(".prproj")) {
+          handleUploadError("Only .prproj files are supported");
+          setIsUploading(false);
+          return;
+        }
         formData.append("sha256", calculatedChecksum);
 
         console.log("Checksum: ", calculatedChecksum); // Log the calculated checksum
