@@ -13,10 +13,10 @@ import play.api.test._
 
 import java.io.{File, FileOutputStream}
 import java.sql.Timestamp
-import javax.inject.Inject
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.io.Source
+
 /**
  * Add your spec here.
  * You can mock out a whole application including requests, plugins etc.
@@ -25,9 +25,9 @@ import scala.io.Source
 import play.api.libs.json._
 
 @RunWith(classOf[JUnitRunner])
-class FileControllerSpec @Inject() (temporaryFileCreator: play.api.libs.Files.TemporaryFileCreator) extends GenericControllerSpec with BeforeAll with AfterAll with ProjectEntrySerializer with ProjectTemplateSerializer{
-  tag("controllers")
+class FileControllerSpec extends GenericControllerSpec with BeforeAll with AfterAll with ProjectEntrySerializer with ProjectTemplateSerializer {  tag("controllers")
   sequential
+
 
   override def beforeAll() = {
     val f = new File("/tmp/realfile")
@@ -174,106 +174,103 @@ class FileControllerSpec @Inject() (temporaryFileCreator: play.api.libs.Files.Te
     }
   }
 
-"FileController.updateContent" should {
-  "respond 404 if an attempt is made to update a non-existing file" in new WithApplication(buildApp) {
-    // Create the multipart body as a ByteString
-    val boundary = "----MyGreatBoundary"
-    val bodyBuilder = new StringBuilder
-    bodyBuilder.append(s"--$boundary\r\n")
-    bodyBuilder.append("Content-Disposition: form-data; name=\"file\"; filename=\"nonexistentfile.txt\"\r\n")
-    bodyBuilder.append("Content-Type: application/octet-stream\r\n\r\n")
-    bodyBuilder.append("Dummy content") // Your file content
-    bodyBuilder.append(s"\r\n--$boundary--")
+  "FileController.updateContent" should {
+    "respond 404 if an attempt is made to update a non-existing file" in new WithApplication(buildApp) {
+      // Create the multipart body as a ByteString
+      val boundary = "----MyGreatBoundary"
+      val bodyBuilder = new StringBuilder
+      bodyBuilder.append(s"--$boundary\r\n")
+      bodyBuilder.append("Content-Disposition: form-data; name=\"file\"; filename=\"nonexistentfile.txt\"\r\n")
+      bodyBuilder.append("Content-Type: application/octet-stream\r\n\r\n")
+      bodyBuilder.append("Dummy content") // Your file content
+      bodyBuilder.append(s"\r\n--$boundary--")
 
-    val bodyBytes = ByteString(bodyBuilder.toString())
+      val bodyBytes = ByteString(bodyBuilder.toString())
 
-    // Create a fake request
-    val fakeRequest = FakeRequest(POST, "/api/file/9999/content")
-      .withHeaders("Content-Type" -> s"multipart/form-data; boundary=$boundary")
-      .withBody(bodyBytes)
+      // Create a fake request
+      val fakeRequest = FakeRequest(POST, "/api/file/9999/content")
+        .withHeaders("Content-Type" -> s"multipart/form-data; boundary=$boundary")
+        .withBody(bodyBytes)
 
-    val response: Future[Result] = route(app, fakeRequest).get
+      val response: Future[Result] = route(app, fakeRequest).get
 
-    status(response) mustEqual NOT_FOUND
-
+      status(response) mustEqual NOT_FOUND
   }
 
-  "successfully update a file when the SHA-256 checksum matches" in new WithApplication(buildApp) {
-    implicit val system: ActorSystem = app.actorSystem
-    implicit val materializer = Materializer.createMaterializer(system)
+    "successfully update a file when the SHA-256 checksum matches" in new WithApplication(buildApp) {
+      implicit val system: ActorSystem = app.actorSystem
+      implicit val materializer = Materializer.createMaterializer(system)
 
-    // Assume testFileId represents an existing file ID
-    val testFileId = 57
-    val testBuffer = "this is my test data\nwith another line"
-    val testChecksum = "1c679cad02cbe715cb98ac864de83206b58f62be" // SHA-256 checksum of `testBuffer`
+      // Assume testFileId represents an existing file ID
+      val testFileId = 57
+      val testBuffer = "this is my test data\nwith another line"
+      val testChecksum = "1c679cad02cbe715cb98ac864de83206b58f62be" // SHA-256 checksum of `testBuffer`
 
-    // Setup test data and request
+      // Setup test data and request
 
-    val boundary = "----MyGreatBoundary"
-    val bodyBuilder = new StringBuilder
-    bodyBuilder.append(s"--$boundary\r\n")
-    bodyBuilder.append("Content-Disposition: form-data; name=\"sha256\"\r\n\r\n")
-    bodyBuilder.append(testChecksum)
-    bodyBuilder.append(s"\r\n--$boundary\r\n")
-    bodyBuilder.append("Content-Disposition: form-data; name=\"file\"; filename=\"filename.txt\"\r\n")
-    bodyBuilder.append("Content-Type: application/octet-stream\r\n\r\n")
-    bodyBuilder.append(testBuffer) // file content
-    bodyBuilder.append(s"\r\n--$boundary--")
+      val boundary = "----MyGreatBoundary"
+      val bodyBuilder = new StringBuilder
+      bodyBuilder.append(s"--$boundary\r\n")
+      bodyBuilder.append("Content-Disposition: form-data; name=\"sha256\"\r\n\r\n")
+      bodyBuilder.append(testChecksum)
+      bodyBuilder.append(s"\r\n--$boundary\r\n")
+      bodyBuilder.append("Content-Disposition: form-data; name=\"file\"; filename=\"filename.txt\"\r\n")
+      bodyBuilder.append("Content-Type: application/octet-stream\r\n\r\n")
+      bodyBuilder.append(testBuffer) // file content
+      bodyBuilder.append(s"\r\n--$boundary--")
 
-    val bodyBytes = ByteString(bodyBuilder.toString())
+      val bodyBytes = ByteString(bodyBuilder.toString())
 
-    // Create a fake request
-    val fakeRequest = FakeRequest(POST, s"/api/file/${testFileId}/content")
-      .withHeaders("Content-Type" -> s"multipart/form-data; boundary=$boundary")
-      .withBody(bodyBytes)
-      .withSession("uid" -> "testuser")
+      // Create a fake request
+      val fakeRequest = FakeRequest(POST, s"/api/file/${testFileId}/content")
+        .withHeaders("Content-Type" -> s"multipart/form-data; boundary=$boundary")
+        .withBody(bodyBytes)
+        .withSession("uid" -> "testuser")
 
-    // Execute the test
-    val response = route(app, fakeRequest).get
+      // Execute the test
+      val response = route(app, fakeRequest).get
 
-    // Verify the response
-    status(response) mustEqual OK
-    // Optionally verify that the file content was updated as expected
+      // Verify the response
+      status(response) mustEqual OK
+      // Optionally verify that the file content was updated as expected
+    }
+
+    "refuse to update a file when the SHA-256 checksum does not match" in new WithApplication(buildApp) {
+      implicit val system: ActorSystem = app.actorSystem
+      implicit val materializer = Materializer.createMaterializer(system)
+
+      val testFileId = 57
+      val testBuffer = "this is my test data\nwith another line"
+      val testChecksum = "" // Incorrect SHA-256 checksum of `testBuffer`
+
+      // Setup test data and request
+
+      val boundary = "----MyGreatBoundary"
+      val bodyBuilder = new StringBuilder
+      bodyBuilder.append(s"--$boundary\r\n")
+      bodyBuilder.append("Content-Disposition: form-data; name=\"sha256\"\r\n\r\n")
+      bodyBuilder.append(testChecksum)
+      bodyBuilder.append(s"\r\n--$boundary\r\n")
+      bodyBuilder.append("Content-Disposition: form-data; name=\"file\"; filename=\"filename.txt\"\r\n")
+      bodyBuilder.append("Content-Type: application/octet-stream\r\n\r\n")
+      bodyBuilder.append(
+        testBuffer) // file content
+      bodyBuilder.append(s"\r\n--$boundary--")
+
+      val bodyBytes = ByteString(bodyBuilder.toString())
+
+      // Create a fake request
+      val fakeRequest = FakeRequest(POST, s"/api/file/${testFileId}/content")
+        .withHeaders("Content-Type" -> s"multipart/form-data; boundary=$boundary")
+        .withBody(bodyBytes)
+        .withSession("uid" -> "testuser")
+
+      val response = route(app, fakeRequest).get
+      // Verify the response
+      status(response) mustEqual BAD_REQUEST
+      val responseBody = Await.result(bodyAsJsonFuture(response),10.seconds)
+      (responseBody \ "status").as[String] mustEqual "error"
+      (responseBody \ "detail").as[String] must contain("SHA256 checksum does not match")
+    }
   }
-
-  "refuse to update a file when the SHA-256 checksum does not match" in new WithApplication(buildApp) {
-    implicit val system: ActorSystem = app.actorSystem
-    implicit val materializer = Materializer.createMaterializer(system)
-
-    val testFileId = 57
-    val testBuffer = "this is my test data\nwith another line"
-    val testChecksum = "" // Incorrect SHA-256 checksum of `testBuffer`
-
-    // Setup test data and request
-
-    val boundary = "----MyGreatBoundary"
-    val bodyBuilder = new StringBuilder
-    bodyBuilder.append(s"--$boundary\r\n")
-    bodyBuilder.append("Content-Disposition: form-data; name=\"sha256\"\r\n\r\n")
-    bodyBuilder.append(testChecksum)
-    bodyBuilder.append(s"\r\n--$boundary\r\n")
-    bodyBuilder.append("Content-Disposition: form-data; name=\"file\"; filename=\"filename.txt\"\r\n")
-    bodyBuilder.append("Content-Type: application/octet-stream\r\n\r\n")
-    bodyBuilder.append(
-      testBuffer) // file content
-    bodyBuilder.append(s"\r\n--$boundary--")
-
-    val bodyBytes = ByteString(bodyBuilder.toString())
-
-    // Create a fake request
-    val fakeRequest = FakeRequest(POST, s"/api/file/${testFileId}/content")
-      .withHeaders("Content-Type" -> s"multipart/form-data; boundary=$boundary")
-      .withBody(bodyBytes)
-      .withSession("uid" -> "testuser")
-
-    val response = route(app, fakeRequest).get
-    // Verify the response
-    status(response) mustEqual BAD_REQUEST
-    val responseBody = Await.result(bodyAsJsonFuture(response),10.seconds)
-    (responseBody \ "status").as[String] mustEqual "error"
-    (responseBody \ "detail").as[String] must contain("SHA256 checksum does not match")
-  }
-}
-
-
 }
