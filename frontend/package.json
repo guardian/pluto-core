@@ -26,7 +26,8 @@
     "verbose": true,
     "moduleNameMapper": {
       "\\.(css|less)$": "identity-obj-proxy",
-      "^~/(.*)$": "<rootDir>/app/$1"
+      "^~/(.*)$": "<rootDir>/app/$1",
+      "axios": "axios/dist/node/axios.cjs"
     },
     "transform": {
       "^.+\\.[jt]sx?$": "ts-jest",
