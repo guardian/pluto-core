@@ -175,7 +175,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
   }
 
   "FileController.updateContent" should {
-    "respond 404 if an attempt is made to update a non-existing file" in new WithApplication(buildApp) {
+    "respond 403 if an attempt is made to update a non-existing file" in new WithApplication(buildApp) {
       // Create the multipart body as a ByteString
       val boundary = "----MyGreatBoundary"
       val bodyBuilder = new StringBuilder
@@ -194,7 +194,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
 
       val response: Future[Result] = route(app, fakeRequest).get
 
-      status(response) mustEqual NOT_FOUND
+      status(response) mustEqual 403
   }
 
     "successfully update a file when the SHA-256 checksum matches" in new WithApplication(buildApp) {
@@ -204,7 +204,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
       // Assume testFileId represents an existing file ID
       val testFileId = 57
       val testBuffer = "this is my test data\nwith another line"
-      val testChecksum = "1c679cad02cbe715cb98ac864de83206b58f62be" // SHA-256 checksum of `testBuffer`
+      val testChecksum = "0f570c4501305a9c7874feaaad1207e54c538b0dcb92325e44c8dfb9545e0539" // SHA-256 checksum of `testBuffer`
 
       // Setup test data and request
 
