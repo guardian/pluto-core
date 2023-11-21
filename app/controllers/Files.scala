@@ -175,6 +175,7 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
         sha256
       } catch {
         case e: Exception =>
+          println(s"updateContent error: ${e.toString}")
           logger.error("Error calculating SHA256", e)
           throw e
       }
@@ -186,9 +187,11 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
     request.body.file("file") match {
       case Some(filePart) =>
         logger.info(s"File found: ${filePart.filename}, size: ${filePart.fileSize}")
+        println(s"File found: ${filePart.filename}, size: ${filePart.fileSize}")
         val fileInputStream = new FileInputStream(filePart.ref.path.toFile)
         calculateSha256(fileInputStream).flatMap { calculatedSha =>
           logger.debug(s"SHA256 comparison: received $sha256Option, calculated $calculatedSha")
+          println(s"SHA256 comparison: received $sha256Option, calculated $calculatedSha")
           if (sha256Option.contains(calculatedSha)) {
             db.run(
               TableQuery[FileEntryRow].filter(_.id === requestedId).result.headOption.asTry
@@ -205,22 +208,27 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
                   }
                 }.recover { case error: Throwable =>
                   logger.error(s"Backup failed: ${error}")
+                  println(s"Backup failed: ${error.toString}")
                   InternalServerError(Json.obj("status" -> "error", "detail" -> s"Backup failed: ${error.toString}"))
                 }
               case Success(None) =>
                 logger.warn(s"No file entry found for ID $requestedId")
+                println((s"No file entry found for ID $requestedId"))
                 Future.successful(NotFound(Json.obj("status" -> "error", "detail" -> s"File with ID $requestedId not found")))
               case Failure(error) =>
                 logger.error("Database query failed", error)
+                println("Database query failed", error.toString)
                 Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
             }
           } else {
             logger.warn("SHA256 checksum does not match")
+            println("SHA256 checksum does not match")
             Future.successful(BadRequest(Json.obj("status" -> "error", "detail" -> s"SHA256 checksum does not match - $sha256Option - $calculatedSha")))
           }
         }
       case None =>
         logger.warn("No file provided in the request")
+        println("No file provided in the request")
         Future.successful(BadRequest(Json.obj("status" -> "error", "detail" -> "No file provided")))
     }
   }

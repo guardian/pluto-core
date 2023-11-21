@@ -232,7 +232,6 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
 
       // Verify the response
       status(response) mustEqual OK
-      // Optionally verify that the file content was updated as expected
     }
 
     "refuse to update a file when the SHA-256 checksum does not match" in new WithApplication(buildApp) {
