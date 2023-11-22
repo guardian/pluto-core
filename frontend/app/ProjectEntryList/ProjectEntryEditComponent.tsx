@@ -345,9 +345,12 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 Delete&nbsp;Data
               </Button>
             ) : null}
+            {projectTypeData[project.projectTypeId] == "Premiere" ? (
+              <ProjectFileUpload projectId={project.id}></ProjectFileUpload>
+            ) : null}
             <Tooltip
               title="View Project File Backups"
-              style={{ marginRight: "-42px", minWidth: "129px" }}
+              style={{ marginRight: "0px", minWidth: "10px" }}
             >
               <IconButton
                 disableRipple
@@ -369,9 +372,6 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 <PermMedia />
               </IconButton>
             </Tooltip>
-            {projectTypeData[project.projectTypeId] == "Premiere" ? (
-              <ProjectFileUpload projectId={project.id}></ProjectFileUpload>
-            ) : null}
           </Box>
         </Grid>
       </Grid>
