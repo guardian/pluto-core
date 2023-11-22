@@ -145,28 +145,46 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
   return (
     <>
       {/* Confirmation Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Confirm Project File Update</DialogTitle>
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        aria-labelledby="update-file-dialog-title"
+        aria-describedby="update-file-dialog-description"
+      >
+        <DialogTitle id="update-file-dialog-title">
+          Confirm Project File Update
+        </DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to upload a new Project file to replace the
-            existing project file that is on Pluto?
-            <Tooltip
-              title="Use this option if you have worked on this project file outside of Pluto such as on a laptop or elsewhere, and you now want to update the Pluto project file with a newer version. The replaced Project file will be backed up"
-              placement="right"
-            >
-              <IconButton>
-                <HelpOutlineIcon />
-              </IconButton>
-            </Tooltip>
+          <DialogContentText id="update-file-dialog-description">
+            <strong>
+              Are you sure you want to update the project file in Pluto?
+            </strong>
+            <br />
+            You are about to upload a new project file. This action will
+            overwrite the current file in Pluto.
+            <br />
+            <br />
+            <strong>Please Note:</strong>
+            <br />
+            Uploading a new file will overwrite the existing project file. This
+            action is suitable if you have updated the project file externally
+            (e.g., on a personal device) and need to synchronize these changes
+            with Pluto. Any existing file will be automatically backed up prior
+            to this update.
+            <br />
+            <br />
+            <strong>Important:</strong>
+            <br />
+            Ensure you are uploading the correct file to avoid unintended file
+            replacement.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleConfirmUpload} color="primary">
-            Upload
+          <Button onClick={handleConfirmUpload} color="primary" autoFocus>
+            Proceed
           </Button>
         </DialogActions>
       </Dialog>
