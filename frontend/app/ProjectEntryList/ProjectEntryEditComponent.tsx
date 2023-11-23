@@ -302,7 +302,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             >
               Open project
             </Button>
-            <div style={{ marginRight: "-6px", minWidth: "129px" }}>
+            <div style={{ marginRight: "-6px", minWidth: "160px" }}>
               <AssetFolderLink
                 projectId={project.id}
                 onClick={(event) => {
