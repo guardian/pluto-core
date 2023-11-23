@@ -278,7 +278,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         <Grid item xs={12} md={9}>
           <Box display="flex" flexDirection="row" alignItems="center">
             <Button
-              style={{ marginRight: "8px", minWidth: "129px" }}
+              style={{ marginRight: "8px", minWidth: "160px" }}
               className={classes.openProjectButton}
               variant="contained"
               color="primary"
