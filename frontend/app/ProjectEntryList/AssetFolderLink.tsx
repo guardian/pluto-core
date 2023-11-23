@@ -74,7 +74,7 @@ const AssetFolderLink: React.FC<AssetFolderLinkProps> = (props) => {
         <Typography variant="caption">...</Typography>
       ) : showCreate ? (
         <>
-          <Typography>
+          <Typography className={classes.button}>
             No asset folder found
             <Tooltip title="Check again">
               <IconButton

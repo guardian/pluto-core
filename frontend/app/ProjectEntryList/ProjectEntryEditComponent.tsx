@@ -275,7 +275,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
           />
         </Grid>
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={9}>
           <Box display="flex" flexDirection="row" alignItems="center">
             <Button
               style={{ marginRight: "8px", minWidth: "129px" }}
