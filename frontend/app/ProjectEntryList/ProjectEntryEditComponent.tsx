@@ -36,12 +36,14 @@ import ProductionOfficeSelector from "../common/ProductionOfficeSelector";
 import StatusSelector from "../common/StatusSelector";
 import { Helmet } from "react-helmet";
 import ProjectEntryVaultComponent from "./ProjectEntryVaultComponent";
-import { FileCopy, PermMedia } from "@material-ui/icons";
+import { FileCopy, PermMedia, CloudUpload } from "@material-ui/icons";
 import UsersAutoComplete from "../common/UsersAutoComplete";
 import { useGuardianStyles } from "~/misc/utils";
 import ObituarySelector from "~/common/ObituarySelector";
 import AssetFolderLink from "~/ProjectEntryList/AssetFolderLink";
 import { isLoggedIn } from "~/utils/api";
+import ProjectFileUpload from "./ProjectFileUpload";
+import FolderIcon from "@material-ui/icons/Folder";
 
 declare var deploymentRootPath: string;
 
@@ -258,6 +260,11 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     <>
       {project ? (
         <Helmet>
+          {console.log("project type is: ", project.projectTypeId)}
+          {console.log(
+            "projectTypeData[project.projectTypeId]",
+            projectTypeData[project.projectTypeId]
+          )}
           <title>[{project.title}] Details</title>
         </Helmet>
       ) : null}
@@ -268,10 +275,10 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
           />
         </Grid>
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={9}>
           <Box display="flex" flexDirection="row" alignItems="center">
             <Button
-              style={{ marginRight: "8px", minWidth: "129px" }}
+              style={{ marginRight: "8px", minWidth: "160px" }}
               className={classes.openProjectButton}
               variant="contained"
               color="primary"
@@ -295,7 +302,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             >
               Open project
             </Button>
-            <div style={{ marginRight: "-6px", minWidth: "129px" }}>
+            <div style={{ marginRight: "-6px", minWidth: "160px" }}>
               <AssetFolderLink
                 projectId={project.id}
                 onClick={(event) => {
@@ -305,10 +312,11 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             </div>
             <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
               <Button
+                startIcon={<FolderIcon />}
                 style={{
                   marginLeft: "14px",
                   marginRight: "8px",
-                  minWidth: "129px",
+                  minWidth: "170px",
                 }}
                 onClick={async () => {
                   try {
@@ -337,9 +345,12 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 Delete&nbsp;Data
               </Button>
             ) : null}
+            {projectTypeData[project.projectTypeId] == "Premiere" ? (
+              <ProjectFileUpload projectId={project.id}></ProjectFileUpload>
+            ) : null}
             <Tooltip
-              title="View backups"
-              style={{ marginRight: "-42px", minWidth: "129px" }}
+              title="View Project File Backups"
+              style={{ marginRight: "0px", minWidth: "10px" }}
             >
               <IconButton
                 disableRipple

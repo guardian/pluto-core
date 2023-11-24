@@ -1,20 +1,22 @@
 package controllers
 
-import java.io.{File, FileOutputStream}
-import java.sql.Timestamp
-
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
-import models.{ProjectEntry, ProjectEntrySerializer, ProjectTemplate, ProjectTemplateSerializer}
+import akka.stream.Materializer
+import akka.util.ByteString
+import models._
 import org.junit.runner._
 import org.specs2.runner._
 import org.specs2.specification.{AfterAll, BeforeAll}
+import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test._
 
-import scala.concurrent.Await
+import java.io.{File, FileOutputStream}
+import java.sql.Timestamp
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 import scala.io.Source
+
 /**
  * Add your spec here.
  * You can mock out a whole application including requests, plugins etc.
@@ -23,9 +25,9 @@ import scala.io.Source
 import play.api.libs.json._
 
 @RunWith(classOf[JUnitRunner])
-class FileControllerSpec extends GenericControllerSpec with BeforeAll with AfterAll with ProjectEntrySerializer with ProjectTemplateSerializer{
-  tag("controllers")
+class FileControllerSpec extends GenericControllerSpec with BeforeAll with AfterAll with ProjectEntrySerializer with ProjectTemplateSerializer {  tag("controllers")
   sequential
+
 
   override def beforeAll() = {
     val f = new File("/tmp/realfile")
@@ -60,6 +62,7 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
   override val minimumNewRecordId = 6
   override val testDeleteId: Int = 3
   override val testConflictId: Int = 5
+
 
   "FileController.create" should {
     "refuse to over-write an existing record with another that has the same filename and storage" in new WithApplication(buildApp) {
@@ -168,6 +171,110 @@ class FileControllerSpec extends GenericControllerSpec with BeforeAll with After
       println(responseBody.toString())
       println((responseBody \ "templates").as[List[ProjectTemplate]])
       (responseBody \ "templates").as[List[ProjectTemplate]].contains(ProjectTemplate(Some(3),"Some random test template",2,2, None)) must beTrue
+    }
+  }
+
+  "FileController.updateContent" should {
+    "respond 403 if an attempt is made to update a non-existing file" in new WithApplication(buildApp) {
+      // Create the multipart body as a ByteString
+      val boundary = "----MyGreatBoundary"
+      val bodyBuilder = new StringBuilder
+      bodyBuilder.append(s"--$boundary\r\n")
+      bodyBuilder.append("Content-Disposition: form-data; name=\"file\"; filename=\"nonexistentfile.txt\"\r\n")
+      bodyBuilder.append("Content-Type: application/octet-stream\r\n\r\n")
+      bodyBuilder.append("Dummy content") // Your file content
+      bodyBuilder.append(s"\r\n--$boundary--")
+
+      val bodyBytes = ByteString(bodyBuilder.toString())
+
+      // Create a fake request
+      val fakeRequest = FakeRequest(POST, "/api/file/9999/content")
+        .withHeaders("Content-Type" -> s"multipart/form-data; boundary=$boundary")
+        .withBody(bodyBytes)
+
+      val response: Future[Result] = route(app, fakeRequest).get
+
+      status(response) mustEqual 403
+  }
+
+    // Create integration test for this behaviour
+
+//    "successfully update a file when the SHA-256 checksum matches" in new WithApplication(buildApp) {
+//      implicit val system: ActorSystem = app.actorSystem
+//      implicit val materializer = Materializer.createMaterializer(system)
+//
+//
+//      // Assume testFileId represents an existing file ID
+//      val testFileId = 57
+//      val testBuffer = "this is my test data\nwith another line"
+//      val testChecksum = "0f570c4501305a9c7874feaaad1207e54c538b0dcb92325e44c8dfb9545e0539" // SHA-256 checksum of `testBuffer`
+//
+//      // Setup test data and request
+//
+//      val boundary = "----MyGreatBoundary"
+//      val bodyBuilder = new StringBuilder
+//      bodyBuilder.append(s"--$boundary\r\n")
+//      bodyBuilder.append("Content-Disposition: form-data; name=\"sha256\"\r\n\r\n")
+//      bodyBuilder.append(testChecksum)
+//      bodyBuilder.append(s"\r\n--$boundary\r\n")
+//      bodyBuilder.append("Content-Disposition: form-data; name=\"file\"; filename=\"filename.txt\"\r\n")
+//      bodyBuilder.append("Content-Type: application/octet-stream\r\n\r\n")
+//      bodyBuilder.append(testBuffer) // file content
+//      bodyBuilder.append(s"\r\n--$boundary--")
+//
+//      val bodyBytes = ByteString(bodyBuilder.toString())
+//
+//      // Create a fake request
+//      val fakeRequest = FakeRequest(POST, s"/api/file/${testFileId}/content")
+//        .withHeaders("Content-Type" -> s"multipart/form-data; boundary=$boundary")
+//        .withBody(bodyBytes)
+//        .withSession("uid" -> "testuser")
+//
+//      // Execute the test
+//      val response = route(app, fakeRequest).get
+//
+//      // Verify the response
+//      status(response) mustEqual OK
+//    }
+
+
+
+    "refuse to update a file when the SHA-256 checksum does not match" in new WithApplication(buildApp) {
+      implicit val system: ActorSystem = app.actorSystem
+      implicit val materializer = Materializer.createMaterializer(system)
+
+      val testFileId = 57
+      val testBuffer = "this is my test data\nwith another line"
+      val testChecksum = "" // Incorrect SHA-256 checksum of `testBuffer`
+
+      // Setup test data and request
+
+      val boundary = "----MyGreatBoundary"
+      val bodyBuilder = new StringBuilder
+      bodyBuilder.append(s"--$boundary\r\n")
+      bodyBuilder.append("Content-Disposition: form-data; name=\"sha256\"\r\n\r\n")
+      bodyBuilder.append(testChecksum)
+      bodyBuilder.append(s"\r\n--$boundary\r\n")
+      bodyBuilder.append("Content-Disposition: form-data; name=\"file\"; filename=\"filename.txt\"\r\n")
+      bodyBuilder.append("Content-Type: application/octet-stream\r\n\r\n")
+      bodyBuilder.append(
+        testBuffer) // file content
+      bodyBuilder.append(s"\r\n--$boundary--")
+
+      val bodyBytes = ByteString(bodyBuilder.toString())
+
+      // Create a fake request
+      val fakeRequest = FakeRequest(POST, s"/api/file/${testFileId}/content")
+        .withHeaders("Content-Type" -> s"multipart/form-data; boundary=$boundary")
+        .withBody(bodyBytes)
+        .withSession("uid" -> "testuser")
+
+      val response = route(app, fakeRequest).get
+      // Verify the response
+      status(response) mustEqual BAD_REQUEST
+      val responseBody = Await.result(bodyAsJsonFuture(response),20.seconds)
+      (responseBody \ "status").as[String] mustEqual "error"
+      (responseBody \ "detail").as[String] must contain("SHA256 checksum does not match")
     }
   }
 }

@@ -1,20 +1,18 @@
 package helpers
 
-import java.io.{EOFException, InputStream, OutputStream}
 import akka.stream.Materializer
-import drivers.{StorageDriver, StorageMetadata}
-import helpers.StorageHelper.{defaultBufferSize, getClass}
-
-import javax.inject.Inject
+import drivers.StorageMetadata
+import helpers.StorageHelper.defaultBufferSize
 import models.{FileEntry, FileEntryDAO, StorageEntry}
-import play.api.Logger
 import org.slf4j.{LoggerFactory, MDC}
 import play.api.inject.Injector
 
+import java.io.{EOFException, InputStream, OutputStream}
 import java.nio.ByteBuffer
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.ExecutionContext.Implicits.global
 
 object StorageHelper {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -94,6 +92,7 @@ class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector, fil
     })
   }
 
+
   /**
     * Copies from the file represented by sourceFile to the (non-existing) file represented by destFile.
     * Both should have been saved to the database before calling this method.  The files do not need to be on the same
@@ -111,8 +110,8 @@ class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector, fil
         .storage
         .map(_.flatMap(_.getStorageDriver))
         .map({
-          case Some(storageDriver)=>storageDriver
-          case None=> throw new RuntimeException(s"Storage with ID ${file.storageId} does not have a valid storage type")
+          case Some(storageDriver) => storageDriver
+          case None => throw new RuntimeException(s"Storage with ID ${file.storageId} does not have a valid storage type")
         })
     }
 
@@ -181,6 +180,7 @@ class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector, fil
       }
     })
   }
+
 
   def onStorageMetadata(targetFile: FileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
     targetFile.storage.map(maybeStorage=>{

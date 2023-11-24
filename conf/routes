@@ -22,6 +22,7 @@ DELETE  /api/file/:id                      @controllers.Files.delete(id: Int,del
 GET     /api/file/:id/checkOnDisk          @controllers.Files.checkOnDisk(id: Int)
 GET     /api/file/:id/storageMetadata      @controllers.Files.fileMetadata(id:Int)
 POST    /api/file/:projectFileId/changePremiereVersion  @controllers.PremiereVersionConverter.changeVersion(projectFileId:Int, requiredDisplayVersion:String ?= "")
+POST     /api/file/:id/content              @controllers.Files.updateContent(id: Int)
 
 GET     /api/storage                       @controllers.StoragesController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/storage                       @controllers.StoragesController.create

@@ -4,20 +4,19 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
 import drivers.{StorageDriver, StorageMetadata}
 import helpers.StorageHelper
-import models.{EntryStatus, FileAssociationRow, FileEntry, FileEntryDAO, ProjectEntry, StorageEntry, StorageEntryHelper}
+import models._
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import slick.jdbc.PostgresProfile
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.PostgresProfile.api._
 
 import java.sql.Timestamp
 import java.time.{Duration, Instant}
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 @Singleton
@@ -123,6 +122,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     * @return a Future containing a FileEntry to write to.  This should be saved to the database before proceeding to write.
     */
   def ascertainTarget(maybeSourceFileEntry:Option[FileEntry], maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = {
+    logger.warn(s"In ascertainTarget. maybePrevDestEntry - ${maybePrevDestEntry}")
     (maybeSourceFileEntry, maybePrevDestEntry) match {
       case (Some(sourceEntry), Some(prevDestEntry))=>
         logger.debug(s"${sourceEntry.filepath}: prevDestEntry is $prevDestEntry")
@@ -133,7 +133,8 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
             mtime=Timestamp.from(Instant.now()),
             atime=Timestamp.from(Instant.now()),
             hasContent = false,
-            hasLink = true)
+            hasLink = true,
+            backupOf = sourceEntry.id) // check
           findAvailableVersion(destStorage, intendedTarget)
             .map(correctedTarget=>{
               logger.debug(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${correctedTarget.version+1}")
@@ -173,8 +174,8 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     * @return a Future, with an Option contianing the number of changed rows if an action was taken.
     */
   def makeProjectLink(sourceEntry:FileEntry, destEntry:FileEntry) = {
-    import slick.jdbc.PostgresProfile.api._
     import cats.implicits._
+    import slick.jdbc.PostgresProfile.api._
 
     def addRow(forProjectId:Int) = db.run {
       TableQuery[FileAssociationRow] += (forProjectId, destEntry.id.get)
@@ -196,6 +197,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
   }
 
   private def getTargetFileEntry(sourceEntry:FileEntry, maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = {
+    logger.warn(s"In getTargetFileEntry. maybePrevDestEntry: ${maybePrevDestEntry}")
     for {
       targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)  //if our destStorage supports versioning, then we get a new entry here
       updatedEntryTry <- fileEntryDAO.save(targetDestEntry) //make sure that we get the updated database id of the file
@@ -230,6 +232,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     *         fails on error.
     */
   def performBackup(sourceEntry:FileEntry, maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry) = {
+    logger.warn(s"maybePrevDestEntry: ${maybePrevDestEntry}")
     for {
       updatedDestEntry <- getTargetFileEntry(sourceEntry, maybePrevDestEntry, destStorage)
       results <- {
