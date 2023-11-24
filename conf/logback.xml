@@ -35,7 +35,7 @@
     <logger name="models.PlutoWorkingGroup" level="WARN"/>
     <logger name="models.PlutoCommission" level="WARN"/>
     <logger name="services.ClockSingleton" level="INFO"/>
-    <logger name="controllers.Files" level="DEBUG" />
+    <logger name="controllers.Files" level="WARN" />
     <logger name="controllers.StoragesController" level="INFO"/>
     <logger name="drivers.MatrixStoreDriver" level="DEBUG"/>
     <logger name="controllers.StorageControllerSpec" level="WARN"/>
@@ -46,12 +46,11 @@
     <logger name="services.actors.MessageProcessorActor" level="WARN"/>
     <logger name="services.actors.MessageProcessorState" level="WARN"/>
     <logger name="services.PlutoProjectTypeScanner" level="WARN"/>
-    <logger name="models.FileEntry" level="DEBUG" />
-    <logger name="controllers.Files" level="DEBUG" />
+    <logger name="models.FileEntry" level="WARN" />
     <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
     <logger name="models.ProjectMetadata" level="WARN"/>
     <logger name="postrun.UpdateAdobeUuidSpec" level="WARN"/>
-    <logger name="services.StorageScanner" level="DEBUG"/>
+    <logger name="services.StorageScanner" level="WARN"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
     <logger name="MockProjectCreationActor" level="DEBUG"/>
     <logger name="services.actors.ProjectCreationActor" level="INFO"/>
