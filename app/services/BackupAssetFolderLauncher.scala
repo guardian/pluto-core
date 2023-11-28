@@ -15,8 +15,8 @@ object BackupAssetFolderLauncher {
   val parser = new OptionParser[Options]("backup-asset-folder-launcher") {
     head("backup-asset-folder-launcher", "1")
 
-    opt[Boolean]("nuke-invalid") action { (x,c)=>c.copy(nukeInvalidBackups = x)} text("instead of launching a backup, remove zero-length backup files")
-    opt[Boolean]("all") action { (x,c)=>c.copy(backupAll = x)} text "try to back up every project instead of just 'in production'"
+    opt[Boolean]("nuke-invalid") action { (x,c)=>c.copy(nukeInvalidBackups = x)} text("Instead of launching a backup, remove zero-length backup files")
+    opt[Boolean]("all") action { (x,c)=>c.copy(backupAll = x)} text "Try to back up every project instead of just 'in production'"
   }
 
   def main(args:Array[String]):Unit = {
@@ -25,7 +25,7 @@ object BackupAssetFolderLauncher {
       .disable(classOf[InjectionConfig])
       .build()
     implicit val injector = app.injector
-    val projectBackup = injector.instanceOf(classOf[NewProjectBackup])
+    val projectBackup = injector.instanceOf(classOf[ProjectBackupAssetFolder])
 
     parser.parse(args, Options(false, false)) match {
       case Some(opts) =>
