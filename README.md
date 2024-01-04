@@ -168,7 +168,7 @@ if you have **AshScriptPlugin** enabled in `build.sbt` when building.
 - You need a version 1.11 JDK. On Linux this is normally as simple as `apt-get install openjdk-11-jdk` or the yum equivalent
 - If you are not using the postgres docker image (not recommended!!), you will need to set up the test database before the tests will work:
   `sudo -u postgres ./scripts/create_dev_db.sh` (**Note**: if installing through homebrew, postgres runs as the current
-  user so the `sudo -u postgres` part is not required)
+  user so the `sudo -u postgres` part is not required.)
 
 ### Backend
 
