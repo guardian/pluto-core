@@ -254,7 +254,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
     var backupTypes = Array(2,3,4,6)
     val backupTypesSequence = config.getOptional[Seq[Int]]("asset_folder_backup_types").getOrElse(None)
     if (backupTypesSequence != None) {
-      backupTypes = backupTypesSequence.toArray
+      backupTypes = backupTypesSequence.iterator.toArray
     }
 
     def getScanSource() = if(onlyByType) {
