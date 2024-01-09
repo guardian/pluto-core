@@ -315,7 +315,8 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
                       logger.debug(s"Storage to use: $assetFolderBackupStorage")
 
                       assetFolderFileDest.map(fileEntry=> {
-                        getTargetFileEntry(fileEntry, None, storages.get(assetFolderBackupStorage).get).onComplete(fileDest => fileDest match {
+                        val mostRecentEntryTwo = Await.result(getMostRecentEntryForProject(p.id.get, assetFolderBackupStorage, fixedPath), 10 seconds)
+                        getTargetFileEntry(fileEntry, Some(mostRecentEntryTwo), storages.get(assetFolderBackupStorage).get).onComplete(fileDest => fileDest match {
                           case Failure(error) =>
                             logger.debug(s"Attempt at getting file data failed: $error")
                           case Success(destData) =>
