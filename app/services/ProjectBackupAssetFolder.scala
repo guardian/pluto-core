@@ -17,7 +17,7 @@ import java.time.{Duration, Instant, LocalDateTime}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 import java.io.File
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -247,6 +247,37 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
     }
   }
 
+  def getOldVersionEntry(projectId: Int, storage: Int, p: ProjectEntry, storageDrivers:Map[Int, StorageDriver], sourceFile: AssetFolderFileEntry ): Try[Either[String, Option[AssetFolderFileEntry]]] = {
+    logger.debug(s"getOldVersionEntry run with projectId: $projectId, storage: $storage, path: ${sourceFile.filepath}")
+    try {
+      val mostRecentEntry = Await.result(getMostRecentEntryForProject(projectId, storage, sourceFile.filepath), 1 seconds)
+
+      val sourceMetaTwo = storageDrivers.get(sourceFile.storageId) match {
+        case Some(sourceDriver) =>
+          sourceDriver.getMetadata(sourceFile.filepath, sourceFile.version)
+      }
+
+      findMostRecentBackup(Seq(mostRecentEntry), p, storageDrivers) match {
+        case None =>
+          logger.info(s"getOldVersionEntry: Project ${p.projectTitle} (${p.id.get}) most recent metadata was empty, could not check sizes. Assuming that the file is not present and needs backup")
+          Success(Right(None))
+        case Some((fileEntry, meta)) =>
+          logger.info(s"getOldVersionEntry: Project ${p.projectTitle} (${p.id.get}) Most recent backup leads source file by ${getTimeDifference(sourceMetaTwo, meta)}")
+          if (meta.size == sourceMetaTwo.get.size) {
+            logger.info(s"getOldVersionEntry: Project ${p.projectTitle} (${p.id.get}) Most recent backup version ${fileEntry.version} matches source, no backup required")
+            Success(Right(Some(fileEntry)))
+          } else {
+            logger.info(s"getOldVersionEntry: Project ${p.projectTitle} (${p.id.get}) Most recent backup version ${fileEntry.version} size mismatch ${sourceMetaTwo.get.size} vs ${meta.size}, backup needed")
+            Success(Right(Some(fileEntry)))
+          }
+      }
+    } catch {
+      case e: Throwable =>
+        logger.debug(s"Problem attempting to get old version. Likely there was none present. Error: $e")
+        Success(Right(None))
+    }
+  }
+
   def backupProjects(onlyByType:Boolean):Future[BackupResults] = {
     val parallelCopies = config.getOptional[Int]("backup.parallelCopies").getOrElse(1)
     val makeFoldersSetting = config.getOptional[Boolean]("asset_folder_backup_make_folders").getOrElse(true)
@@ -315,8 +346,18 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
                       logger.debug(s"Storage to use: $assetFolderBackupStorage")
 
                       assetFolderFileDest.map(fileEntry=> {
-                        val mostRecentEntryTwo = Await.result(getMostRecentEntryForProject(p.id.get, assetFolderBackupStorage, fixedPath), 10 seconds)
-                        getTargetFileEntry(fileEntry, Some(mostRecentEntryTwo), storages.get(assetFolderBackupStorage).get).onComplete(fileDest => fileDest match {
+                        val possiblyOldVersionEntry = getOldVersionEntry(p.id.get, assetFolderBackupStorage, p, drivers, fileEntry) match {
+                          case Failure(err) =>
+                            None
+                          case Success(Left(msg)) =>
+                            None
+                          case Success(Right(maybeMostRecentBackup)) =>
+                            maybeMostRecentBackup
+                        }
+
+                        logger.debug(s"possiblyOldVersionEntry: $possiblyOldVersionEntry for path: $filePath")
+
+                        getTargetFileEntry(fileEntry, possiblyOldVersionEntry, storages.get(assetFolderBackupStorage).get).onComplete(fileDest => fileDest match {
                           case Failure(error) =>
                             logger.debug(s"Attempt at getting file data failed: $error")
                           case Success(destData) =>
@@ -351,7 +392,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
                 case e: java.util.NoSuchElementException => logger.debug(s"Could not find an asset folder path.")
               }
           })
-          Thread.sleep(800)
+          Thread.sleep(5000)
           Future(Right(true))
         })
         .toMat(Sink.fold(BackupResults.empty(0))((acc, elem) => elem match {
