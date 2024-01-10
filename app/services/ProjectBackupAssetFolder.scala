@@ -401,7 +401,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
                 case e: java.util.NoSuchElementException => logger.debug(s"Could not find an asset folder path.")
               }
           })
-          Thread.sleep(5000)
+          Thread.sleep(800)
           Future(Right(true))
         })
         .toMat(Sink.fold(BackupResults.empty(0))((acc, elem) => elem match {
