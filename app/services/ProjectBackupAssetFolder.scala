@@ -132,7 +132,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
         if(destStorage.supportsVersions) {
           val intendedTarget = prevDestEntry.copy(id=None,
             storageId=destStorage.id.get,
-            version = prevDestEntry.version+1,
+            version = prevDestEntry.version,
             mtime=Timestamp.from(Instant.now()),
             atime=Timestamp.from(Instant.now()),
             backupOf = sourceEntry.id) // check
