@@ -225,7 +225,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
 
   def shouldCopy(readPath: String, writePath: String, projectId: Int, storage: Int, p: ProjectEntry, storageDrivers:Map[Int, StorageDriver], sourceFile: AssetFolderFileEntry ): Boolean = {
     try {
-      val mostRecentEntry = Await.result(getMostRecentEntryForProject(projectId, storage, sourceFile.filepath), 1 seconds)
+      val mostRecentEntry = Await.result(getMostRecentEntryForProject(projectId, storage, sourceFile.filepath), 10 seconds)
       logger.debug(s"Most recent version for project $projectId is ${mostRecentEntry.version}")
       val sourceMetaTwo = storageDrivers.get(sourceFile.storageId) match {
         case Some(sourceDriver) =>
