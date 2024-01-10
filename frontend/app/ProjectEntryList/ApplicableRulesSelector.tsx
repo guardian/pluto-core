@@ -18,7 +18,7 @@ interface ApplicableRulesSelectorProps {
   deletable: boolean;
   deep_archive: boolean;
   sensitive: boolean;
-  onChange: (field: keyof Project, prevValue: boolean) => void;
+  onChange: (newDeletable: boolean, newDeepArchive: boolean) => void;
   disabled: boolean;
 }
 
@@ -53,14 +53,13 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
     if (value in props) {
       const key = value as keyof ApplicableRulesSelectorProps;
       console.log("Key: ", key);
-      if (key === "deletable" && props.deep_archive) {
+      if (key === "deletable") {
         setPendingChange({ field: key, prevValue: props[key] });
         setOpenDialog(true);
-      } else if (key === "deep_archive" && props.deletable) {
+      } else if (key === "deep_archive") {
         setPendingChange({ field: key, prevValue: props[key] });
         setSelectedOption(value);
-        const projectKey = key as keyof Project;
-        props.onChange(projectKey, props[key] as boolean);
+        props.onChange(false, true);
       }
     }
   };
@@ -68,14 +67,7 @@ const ApplicableRulesSelector: React.FC<ApplicableRulesSelectorProps> = (
   const handleDialogClose = (confirm: boolean) => {
     setOpenDialog(false);
     if (confirm && pendingChange) {
-      setSelectedOption("deletable");
-      props.onChange("deletable", false);
-      props.onChange("deep_archive", true);
-    } else if (pendingChange) {
-      console.log("Else: (pendingChange)", pendingChange);
-      setSelectedOption("deep_archive");
-      props.onChange("deletable", true);
-      props.onChange("deep_archive", false);
+      props.onChange(true, false);
     }
     setPendingChange(null);
   };
