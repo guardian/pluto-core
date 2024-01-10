@@ -23,7 +23,7 @@ ALTER SEQUENCE "AssetFolderFileEntry_id_seq" OWNED BY "AssetFolderFileEntry".id;
 ALTER TABLE public."AssetFolderFileEntry_id_seq" OWNER TO projectlocker;
 
 ALTER TABLE "AssetFolderFileEntry" OWNER TO "projectlocker";
-CREATE UNIQUE INDEX IX_PATH_STORAGE ON "AssetFolderFileEntry" (S_FILEPATH, K_STORAGE_ID);
+
 ALTER TABLE "AssetFolderFileEntry" ADD CONSTRAINT "fk_storage" FOREIGN KEY (K_STORAGE_ID) REFERENCES "StorageEntry"(id) DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE ONLY "AssetFolderFileEntry" ALTER COLUMN id SET DEFAULT nextval('"AssetFolderFileEntry_id_seq"'::regclass);

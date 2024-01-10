@@ -88,7 +88,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
 
   /**
     * Checks to find the next available (not existing) version number on the storage
-    * @param destStorage destination storage that FileEntry will be written to. The storage driver associated with this
+    * @param destStorage destination storage that AssetFolderFileEntry will be written to. The storage driver associated with this
     *                    storage is then used for lookup.
     * @param intendedTarget AssetFolderFileEntry with `version` set to the initial estimate of what the version should be
     */
@@ -138,7 +138,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
             backupOf = sourceEntry.id) // check
           findAvailableVersion(destStorage, intendedTarget)
             .map(correctedTarget=>{
-              logger.debug(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${correctedTarget.version+1}")
+              logger.debug(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${correctedTarget.version}")
               correctedTarget
             })
         } else {
@@ -224,26 +224,32 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
   }
 
   def shouldCopy(readPath: String, writePath: String, projectId: Int, storage: Int, p: ProjectEntry, storageDrivers:Map[Int, StorageDriver], sourceFile: AssetFolderFileEntry ): Boolean = {
-    val mostRecentEntry = Await.result(getMostRecentEntryForProject(projectId, storage, sourceFile.filepath), 10 seconds)
-    logger.debug(s"Most recent version for project $projectId is ${mostRecentEntry.version}")
-    val sourceMetaTwo = storageDrivers.get(sourceFile.storageId) match {
-      case Some(sourceDriver) =>
-        sourceDriver.getMetadata(sourceFile.filepath, sourceFile.version)
-    }
+    try {
+      val mostRecentEntry = Await.result(getMostRecentEntryForProject(projectId, storage, sourceFile.filepath), 1 seconds)
+      logger.debug(s"Most recent version for project $projectId is ${mostRecentEntry.version}")
+      val sourceMetaTwo = storageDrivers.get(sourceFile.storageId) match {
+        case Some(sourceDriver) =>
+          sourceDriver.getMetadata(sourceFile.filepath, sourceFile.version)
+      }
 
-    findMostRecentBackup(Seq(mostRecentEntry), p, storageDrivers) match {
-      case None =>
-        logger.info(s"Project ${p.projectTitle} (${p.id.get}) most recent metadata was empty, could not check sizes. Assuming that the file is not present and needs backup")
-        true
-      case Some((fileEntry, meta)) =>
-        logger.info(s"Project ${p.projectTitle} (${p.id.get}) Most recent backup leads source file by ${getTimeDifference(sourceMetaTwo, meta)}")
-        if (meta.size == sourceMetaTwo.get.size) {
-          logger.info(s"Project ${p.projectTitle} (${p.id.get}) Most recent backup version ${fileEntry.version} matches source, no backup required")
-          false
-        } else {
-          logger.info(s"Project ${p.projectTitle} (${p.id.get}) Most recent backup version ${fileEntry.version} size mismatch ${sourceMetaTwo.get.size} vs ${meta.size}, backup needed")
+      findMostRecentBackup(Seq(mostRecentEntry), p, storageDrivers) match {
+        case None =>
+          logger.info(s"Project ${p.projectTitle} (${p.id.get}) most recent metadata was empty, could not check sizes. Assuming that the file is not present and needs backup")
           true
-        }
+        case Some((fileEntry, meta)) =>
+          logger.info(s"Project ${p.projectTitle} (${p.id.get}) Most recent backup leads source file by ${getTimeDifference(sourceMetaTwo, meta)}")
+          if (meta.size == sourceMetaTwo.get.size) {
+            logger.info(s"Project ${p.projectTitle} (${p.id.get}) Most recent backup version ${fileEntry.version} matches source, no backup required")
+            false
+          } else {
+            logger.info(s"Project ${p.projectTitle} (${p.id.get}) Most recent backup version ${fileEntry.version} size mismatch ${sourceMetaTwo.get.size} vs ${meta.size}, backup needed")
+            true
+          }
+      }
+    } catch {
+      case e: Throwable =>
+        logger.debug(s"Problem attempting to get old version. Likely there was none present. Error: $e")
+        true
     }
   }
 
