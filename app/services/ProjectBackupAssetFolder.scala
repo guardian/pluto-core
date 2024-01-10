@@ -132,7 +132,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
         if(destStorage.supportsVersions) {
           val intendedTarget = prevDestEntry.copy(id=None,
             storageId=destStorage.id.get,
-            version = prevDestEntry.version,
+            version = prevDestEntry.version+1,
             mtime=Timestamp.from(Instant.now()),
             atime=Timestamp.from(Instant.now()),
             backupOf = sourceEntry.id) // check
@@ -352,44 +352,47 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
                       logger.debug(s"Storage to use: $assetFolderBackupStorage")
 
                       assetFolderFileDest.map(fileEntry=> {
-                        val possiblyOldVersionEntry = getOldVersionEntry(p.id.get, assetFolderBackupStorage, p, drivers, fileEntry) match {
-                          case Failure(err) =>
-                            None
-                          case Success(Left(msg)) =>
-                            None
-                          case Success(Right(maybeMostRecentBackup)) =>
-                            maybeMostRecentBackup
+
+                        val storageSupportsVersions = storages(assetFolderBackupStorage).supportsVersions
+                        logger.debug(s"Back up storage supports versions: $storageSupportsVersions")
+                        var attemptCopy = false
+                        if (storageSupportsVersions) {
+                          attemptCopy = shouldCopy(filePath, "something", p.id.get, assetFolderBackupStorage, p, drivers, fileEntry)
+                        } else {
+                          attemptCopy = true
                         }
+                        if (attemptCopy) {
+                          val possiblyOldVersionEntry = getOldVersionEntry(p.id.get, assetFolderBackupStorage, p, drivers, fileEntry) match {
+                            case Failure(err) =>
+                              None
+                            case Success(Left(msg)) =>
+                              None
+                            case Success(Right(maybeMostRecentBackup)) =>
+                              maybeMostRecentBackup
+                          }
 
-                        logger.debug(s"possiblyOldVersionEntry: $possiblyOldVersionEntry for path: $filePath")
+                          logger.debug(s"possiblyOldVersionEntry: $possiblyOldVersionEntry for path: $filePath")
 
-                        getTargetFileEntry(fileEntry, possiblyOldVersionEntry, storages.get(assetFolderBackupStorage).get).onComplete(fileDest => fileDest match {
-                          case Failure(error) =>
-                            logger.debug(s"Attempt at getting file data failed: $error")
-                          case Success(destData) =>
-                            destData.getFullPath.onComplete {
-                              case Failure(exception) =>
-                                logger.debug(s"Fail: $exception")
-                              case Success(pathData) =>
-                                val storageSupportsVersions = storages(assetFolderBackupStorage).supportsVersions
-                                logger.debug(s"Back up storage supports versions: $storageSupportsVersions")
-                                var attemptCopy = false
-                                if (storageSupportsVersions) {
-                                  attemptCopy = shouldCopy(filePath, pathData, p.id.get, assetFolderBackupStorage, p, drivers, fileEntry)
-                                } else {
-                                  attemptCopy = true
-                                }
-                                if (attemptCopy) {
-                                  if (makeFoldersSetting) {
-                                    logger.debug(s"Write path: $pathData")
-                                    val pathFolder = Paths.get(pathData).getParent.toString
-                                    logger.debug(s"Write folder: $pathFolder")
-                                    Files.createDirectories(Paths.get(pathFolder))
-                                  }
-                                  storageHelper.copyAssetFolderFile(fileEntry, destData)
-                                }
-                            }
-                        })
+                          getTargetFileEntry(fileEntry, possiblyOldVersionEntry, storages.get(assetFolderBackupStorage).get).onComplete(fileDest => fileDest match {
+                            case Failure(error) =>
+                              logger.debug(s"Attempt at getting file data failed: $error")
+                            case Success(destData) =>
+                              destData.getFullPath.onComplete {
+                                case Failure(exception) =>
+                                  logger.debug(s"Fail: $exception")
+                                case Success(pathData) =>
+
+                                    if (makeFoldersSetting) {
+                                      logger.debug(s"Write path: $pathData")
+                                      val pathFolder = Paths.get(pathData).getParent.toString
+                                      logger.debug(s"Write folder: $pathFolder")
+                                      Files.createDirectories(Paths.get(pathFolder))
+                                    }
+                                    storageHelper.copyAssetFolderFile(fileEntry, destData)
+
+                              }
+                          })
+                        }
                       })
                   })
                 })
