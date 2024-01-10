@@ -256,7 +256,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
   def getOldVersionEntry(projectId: Int, storage: Int, p: ProjectEntry, storageDrivers:Map[Int, StorageDriver], sourceFile: AssetFolderFileEntry ): Try[Either[String, Option[AssetFolderFileEntry]]] = {
     logger.debug(s"getOldVersionEntry run with projectId: $projectId, storage: $storage, path: ${sourceFile.filepath}")
     try {
-      val mostRecentEntry = Await.result(getMostRecentEntryForProject(projectId, storage, sourceFile.filepath), 1 seconds)
+      val mostRecentEntry = Await.result(getMostRecentEntryForProject(projectId, storage, sourceFile.filepath), 10 seconds)
 
       val sourceMetaTwo = storageDrivers.get(sourceFile.storageId) match {
         case Some(sourceDriver) =>
