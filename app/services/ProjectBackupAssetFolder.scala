@@ -192,7 +192,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
 
   def getAssetFolderProjectFilePaths(directoryName: String): Array[String] = {
     return new File(directoryName).listFiles.
-      filter { f => f.isFile && (f.getName.endsWith(".cpr") || f.getName.endsWith(".sesx") || f.getName.endsWith(".bak")) }.
+      filter { f => f.isFile && (f.getName.endsWith(".cpr") || f.getName.endsWith(".sesx") || f.getName.endsWith(".bak")) && !f.getName.startsWith("._") }.
       map(_.getAbsolutePath)
   }
 
@@ -223,7 +223,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
       .headOption
   }
 
-  def shouldCopy(readPath: String, writePath: String, projectId: Int, storage: Int, p: ProjectEntry, storageDrivers:Map[Int, StorageDriver], sourceFile: AssetFolderFileEntry ): Boolean = {
+  def shouldCopy(projectId: Int, storage: Int, p: ProjectEntry, storageDrivers:Map[Int, StorageDriver], sourceFile: AssetFolderFileEntry ): Boolean = {
     try {
       val mostRecentEntry = Await.result(getMostRecentEntryForProject(projectId, storage, sourceFile.filepath), 10 seconds)
       logger.debug(s"Most recent version for project $projectId is ${mostRecentEntry.version}")
@@ -316,7 +316,6 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
           case Failure(error) => throw error
         })
 
-
     for {
       drivers <- loadStorageDrivers()
       storages <- loadAllStorages()
@@ -357,7 +356,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
                         logger.debug(s"Back up storage supports versions: $storageSupportsVersions")
                         var attemptCopy = false
                         if (storageSupportsVersions) {
-                          attemptCopy = shouldCopy(filePath, "something", p.id.get, assetFolderBackupStorage, p, drivers, fileEntry)
+                          attemptCopy = shouldCopy(p.id.get, assetFolderBackupStorage, p, drivers, fileEntry)
                         } else {
                           attemptCopy = true
                         }
@@ -381,15 +380,13 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
                                 case Failure(exception) =>
                                   logger.debug(s"Fail: $exception")
                                 case Success(pathData) =>
-
-                                    if (makeFoldersSetting) {
-                                      logger.debug(s"Write path: $pathData")
-                                      val pathFolder = Paths.get(pathData).getParent.toString
-                                      logger.debug(s"Write folder: $pathFolder")
-                                      Files.createDirectories(Paths.get(pathFolder))
-                                    }
-                                    storageHelper.copyAssetFolderFile(fileEntry, destData)
-
+                                  if (makeFoldersSetting) {
+                                    logger.debug(s"Write path: $pathData")
+                                    val pathFolder = Paths.get(pathData).getParent.toString
+                                    logger.debug(s"Write folder: $pathFolder")
+                                    Files.createDirectories(Paths.get(pathFolder))
+                                  }
+                                  storageHelper.copyAssetFolderFile(fileEntry, destData)
                               }
                           })
                         }
