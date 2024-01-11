@@ -190,10 +190,15 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
     } yield updatedDestEntry
   }
 
-  def getAssetFolderProjectFilePaths(directoryName: String): Array[String] = {
-    return new File(directoryName).listFiles.
-      filter { f => f.isFile && (f.getName.endsWith(".cpr") || f.getName.endsWith(".sesx") || f.getName.endsWith(".bak")) && !f.getName.startsWith("._") }.
-      map(_.getAbsolutePath)
+  def getListOfFiles(dir: File): Array[File] = {
+    val filesList= dir.listFiles
+    val res = filesList ++ filesList.filter(_.isDirectory).flatMap(getListOfFiles)
+    res.filter { f => f.isFile && (f.getName.endsWith(".cpr") || f.getName.endsWith(".sesx") || f.getName.endsWith(".bak")) && !f.getName.startsWith("._") }
+  }
+
+  def getAssetFolderProjectFilePaths (name: String): Array[String] = {
+    val fileArray = getListOfFiles(new File(name))
+    fileArray.map(_.getAbsolutePath)
   }
 
   def getMostRecentEntryForProject(projectId: Int, storage: Int, filePath: String): Future[AssetFolderFileEntry] = {
