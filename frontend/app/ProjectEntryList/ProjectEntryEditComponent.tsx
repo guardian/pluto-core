@@ -183,6 +183,17 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     setProject({ ...project, [field]: !checked });
   };
 
+  const updateDeletableAndDeepArchive = (
+    newDeletable: boolean,
+    newDeepArchive: boolean
+  ) => {
+    setProject((prevProject) => ({
+      ...prevProject,
+      deletable: newDeletable,
+      deep_archive: newDeepArchive,
+    }));
+  };
+
   const subComponentErrored = (errorDesc: string) => {
     SystemNotification.open(SystemNotifcationKind.Error, errorDesc);
   };
@@ -439,7 +450,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 deletable={project.deletable}
                 deep_archive={project.deep_archive}
                 sensitive={project.sensitive}
-                onChange={checkboxChanged}
+                onChange={updateDeletableAndDeepArchive}
                 disabled={!isAdmin}
               />
 
