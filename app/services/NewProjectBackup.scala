@@ -464,8 +464,14 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
   def backupProjects(onlyInProgress:Boolean):Future[BackupResults] = {
     val parallelCopies = config.getOptional[Int]("backup.parallelCopies").getOrElse(1)
 
+    var backupTypes = Array(1,5)
+    val backupTypesSequence = config.getOptional[Seq[Int]]("backup_types").getOrElse(None)
+    if (backupTypesSequence != None) {
+      backupTypes = backupTypesSequence.iterator.toArray
+    }
+
     def getScanSource() = if(onlyInProgress) {
-      ProjectEntry.scanProjectsForStatus(EntryStatus.InProduction)
+      ProjectEntry.scanProjectsForStatusAndTypes(EntryStatus.InProduction, backupTypes)
     } else {
       ProjectEntry.scanAllProjects
     }
