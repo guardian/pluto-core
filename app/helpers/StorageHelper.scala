@@ -205,7 +205,7 @@ class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector, fil
         .map(_.flatMap(_.getStorageDriver))
         .map({
           case Some(storageDriver) => storageDriver
-          case None => throw new RuntimeException(s"Storage with ID ${file.storageId} does not have a valid storage type")
+          case None => throw new RuntimeException(s"Storage with id. ${file.storageId} does not have a valid storage type")
         })
     }
 

@@ -31,7 +31,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
   import ProjectBackupAssetFolder._
 
   /**
-    * initiates a StorageDriver for every storage in the system
+    * Initiates a StorageDriver for every storage in the system
     * @return
     */
   def loadStorageDrivers(): Future[Map[Int, StorageDriver]] = {
@@ -50,7 +50,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
 
   /**
     * Caches all of the storages in-memory from the database
-    * @return a map relating the storage ID to the full record.
+    * @return A map relating the storage ID to the full record.
     */
   def loadAllStorages():Future[Map[Int, StorageEntry]] = {
     StorageEntryHelper.allStorages.flatMap({
@@ -83,12 +83,12 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
           }
         }
       case None=>
-        "Can't get time difference, no source metadata present"
+        "Can not get time difference, no source metadata present"
     }
 
   /**
     * Checks to find the next available (not existing) version number on the storage
-    * @param destStorage destination storage that AssetFolderFileEntry will be written to. The storage driver associated with this
+    * @param destStorage Destination storage that AssetFolderFileEntry will be written to. The storage driver associated with this
     *                    storage is then used for lookup.
     * @param intendedTarget AssetFolderFileEntry with `version` set to the initial estimate of what the version should be
     */
@@ -112,20 +112,20 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
   }
 
   /**
-    * returns a AssetFolderFileEntry indicating a target file to write.
+    * Returns a AssetFolderFileEntry indicating a target file to write.
     * This is guaranteed to be on the destination storage given.
-    *   - if the destination storage supports versioning, then it is guaranteed not to exist yet (previous dest entry with the version field incremented).
+    *   - If the destination storage supports versioning, then it is guaranteed not to exist yet (previous dest entry with the version field incremented).
     *   - If the destination storage does NOT support versioning, then it will be identical to the "previous" dest entry provided
-    *   - if there is no "previous" destination that a new entry will be created from the source entry's metadata
-    *   - if the Source entry does not exist then that's an error
+    *   - If there is no "previous" destination that a new entry will be created from the source entry's metadata
+    *   - If the Source entry does not exist then that's an error
     *
-    * @param maybeSourceFileEntry option containing the source file entry
-    * @param maybePrevDestEntry optional destination of the previous iteration
-    * @param destStorage destination storage
-    * @return a Future containing a AssetFolderFileEntry to write to.  This should be saved to the database before proceeding to write.
+    * @param maybeSourceFileEntry Option containing the source file entry
+    * @param maybePrevDestEntry Optional destination of the previous iteration
+    * @param destStorage Destination storage
+    * @return A Future containing a AssetFolderFileEntry to write to.  This should be saved to the database before proceeding to write.
     */
   def ascertainTarget(maybeSourceFileEntry:Option[AssetFolderFileEntry], maybePrevDestEntry:Option[AssetFolderFileEntry], destStorage:StorageEntry):Future[AssetFolderFileEntry] = {
-    logger.warn(s"In ascertainTarget. maybePrevDestEntry - ${maybePrevDestEntry}")
+    logger.debug(s"In ascertainTarget. maybePrevDestEntry - ${maybePrevDestEntry}")
     (maybeSourceFileEntry, maybePrevDestEntry) match {
       case (Some(sourceEntry), Some(prevDestEntry))=>
         logger.debug(s"${sourceEntry.filepath}: prevDestEntry is $prevDestEntry")
@@ -159,15 +159,15 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
             backupOf = sourceEntry.id)
         )
       case (None, _)=>
-        throw new RuntimeException("Can't back up as source file was not found")  //fail the Future
+        throw new RuntimeException("Can not back up as source file was not found")  //Fail the Future
     }
   }
 
   private def getTargetFileEntry(sourceEntry:AssetFolderFileEntry, maybePrevDestEntry:Option[AssetFolderFileEntry], destStorage:StorageEntry):Future[AssetFolderFileEntry] = {
-    logger.warn(s"In getTargetFileEntry. maybePrevDestEntry: ${maybePrevDestEntry}")
+    logger.debug(s"In getTargetFileEntry. maybePrevDestEntry: ${maybePrevDestEntry}")
     for {
-      targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)  //if our destStorage supports versioning, then we get a new entry here
-      updatedEntryTry <- assetFolderFileEntryDAO.save(targetDestEntry) //make sure that we get the updated database id of the file
+      targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)  //If our destStorage supports versioning, then we get a new entry here
+      updatedEntryTry <- assetFolderFileEntryDAO.save(targetDestEntry) //Make sure that we get the updated database id of the file
       updatedDestEntry <- Future
         .fromTry(updatedEntryTry)
         .recoverWith({
@@ -270,15 +270,14 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
 
       findMostRecentBackup(Seq(mostRecentEntry), p, storageDrivers) match {
         case None =>
-          logger.info(s"getOldVersionEntry: Project ${p.projectTitle} (${p.id.get}) most recent metadata was empty, could not check sizes. Assuming that the file is not present and needs backup")
+          logger.debug(s"getOldVersionEntry: Project ${p.projectTitle} (${p.id.get}) most recent metadata was empty, could not check sizes. Assuming that the file is not present and needs backup")
           Success(Right(None))
         case Some((fileEntry, meta)) =>
-          logger.info(s"getOldVersionEntry: Project ${p.projectTitle} (${p.id.get}) Most recent backup leads source file by ${getTimeDifference(sourceMetaTwo, meta)}")
           if (meta.size == sourceMetaTwo.get.size) {
-            logger.info(s"getOldVersionEntry: Project ${p.projectTitle} (${p.id.get}) Most recent backup version ${fileEntry.version} matches source, no backup required")
+            logger.debug(s"getOldVersionEntry: Project ${p.projectTitle} (${p.id.get}) Most recent backup version ${fileEntry.version} matches source, no backup required")
             Success(Right(Some(fileEntry)))
           } else {
-            logger.info(s"getOldVersionEntry: Project ${p.projectTitle} (${p.id.get}) Most recent backup version ${fileEntry.version} size mismatch ${sourceMetaTwo.get.size} vs ${meta.size}, backup needed")
+            logger.debug(s"getOldVersionEntry: Project ${p.projectTitle} (${p.id.get}) Most recent backup version ${fileEntry.version} size mismatch ${sourceMetaTwo.get.size} vs ${meta.size}, backup needed")
             Success(Right(Some(fileEntry)))
           }
       }
@@ -338,7 +337,6 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
               try {
                 logger.debug(s"Got asset folder path: ${assetFolderData.get.value.get}")
                 val fileArray = getAssetFolderProjectFilePaths(assetFolderData.get.value.get)
-                logger.debug(s"Got file array: ${fileArray.mkString}")
                 fileArray.foreach(filePath => {
                   logger.debug(s"File path: $filePath")
                   val assetFolderStorage = config.getOptional[Int]("asset_folder_storage").getOrElse(1)
@@ -383,7 +381,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
                             case Success(destData) =>
                               destData.getFullPath.onComplete {
                                 case Failure(exception) =>
-                                  logger.debug(s"Fail: $exception")
+                                  logger.debug(s"Attempt at getting path failed:: $exception")
                                 case Success(pathData) =>
                                   if (makeFoldersSetting) {
                                     logger.debug(s"Write path: $pathData")

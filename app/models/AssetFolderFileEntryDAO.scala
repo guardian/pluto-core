@@ -77,8 +77,8 @@ class AssetFolderFileEntryDAO @Inject()(dbConfigProvider:DatabaseConfigProvider)
     }
 
     /**
-    * Get a [[AssetFolderFileEntry]] instance for the given database id.
-    * @param entryId database id. to look up
+    * Get an [[AssetFolderFileEntry]] instance for the given database id.
+    * @param entryId Database id. to look up
     * @return A Future, containing an Option that may contain a [[AssetFolderFileEntry]] instance
     */
   def entryFor(entryId: Int):Future[Option[AssetFolderFileEntry]] =
@@ -94,7 +94,7 @@ class AssetFolderFileEntryDAO @Inject()(dbConfigProvider:DatabaseConfigProvider)
     * Get an AssetFolderFileEntry instance for the given filename and version
     * @param fileName File name to search for
     * @param version id. to search for
-    * @return a Future, containing a Try that contains a sequence of zero or more AssetFolderFileEntry instances
+    * @return A Future, containing a Try that contains a sequence of zero or more AssetFolderFileEntry instances
     */
   def entryFor(fileName: String, version:Int):Future[Try[Seq[AssetFolderFileEntry]]] =
     db.run(
@@ -110,7 +110,7 @@ class AssetFolderFileEntryDAO @Inject()(dbConfigProvider:DatabaseConfigProvider)
     * This should be all that is needed because of table constraints
     * @param fileName The file name to search for (exact match)
     * @param version Version number to search for
-    * @return a Future containing either an AssetFolderFileEntry or None. The future fails if there is a problem.
+    * @return A Future containing either an AssetFolderFileEntry or None. The future fails if there is a problem.
     */
   def singleEntryFor(fileName: String, storageId:Int, version:Int):Future[Option[AssetFolderFileEntry]] =
     db.run(
@@ -126,7 +126,7 @@ class AssetFolderFileEntryDAO @Inject()(dbConfigProvider:DatabaseConfigProvider)
   /**
     * Returns a list of matching records for the given file name, ordered by most recent first (if versioning is enabled)
     * @param target File path to query. this should be a relative filepath for the given storage.
-    * @return a Future containing a sequence of results
+    * @return A Future containing a sequence of results
     */
   def findByFilename(target:Path, drop:Int=0, take:Int=100) = {
     val baseQuery = TableQuery[AssetFolderFileEntryRow].filter(_.filepath===target.toString)
@@ -138,7 +138,7 @@ class AssetFolderFileEntryDAO @Inject()(dbConfigProvider:DatabaseConfigProvider)
 
   /**
     * Returns a streaming source that lists out all files in the database, optionally limiting to a given storage id.
-    * @return an Akka Source, that yields FileEntry objects
+    * @return An Akka Source, that yields AssetFolderFileEntry objects
     */
   def scanAllFiles() = {
     val baseQuery = TableQuery[AssetFolderFileEntryRow]
