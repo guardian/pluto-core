@@ -3,7 +3,7 @@ package helpers
 import akka.stream.Materializer
 import drivers.StorageMetadata
 import helpers.StorageHelper.defaultBufferSize
-import models.{FileEntry, FileEntryDAO, StorageEntry}
+import models.{AssetFolderFileEntry, AssetFolderFileEntryDAO, FileEntry, FileEntryDAO, StorageEntry}
 import org.slf4j.{LoggerFactory, MDC}
 import play.api.inject.Injector
 
@@ -51,7 +51,7 @@ object StorageHelper {
   }
 }
 
-class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector, fileEntryDAO: FileEntryDAO) {
+class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector, fileEntryDAO: FileEntryDAO, assetFolderFileEntryDAO: AssetFolderFileEntryDAO) {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /**
@@ -192,6 +192,69 @@ class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector, fil
         case None=>
           throw new RuntimeException(s"No storage driver defined for ${maybeStorage.map(_.repr).getOrElse("unknown storage")}")
       }
+    })
+  }
+
+  def copyAssetFolderFile(sourceFile: AssetFolderFileEntry, destFile:AssetFolderFileEntry)
+              (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[AssetFolderFileEntry] = {
+    logger.debug(s"copyAssetFolderFile running with source of $sourceFile")
+
+    def getStorageDriverForFile(file:AssetFolderFileEntry) = {
+      file
+        .storage
+        .map(_.flatMap(_.getStorageDriver))
+        .map({
+          case Some(storageDriver) => storageDriver
+          case None => throw new RuntimeException(s"Storage with id. ${file.storageId} does not have a valid storage type")
+        })
+    }
+
+    def withReadStream[A](sourceFile:AssetFolderFileEntry)(cb:(Option[StorageMetadata], InputStream)=>Try[A]) = {
+      val readStreamFut = for {
+        driver <- getStorageDriverForFile(sourceFile)
+        fullPath <- sourceFile.getFullPath
+        readStream <- Future.fromTry(driver.getReadStream(fullPath, sourceFile.version))
+        meta <- Future.fromTry(Try { driver.getMetadata(fullPath, sourceFile.version)})
+      } yield (driver, readStream, meta)
+
+      readStreamFut.map({
+        case (driver, readStream, meta)=>
+          val result = cb(meta, readStream)
+          Try { readStream.close() } match {
+            case Success(_)=>
+            case Failure(err)=>
+              logger.error(s"Could not close file $sourceFile via driver $driver: ${err.getMessage}", err)
+          }
+          Future.fromTry(result)
+      }).flatten
+    }
+
+    val destination = for {
+      destFilePath <- destFile.getFullPath
+      destStorageDriver <- getStorageDriverForFile(destFile)
+    } yield (destFilePath, destStorageDriver)
+
+    destination.flatMap({
+      case (destFilePath, destDriver)=>
+        withReadStream(sourceFile) { (sourceMeta,readStream)=>
+          destDriver
+            .writeDataToPath(destFilePath, destFile.version, readStream)
+            .flatMap(_=> {
+              //Now that the copy completed successfully, we need to check that the file sizes actually match
+              destDriver.getMetadata(destFilePath, destFile.version) match {
+                case None =>
+                  logger.error(s"${sourceFile.filepath}: Could not get destination file metadata")
+                  Failure(new RuntimeException(s"${sourceFile.filepath}: Could not get destination file metadata"))
+                case Some(meta)=>
+                  logger.debug(s"${sourceFile.filepath}: Destination size is ${meta.size} and source size is ${sourceMeta.get.size}")
+                  if(meta.size==sourceMeta.get.size) {
+                    Success( () )
+                  } else {
+                    Failure(new RuntimeException(s"${sourceFile.filepath}: Copied file size ${meta.size} did not match source size of ${sourceMeta.get.size}"))
+                  }
+              }
+            })
+        }.map(_=>destFile.copy())
     })
   }
 }

@@ -260,26 +260,26 @@ class MatrixStoreDriver(override val storageRef: StorageEntry)(implicit injector
   /**
     * look up a given (unique) path on the storage that is not in the trash.
     * @param vault Vault reference to perform search on
-    * @param fileName filename to look for (in MXFS_FILENAME)
+    * @param path Path to look for (in MXFS_PATH)
     * @param version version number to look for (in PROJECTLOCKER_VERSION)
     * @return either the OID of the matching file or None.
     */
-  def lookupPath(vault:Vault, fileName:String, version:Int)  = {
-    logger.debug(s"Lookup $fileName at version $version on OM vault ${vault.getId}")
+  def lookupPath(vault:Vault, path:String, version:Int)  = {
+    logger.debug(s"Lookup $path at version $version on OM vault ${vault.getId}")
 
-    val searchTerm = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\" AND PROJECTLOCKER_VERSION:$version AND MXFS_INTRASH:0""")
+    val searchTerm = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_PATH:\"$path\" AND PROJECTLOCKER_VERSION:$version AND MXFS_INTRASH:0""")
     //val searchTerm = SearchTerm.createSimpleTerm("PROJECTLOCKER_VERSION", version)
     val results = vault.searchObjects(searchTerm, 1).asScala.toSeq
 
     results.headOption match {
       case Some(entry)=>
-        logger.debug(s"Got $entry as the OID for $fileName at version $version")
+        logger.debug(s"Got $entry as the OID for $path at version $version")
       case None=>
-        logger.info(s"Could not find anything for $fileName at version $version")
-        val allVersionsQuery = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_FILENAME:\"$fileName\" AND MXFS_INTRASH:0""")
+        logger.info(s"Could not find anything for $path at version $version")
+        val allVersionsQuery = SearchTerm.createSimpleTerm(Constants.CONTENT, s"""MXFS_PATH:\"$path\" AND MXFS_INTRASH:0""")
         val allVersions = vault.searchObjects(allVersionsQuery, 10).asScala.toSeq
-        logger.info(s"Found ${allVersions.length} hits for filename $fileName")
-        allVersions.foreach(oid=>logger.info(s"\t$fileName: $oid"))
+        logger.info(s"Found ${allVersions.length} hits for path $path")
+        allVersions.foreach(oid=>logger.info(s"\t$path: $oid"))
     }
     results.headOption
   }
