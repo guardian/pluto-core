@@ -244,3 +244,15 @@ consult that for setup-by-step instructions.
 
 These steps are carried out automatically when you run `scripts/setup_docker_postgres.sh`.
 
+## Settings For Jobs to Back Up Project Files
+
+Various settings are required in the pluto-core config. file to make backing up project files work correctly, for example: -
+
+asset_folder_backup_storage = 3
+asset_folder_storage = 5
+asset_folder_backup_types = [2,6]
+asset_folder_backup_make_folders = false
+backup_types = [1,3,4,5,7,8]
+
+Where asset_folder_backup_storage is the storage to back up to, asset_folder_storage is the storage used for asset folders, asset_folder_backup_types is an array of the types to back up with the job for project files stored in asset folders (Currently these are Cubase and Audition files), asset_folder_backup_make_folders is a Boolean controlling if an attempt should be made to create the folder on the storage before copying the file, and backup_types is an array of the types to back up with the job to copy files from the project file storage (Designed to be used with project types other than Cubase or Audition).
+
