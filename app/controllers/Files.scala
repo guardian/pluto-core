@@ -428,6 +428,7 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
             )))
         }
       case Failure(err)=>
+        logger.error(s"Asset folder file metadata retrieval failed: ${err.getMessage}", err)
         Future(InternalServerError(Json.obj("status"->"error", "detail"->err.getMessage)))
     })
   }}
