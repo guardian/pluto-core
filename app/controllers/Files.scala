@@ -405,6 +405,33 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
     })
   }}
 
+  def assetFolderSelectId(requestedId: Int) = {
+    dbConfig.db.run(
+      TableQuery[AssetFolderFileEntryRow].filter(_.id === requestedId).result.asTry
+    )
+  }
+
+  def assetFolderFileMetadata(fileId:Int) = IsAuthenticatedAsync {uid=>{request=>
+    assetFolderSelectId(fileId).flatMap({
+      case Success(rows)=>
+        if(rows.isEmpty){
+          Future(NotFound(Json.obj("status"->"notfound")))
+        } else {
+          storageHelper
+            .assetFolderOnStorageMetadata(rows.head)
+            .map(result=>Ok(Json.obj(
+              "status"->"ok",
+              "metadata"->Json.obj(
+                "size"->result.map(_.size),
+                "lastModified"->result.map(_.lastModified.format(DateTimeFormatter.ISO_DATE_TIME))
+              )
+            )))
+        }
+      case Failure(err)=>
+        Future(InternalServerError(Json.obj("status"->"error", "detail"->err.getMessage)))
+    })
+  }}
+
 }
 
 case class RenameFileRequest(newName: String)

@@ -367,3 +367,19 @@ interface ItemsNotDeleted {
   projectEntry?: number;
   item?: string;
 }
+
+interface AssetFolderFileEntry {
+  id: number;
+  filepath: string;
+  storage: number;
+  version: number;
+  ctime: string;
+  mtime: string;
+  atime: string;
+  backupOf?: number;
+}
+
+interface AssetFolderProjectFilesResponse {
+  status: string;
+  files: AssetFolderFileEntry[];
+}

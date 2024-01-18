@@ -56,7 +56,7 @@ class AssetFolderFileEntryRow(tag:Tag) extends Table[AssetFolderFileEntry](tag, 
   */
 trait AssetFolderFileEntrySerializer extends TimestampSerialization {
   /*https://www.playframework.com/documentation/2.5.x/ScalaJson*/
-  implicit val fileWrites: Writes[AssetFolderFileEntry] = (
+  implicit val assetFolderFileWrites: Writes[AssetFolderFileEntry] = (
     (JsPath \ "id").writeNullable[Int] and
       (JsPath \ "filepath").write[String] and
       (JsPath \ "storage").write[Int] and
@@ -68,7 +68,7 @@ trait AssetFolderFileEntrySerializer extends TimestampSerialization {
       (JsPath \ "backupOf").writeNullable[Int]
     )(unlift(AssetFolderFileEntry.unapply))
 
-  implicit val fileReads: Reads[AssetFolderFileEntry] = (
+  implicit val assetFolderFileReads: Reads[AssetFolderFileEntry] = (
     (JsPath \ "id").readNullable[Int] and
       (JsPath \ "filepath").read[String] and
       (JsPath \ "storage").read[Int] and

@@ -446,3 +446,36 @@ export const getItemsNotDeleted = async (
     throw error;
   }
 };
+
+export const getAssetFolderProjectFiles = async (id: number): Promise<AssetFolderFileEntry[]> => {
+  const response = await Axios.get<AssetFolderProjectFilesResponse>(
+      `${API_PROJECTS}/${id}/assetFolderFiles?allVersions=false`,
+      { validateStatus: (s) => s == 200 || s == 404 }
+  );
+  switch (response.status) {
+    case 200:
+      return response.data.files;
+    case 404:
+      throw `The project with id. ${id} does not exist`;
+    default:
+      throw `Axios returned an unexpected response code ${response.status}`;
+  }
+};
+
+export const getAssetFolderFileStorageMetadata = async (
+    fileId: number
+): Promise<Map<string, string>> => {
+  const response = await Axios.get<FileMetadataResponse>(
+      `${API_FILES}/${fileId}/assetFolderStorageMetadata`,
+      { validateStatus: (s) => s == 200 || s == 404 }
+  );
+
+  switch (response.status) {
+    case 200:
+      return new Map(Object.entries(response.data.metadata));
+    case 404:
+      throw `There is no file with id. ${fileId}`;
+    default:
+      throw `Axios returned an unexpected response code ${response.status}`;
+  }
+};

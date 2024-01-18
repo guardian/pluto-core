@@ -257,4 +257,17 @@ class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector, fil
         }.map(_=>destFile.copy())
     })
   }
+
+  def assetFolderOnStorageMetadata(targetFile: AssetFolderFileEntry)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    targetFile.storage.map(maybeStorage=>{
+      val maybeStorageDriver = maybeStorage.flatMap(_.getStorageDriver)
+
+      maybeStorageDriver match {
+        case Some(storageDriver)=>
+          storageDriver.getMetadata(targetFile.filepath, targetFile.version)
+        case None=>
+          throw new RuntimeException(s"No storage driver defined for ${maybeStorage.map(_.repr).getOrElse("unknown storage")}")
+      }
+    })
+  }
 }
