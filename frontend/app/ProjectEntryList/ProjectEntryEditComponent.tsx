@@ -359,32 +359,35 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             {projectTypeData[project.projectTypeId] == "Premiere" ? (
               <ProjectFileUpload projectId={project.id}></ProjectFileUpload>
             ) : null}
-            {(projectTypeData[project.projectTypeId] == "Audition") || (projectTypeData[project.projectTypeId] == "Cubase") ? (
-                <Tooltip
-                    title="View Project File Backups"
-                    style={{ marginRight: "0px", minWidth: "10px" }}
+            {projectTypeData[project.projectTypeId] == "Audition" ||
+            projectTypeData[project.projectTypeId] == "Cubase" ? (
+              <Tooltip
+                title="View Project File Backups"
+                style={{ marginRight: "0px", minWidth: "10px" }}
+              >
+                <IconButton
+                  disableRipple
+                  className={classes.noHoverEffect}
+                  onClick={() =>
+                    history.push(`/project/${project.id}/assetfolderbackups`)
+                  }
                 >
-                  <IconButton
-                      disableRipple
-                      className={classes.noHoverEffect}
-                      onClick={() => history.push(`/project/${project.id}/assetfolderbackups`)}
-                  >
-                    <FileCopy />
-                  </IconButton>
-                </Tooltip>
+                  <FileCopy />
+                </IconButton>
+              </Tooltip>
             ) : (
-                <Tooltip
-                    title="View Project File Backups"
-                    style={{ marginRight: "0px", minWidth: "10px" }}
+              <Tooltip
+                title="View Project File Backups"
+                style={{ marginRight: "0px", minWidth: "10px" }}
+              >
+                <IconButton
+                  disableRipple
+                  className={classes.noHoverEffect}
+                  onClick={() => history.push(`/project/${project.id}/backups`)}
                 >
-                  <IconButton
-                      disableRipple
-                      className={classes.noHoverEffect}
-                      onClick={() => history.push(`/project/${project.id}/backups`)}
-                  >
-                    <FileCopy />
-                  </IconButton>
-                </Tooltip>
+                  <FileCopy />
+                </IconButton>
+              </Tooltip>
             )}
 
             <Tooltip title="See project's media">

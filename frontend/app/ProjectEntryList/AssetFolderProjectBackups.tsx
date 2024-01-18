@@ -23,9 +23,9 @@ import { useGuardianStyles } from "~/misc/utils";
 
 declare var deploymentRootPath: string;
 
-const AssetFolderProjectBackups: React.FC<RouteComponentProps<{ itemid: string }>> = (
-  props
-) => {
+const AssetFolderProjectBackups: React.FC<RouteComponentProps<{
+  itemid: string;
+}>> = (props) => {
   const [project, setProject] = useState<Project | undefined>(undefined);
   const [dialogErrString, setDialogErrString] = useState<string | undefined>(
     undefined
@@ -48,15 +48,15 @@ const AssetFolderProjectBackups: React.FC<RouteComponentProps<{ itemid: string }
     });
   }, [props.match.params.itemid]);
 
-  const sortFileEntryFunc = (a: AssetFolderFileEntry, b: AssetFolderFileEntry) =>
-    a.mtime.localeCompare(b.mtime);
+  const sortFileEntryFunc = (
+    a: AssetFolderFileEntry,
+    b: AssetFolderFileEntry
+  ) => a.mtime.localeCompare(b.mtime);
 
   useEffect(() => {
     if (project) {
       getAssetFolderProjectFiles(project.id).then((fileList) => {
-        setBackupFiles(
-            fileList.sort(sortFileEntryFunc)
-        );
+        setBackupFiles(fileList.sort(sortFileEntryFunc));
       });
     }
   }, [project]);

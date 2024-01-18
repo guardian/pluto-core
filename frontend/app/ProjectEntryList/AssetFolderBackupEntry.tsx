@@ -18,7 +18,9 @@ interface AssetFolderBackupEntryProps {
   version: number;
 }
 
-const AssetFolderBackupEntry: React.FC<AssetFolderBackupEntryProps> = (props) => {
+const AssetFolderBackupEntry: React.FC<AssetFolderBackupEntryProps> = (
+  props
+) => {
   const classes = useGuardianStyles();
   const [fileMeta, setFileMeta] = useState<Map<string, string>>(new Map());
   const [loadError, setLoadError] = useState(false);

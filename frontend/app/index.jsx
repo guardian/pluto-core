@@ -334,8 +334,8 @@ class App extends React.Component {
                       component={ProjectBackups}
                     />
                     <Route
-                        path="/project/:itemid/assetfolderbackups"
-                        component={AssetFolderProjectBackups}
+                      path="/project/:itemid/assetfolderbackups"
+                      component={AssetFolderProjectBackups}
                     />
                     <Route
                       path="/project/:itemid/delete"

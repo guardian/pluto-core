@@ -447,10 +447,12 @@ export const getItemsNotDeleted = async (
   }
 };
 
-export const getAssetFolderProjectFiles = async (id: number): Promise<AssetFolderFileEntry[]> => {
+export const getAssetFolderProjectFiles = async (
+  id: number
+): Promise<AssetFolderFileEntry[]> => {
   const response = await Axios.get<AssetFolderProjectFilesResponse>(
-      `${API_PROJECTS}/${id}/assetFolderFiles?allVersions=false`,
-      { validateStatus: (s) => s == 200 || s == 404 }
+    `${API_PROJECTS}/${id}/assetFolderFiles?allVersions=false`,
+    { validateStatus: (s) => s == 200 || s == 404 }
   );
   switch (response.status) {
     case 200:
@@ -463,11 +465,11 @@ export const getAssetFolderProjectFiles = async (id: number): Promise<AssetFolde
 };
 
 export const getAssetFolderFileStorageMetadata = async (
-    fileId: number
+  fileId: number
 ): Promise<Map<string, string>> => {
   const response = await Axios.get<FileMetadataResponse>(
-      `${API_FILES}/${fileId}/assetFolderStorageMetadata`,
-      { validateStatus: (s) => s == 200 || s == 404 }
+    `${API_FILES}/${fileId}/assetFolderStorageMetadata`,
+    { validateStatus: (s) => s == 200 || s == 404 }
   );
 
   switch (response.status) {
