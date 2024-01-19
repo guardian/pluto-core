@@ -66,6 +66,7 @@ import PremiereVersionChange from "./PremiereVersionChange/PremiereVersionChange
 import VersionTranslationsList from "./PremiereVersionTranslation/VersionTranslationsList";
 import ProjectDeleteDataComponent from "./ProjectEntryList/ProjectDeleteDataComponent";
 import CommissionDeleteDataComponent from "./CommissionsList/CommissionDeleteDataComponent";
+import AssetFolderProjectBackups from "./ProjectEntryList/AssetFolderProjectBackups";
 
 library.add(faSearch);
 
@@ -331,6 +332,10 @@ class App extends React.Component {
                     <Route
                       path="/project/:itemid/backups"
                       component={ProjectBackups}
+                    />
+                    <Route
+                      path="/project/:itemid/assetfolderbackups"
+                      component={AssetFolderProjectBackups}
                     />
                     <Route
                       path="/project/:itemid/delete"

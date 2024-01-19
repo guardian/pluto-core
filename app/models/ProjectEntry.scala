@@ -11,7 +11,7 @@ import org.joda.time.DateTime
 import org.joda.time.DateTimeZone.UTC
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-
+import play.api.Configuration
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -153,6 +153,21 @@ extends PlutoModel{
       "projectCreated"->created.toString,
       "projectOwner"->user
     )
+  }
+
+  private def projectAssetFolderFilesLookupQuery(maybeLimitStorage:Option[Int]) = TableQuery[AssetFolderFileEntryRow]
+    .filter(_.project===id.get)
+    .filterOpt(maybeLimitStorage)(_.storage===_)
+    .sortBy(_.version.desc.nullsLast)
+
+  def associatedAssetFolderFiles(allVersions:Boolean, configuration: Configuration)(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Seq[AssetFolderFileEntry]] = {
+    def lookupProjectAssetFolderFiles(maybeLimitStorage:Option[Int]) = db.run {
+      projectAssetFolderFilesLookupQuery(maybeLimitStorage).result
+    }
+
+    for {
+      result <- lookupProjectAssetFolderFiles(if(allVersions) None else configuration.getOptional[Int]("asset_folder_backup_storage"))
+    } yield result
   }
 }
 

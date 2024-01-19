@@ -66,7 +66,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                        (implicit fileEntryDAO:FileEntryDAO, injector: Injector, mat: Materializer)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
-    with UpdateTitleRequestSerializer with FileEntrySerializer
+    with UpdateTitleRequestSerializer with FileEntrySerializer with AssetFolderFileEntrySerializer
     with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
@@ -993,4 +993,21 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
       Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
   }
+
+  def assetFolderFilesList(requestedId: Int, allVersions: Boolean) = IsAuthenticatedAsync {uid=>{request=>
+    implicit val db = dbConfig.db
+
+    selectid(requestedId).flatMap({
+      case Failure(error)=>
+        logger.error(s"Could not list files from project ${requestedId}",error)
+        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+      case Success(someSeq)=>
+        someSeq.headOption match { //matching on pk, so can only be one result
+          case Some(projectEntry)=>
+            projectEntry.associatedAssetFolderFiles(allVersions, implicitConfig).map(fileList=>Ok(Json.obj("status"->"ok","files"->fileList)))
+          case None=>
+            Future(NotFound(Json.obj("status"->"error","detail"->s"project $requestedId not found")))
+        }
+    })
+  }}
 }
