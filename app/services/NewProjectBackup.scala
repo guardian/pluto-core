@@ -542,13 +542,14 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
           case Some(driver)=>
             if(fileEntry.storageId!=2) {
               logger.info(s"Deleting backup ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
-              if (driver.deleteFileAtPath(fileEntry.filepath, fileEntry.version)) {
+              /*if (driver.deleteFileAtPath(fileEntry.filepath, fileEntry.version)) {
                 logger.info(s"Deleting backup entry ${fileEntry.id}")
                 fileEntry.deleteSelf
               } else {
                 logger.error(s"Could not delete file ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
                 Future( () )
-              }
+              }*/
+              Future( () )
             } else {
               Future( () )
             }
