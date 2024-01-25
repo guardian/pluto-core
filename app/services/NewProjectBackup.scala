@@ -505,6 +505,81 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         .run()
     } yield result
   }
+
+  /**
+   * Deletes all audio backups for the given project.  This deletes the files from disk via the storage driver,
+   * deletes the ProjectFileAssociation and the FileEntry associated with the backup file.
+   * @param projectAndFiles A 2-tuple consisting of the ProjectEntry representing the project and a list of all the
+   *                        FileEntry objects associated with it
+   * @param storageDrivers Cached map of StorageDrivers, so we don't have to initialise a new one every time
+   * @return A successful Future if all the invalid backups are removed or there were none to remove. A Failed future if
+   *         there is a problem.
+   */
+  def deleteAudioBackupsFor(projectAndFiles:(ProjectEntry, Seq[FileEntry]), storageDrivers:Map[Int, StorageDriver]):Future[Seq[Unit]] = {
+    val p = projectAndFiles._1
+    val backupFiles = projectAndFiles._2.filter(_.backupOf.isDefined)
+
+    val audioBackups = backupFiles.filter(fileEntry=>{
+      if(fileEntry.filepath.endsWith(".cpr")) {
+        logger.debug(s"Found Cubase file: ${fileEntry.filepath}")
+        true
+      } else if(fileEntry.filepath.endsWith(".sesx")) {
+        logger.debug(s"Found Audition file: ${fileEntry.filepath}")
+        true
+      } else {
+        false
+      }
+    })
+
+    logger.info(s"Project ${p.projectTitle} (${p.id.get}) has ${audioBackups.length} audio backups")
+
+    Future.sequence(
+      audioBackups.map(fileEntry=>{
+        storageDrivers.get(fileEntry.storageId) match {
+          case None=>
+            logger.error(s"Could not get a storage driver for ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
+            Future.failed(new RuntimeException("Could not get a storage driver on the second pass, this should not happen!"))
+          case Some(driver)=>
+            if(fileEntry.storageId!=2) {
+              logger.info(s"Deleting backup ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
+              if (driver.deleteFileAtPath(fileEntry.filepath, fileEntry.version)) {
+                logger.info(s"Deleting backup entry ${fileEntry.id}")
+                fileEntry.deleteSelf
+              } else {
+                logger.error(s"Could not delete file ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
+                Future( () )
+              }
+            } else {
+              Future( () )
+            }
+        }
+      })
+    )
+  }
+
+  def deleteAudioBackups:Future[BackupResults] = {
+    loadStorageDrivers().flatMap(drivers=>
+      ProjectEntry
+        .scanAllProjects
+        .map(p=>{
+          logger.info(s"Checking project ${p.projectTitle} for backups")
+          p
+        })
+        .mapAsync(1)(p=>p.associatedFiles(allVersions = true).map((p, _)))
+        .map(projectAndFiles=>{
+          val p = projectAndFiles._1
+          val f = projectAndFiles._2
+          val backupsCount = f.count(_.backupOf.isDefined)
+          logger.info(s"Project ${p.projectTitle} has ${f.length} files of which $backupsCount are backups")
+          projectAndFiles
+        })
+        .mapAsync(1)(projectAndFiles=>deleteAudioBackupsFor(projectAndFiles, drivers))
+        .toMat(Sink.fold(BackupResults.empty(0))((acc, results)=>{
+          acc.copy(successCount = acc.successCount+results.length)
+        }))(Keep.right)
+        .run()
+    )
+  }
 }
 
 object NewProjectBackup {
