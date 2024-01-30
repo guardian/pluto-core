@@ -143,9 +143,17 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
                 helperText="Enter a good descriptive project name"
                 margin="normal"
                 id="projectNameInput"
-                onChange={(event) =>
-                  props.projectNameDidChange(event.target.value)
-                }
+                onChange={(event) => {
+                  props.projectNameDidChange(
+                    event.target.value.replace(/[_]/g, "")
+                  );
+                  if (event.target.value.includes("_")) {
+                    SystemNotification.open(
+                      SystemNotifcationKind.Warning,
+                      "Underscores should not be used in project titles."
+                    );
+                  }
+                }}
                 value={props.projectName}
               />
             </Grid>
