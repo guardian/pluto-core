@@ -11,6 +11,10 @@ import ProductionOfficeComponent from "../projectcreate_new/ProductionOfficeComp
 import WorkingGroupSelector from "../common/WorkingGroupSelector";
 import { loadWorkingGroups } from "../common/WorkingGroupService";
 import { Autocomplete } from "@material-ui/lab";
+import {
+  SystemNotifcationKind,
+  SystemNotification,
+} from "@guardian/pluto-headers";
 
 interface CommissionTitleComponentProps {
   title: string;
@@ -50,7 +54,15 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
                 helperText="Enter a good descriptive Commission title"
                 margin="normal"
                 id="commissionNameInput"
-                onChange={(event) => props.onTitleChanged(event.target.value)}
+                onChange={(event) => {
+                  props.onTitleChanged(event.target.value.replace(/[_]/g, ""));
+                  if (event.target.value.includes("_")) {
+                    SystemNotification.open(
+                      SystemNotifcationKind.Warning,
+                      "Underscores should not be used in commission titles."
+                    );
+                  }
+                }}
                 value={props.title}
               />
             </Grid>
