@@ -70,16 +70,16 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
     initialCommission,
     setInitialCommission,
   ] = useState<CommissionFullRecord | null>(null);
-  const [hasChanges, setHasChanges] = React.useState(false);
 
+  const [hasChanges, setHasChanges] = React.useState(false);
   const fieldValueChanged = (
     value: string | null,
     field: keyof CommissionFullRecord
   ): void => {
     const updatedCommission = { ...props.commission, [field]: value };
     props.onChange(updatedCommission);
-    console.log("Updated commission:::", updatedCommission);
-    console.log("Initial Commission:::", initialCommission);
+    console.log("Updated commission: ", updatedCommission);
+    console.log("Initial Commission: ", initialCommission);
     setHasChanges(
       JSON.stringify(updatedCommission) !== JSON.stringify(initialCommission)
     );
@@ -92,9 +92,13 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
       | HTMLSelectElement
       | { name?: string; value: string }
     >,
-    field: keyof CommissionFullRecord
+    field: keyof CommissionFullRecord,
+    value?: string | null
   ): void => {
-    fieldValueChanged(event.target.value, field);
+    console.log("Field changed: ", field);
+    // If a value is provided directly, use it; otherwise, fall back to event.target.value
+    const fieldValue = value !== undefined ? value : event.target.value;
+    fieldValueChanged(fieldValue, field);
   };
 
   useEffect(() => {
@@ -155,12 +159,13 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
                 margin="normal"
                 id="scheduled-completion"
                 value={props.commission.scheduledCompletion}
-                onChange={(newValue: Date | null) => {
-                  if (newValue)
-                    props.onChange({
-                      ...props.commission,
-                      scheduledCompletion: FormatDateISO(newValue),
-                    });
+                onChange={(value) => {
+                  console.log("Value:::", value);
+                  setHasChanges(true);
+                  if (value) {
+                    const formattedDate = FormatDateISO(value); // Format the date to ISO string
+                    fieldValueChanged(formattedDate, "scheduledCompletion");
+                  }
                 }}
               />
             </MuiPickersUtilsProvider>
