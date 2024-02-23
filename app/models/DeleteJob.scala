@@ -48,6 +48,11 @@ object DeleteJobDAO extends ((Option[Int], Int, String)=>DeleteJobDAO) {
         val newJob = DeleteJobDAO(None, projectId, status)
         newJob.save
     })
+
+  def getJobs(startAt:Int, limit:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) =
+    db.run(
+      TableQuery[DeleteJob].sortBy(_.id.asc).drop(startAt).take(limit).result.asTry
+    )
 }
 
 
@@ -56,4 +61,18 @@ class DeleteJob(tag: Tag) extends Table[DeleteJobDAO](tag, "DeleteJob") {
   def projectEntry = column[Int]("k_project_entry")
   def status = column[String]("s_status")
   def * = (id.?, projectEntry, status) <> (DeleteJobDAO.tupled, DeleteJobDAO.unapply)
+}
+
+trait DeleteJobSerializer {
+  implicit val defaultsWrites:Writes[DeleteJobDAO] = (
+    (JsPath \ "id").writeNullable[Int] and
+      (JsPath \ "projectEntry").write[Int] and
+      (JsPath \ "status").write[String]
+    )(unlift(DeleteJobDAO.unapply))
+
+  implicit val defaultsReads:Reads[DeleteJobDAO] = (
+    (JsPath \ "id").readNullable[Int] and
+      (JsPath \ "projectEntry").read[Int] and
+      (JsPath \ "status").read[String]
+    )(DeleteJobDAO.apply _)
 }
