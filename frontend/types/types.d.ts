@@ -383,3 +383,9 @@ interface AssetFolderProjectFilesResponse {
   status: string;
   files: AssetFolderFileEntry[];
 }
+
+interface DeletionRecord {
+  id: number;
+  projectEntry: number;
+  status: string;
+}

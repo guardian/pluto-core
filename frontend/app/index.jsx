@@ -67,6 +67,8 @@ import VersionTranslationsList from "./PremiereVersionTranslation/VersionTransla
 import ProjectDeleteDataComponent from "./ProjectEntryList/ProjectDeleteDataComponent";
 import CommissionDeleteDataComponent from "./CommissionsList/CommissionDeleteDataComponent";
 import AssetFolderProjectBackups from "./ProjectEntryList/AssetFolderProjectBackups";
+import DeletionRecords from "./DeletionRecords/DeletionRecords.tsx";
+import DeletionRecord from "./DeletionRecords/DeletionRecord.tsx";
 
 library.add(faSearch);
 
@@ -394,7 +396,11 @@ class App extends React.Component {
                     />
                     <Route path="/postrun/" component={PostrunList} />
                     <Route path="/defaults/" component={ServerDefaults} />
-
+                    <Route
+                      path="/deleted/:projectEntry"
+                      component={DeletionRecord}
+                    />
+                    <Route path="/deleted/" component={DeletionRecords} />
                     <Route
                       exact
                       path="/"
