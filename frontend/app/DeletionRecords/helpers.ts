@@ -31,3 +31,26 @@ export const getDeletionRecordsOnPage = async ({
     throw error;
   }
 };
+
+export const getDeletionRecord = async (
+  id: number
+): Promise<DeletionRecord> => {
+  try {
+    const {
+      status,
+      data: { result },
+    } = await Axios.get<PlutoApiResponse<DeletionRecord>>(
+      `${API_DELETED}/${id}`
+    );
+
+    if (status === 200) {
+      console.log(result);
+      return result;
+    }
+
+    throw new Error(`Could not retrieve deletion record. ${status}`);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};

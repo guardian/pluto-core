@@ -16,11 +16,14 @@ import { sortListByOrder, SortDirection } from "../utils/lists";
 import { isLoggedIn } from "../utils/api";
 import { Helmet } from "react-helmet";
 import { useGuardianStyles } from "~/misc/utils";
+import moment from "moment";
 
 const tableHeaderTitles: HeaderTitle<DeletionRecord>[] = [
-  { label: "Idenity", key: "id" },
   { label: "Project", key: "projectEntry" },
-  { label: "Status", key: "status" },
+  { label: "Owner", key: "user" },
+  { label: "Deleted", key: "deleted" },
+  { label: "Created", key: "created" },
+  { label: "Working Group", key: "workingGroup" },
 ];
 
 const pageSizeOptions = [25, 50, 100];
@@ -117,17 +120,32 @@ const DeletionRecords: React.FC<RouteComponentProps> = (props) => {
               </TableHead>
               <TableBody>
                 {sortListByOrder(deletionRecords, orderBy, order).map(
-                  ({ id, projectEntry, status }) => (
+                  ({
+                    id,
+                    projectEntry,
+                    user,
+                    deleted,
+                    created,
+                    workingGroup,
+                  }) => (
                     <TableRow
                       hover={true}
-                      onClick={() =>
-                        props.history.push(`/deleted/${projectEntry}`)
-                      }
+                      onClick={() => props.history.push(`/deleted/${id}`)}
                       key={id}
                     >
-                      <TableCell>{id}</TableCell>
                       <TableCell>{projectEntry}</TableCell>
-                      <TableCell>{status}</TableCell>
+                      <TableCell>{user}</TableCell>
+                      <TableCell>
+                        <span className="datetime">
+                          {moment(deleted).format("DD/MM/YYYY HH:mm")}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="datetime">
+                          {moment(created).format("DD/MM/YYYY HH:mm")}
+                        </span>
+                      </TableCell>
+                      <TableCell>{workingGroup}</TableCell>
                     </TableRow>
                   )
                 )}
