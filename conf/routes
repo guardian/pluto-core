@@ -49,7 +49,8 @@ GET     /api/project/obits                  @controllers.ProjectEntryController.
 
 PUT     /api/project                        @controllers.ProjectEntryController.create
 GET     /api/project/forFilename            @controllers.Files.projectFromFile(filename: String,startAt:Int ?= 0,limit:Int ?=50, includeBackups:Boolean ?=false)
-GET     /api/project/deleted                @controllers.DeleteJobController.deleted(startAt:Int ?=0,length:Int ?=100)
+GET     /api/project/deleted                @controllers.DeletionRecordController.deleted(startAt:Int ?=0,length:Int ?=100)
+GET     /api/project/deleted/:id            @controllers.DeletionRecordController.record(id:Int)
 GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int, allVersions:Boolean ?=false)
 GET     /api/project/:id/assetFolderFiles   @controllers.ProjectEntryController.assetFolderFilesList(id:Int, allVersions:Boolean ?=false)
 GET     /api/project/:id                    @controllers.ProjectEntryController.getitem(id: Int)

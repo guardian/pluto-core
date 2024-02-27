@@ -5,9 +5,11 @@ import { useGuardianStyles } from "~/misc/utils";
 import { getItemsNotDeleted, getDeleteJob } from "../ProjectEntryList/helpers";
 import { Helmet } from "react-helmet";
 import { isLoggedIn } from "~/utils/api";
+import { getDeletionRecord } from "./helpers";
+import moment from "moment";
 
 interface DeletionRecordStateTypes {
-  projectEntry?: string;
+  id?: string;
 }
 
 type DeletionRecordProps = RouteComponentProps<DeletionRecordStateTypes>;
@@ -19,10 +21,11 @@ const DeletionRecord: React.FC<DeletionRecordProps> = (props) => {
   const [itemsNotDeleted, setItemsNotDeleted] = useState<ItemsNotDeleted[]>([]);
   const [refreshInterval, setRefreshInterval] = useState<any>();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [deletionRecord, setDeletionRecord] = useState<DeletionRecord>();
 
   const getDeleteItemData = async () => {
     try {
-      const id = Number(props.match.params.projectEntry);
+      const id = Number(deletionRecord?.projectEntry);
       const returnedItems = await getItemsNotDeleted(id);
       setItemsNotDeleted(returnedItems);
     } catch {
@@ -44,28 +47,43 @@ const DeletionRecord: React.FC<DeletionRecordProps> = (props) => {
 
     fetchWhoIsLoggedIn();
 
-    const getDeleteJobData = async () => {
+    const getDeletionRecordData = async () => {
       try {
-        const id = Number(props.match.params.projectEntry);
-        const returnedStatus = await getDeleteJob(id);
-        setDeleteJobStatus(returnedStatus);
+        const id = Number(props.match.params.id);
+        const returnedRecord = await getDeletionRecord(id);
+        setDeletionRecord(returnedRecord);
       } catch {
-        console.log("Could not load delete job status.");
+        console.log("Could not load deletion record.");
       }
     };
 
-    getDeleteJobData();
-
-    const interval = setInterval(() => getDeleteJobData(), 10000);
-    setRefreshInterval(interval);
-
-    getDeleteItemData();
+    getDeletionRecordData();
 
     return () => {
       isMounted = false;
-      clearInterval(interval);
     };
   }, []);
+
+  useEffect(() => {
+    if (deletionRecord != undefined) {
+      const getDeleteJobData = async () => {
+        try {
+          const id = Number(deletionRecord?.projectEntry);
+          const returnedStatus = await getDeleteJob(id);
+          setDeleteJobStatus(returnedStatus);
+        } catch {
+          console.log("Could not load delete job status.");
+        }
+      };
+
+      getDeleteJobData();
+
+      const interval = setInterval(() => getDeleteJobData(), 10000);
+      setRefreshInterval(interval);
+
+      getDeleteItemData();
+    }
+  }, [deletionRecord]);
 
   useEffect(() => {
     if (deleteJobStatus == "Finished") {
@@ -77,52 +95,72 @@ const DeletionRecord: React.FC<DeletionRecordProps> = (props) => {
   return (
     <>
       <Helmet>
-        <title>
-          Deletion Record for Project {props.match.params.projectEntry} - Pluto
-          Admin
-        </title>
+        <title>Deletion Record {props.match.params.id} - Pluto Admin</title>
       </Helmet>
       {isAdmin ? (
-        <Paper className={classes.root} elevation={3}>
+        <div>
           <Grid container xs={12} direction="row" spacing={3}>
             <Grid item xs={12} style={{ fontSize: "2em" }}>
-              Project {props.match.params.projectEntry} Deletion Record
+              Project Deletion Record {props.match.params.id}
             </Grid>
-            <Grid item xs={12} style={{ fontSize: "1.6em" }}>
-              Storage Area Network Data Outcome
-            </Grid>
-            <Grid item xs={12}>
-              {deleteJobStatus == "Started" ? <>Job running...</> : null}
-              {deleteJobStatus == "Finished" ? (
-                <>
-                  Deletion instructions sent to RabbitMQ.
-                  {itemsNotDeleted.length > 0 ? (
-                    <>
-                      <br />
-                      <br />
-                      No attempt to delete the following items was made due to
-                      them being in more than one project:-
-                      <br />
-                    </>
-                  ) : null}
-                  {itemsNotDeleted
-                    ? itemsNotDeleted.map((vidispine_item) => {
-                        const { id, projectEntry, item } = vidispine_item;
-                        return (
-                          <>
-                            <a href={"/vs/item/" + item} target="_blank">
-                              {item}
-                            </a>
-                            <br />
-                          </>
-                        );
-                      })
-                    : null}
-                </>
-              ) : null}
+            <Grid item xs={12} style={{ fontSize: "1em" }}>
+              Project: {deletionRecord?.projectEntry}
+              <br />
+              Owner: {deletionRecord?.user}
+              <br />
+              Deleted:{" "}
+              {moment(deletionRecord?.deleted).format("DD/MM/YYYY HH:mm")}
+              <br />
+              Created:{" "}
+              {moment(deletionRecord?.created).format("DD/MM/YYYY HH:mm")}
+              <br />
+              Working group: {deletionRecord?.workingGroup}
             </Grid>
           </Grid>
-        </Paper>
+          {deleteJobStatus != "" ? (
+            <Paper
+              className={classes.root}
+              elevation={3}
+              style={{ marginTop: "30px" }}
+            >
+              <Grid container xs={12} direction="row" spacing={3}>
+                <Grid item xs={12} style={{ fontSize: "1.6em" }}>
+                  Storage Area Network Data Outcome
+                </Grid>
+                <Grid item xs={12}>
+                  {deleteJobStatus == "Started" ? <>Job running...</> : null}
+                  {deleteJobStatus == "Finished" ? (
+                    <>
+                      Deletion instructions sent to RabbitMQ.
+                      {itemsNotDeleted.length > 0 ? (
+                        <>
+                          <br />
+                          <br />
+                          No attempt to delete the following items was made due
+                          to them being in more than one project:-
+                          <br />
+                        </>
+                      ) : null}
+                      {itemsNotDeleted
+                        ? itemsNotDeleted.map((vidispine_item) => {
+                            const { id, projectEntry, item } = vidispine_item;
+                            return (
+                              <>
+                                <a href={"/vs/item/" + item} target="_blank">
+                                  {item}
+                                </a>
+                                <br />
+                              </>
+                            );
+                          })
+                        : null}
+                    </>
+                  ) : null}
+                </Grid>
+              </Grid>
+            </Paper>
+          ) : null}
+        </div>
       ) : (
         <div>You do not have access to this page.</div>
       )}

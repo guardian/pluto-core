@@ -387,5 +387,8 @@ interface AssetFolderProjectFilesResponse {
 interface DeletionRecord {
   id: number;
   projectEntry: number;
-  status: string;
+  user: string;
+  deleted: string;
+  created: string;
+  workingGroup: string;
 }

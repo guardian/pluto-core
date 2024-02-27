@@ -396,10 +396,7 @@ class App extends React.Component {
                     />
                     <Route path="/postrun/" component={PostrunList} />
                     <Route path="/defaults/" component={ServerDefaults} />
-                    <Route
-                      path="/deleted/:projectEntry"
-                      component={DeletionRecord}
-                    />
+                    <Route path="/deleted/:id" component={DeletionRecord} />
                     <Route path="/deleted/" component={DeletionRecords} />
                     <Route
                       exact

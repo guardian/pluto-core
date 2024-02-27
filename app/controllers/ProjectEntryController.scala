@@ -50,6 +50,8 @@ import matrixstore.MatrixStoreEnvironmentConfigProvider
 import mxscopy.MXSConnectionBuilderImpl
 import mxscopy.MXSConnectionBuilder
 import services.RabbitMqMatrix.MatrixEvent
+import java.util.Date
+import java.sql.Timestamp
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
@@ -865,15 +867,43 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       }
     }
 
+    def makeDeletionRecord() = Future {
+      implicit val db = dbConfig.db
+
+      var user = ""
+      val currentDate = new Date()
+      val timestampOfNow = new Timestamp(currentDate.getTime)
+      var created = timestampOfNow
+      var workingGroupName = ""
+
+      ProjectEntry.entryForId(projectId).map({
+        case Success(projectEntry: ProjectEntry) =>
+          user = projectEntry.user
+          created = projectEntry.created
+          projectEntry.getWorkingGroup.map({
+            case Some(workingGroup: PlutoWorkingGroup) =>
+              workingGroupName = workingGroup.name
+              DeletionRecordDAO.getOrCreate(projectId, user, timestampOfNow, created, workingGroupName)
+            case None =>
+              logger.error(s"Could not get working group name for project ${projectId}")
+              DeletionRecordDAO.getOrCreate(projectId, user, timestampOfNow, created, "Unknown")
+          })
+        case Failure(error) =>
+          logger.error(s"Could not look up project entry for ${projectId}: ", error)
+          Left(error.toString)
+      })
+    }
+
     val f = for {
-      f1 <- deletePTRJob()
-      f2 <- deleteFileJob()
-      f3 <- deleteBackupsJob()
-      f4 <- deleteDeliverables()
-      f5 <- deleteS3()
-      f6 <- deleteMatrix()
-      f7 <- deleteSAN()
-    } yield List(f1, f2, f3, f4, f5, f6, f7)
+      f1 <- makeDeletionRecord()
+      f2 <- deletePTRJob()
+      f3 <- deleteFileJob()
+      f4 <- deleteBackupsJob()
+      f5 <- deleteDeliverables()
+      f6 <- deleteS3()
+      f7 <- deleteMatrix()
+      f8 <- deleteSAN()
+    } yield List(f1, f2, f3, f4, f5, f6, f7, f8)
     if (pluto) {
       Thread.sleep(800)
       implicit val db = dbConfig.db
