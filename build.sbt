@@ -57,7 +57,7 @@ unmanagedResourceDirectories in Test +=  (baseDirectory ( _ /"target/web/public/
 resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 
 libraryDependencies ++= Seq(
-  "org.postgresql" % "postgresql" % "42.3.3",
+  "org.postgresql" % "postgresql" % "42.7.2",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-slick
   "com.typesafe.play" %% "play-slick" % "4.0.2",
   "com.typesafe.play" %% "play-slick-evolutions" % "4.0.2",
@@ -74,7 +74,7 @@ libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
 //authentication
 libraryDependencies ++= Seq(
   "com.unboundid" % "unboundid-ldapsdk" % "5.0.0",
-  "com.nimbusds" % "nimbus-jose-jwt" % "9.0",
+  "com.nimbusds" % "nimbus-jose-jwt" % "9.37.2",
 )
 
 
@@ -111,7 +111,7 @@ libraryDependencies ++= Seq(
 )
 
 //Sentry
-libraryDependencies += "io.sentry" % "sentry-logback" % "6.0.0"
+libraryDependencies += "io.sentry" % "sentry-logback" % "7.5.0"
 
 //Reflections library for scanning classpath
 libraryDependencies += "org.reflections" % "reflections" % "0.9.11"
