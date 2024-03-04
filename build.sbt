@@ -111,7 +111,7 @@ libraryDependencies ++= Seq(
 )
 
 //Sentry
-libraryDependencies += "io.sentry" % "sentry-logback" % "6.0.0"
+libraryDependencies += "io.sentry" % "sentry-logback" % "7.5.0"
 
 //Reflections library for scanning classpath
 libraryDependencies += "org.reflections" % "reflections" % "0.9.11"
