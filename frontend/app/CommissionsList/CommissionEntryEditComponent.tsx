@@ -21,6 +21,8 @@ import {
   InputLabel,
   Box,
 } from "@material-ui/core";
+import Snackbar from "@material-ui/core/Snackbar";
+import Alert from "@material-ui/lab/Alert";
 import {
   KeyboardDatePicker,
   MuiPickersUtilsProvider,
@@ -265,11 +267,32 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   const [projectList, setProjectList] = useState<Project[] | undefined>(
     undefined
   );
+
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const handleSaveSuccess = () => {
+    setSnackbarMessage("Commission saved successfully!");
+    setOpenSnackbar(true);
+  };
+  const history = useHistory();
+
+  useEffect(() => {
+    if (openSnackbar) {
+      const timer = setTimeout(() => {
+        // Perform delayed actions here, like navigation or updating state
+        // history.push("/some-path"); // Example navigation (if needed)
+
+        setOpenSnackbar(false); // Close the Snackbar after the delay
+      }, 12000); // Delay in milliseconds
+
+      return () => clearTimeout(timer); // Cleanup the timer on component unmount or when Snackbar closes
+    }
+  }, [openSnackbar, history]);
+
   const [lastError, setLastError] = useState<null | string>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const classes = useGuardianStyles();
-  const history = useHistory();
   const [errorDialog, setErrorDialog] = useState<boolean>(false);
   const [filterTerms, setFilterTerms] = useState<ProjectFilterTerms>({
     commissionId: parseInt(props.match.params.commissionId),
@@ -433,6 +456,15 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
 
   return (
     <>
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={() => setOpenSnackbar(false)}
+      >
+        <Alert onClose={() => setOpenSnackbar(false)} severity="success">
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
       {commissionData ? (
         <Helmet>
           <title>[{commissionData.title}] Details</title>
@@ -505,12 +537,23 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
             workingGroupName="test"
             isSaving={isSaving}
             onSubmit={(evt) => {
-              evt.preventDefault();
               setIsSaving(true);
+              console.log(
+                "Commission saved successfully - snackbar should render"
+              );
+              setTimeout(() => {
+                // Navigate or update state to cause re-render
+              }, 12000);
+              console.log(
+                "Commission saved successfully - snackbar should render"
+              );
+              setSnackbarMessage("Commission saved successfully!"); // Set success message
+              setOpenSnackbar(true);
+
               updateCommissionData(commissionData)
                 .then(() => {
                   setIsSaving(false);
-                  history.push("/commission");
+                  handleSaveSuccess();
                 })
                 .catch((err) => {
                   setIsSaving(false);
