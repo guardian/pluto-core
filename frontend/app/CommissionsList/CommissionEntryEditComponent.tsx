@@ -24,6 +24,10 @@ import {
 import Snackbar from "@material-ui/core/Snackbar";
 import Alert from "@material-ui/lab/Alert";
 import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
+import {
   KeyboardDatePicker,
   MuiPickersUtilsProvider,
 } from "@material-ui/pickers";
@@ -120,7 +124,13 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
   }
 
   return (
-    <form onSubmit={props.onSubmit} className={classes.root}>
+    <form
+      onSubmit={(evt) => {
+        evt.preventDefault(); // Prevent the default form submission
+        props.onSubmit(evt); // Call the onSubmit prop function
+      }}
+      className={classes.root}
+    >
       <Grid container xs={12} direction="row" spacing={3}>
         {/*left-hand column*/}
         <Grid item xs={6}>
@@ -456,15 +466,6 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
 
   return (
     <>
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={6000}
-        onClose={() => setOpenSnackbar(false)}
-      >
-        <Alert onClose={() => setOpenSnackbar(false)} severity="success">
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
       {commissionData ? (
         <Helmet>
           <title>[{commissionData.title}] Details</title>
@@ -537,26 +538,24 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
             workingGroupName="test"
             isSaving={isSaving}
             onSubmit={(evt) => {
-              setIsSaving(true);
-              console.log(
-                "Commission saved successfully - snackbar should render"
-              );
-              setTimeout(() => {
-                // Navigate or update state to cause re-render
-              }, 12000);
-              console.log(
-                "Commission saved successfully - snackbar should render"
-              );
-              setSnackbarMessage("Commission saved successfully!"); // Set success message
-              setOpenSnackbar(true);
+              // setIsSaving(true);
 
               updateCommissionData(commissionData)
                 .then(() => {
                   setIsSaving(false);
-                  handleSaveSuccess();
+                  SystemNotification.open(
+                    SystemNotifcationKind.Success,
+                    `Successfully updated Commission ${commissionData.title}`
+                  );
+                  // history.goBack();
                 })
                 .catch((err) => {
                   setIsSaving(false);
+                  SystemNotification.open(
+                    SystemNotifcationKind.Error,
+                    `Failed to update Commission "${commissionData.title}". Please try again.`
+                  ); // Display error message
+                  console.error("Error updating commission: ", err);
                   if (err.hasOwnProperty("response")) {
                     console.error(
                       "Server error saving record: ",
