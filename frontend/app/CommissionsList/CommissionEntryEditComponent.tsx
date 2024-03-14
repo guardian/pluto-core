@@ -7,9 +7,7 @@ import {
   FormControl,
   FormLabel,
   Grid,
-  IconButton,
   Paper,
-  Select,
   TextField,
   Typography,
   Tooltip,
@@ -21,8 +19,6 @@ import {
   InputLabel,
   Box,
 } from "@material-ui/core";
-import Snackbar from "@material-ui/core/Snackbar";
-import Alert from "@material-ui/lab/Alert";
 import {
   SystemNotification,
   SystemNotifcationKind,
@@ -41,8 +37,6 @@ import {
   updateCommissionData,
 } from "./helpers";
 import ErrorIcon from "@material-ui/icons/Error";
-import LaunchIcon from "@material-ui/icons/Launch";
-import WorkingGroupEntryView from "../EntryViews/WorkingGroupEntryView";
 import ProductionOfficeSelector from "../common/ProductionOfficeSelector";
 import WorkingGroupSelector from "../common/WorkingGroupSelector";
 import StatusSelector from "../common/StatusSelector";
@@ -50,105 +44,118 @@ import ProjectsTable from "../ProjectEntryList/ProjectsTable";
 import { Helmet } from "react-helmet";
 import HelpIcon from "@material-ui/icons/Help";
 import CommissionEntryDeliverablesComponent from "./CommissionEntryDeliverablesComponent";
-import ChipsWithWarning from "./ChipsWithWarning";
 import UsersAutoComplete from "../common/UsersAutoComplete";
 import { useGuardianStyles } from "~/misc/utils";
 import ProjectFilterComponent from "~/filter/ProjectFilterComponent";
 import { filterTermsToQuerystring } from "~/filter/terms";
 import { isLoggedIn } from "~/utils/api";
+import { set } from "js-cookie";
 declare var deploymentRootPath: string;
 
 interface CommissionEntryFormProps {
   commission: CommissionFullRecord;
   workingGroupName: string;
   isSaving: boolean;
-  onSubmit: (evt: React.FormEvent<HTMLFormElement>) => void;
-  onChange: (newValue: CommissionFullRecord) => void;
+  onSubmit: (updatedCommission: CommissionFullRecord) => void;
 }
 
-const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
-  const history = useHistory();
+const CommissionEntryForm: React.FC<CommissionEntryFormProps> = ({
+  commission,
+  isSaving,
+  onSubmit,
+}) => {
+  const [formState, setFormState] = useState(commission);
+
   const classes = useGuardianStyles();
-  const [commission, setCommission] = useState<CommissionFullRecord | null>(
-    null
-  );
+
+  useEffect(() => {
+    setFormState(commission); // Initialize form state with commission data
+  }, [commission]);
+
+  const handleChange = (field: keyof CommissionFullRecord, value: any) => {
+    const updatedFormState = { ...formState, [field]: value };
+    setFormState((prevState) => ({ ...prevState, [field]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onSubmit(formState);
+  };
+
+  const hasUnsavedChanges =
+    JSON.stringify(formState) !== JSON.stringify(commission);
+
   const [
     initialCommission,
     setInitialCommission,
   ] = useState<CommissionFullRecord | null>(null);
 
-  const [hasChanges, setHasChanges] = React.useState(false);
-  const fieldValueChanged = (
-    value: string | null,
-    field: keyof CommissionFullRecord
-  ): void => {
-    const updatedCommission = { ...props.commission, [field]: value };
-    props.onChange(updatedCommission);
-    console.log("Updated commission: ", updatedCommission);
-    console.log("Initial Commission: ", initialCommission);
-    setHasChanges(
-      JSON.stringify(updatedCommission) !== JSON.stringify(initialCommission)
-    );
-  };
+  // const [hasChanges, setHasChanges] = React.useState(false);
+  // const fieldValueChanged = (
+  //   value: string | null,
+  //   field: keyof CommissionFullRecord
+  // ): void => {
+  //   const updatedCommission = { ...props.commission, [field]: value };
+  //   props.onChange(updatedCommission);
+  //   console.log("Updated commission: ", updatedCommission);
+  //   console.log("Initial Commission: ", initialCommission);
+  //   setHasChanges(
+  //     JSON.stringify(updatedCommission) !== JSON.stringify(initialCommission)
+  //   );
+  // };
 
-  const fieldChanged = (
-    event: React.ChangeEvent<
-      | HTMLTextAreaElement
-      | HTMLInputElement
-      | HTMLSelectElement
-      | { name?: string; value: string }
-    >,
-    field: keyof CommissionFullRecord,
-    value?: string | null
-  ): void => {
-    console.log("Field changed: ", field);
-    // If a value is provided directly, use it; otherwise, fall back to event.target.value
-    const fieldValue = value !== undefined ? value : event.target.value;
-    fieldValueChanged(fieldValue, field);
-  };
+  // const fieldChanged = (
+  //   event: React.ChangeEvent<
+  //     | HTMLTextAreaElement
+  //     | HTMLInputElement
+  //     | HTMLSelectElement
+  //     | { name?: string; value: string }
+  //   >,
+  //   field: keyof CommissionFullRecord,
+  //   value?: string | null
+  // ): void => {
+  //   console.log("Field changed: ", field);
+  //   // If a value is provided directly, use it; otherwise, fall back to event.target.value
+  //   const fieldValue = value !== undefined ? value : event.target.value;
+  //   fieldValueChanged(fieldValue, field);
+  // };
 
-  useEffect(() => {
-    if (initialCommission === null) {
-      setInitialCommission(props.commission);
-    }
-  }, [props.commission]);
+  // useEffect(() => {
+  //   if (initialCommission === null) {
+  //     setInitialCommission(props.commission);
+  //   }
+  // }, [props.commission]);
 
-  let createdTime: string | undefined = undefined;
-  let timeValue;
-  try {
-    timeValue = ParseDateISO(props.commission.created);
-    createdTime = FormatDate(timeValue, "E do MMM yyyy, h:mm a");
-  } catch (err) {
-    console.warn("Invalid creation time ", props.commission.created, ": ", err);
-    console.warn("timeValue was ", timeValue);
-  }
+  // let createdTime: string | undefined = undefined;
+  // let timeValue;
+  // try {
+  //   timeValue = ParseDateISO(props.commission.created);
+  //   createdTime = FormatDate(timeValue, "E do MMM yyyy, h:mm a");
+  // } catch (err) {
+  //   console.warn("Invalid creation time ", props.commission.created, ": ", err);
+  //   console.warn("timeValue was ", timeValue);
+  // }
 
   return (
-    <form
-      onSubmit={(evt) => {
-        evt.preventDefault(); // Prevent the default form submission
-        props.onSubmit(evt); // Call the onSubmit prop function
-      }}
-      className={classes.root}
-    >
+    <form onSubmit={handleSubmit} className={classes.root}>
       <Grid container xs={12} direction="row" spacing={3}>
         {/*left-hand column*/}
         <Grid item xs={6}>
           <TextField
             id="title"
             label="Title"
-            value={props.commission.title}
-            onChange={(evt) => fieldChanged(evt, "title")}
+            value={formState.title}
+            onChange={(evt) => handleChange("title", evt.target.value)}
           />
 
           <WorkingGroupSelector
-            workingGroupId={props.commission.workingGroupId}
-            onChange={(evt) => fieldChanged(evt, "workingGroupId")}
+            workingGroupId={formState.workingGroupId}
+            onChange={(evt) => handleChange("workingGroupId", evt.target.value)}
           />
           <TextField
             id="original-commissioner"
             label="Originally commissioned by"
-            value={props.commission.originalCommissionerName}
+            value={formState.originalCommissionerName}
             disabled={true}
           />
 
@@ -156,8 +163,8 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
             id="description"
             label="Description/Brief"
             multiline={true}
-            value={props.commission.description ?? ""}
-            onChange={(evt) => fieldChanged(evt, "description")}
+            value={formState.description ?? ""}
+            onChange={(evt) => handleChange("description", evt.target.value)}
           />
 
           <FormControl>
@@ -170,13 +177,11 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
                 format="yyyy-MM-dd"
                 margin="normal"
                 id="scheduled-completion"
-                value={props.commission.scheduledCompletion}
+                value={formState.scheduledCompletion}
                 onChange={(value) => {
-                  console.log("Value:::", value);
-                  setHasChanges(true);
                   if (value) {
                     const formattedDate = FormatDateISO(value); // Format the date to ISO string
-                    fieldValueChanged(formattedDate, "scheduledCompletion");
+                    handleChange("scheduledCompletion", formattedDate);
                   }
                 }}
               />
@@ -187,41 +192,43 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
         <Grid item xs={6}>
           <UsersAutoComplete
             valueDidChange={(evt, newValue) =>
-              fieldValueChanged(newValue?.join("|") ?? "", "owner")
+              handleChange("owner", newValue?.join("|") ?? "")
             }
             label="Owner"
-            value={props.commission.owner}
+            value={formState.owner}
             shouldValidate={true}
           />
           <TextField
             id="created"
             label="Created"
-            value={createdTime ?? "(error)"}
+            value={commission.created ?? "(error)"}
             disabled={true}
           />
           <StatusSelector
-            value={props.commission.status}
-            onChange={(evt: any) => fieldChanged(evt, "status")}
+            value={formState.status}
+            onChange={(evt: any) => handleChange("status", evt.target.value)}
           />
           <ProductionOfficeSelector
             label="Production Office"
-            value={props.commission.productionOffice}
-            onChange={(evt: any) => fieldChanged(evt, "productionOffice")}
+            value={formState.productionOffice}
+            onChange={(evt: any) =>
+              handleChange("productionOffice", evt.target.value)
+            }
           />
           <TextField
             id="notes"
             label="Notes"
-            value={props.commission.notes ?? ""}
+            value={formState.notes ?? ""}
             multiline={true}
-            onChange={(evt) => fieldChanged(evt, "notes")}
+            onChange={(evt) => handleChange("notes", evt.target.value)}
           />
-          {props.commission.googleFolder ? (
+          {commission.googleFolder ? (
             <div>
               View Documents
               <br />
-              {props.commission.googleFolder ? (
+              {commission.googleFolder ? (
                 <Tooltip title="Open commission folder in Google Drive" arrow>
-                  <a href={props.commission.googleFolder} target="_blank">
+                  <a href={commission.googleFolder} target="_blank">
                     <img
                       className="smallicon"
                       src="/pluto-core/assets/images/google-drive-folder-icon.png"
@@ -243,17 +250,17 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = (props) => {
           ) : null}
 
           <div className={classes.formButtons}>
-            {hasChanges ? (
+            {hasUnsavedChanges && !isSaving ? (
               <Button
                 type="submit"
                 variant="contained"
                 color="secondary"
-                disabled={props.isSaving}
+                // disabled={props.isSaving}
               >
                 Save changes
               </Button>
             ) : null}
-            {props.isSaving ? (
+            {isSaving ? (
               <CircularProgress style={{ width: "18px", height: "18px" }} />
             ) : null}
           </div>
@@ -277,27 +284,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   const [projectList, setProjectList] = useState<Project[] | undefined>(
     undefined
   );
-
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const handleSaveSuccess = () => {
-    setSnackbarMessage("Commission saved successfully!");
-    setOpenSnackbar(true);
-  };
   const history = useHistory();
-
-  useEffect(() => {
-    if (openSnackbar) {
-      const timer = setTimeout(() => {
-        // Perform delayed actions here, like navigation or updating state
-        // history.push("/some-path"); // Example navigation (if needed)
-
-        setOpenSnackbar(false); // Close the Snackbar after the delay
-      }, 12000); // Delay in milliseconds
-
-      return () => clearTimeout(timer); // Cleanup the timer on component unmount or when Snackbar closes
-    }
-  }, [openSnackbar, history]);
 
   const [lastError, setLastError] = useState<null | string>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -315,6 +302,26 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   >("");
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
+  useEffect(() => {
+    const fetchCommissionData = async () => {
+      try {
+        const commissionId = parseInt(props.match.params.commissionId); // Parse the commissionId from string to number
+        const data = await loadCommissionData(commissionId);
+        setCommissionData(data);
+      } catch (error) {
+        SystemNotification.open(
+          SystemNotifcationKind.Error,
+          "Failed to load commission data."
+        );
+        setErrorDialog(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCommissionData();
+  }, [props.match.params.commissionId, history]);
+
   let commissionId: number;
   try {
     commissionId = parseInt(props.match.params.commissionId);
@@ -327,6 +334,24 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
     commissionId = -1;
   }
 
+  const handleFormSubmit = async (updatedCommission: CommissionFullRecord) => {
+    setIsSaving(true);
+    try {
+      await updateCommissionData(updatedCommission);
+      SystemNotification.open(
+        SystemNotifcationKind.Success,
+        "Commission saved successfully."
+      );
+      setCommissionData(updatedCommission); // Update commission data with saved changes
+    } catch (error) {
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        "Failed to save commission."
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
   /**
    * load in member projects on launch
    */
@@ -537,58 +562,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
             commission={commissionData}
             workingGroupName="test"
             isSaving={isSaving}
-            onSubmit={(evt) => {
-              // setIsSaving(true);
-
-              updateCommissionData(commissionData)
-                .then(() => {
-                  setIsSaving(false);
-                  SystemNotification.open(
-                    SystemNotifcationKind.Success,
-                    `Successfully updated Commission ${commissionData.title}`
-                  );
-                  // history.goBack();
-                })
-                .catch((err) => {
-                  setIsSaving(false);
-                  SystemNotification.open(
-                    SystemNotifcationKind.Error,
-                    `Failed to update Commission "${commissionData.title}". Please try again.`
-                  ); // Display error message
-                  console.error("Error updating commission: ", err);
-                  if (err.hasOwnProperty("response")) {
-                    console.error(
-                      "Server error saving record: ",
-                      err.response.status
-                    );
-                    console.error("Server said: ", err.response.body);
-
-                    switch (err.response.status) {
-                      case 502:
-                      case 503:
-                        setLastError(
-                          "Server is not responding. Try saving again in a minute"
-                        );
-                        break;
-                      case 500:
-                        setLastError("Server error, see logs for details");
-                        break;
-                      case 400:
-                        setLastError("Some values are incorrect");
-                        break;
-                      default:
-                        setLastError(
-                          `Unexpected server response ${err.response.status}`
-                        );
-                        break;
-                    }
-                  } else {
-                    setLastError("Browser error, see console for details.");
-                    console.error("Could not make update request: ", err);
-                  }
-                });
-            }}
-            onChange={(newValue) => setCommissionData(newValue)}
+            onSubmit={handleFormSubmit} // Handle the updated commission data
           />
         ) : null}
       </Paper>
