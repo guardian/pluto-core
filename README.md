@@ -24,6 +24,12 @@ $ sbt docker:publishLocal
 ```
 - this should create a local docker image called `guardianmultimedia/pluto-core:DEV`.  If done from the minikube context it will immediately be available for use in the cluster.
 
+Alternatively, run `$ make` in the root of the project. The supplied `Makefile` 
+1. Ensures you are using the minikube docker context
+2. Builds the frontend
+3. Builds backend and publishes a local image
+4. Deletes the old pluto-core pod so you can test the new image 
+
 ## Session cookie setup
 
 pluto-core is still under active development and still uses a session cookie. This is controlled by the `play.http.session` section of `application.conf`.
