@@ -85,57 +85,6 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = ({
   const hasUnsavedChanges =
     JSON.stringify(formState) !== JSON.stringify(commission);
 
-  const [
-    initialCommission,
-    setInitialCommission,
-  ] = useState<CommissionFullRecord | null>(null);
-
-  // const [hasChanges, setHasChanges] = React.useState(false);
-  // const fieldValueChanged = (
-  //   value: string | null,
-  //   field: keyof CommissionFullRecord
-  // ): void => {
-  //   const updatedCommission = { ...props.commission, [field]: value };
-  //   props.onChange(updatedCommission);
-  //   console.log("Updated commission: ", updatedCommission);
-  //   console.log("Initial Commission: ", initialCommission);
-  //   setHasChanges(
-  //     JSON.stringify(updatedCommission) !== JSON.stringify(initialCommission)
-  //   );
-  // };
-
-  // const fieldChanged = (
-  //   event: React.ChangeEvent<
-  //     | HTMLTextAreaElement
-  //     | HTMLInputElement
-  //     | HTMLSelectElement
-  //     | { name?: string; value: string }
-  //   >,
-  //   field: keyof CommissionFullRecord,
-  //   value?: string | null
-  // ): void => {
-  //   console.log("Field changed: ", field);
-  //   // If a value is provided directly, use it; otherwise, fall back to event.target.value
-  //   const fieldValue = value !== undefined ? value : event.target.value;
-  //   fieldValueChanged(fieldValue, field);
-  // };
-
-  // useEffect(() => {
-  //   if (initialCommission === null) {
-  //     setInitialCommission(props.commission);
-  //   }
-  // }, [props.commission]);
-
-  // let createdTime: string | undefined = undefined;
-  // let timeValue;
-  // try {
-  //   timeValue = ParseDateISO(props.commission.created);
-  //   createdTime = FormatDate(timeValue, "E do MMM yyyy, h:mm a");
-  // } catch (err) {
-  //   console.warn("Invalid creation time ", props.commission.created, ": ", err);
-  //   console.warn("timeValue was ", timeValue);
-  // }
-
   return (
     <form onSubmit={handleSubmit} className={classes.root}>
       <Grid container xs={12} direction="row" spacing={3}>
