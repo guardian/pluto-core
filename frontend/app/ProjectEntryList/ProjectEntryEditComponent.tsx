@@ -489,12 +489,6 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           onError={subComponentErrored}
         />
       )}
-      {project === EMPTY_PROJECT ? null : (
-        <ProjectEntryVaultComponent
-          project={project}
-          onError={subComponentErrored}
-        />
-      )}
       <Dialog
         open={errorDialog}
         onClose={closeDialog}
