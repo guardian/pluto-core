@@ -392,3 +392,9 @@ interface DeletionRecord {
   created: string;
   workingGroup: string;
 }
+
+interface MissingFiles {
+  id: number;
+  project: number;
+  filepath: string;
+}
