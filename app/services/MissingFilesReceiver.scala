@@ -73,19 +73,23 @@ class MissingFilesReceiver @Inject()(config:Configuration, dbConfigProvider:Data
 
       def handleEvent(messageData: MissingFile): Future[Boolean] = {
         if (messageData.project_id.toInt.isValidInt) {
-          logger.debug(s"Missing file at path: ${messageData.file_path} is used by project ${messageData.project_id}")
-          missingAssetFileEntryDAO.entryFor(messageData.file_path, messageData.project_id.toInt).map({
-            case Success(filesList) =>
-              if (filesList.isEmpty) {
-                //No file entries exist already, create one and proceed
-                logger.debug(s"Attempting to create record for missing file used by project ${messageData.project_id} at path ${messageData.file_path}")
-                missingAssetFileEntryDAO.save(MissingAssetFileEntry(None, messageData.project_id.toInt, messageData.file_path))
-              } else {
-                logger.debug(s"Missing file used by project ${messageData.project_id} at path ${messageData.file_path} already logged in the database.")
-              }
-            case Failure(error) =>
-              logger.debug(s"Could not load data on the missing file used by project ${messageData.project_id} at path ${messageData.file_path}. Error was $error")
-          })
+          if (messageData.file_path.startsWith("/")) {
+            logger.debug(s"Missing file at path: ${messageData.file_path} is used by project ${messageData.project_id}")
+            missingAssetFileEntryDAO.entryFor(messageData.file_path, messageData.project_id.toInt).map({
+              case Success(filesList) =>
+                if (filesList.isEmpty) {
+                  //No file entries exist already, create one and proceed
+                  logger.debug(s"Attempting to create record for missing file used by project ${messageData.project_id} at path ${messageData.file_path}")
+                  missingAssetFileEntryDAO.save(MissingAssetFileEntry(None, messageData.project_id.toInt, messageData.file_path))
+                } else {
+                  logger.debug(s"Missing file used by project ${messageData.project_id} at path ${messageData.file_path} already logged in the database.")
+                }
+              case Failure(error) =>
+                logger.debug(s"Could not load data on the missing file used by project ${messageData.project_id} at path ${messageData.file_path}. Error was $error")
+            })
+          } else {
+            logger.debug(s"Recorded 'missing file' at path: ${messageData.file_path} does not with a /. Ignoring.")
+          }
 
           Future(true)
         } else Future(false)
