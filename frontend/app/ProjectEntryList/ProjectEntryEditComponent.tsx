@@ -12,7 +12,7 @@ import {
   Paper,
   TextField,
   Tooltip,
-  makeStyles, TableCell, TableSortLabel, Typography,
+  Typography,
 } from "@material-ui/core";
 import {
   getProject,
@@ -21,7 +21,7 @@ import {
   updateProject,
   updateProjectOpenedStatus,
   getSimpleProjectTypeData,
-  getMissingFiles, getItemsNotDeleted
+  getMissingFiles,
 } from "./helpers";
 import {
   SystemNotification,
@@ -163,7 +163,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
     fetchWhoIsLoggedIn();
 
-    getMissingFilesData()
+    getMissingFilesData();
 
     return () => {
       isMounted = false;
@@ -504,18 +504,24 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         />
       )}
       {missingFiles.length === 0 ? null : (
-        <Paper className={classes.root} elevation={3} style={{marginTop: "1rem"}}>
+        <Paper
+          className={classes.root}
+          elevation={3}
+          style={{ marginTop: "1rem" }}
+        >
           <Typography variant="h4">Warning</Typography>
           <Typography>
             <br />
-            Some media files used in this project have been imported from Internet Downloads or other areas. Please move these files to the project's asset folder, otherwise these files will be lost.
+            Some media files used in this project have been imported from
+            Internet Downloads or other areas. Please move these files to the
+            project's asset folder, otherwise these files will be lost.
             <br />
             <br />
             {missingFiles.map((file, index) => (
-                <>
-                  {file.filepath}
-                  <br />
-                </>
+              <>
+                {file.filepath}
+                <br />
+              </>
             ))}
           </Typography>
         </Paper>

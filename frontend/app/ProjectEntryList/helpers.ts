@@ -482,24 +482,20 @@ export const getAssetFolderFileStorageMetadata = async (
   }
 };
 
-export const getMissingFiles = async (
-    id: number
-): Promise<MissingFiles[]> => {
+export const getMissingFiles = async (id: number): Promise<MissingFiles[]> => {
   try {
     const {
       status,
       data: { results },
     } = await Axios.get<PlutoItemDeleteDataAPIResponse<MissingFiles[]>>(
-        `${API_PROJECTS}/${id}/missingFiles`
+      `${API_PROJECTS}/${id}/missingFiles`
     );
 
     if (status === 200) {
       return results;
     }
 
-    throw new Error(
-        `Could not get missing files for project ${id}. ${status}`
-    );
+    throw new Error(`Could not get missing files for project ${id}. ${status}`);
   } catch (error) {
     console.error(error);
     throw error;
