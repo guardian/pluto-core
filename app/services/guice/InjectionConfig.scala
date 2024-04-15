@@ -29,6 +29,7 @@ class InjectionConfig extends AbstractModule with AkkaGuiceSupport {
     bind(classOf[PeriodicScanReceiver]).asEagerSingleton()
     bind(classOf[MXSConnectionManager]).asEagerSingleton()
     bind(classOf[AtomResponderReceiver]).asEagerSingleton()
+    bind(classOf[MissingFilesReceiver]).asEagerSingleton()
   }
 
 }

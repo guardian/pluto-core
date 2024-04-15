@@ -12,7 +12,7 @@ import {
   Paper,
   TextField,
   Tooltip,
-  makeStyles,
+  Typography,
 } from "@material-ui/core";
 import {
   getProject,
@@ -21,6 +21,7 @@ import {
   updateProject,
   updateProjectOpenedStatus,
   getSimpleProjectTypeData,
+  getMissingFiles,
 } from "./helpers";
 import {
   SystemNotification,
@@ -88,6 +89,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [projectTypeData, setProjectTypeData] = useState<any>({});
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [initialProject, setInitialProject] = useState<Project | null>(null);
+  const [missingFiles, setMissingFiles] = useState<MissingFiles[]>([]);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -102,6 +104,16 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const hasChanges = () => {
     // Perform deep equality check
     return JSON.stringify(initialProject) !== JSON.stringify(project);
+  };
+
+  const getMissingFilesData = async () => {
+    try {
+      const id = Number(props.match.params.itemid);
+      const returnedRecords = await getMissingFiles(id);
+      setMissingFiles(returnedRecords);
+    } catch {
+      console.log("Could not load missing files.");
+    }
   };
 
   // Fetch project from URL path
@@ -150,6 +162,8 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     };
 
     fetchWhoIsLoggedIn();
+
+    getMissingFilesData();
 
     return () => {
       isMounted = false;
