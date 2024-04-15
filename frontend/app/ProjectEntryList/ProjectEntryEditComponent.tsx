@@ -503,29 +503,6 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           onError={subComponentErrored}
         />
       )}
-      {missingFiles.length === 0 ? null : (
-        <Paper
-          className={classes.root}
-          elevation={3}
-          style={{ marginTop: "1rem" }}
-        >
-          <Typography variant="h4">Warning</Typography>
-          <Typography>
-            <br />
-            Some media files used in this project have been imported from
-            Internet Downloads or other areas. Please move these files to the
-            project's asset folder, otherwise these files will be lost.
-            <br />
-            <br />
-            {missingFiles.map((file, index) => (
-              <>
-                {file.filepath}
-                <br />
-              </>
-            ))}
-          </Typography>
-        </Paper>
-      )}
       <Dialog
         open={errorDialog}
         onClose={closeDialog}
