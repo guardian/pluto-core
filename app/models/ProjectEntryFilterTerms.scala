@@ -12,6 +12,7 @@ case class ProjectEntryFilterTerms(title:Option[String],
                                    group:Option[String],
                                    commissionId:Option[Int],
                                    showKilled:Option[Boolean],
+                                   status:Option[String],
                                    wildcard:FilterTypeWildcard.Value)
 extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
 
@@ -31,13 +32,13 @@ extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
         projectEntryRow <- action.filter(_.id===assoc.projectEntry)
       } yield projectEntryRow
     }
-
     if(title.isDefined) action = action.filter(_.projectTitle.toLowerCase like makeWildcard(title.get).toLowerCase)
     if(vidispineProjectId.isDefined) action = action.filter(_.vidispineProjectId like makeWildcard(vidispineProjectId.get))
     if(user.isDefined && user.get!="Everyone") action = action.filter(_.user like makeWildcard(user.get))
     if(group.isDefined && group.get!="All") action = action.filter(_.workingGroup===group.get.toInt)
     if(showKilled.contains(false)) action = action.filter(_.status=!=EntryStatus.Killed)
     if(commissionId.isDefined ) action = action.filter(_.commission===commissionId.get)
+    if(status.isDefined) action = action.filter(_.status===EntryStatus.withName(status.get))
     action
   }
 }
@@ -53,6 +54,7 @@ trait ProjectEntryFilterTermsSerializer {
       (JsPath \ "group").readNullable[String] and
       (JsPath \ "commissionId").readNullable[Int] and
       (JsPath \ "showKilled").readNullable[Boolean] and
+      (JsPath \ "status").readNullable[String] and
       (JsPath \ "match").read[FilterTypeWildcard.Value]
   )(ProjectEntryFilterTerms.apply _)
 }
