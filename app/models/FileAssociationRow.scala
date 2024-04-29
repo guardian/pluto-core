@@ -1,6 +1,7 @@
 package models
 
 import slick.jdbc.PostgresProfile.api._
+import slick.lifted.TableQuery
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -25,6 +26,16 @@ object FileAssociation {
     val query = for {
       (assocRow, projectEntry) <- TableQuery[FileAssociationRow] join TableQuery[ProjectEntryRow] on (_.fileEntry===_.id) if assocRow.fileEntry===fileId
     } yield projectEntry
+
+    db.run(
+      query.result.asTry
+    )
+  }
+
+  def filesForProject(projectId:Int)(implicit db: slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Seq[FileEntry]]] = {
+    val query = for {
+      (assocRow, fileEntry) <- TableQuery[FileAssociationRow] join TableQuery[FileEntryRow] on (_.fileEntry===_.id) if assocRow.projectEntry===projectId
+    } yield fileEntry
 
     db.run(
       query.result.asTry

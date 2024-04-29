@@ -9,6 +9,7 @@ import slick.lifted.TableQuery
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import akka.stream.scaladsl.{Keep, Sink, Source}
 
 @Singleton
 class MissingAssetFileEntryDAO @Inject()(dbConfigProvider:DatabaseConfigProvider)(implicit ec:ExecutionContext, injector:Injector) {
@@ -98,4 +99,8 @@ object MissingAssetFileEntryDAO extends ((Option[Int], Int, String)=>MissingAsse
     )
 
   override def apply(v1: Option[Int], v2: Int, v3: String): MissingAssetFileEntryDAO = ???
+
+  def loadAFilePerProject(implicit db:slick.jdbc.PostgresProfile#Backend#Database) = {
+    Source.fromPublisher(db.stream(TableQuery[MissingAssetFileEntryRow].distinctOn(_.project).result))
+  }
 }
