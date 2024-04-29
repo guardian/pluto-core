@@ -281,6 +281,23 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     }
   };
 
+  const removeWarning = async (project: number) => {
+    try {
+      const response = await axios.get(`/api/project/${project}/removeWarning`);
+      console.log("Attempt to remove warning got ", response.data);
+      SystemNotification.open(
+        SystemNotifcationKind.Success,
+        `Successfully started attempt at removing warning.`
+      );
+    } catch (err) {
+      console.error("Could not remove warning: ", err);
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        `Failed to start attempt at removing warning.`
+      );
+    }
+  };
+
   return (
     <>
       {project ? (
@@ -502,6 +519,56 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           project={project}
           onError={subComponentErrored}
         />
+      )}
+      {missingFiles.length === 0 ? null : (
+        <Paper
+          className={classes.root}
+          elevation={3}
+          style={{ marginTop: "1rem" }}
+        >
+          <Grid container xs={12} direction="row" spacing={3}>
+            <Grid item xs={8}>
+              <Typography variant="h4">Warning</Typography>
+            </Grid>
+            <Grid item xs={4}>
+              <Button
+                style={{
+                  width: "180px",
+                }}
+                onClick={async () => {
+                  try {
+                    await removeWarning(project.id);
+                    getMissingFilesData();
+                  } catch (error) {
+                    SystemNotification.open(
+                      SystemNotifcationKind.Error,
+                      `An error occurred when attempting to remove the warning.`
+                    );
+                    console.error(error);
+                  }
+                }}
+                variant="contained"
+              >
+                Remove&nbsp;Warning
+              </Button>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography>
+                Some media files used in this project have been imported from
+                Internet Downloads or other areas. Please move these files to
+                the project's asset folder, otherwise these files will be lost.
+                <br />
+                <br />
+                {missingFiles.map((file, index) => (
+                  <>
+                    {file.filepath}
+                    <br />
+                  </>
+                ))}
+              </Typography>
+            </Grid>
+          </Grid>
+        </Paper>
       )}
       <Dialog
         open={errorDialog}
