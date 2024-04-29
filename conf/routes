@@ -66,6 +66,7 @@ GET     /api/project/:id/deleteItems        @controllers.ItemDeleteDataControlle
 GET     /api/project/:id/matrixDeleteJob    @controllers.ProjectEntryController.matrixDeleteJob(id: Int)
 GET     /api/project/:id/matrixDeleteItems  @controllers.MatrixDeleteDataController.listForProject(id: Int)
 GET     /api/project/:id/missingFiles       @controllers.MissingFilesController.missing(id:Int)
+GET     /api/project/:id/removeWarning      @controllers.MissingFilesController.removeWarning(id:Int)
 
 GET     /api/valid-users                    @controllers.ProjectEntryController.queryUsersForAutocomplete(prefix:String ?= "", limit:Option[Int])
 GET     /api/known-user                     @controllers.ProjectEntryController.isUserKnown(uname:String ?= "")
