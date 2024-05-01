@@ -222,20 +222,45 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     }
 
     if (project.title) {
-      try {
-        await updateProject(project as Project);
+      if (project.status == "Completed") {
+        if (missingFiles.length == 0) {
+          try {
+            await updateProject(project as Project);
 
-        SystemNotification.open(
-          SystemNotifcationKind.Success,
-          `Successfully updated Project "${project.title}"`
-        );
-        history.goBack();
-        setInitialProject({ ...project });
-      } catch {
-        SystemNotification.open(
-          SystemNotifcationKind.Error,
-          `Failed to update Project "${project.title}"`
-        );
+            SystemNotification.open(
+              SystemNotifcationKind.Success,
+              `Successfully updated project "${project.title}"`
+            );
+            history.goBack();
+            setInitialProject({ ...project });
+          } catch {
+            SystemNotification.open(
+              SystemNotifcationKind.Error,
+              `Failed to update project "${project.title}"`
+            );
+          }
+        } else {
+          SystemNotification.open(
+            SystemNotifcationKind.Error,
+            `Cannot change project "${project.title}" status to Completed because it has missing files.`
+          );
+        }
+      } else {
+        try {
+          await updateProject(project as Project);
+
+          SystemNotification.open(
+            SystemNotifcationKind.Success,
+            `Successfully updated project "${project.title}"`
+          );
+          history.goBack();
+          setInitialProject({ ...project });
+        } catch {
+          SystemNotification.open(
+            SystemNotifcationKind.Error,
+            `Failed to update project "${project.title}"`
+          );
+        }
       }
     }
   };
