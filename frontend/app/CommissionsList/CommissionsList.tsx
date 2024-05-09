@@ -10,6 +10,8 @@ import {
   TableRow,
   TableSortLabel,
   Grid,
+  Menu,
+  MenuItem,
 } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
@@ -51,6 +53,7 @@ const CommissionsList: React.FC = () => {
   >(undefined);
   const [user, setUser] = useState<PlutoUser | null>(null);
   const { search } = useLocation();
+  const [commissionToOpen, setCommissionToOpen] = useState<number>(1);
 
   useEffect(() => {
     if (filterTerms != undefined) {
@@ -124,6 +127,28 @@ const CommissionsList: React.FC = () => {
       return userNameConst;
     }
     return inputString;
+  };
+
+  const [contextMenu, setContextMenu] = React.useState<{
+    mouseX: number;
+    mouseY: number;
+  } | null>(null);
+
+  const handleContextMenu = (event: React.MouseEvent, commission: number) => {
+    event.preventDefault();
+    setCommissionToOpen(commission);
+    setContextMenu(
+      contextMenu === null
+        ? {
+            mouseX: event.clientX + 2,
+            mouseY: event.clientY - 6,
+          }
+        : null
+    );
+  };
+
+  const handleClose = () => {
+    setContextMenu(null);
   };
 
   return (
@@ -216,6 +241,9 @@ const CommissionsList: React.FC = () => {
                       );
                     }}
                     key={id}
+                    onContextMenu={(e) => {
+                      handleContextMenu(e, id);
+                    }}
                   >
                     <TableCell>{title}</TableCell>
                     <TableCell>{projectCount}</TableCell>
@@ -246,6 +274,36 @@ const CommissionsList: React.FC = () => {
           labelDisplayedRows={({ from, to }) => `${from}-${to}`}
         />
       </Paper>
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleClose}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem
+          onClick={(e) => {
+            window.open(
+              `${deploymentRootPath}commission/${commissionToOpen}`,
+              "_blank"
+            );
+            handleClose();
+          }}
+        >
+          Open in new window or tab
+        </MenuItem>
+        <MenuItem
+          onClick={(e) => {
+            history.push(`/commission/${commissionToOpen}`);
+            handleClose();
+          }}
+        >
+          Open in existing window or tab
+        </MenuItem>
+      </Menu>
     </>
   );
 };
