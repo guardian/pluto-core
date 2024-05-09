@@ -18,6 +18,8 @@ import {
   Box,
   useTheme,
   makeStyles,
+  Menu,
+  MenuItem,
 } from "@material-ui/core";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
@@ -38,6 +40,7 @@ import {
   SystemNotifcationKind,
 } from "@guardian/pluto-headers";
 import { useGuardianStyles } from "~/misc/utils";
+import { useHistory } from "react-router-dom";
 
 const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Project title", key: "title" },
@@ -96,6 +99,8 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [updatingProject, setUpdatingProject] = useState<number>(0);
   const [projectTypeData, setProjectTypeData] = useState<any>({});
+  const [projectToOpen, setProjectToOpen] = useState<number>(1);
+  const history = useHistory<any>();
 
   useEffect(() => {
     console.log("filter terms or search changed, updating...");
@@ -200,6 +205,28 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
     }
   };
 
+  const [contextMenu, setContextMenu] = React.useState<{
+    mouseX: number;
+    mouseY: number;
+  } | null>(null);
+
+  const handleContextMenu = (event: React.MouseEvent, project: number) => {
+    event.preventDefault();
+    setProjectToOpen(project);
+    setContextMenu(
+      contextMenu === null
+        ? {
+            mouseX: event.clientX + 2,
+            mouseY: event.clientY - 6,
+          }
+        : null
+    );
+  };
+
+  const handleClose = () => {
+    setContextMenu(null);
+  };
+
   return (
     <>
       <TableContainer>
@@ -261,6 +288,9 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                   onClick={() =>
                     window.open(`${deploymentRootPath}project/${id}`, "_blank")
                   }
+                  onContextMenu={(e) => {
+                    handleContextMenu(e, id);
+                  }}
                 >
                   <TableCell>{title}</TableCell>
                   <TableCell>
@@ -345,6 +375,36 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleClose}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem
+          onClick={(e) => {
+            window.open(
+              `${deploymentRootPath}project/${projectToOpen}`,
+              "_blank"
+            );
+            handleClose();
+          }}
+        >
+          Open in new window or tab
+        </MenuItem>
+        <MenuItem
+          onClick={(e) => {
+            history.push(`/project/${projectToOpen}`);
+            handleClose();
+          }}
+        >
+          Open in existing window or tab
+        </MenuItem>
+      </Menu>
       <Dialog
         open={openDialog}
         onClose={closeDialog}
