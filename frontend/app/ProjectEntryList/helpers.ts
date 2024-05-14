@@ -192,7 +192,7 @@ export const getFileData = async (id: number): Promise<FileEntry[]> => {
     } = await Axios.get<PlutoFilesAPIResponse<FileEntry[]>>(
       `${API_PROJECTS}/${id}/files`
     );
-
+    console.log(files);
     if (status === 200) {
       return files;
     }
@@ -268,9 +268,15 @@ export const translatePremiereVersion = async (
   }
 };
 
-export const getOpenUrl = async (entry: FileEntry) => {
+export const getOpenUrl = async (entry: FileEntry, id: number) => {
   const storageResult = await getStorageData(entry.storage);
-  const pathToUse = storageResult.clientpath
+  const isAudition = await isAuditionProject(id);
+  const auditionPath = await getAssetFolderPath(id);
+  console.log("Audition path: ", auditionPath);
+
+  const pathToUse = isAudition
+    ? auditionPath.value
+    : storageResult.clientpath
     ? storageResult.clientpath
     : storageResult.rootpath;
 
@@ -284,6 +290,50 @@ export const getOpenUrl = async (entry: FileEntry) => {
   return `pluto:openproject:${pathToUse}/${entry.filepath}${versionPart}`;
 };
 
+const isAuditionProject = async (id: number) => {
+  try {
+    const {
+      status,
+      data: { result },
+    } = await Axios.get<PlutoApiResponse<Project>>(`${API_PROJECTS}/${id}`);
+
+    if (status === 200) {
+      if (result.projectTypeId === 2) {
+        return true;
+      }
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const getAssetFolderPath = async (
+  id: number
+): Promise<ProjectMetadataResponse> => {
+  try {
+    const {
+      status,
+      data: { result },
+    } = await Axios.get<PlutoApiResponse<ProjectMetadataResponse>>(
+      `${API_PROJECTS}/${id}/assetfolder`
+    );
+    console.log(result);
+    if (status === 200) {
+      return result;
+    }
+
+    throw new Error(
+      `Could not get asset folder path for project ${id}. ${status}`
+    );
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
 export const getOpenUrlForId = async (id: number) => {
   const fileResult = await getFileData(id);
 
@@ -294,8 +344,8 @@ export const getOpenUrlForId = async (id: number) => {
     );
     return;
   }
-
-  return getOpenUrl(fileResult[0]);
+  console.log(fileResult);
+  return getOpenUrl(fileResult[0], id);
 };
 
 /**
