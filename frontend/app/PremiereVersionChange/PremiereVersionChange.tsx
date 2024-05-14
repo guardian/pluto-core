@@ -152,7 +152,7 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
     if (fileId && requiredVersion) {
       try {
         const updatedFile = await performConversion(fileId, requiredVersion);
-        const openUrl = await getOpenUrl(updatedFile);
+        const openUrl = await getOpenUrl(updatedFile, -1);
         setNewOpenUrl(openUrl);
         setConversionInProgress(false);
       } catch (err) {
