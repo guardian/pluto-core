@@ -272,15 +272,18 @@ export const getOpenUrl = async (entry: FileEntry, id: number) => {
   const storageResult = await getStorageData(entry.storage);
   const isAudition = await isAuditionProject(id);
   const auditionPath = await getAssetFolderPath(id);
-  console.log("Audition path: ", auditionPath.value);
-  const normalisedPath = auditionPath.value.replace(/^\/srv/, "/Volumes");
 
+  const normalisedPath = auditionPath.value
+    .replace(/^\/srv/, "/Volumes")
+    .replace("/", "%2F");
+  console.log("normalisedPath: ", normalisedPath);
   const pathToUse = isAudition
     ? normalisedPath
     : storageResult.clientpath
     ? storageResult.clientpath
     : storageResult.rootpath;
 
+  console.log("pathToUse: ", pathToUse);
   const premiereDisplayVersion = entry.premiereVersion
     ? await translatePremiereVersion(entry.premiereVersion, false)
     : undefined;
