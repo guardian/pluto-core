@@ -274,9 +274,7 @@ export const getOpenUrl = async (entry: FileEntry, id: number) => {
   const auditionPath = await getAssetFolderPath(id);
   console.log("isAudition: ", isAudition);
 
-  const normalisedPath = auditionPath.value
-    .replace(/^\/srv/, "/Volumes")
-    .replace("/", "%2F");
+  const normalisedPath = auditionPath.value.replace(/^\/srv/, "/Volumes");
   console.log("normalisedPath: ", normalisedPath);
   const pathToUse = isAudition
     ? normalisedPath
