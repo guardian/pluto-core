@@ -272,6 +272,7 @@ export const getOpenUrl = async (entry: FileEntry, id: number) => {
   const storageResult = await getStorageData(entry.storage);
   const isAudition = await isAuditionProject(id);
   const auditionPath = await getAssetFolderPath(id);
+  console.log("isAudition: ", isAudition);
 
   const normalisedPath = auditionPath.value
     .replace(/^\/srv/, "/Volumes")
