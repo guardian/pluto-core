@@ -350,7 +350,7 @@ export const getOpenUrlForId = async (id: number) => {
     );
     return;
   }
-  console.log(fileResult);
+
   return getOpenUrl(fileResult[0], id);
 };
 
