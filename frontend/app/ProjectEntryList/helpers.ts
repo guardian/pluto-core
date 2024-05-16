@@ -192,7 +192,7 @@ export const getFileData = async (id: number): Promise<FileEntry[]> => {
     } = await Axios.get<PlutoFilesAPIResponse<FileEntry[]>>(
       `${API_PROJECTS}/${id}/files`
     );
-    console.log(files);
+
     if (status === 200) {
       return files;
     }
@@ -272,17 +272,15 @@ export const getOpenUrl = async (entry: FileEntry, id: number) => {
   const storageResult = await getStorageData(entry.storage);
   const isAudition = await isAuditionProject(id);
   const auditionPath = await getAssetFolderPath(id);
-  console.log("isAudition: ", isAudition);
 
   const normalisedPath = auditionPath.value.replace(/^\/srv/, "/Volumes");
-  console.log("normalisedPath: ", normalisedPath);
+
   const pathToUse = isAudition
     ? normalisedPath
     : storageResult.clientpath
     ? storageResult.clientpath
     : storageResult.rootpath;
 
-  console.log("pathToUse: ", pathToUse);
   const premiereDisplayVersion = entry.premiereVersion
     ? await translatePremiereVersion(entry.premiereVersion, false)
     : undefined;
@@ -301,6 +299,7 @@ const isAuditionProject = async (id: number) => {
     } = await Axios.get<PlutoApiResponse<Project>>(`${API_PROJECTS}/${id}`);
 
     if (status === 200) {
+      // Audition project type is 2 on both the dev a live system
       if (result.projectTypeId === 2) {
         return true;
       }
@@ -323,17 +322,21 @@ export const getAssetFolderPath = async (
     } = await Axios.get<PlutoApiResponse<ProjectMetadataResponse>>(
       `${API_PROJECTS}/${id}/assetfolder`
     );
-    console.log(result);
+
     if (status === 200) {
       return result;
     }
 
-    throw new Error(
+    // Handle the non-200 status without throwing an error
+    console.error(
       `Could not get asset folder path for project ${id}. ${status}`
+    );
+    return Promise.reject(
+      new Error(`Could not get asset folder path for project ${id}. ${status}`)
     );
   } catch (error) {
     console.error(error);
-    throw error;
+    return Promise.reject(error);
   }
 };
 
