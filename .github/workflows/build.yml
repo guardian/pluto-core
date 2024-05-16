@@ -126,19 +126,19 @@ jobs:
           CI: 1
         run: sbt -v "test; docker:publishLocal"
 
-#      - name: Publish Unit Test Results
-#        uses: EnricoMi/publish-unit-test-result-action@v1
-#        if: always()  #runs even if there is a test failure
-#        with:
-#          files: junit-tests/*.xml
-
-      - name: Tag docker image
-        run:  docker tag guardianmultimedia/pluto-core:${{ env.GITHUB_RUN_NUMBER }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/pluto-core:${{ env.GITHUB_RUN_NUMBER }}
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always()  #runs even if there is a test failure
+        with:
+          files: junit-tests/*.xml
+ltimedia/pluto-core:${{ env.GITHUB_RUN_NUMBER }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/pluto-core:${{ env.GITHUB_RUN_NUMBER }}
 
       - name: Push docker image
         run: docker push  ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/pluto-core:${{ env.GITHUB_RUN_NUMBER }}
 
-      - name: Output build-info.yaml
+
+    - name: Tag docker image
+      run:  docker tag guardianmu    - name: Output build-info.yaml
         uses: fredex42/pluto-build-info@v1.1
         with:
           builtimage: AWS_ACCOUNT_ID.dkr.ecr.AWS_REGION.amazonaws.com/pluto-core:${{ env.GITHUB_RUN_NUMBER }}
