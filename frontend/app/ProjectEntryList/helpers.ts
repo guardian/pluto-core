@@ -291,16 +291,36 @@ export const getOpenUrl = async (entry: FileEntry, id: number) => {
   return `pluto:openproject:${pathToUse}/${entry.filepath}${versionPart}`;
 };
 
+const getSesxProjectTypeIds = async () => {
+  try {
+    const { data } = await Axios.get(`${API}/projecttype`);
+    if (data.status === "ok") {
+      return data.result
+        .filter(
+          (projectType: { fileExtension: string }) =>
+            projectType.fileExtension === ".sesx"
+        )
+        .map((projectType: { id: any }) => projectType.id);
+    } else {
+      throw new Error("Failed to fetch project types");
+    }
+  } catch (error) {
+    console.error("Error fetching project types:", error);
+    throw error;
+  }
+};
+
 const isAuditionProject = async (id: number) => {
   try {
+    const sesxProjectTypeIds = await getSesxProjectTypeIds();
+    console.log("sesxProjectTypeIds", sesxProjectTypeIds);
     const {
       status,
       data: { result },
     } = await Axios.get<PlutoApiResponse<Project>>(`${API_PROJECTS}/${id}`);
 
     if (status === 200) {
-      // Audition project type is 2 on both the dev a live system
-      if (result.projectTypeId === 2) {
+      if (sesxProjectTypeIds.includes(result.projectTypeId)) {
         return true;
       }
     } else {
