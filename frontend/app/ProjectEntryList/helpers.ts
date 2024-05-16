@@ -291,7 +291,7 @@ export const getOpenUrl = async (entry: FileEntry, id: number) => {
   return `pluto:openproject:${pathToUse}/${entry.filepath}${versionPart}`;
 };
 
-const getSesxProjectTypeIds = async () => {
+export const getSesxProjectTypeIds = async () => {
   try {
     const { data } = await Axios.get(`${API}/projecttype`);
     if (data.status === "ok") {
