@@ -268,9 +268,16 @@ export const translatePremiereVersion = async (
   }
 };
 
-export const getOpenUrl = async (entry: FileEntry) => {
+export const getOpenUrl = async (entry: FileEntry, id: number) => {
   const storageResult = await getStorageData(entry.storage);
-  const pathToUse = storageResult.clientpath
+  const isAudition = await isAuditionProject(id);
+  const auditionPath = await getAssetFolderPath(id);
+
+  const normalisedPath = auditionPath.value.replace(/^\/srv/, "/Volumes");
+
+  const pathToUse = isAudition
+    ? normalisedPath
+    : storageResult.clientpath
     ? storageResult.clientpath
     : storageResult.rootpath;
 
@@ -284,6 +291,75 @@ export const getOpenUrl = async (entry: FileEntry) => {
   return `pluto:openproject:${pathToUse}/${entry.filepath}${versionPart}`;
 };
 
+export const getSesxProjectTypeIds = async () => {
+  try {
+    const { data } = await Axios.get(`${API}/projecttype`);
+    if (data.status === "ok") {
+      return data.result
+        .filter(
+          (projectType: { fileExtension: string }) =>
+            projectType.fileExtension === ".sesx"
+        )
+        .map((projectType: { id: any }) => projectType.id);
+    } else {
+      throw new Error("Failed to fetch project types");
+    }
+  } catch (error) {
+    console.error("Error fetching project types:", error);
+    throw error;
+  }
+};
+
+const isAuditionProject = async (id: number) => {
+  try {
+    const sesxProjectTypeIds = await getSesxProjectTypeIds();
+    console.log("sesxProjectTypeIds", sesxProjectTypeIds);
+    const {
+      status,
+      data: { result },
+    } = await Axios.get<PlutoApiResponse<Project>>(`${API_PROJECTS}/${id}`);
+
+    if (status === 200) {
+      if (sesxProjectTypeIds.includes(result.projectTypeId)) {
+        return true;
+      }
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const getAssetFolderPath = async (
+  id: number
+): Promise<ProjectMetadataResponse> => {
+  try {
+    const {
+      status,
+      data: { result },
+    } = await Axios.get<PlutoApiResponse<ProjectMetadataResponse>>(
+      `${API_PROJECTS}/${id}/assetfolder`
+    );
+
+    if (status === 200) {
+      return result;
+    }
+
+    // Handle the non-200 status without throwing an error
+    console.error(
+      `Could not get asset folder path for project ${id}. ${status}`
+    );
+    return Promise.reject(
+      new Error(`Could not get asset folder path for project ${id}. ${status}`)
+    );
+  } catch (error) {
+    console.error(error);
+    return Promise.reject(error);
+  }
+};
+
 export const getOpenUrlForId = async (id: number) => {
   const fileResult = await getFileData(id);
 
@@ -295,7 +371,7 @@ export const getOpenUrlForId = async (id: number) => {
     return;
   }
 
-  return getOpenUrl(fileResult[0]);
+  return getOpenUrl(fileResult[0], id);
 };
 
 /**

@@ -1,5 +1,6 @@
 import moxios from "moxios";
 import { translatePremiereVersion } from "../../app/ProjectEntryList/helpers";
+import { getSesxProjectTypeIds } from "../../app/ProjectEntryList/helpers";
 
 describe("helpers.translatePremiereVersion", () => {
   beforeEach(() => moxios.install());
@@ -79,5 +80,68 @@ describe("helpers.translatePremiereVersion", () => {
         done.fail(err);
       }
     });
+  });
+});
+
+describe("getSesxProjectTypeIds", () => {
+  beforeEach(() => {
+    moxios.install();
+  });
+
+  afterEach(() => {
+    moxios.uninstall();
+  });
+
+  it("should return project type ids for '.sesx' file extension", async () => {
+    const mockData = {
+      status: "ok",
+      result: [
+        { id: 1, fileExtension: ".sesx" },
+        { id: 2, fileExtension: ".txt" },
+        { id: 3, fileExtension: ".sesx" },
+      ],
+    };
+
+    moxios.wait(() => {
+      const request = moxios.requests.mostRecent();
+      request.respondWith({
+        status: 200,
+        response: mockData,
+      });
+    });
+
+    const result = await getSesxProjectTypeIds();
+    expect(result).toEqual([1, 3]);
+  });
+
+  it("should throw an error when the status is not 'ok'", async () => {
+    const mockData = {
+      status: "error",
+      result: [],
+    };
+
+    moxios.wait(() => {
+      const request = moxios.requests.mostRecent();
+      request.respondWith({
+        status: 200,
+        response: mockData,
+      });
+    });
+
+    await expect(getSesxProjectTypeIds()).rejects.toThrow(
+      "Failed to fetch project types"
+    );
+  });
+
+  it("should throw an error when the request fails", async () => {
+    moxios.wait(() => {
+      const request = moxios.requests.mostRecent();
+      request.respondWith({
+        status: 500,
+        response: {},
+      });
+    });
+
+    await expect(getSesxProjectTypeIds()).rejects.toThrow();
   });
 });
