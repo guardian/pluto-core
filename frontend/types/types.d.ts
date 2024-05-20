@@ -55,6 +55,7 @@ interface Project {
   sensitive: boolean;
   status: ProjectStatus;
   productionOffice: ProductionOffice;
+  confidential: boolean;
 }
 
 type FilterOrderType = "W_STARTSWITH" | "W_ENDSWITH" | "W_CONTAINS" | "W_EXACT";

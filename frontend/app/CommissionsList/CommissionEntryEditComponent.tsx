@@ -582,6 +582,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
             }}
             projects={projectList}
             projectCount={projectCount}
+            user={user}
           />
         ) : null}
       </Paper>

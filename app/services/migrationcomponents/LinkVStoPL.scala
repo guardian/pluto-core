@@ -101,7 +101,8 @@ class LinkVStoPL (createProjectTypeId:Int, vsUserCache: VSUserCache)(implicit db
                 sensitive = Some(vsProject.isSensitive),
                 status = maybeProjectStatus.getOrElse(EntryStatus.Completed),
                 productionOffice = maybeProductionOffice.getOrElse(ProductionOffice.UK),
-                None
+                None,
+                Some(false)
               )
             })
           case Some(existingProject)=>

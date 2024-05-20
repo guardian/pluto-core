@@ -83,6 +83,7 @@ interface ProjectsTableProps {
   //is the user an admin
   isAdmin?: boolean;
   projectCount: number;
+  user: PlutoUser | null;
 }
 
 const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
@@ -227,6 +228,21 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
     setContextMenu(null);
   };
 
+  const userAllowed = (confidential: Boolean, projectUser: string) => {
+    if (confidential == false) {
+      return true;
+    }
+    if (props.user != null) {
+      if (props.user.isAdmin) {
+        return true;
+      } else if (projectUser.split("|").includes(props.user.uid)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  };
+
   return (
     <>
       <TableContainer>
@@ -264,103 +280,111 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                 status,
                 user: projectUser,
                 projectTypeId,
+                confidential,
               } = project;
 
               const backgroundColour = backgroundColourForType(
                 projectTypeData[projectTypeId] || "defaultType"
               );
 
-              return (
-                <TableRow
-                  style={{
-                    backgroundColor: backgroundColour,
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = Color(
-                      backgroundColour
-                    )
-                      .darken(0.1)
-                      .string();
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = backgroundColour;
-                  }}
-                  onClick={() =>
-                    window.open(`${deploymentRootPath}project/${id}`, "_blank")
-                  }
-                  onContextMenu={(e) => {
-                    handleContextMenu(e, id);
-                  }}
-                >
-                  <TableCell>{title}</TableCell>
-                  <TableCell>
-                    <CommissionEntryView entryId={commissionId} />
-                  </TableCell>
-                  <TableCell>
-                    <span className="datetime">
-                      {moment(created).format("DD/MM/YYYY HH:mm A")}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <WorkingGroupEntryView entryId={workingGroupId} />
-                  </TableCell>
-                  <TableCell>{status}</TableCell>
-                  <TableCell>{projectUser.replace(/\|/g, " ")}</TableCell>
-                  <TableCell>
-                    <img src={imagePath(projectTypeData[projectTypeId])} />
-                  </TableCell>
-                  <TableCell>
-                    <Box width="50px">
-                      <IconButton
-                        onClick={(event) => {
+              if (userAllowed(confidential, projectUser)) {
+                return (
+                  <TableRow
+                    style={{
+                      backgroundColor: backgroundColour,
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = Color(
+                        backgroundColour
+                      )
+                        .darken(0.1)
+                        .string();
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = backgroundColour;
+                    }}
+                    onClick={() =>
+                      window.open(
+                        `${deploymentRootPath}project/${id}`,
+                        "_blank"
+                      )
+                    }
+                    onContextMenu={(e) => {
+                      handleContextMenu(e, id);
+                    }}
+                  >
+                    <TableCell>{title}</TableCell>
+                    <TableCell>
+                      <CommissionEntryView entryId={commissionId} />
+                    </TableCell>
+                    <TableCell>
+                      <span className="datetime">
+                        {moment(created).format("DD/MM/YYYY HH:mm A")}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <WorkingGroupEntryView entryId={workingGroupId} />
+                    </TableCell>
+                    <TableCell>{status}</TableCell>
+                    <TableCell>{projectUser.replace(/\|/g, " ")}</TableCell>
+                    <TableCell>
+                      <img src={imagePath(projectTypeData[projectTypeId])} />
+                    </TableCell>
+                    <TableCell>
+                      <Box width="50px">
+                        <IconButton
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setUpdatingProject(id);
+                            setOpenDialog(true);
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        className={classes.openProjectButton}
+                        variant="contained"
+                        color="primary"
+                        onClick={async (event) => {
                           event.stopPropagation();
-                          setUpdatingProject(id);
-                          setOpenDialog(true);
+                          try {
+                            await openProject(id);
+                          } catch (error) {
+                            SystemNotification.open(
+                              SystemNotifcationKind.Error,
+                              `An error occurred when attempting to open the project. `
+                            );
+                            console.error(error);
+                          }
+
+                          try {
+                            await updateProjectOpenedStatus(id);
+
+                            await props.updateRequired(page, rowsPerPage);
+                          } catch (error) {
+                            console.error(error);
+                          }
                         }}
                       >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      className={classes.openProjectButton}
-                      variant="contained"
-                      color="primary"
-                      onClick={async (event) => {
-                        event.stopPropagation();
-                        try {
-                          await openProject(id);
-                        } catch (error) {
-                          SystemNotification.open(
-                            SystemNotifcationKind.Error,
-                            `An error occurred when attempting to open the project. `
-                          );
-                          console.error(error);
-                        }
-
-                        try {
-                          await updateProjectOpenedStatus(id);
-
-                          await props.updateRequired(page, rowsPerPage);
-                        } catch (error) {
-                          console.error(error);
-                        }
-                      }}
-                    >
-                      Open project
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <AssetFolderLink
-                      projectId={id}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                      }}
-                    />
-                  </TableCell>
-                </TableRow>
-              );
+                        Open project
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <AssetFolderLink
+                        projectId={id}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              } else {
+                return null;
+              }
             })}
           </TableBody>
         </Table>

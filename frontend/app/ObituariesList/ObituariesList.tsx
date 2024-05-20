@@ -34,6 +34,7 @@ import {
 import AssetFolderLink from "~/ProjectEntryList/AssetFolderLink";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
 import { Autocomplete } from "@material-ui/lab";
+import { isLoggedIn } from "~/utils/api";
 
 export interface ObituaryProject {
   commissionId: number;
@@ -50,6 +51,7 @@ export interface ObituaryProject {
   updated: string;
   user: string;
   workingGroupId: number;
+  confidential: boolean;
 }
 
 const tableHeaderTitles: HeaderTitle<Project>[] = [
@@ -72,6 +74,20 @@ const ObituariesList = () => {
   const [order, setOrder] = useState<SortDirection>("asc");
   const [name, setName] = useState<string>("");
   const [obituaryOptions, setObituaryOptions] = useState<null | string[]>(null);
+  const [user, setUser] = useState<PlutoUser | null>(null);
+
+  useEffect(() => {
+    const fetchWhoIsLoggedIn = async () => {
+      try {
+        let user = await isLoggedIn();
+        setUser(user);
+      } catch (error) {
+        console.error("Could not login user:", error);
+      }
+    };
+
+    fetchWhoIsLoggedIn();
+  }, []);
 
   const fetchObituaryProjects = async () => {
     try {
@@ -165,6 +181,21 @@ const ObituariesList = () => {
     });
   }
 
+  const userAllowed = (confidential: Boolean, projectUser: string) => {
+    if (confidential == false) {
+      return true;
+    }
+    if (user != null) {
+      if (user.isAdmin) {
+        return true;
+      } else if (projectUser.split("|").includes(user.uid)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  };
+
   return (
     <>
       <Helmet>
@@ -229,66 +260,74 @@ const ObituariesList = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {projects.map((project: ObituaryProject) => (
-                <TableRow key={project.id}>
-                  <TableCell
-                    component="th"
-                    scope="row"
-                    className={classes.title_case_text}
-                  >
-                    {project.isObitProject}
-                  </TableCell>
-                  <TableCell>{project.title}</TableCell>
-                  <TableCell>
-                    <CommissionEntryView entryId={project.commissionId} />
-                  </TableCell>
-                  <TableCell>
-                    <span className="datetime">
-                      {moment(project.created).format("DD/MM/YYYY HH:mm")}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <ProjectTypeDisplay projectTypeId={project.projectTypeId} />
-                  </TableCell>
-                  <TableCell>{project.user}</TableCell>
-                  <TableCell align="right">
-                    <Link to={"/project/" + project.id}>
-                      Edit obituary project
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      className={classes.openProjectButton}
-                      variant="contained"
-                      color="primary"
-                      onClick={async () => {
-                        try {
-                          await openProject(project.id);
-                        } catch (error) {
-                          SystemNotification.open(
-                            SystemNotifcationKind.Error,
-                            `An error occurred when attempting to open the project.`
-                          );
-                          console.error(error);
-                        }
-                        try {
-                          await updateProjectOpenedStatus(project.id);
-                        } catch (error) {
-                          console.error(error);
-                        }
-                      }}
-                    >
-                      Open project
-                    </Button>
-                    <AssetFolderLink
-                      projectId={project.id}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                      }}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
+              {projects.map((project: ObituaryProject) => {
+                if (userAllowed(project.confidential, project.user)) {
+                  return (
+                    <TableRow key={project.id}>
+                      <TableCell
+                        component="th"
+                        scope="row"
+                        className={classes.title_case_text}
+                      >
+                        {project.isObitProject}
+                      </TableCell>
+                      <TableCell>{project.title}</TableCell>
+                      <TableCell>
+                        <CommissionEntryView entryId={project.commissionId} />
+                      </TableCell>
+                      <TableCell>
+                        <span className="datetime">
+                          {moment(project.created).format("DD/MM/YYYY HH:mm")}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <ProjectTypeDisplay
+                          projectTypeId={project.projectTypeId}
+                        />
+                      </TableCell>
+                      <TableCell>{project.user}</TableCell>
+                      <TableCell align="right">
+                        <Link to={"/project/" + project.id}>
+                          Edit obituary project
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          className={classes.openProjectButton}
+                          variant="contained"
+                          color="primary"
+                          onClick={async () => {
+                            try {
+                              await openProject(project.id);
+                            } catch (error) {
+                              SystemNotification.open(
+                                SystemNotifcationKind.Error,
+                                `An error occurred when attempting to open the project.`
+                              );
+                              console.error(error);
+                            }
+                            try {
+                              await updateProjectOpenedStatus(project.id);
+                            } catch (error) {
+                              console.error(error);
+                            }
+                          }}
+                        >
+                          Open project
+                        </Button>
+                        <AssetFolderLink
+                          projectId={project.id}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                } else {
+                  return null;
+                }
+              })}
             </TableBody>
           </Table>
         </TableContainer>

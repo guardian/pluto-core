@@ -151,6 +151,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
           }}
           projects={projects}
           projectCount={projectCount}
+          user={user}
         />
       </Paper>
     </>
