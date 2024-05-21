@@ -566,7 +566,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                   />
                   <br />
                   <br />
-                  <Tooltip title="Set this Boolean if you do not want other users to be able to access this project via Pluto.">
+                  <Tooltip title="Select this option if you do not want other users to be able to access this project via Pluto.">
                     <FormControlLabel
                       control={
                         <Checkbox
