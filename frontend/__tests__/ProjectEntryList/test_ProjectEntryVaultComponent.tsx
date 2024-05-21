@@ -18,6 +18,7 @@ const fakeProject: Project = {
   sensitive: false,
   status: "New",
   productionOffice: "UK",
+  confidential: false,
 };
 
 (global as any).vaultdoorURL = "https://vaultdoor-server/";

@@ -7,9 +7,11 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
+  FormControlLabel,
   Grid,
   IconButton,
   Paper,
+  Checkbox,
   TextField,
   Tooltip,
   Typography,
@@ -70,6 +72,7 @@ const EMPTY_PROJECT: Project = {
   title: "",
   user: "",
   workingGroupId: 0,
+  confidential: false,
 };
 
 const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
@@ -90,6 +93,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [initialProject, setInitialProject] = useState<Project | null>(null);
   const [missingFiles, setMissingFiles] = useState<MissingFiles[]>([]);
+  const [userAllowedBoolean, setUserAllowedBoolean] = useState<boolean>(true);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -287,6 +291,29 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     fetchProjectTypeData();
   }, []);
 
+  useEffect(() => {
+    const userAllowed = async () => {
+      try {
+        const loggedIn = await isLoggedIn();
+        if (loggedIn.isAdmin) {
+          setUserAllowedBoolean(true);
+        } else if (project.user.split("|").includes(loggedIn.uid)) {
+          setUserAllowedBoolean(true);
+        } else {
+          setUserAllowedBoolean(false);
+        }
+      } catch {
+        console.error(
+          "Error attempting to check if user is allowed access to this page."
+        );
+      }
+    };
+
+    if (project.confidential) {
+      userAllowed();
+    }
+  }, [project.user]);
+
   const fixPermissions = async (project: number) => {
     try {
       const response = await axios.get(
@@ -325,291 +352,332 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
   return (
     <>
-      {project ? (
-        <Helmet>
-          {console.log("project type is: ", project.projectTypeId)}
-          {console.log(
-            "projectTypeData[project.projectTypeId]",
-            projectTypeData[project.projectTypeId]
-          )}
-          <title>[{project.title}] Details</title>
-        </Helmet>
-      ) : null}
-      <Grid container spacing={3}>
-        <Grid item xs={9} md={6}>
-          <Breadcrumb
-            projectId={project.id}
-            plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
-          />
-        </Grid>
-        <Grid item xs={12} md={9}>
-          <Box display="flex" flexDirection="row" alignItems="center">
-            <Button
-              style={{ marginRight: "8px", minWidth: "160px" }}
-              className={classes.openProjectButton}
-              variant="contained"
-              color="primary"
-              onClick={async () => {
-                try {
-                  await openProject(project.id);
-                } catch (error) {
-                  SystemNotification.open(
-                    SystemNotifcationKind.Error,
-                    `An error occurred when attempting to open the project.`
-                  );
-                  console.error(error);
-                }
-
-                try {
-                  await updateProjectOpenedStatus(project.id);
-                } catch (error) {
-                  console.error(error);
-                }
-              }}
-            >
-              Open project
-            </Button>
-            <div style={{ marginRight: "-6px", minWidth: "160px" }}>
-              <AssetFolderLink
+      {userAllowedBoolean ? (
+        <>
+          {project ? (
+            <Helmet>
+              {console.log("project type is: ", project.projectTypeId)}
+              {console.log(
+                "projectTypeData[project.projectTypeId]",
+                projectTypeData[project.projectTypeId]
+              )}
+              <title>[{project.title}] Details</title>
+            </Helmet>
+          ) : null}
+          <Grid container spacing={3}>
+            <Grid item xs={9} md={6}>
+              <Breadcrumb
                 projectId={project.id}
-                onClick={(event) => {
-                  event.stopPropagation();
-                }}
+                plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
               />
-            </div>
-            <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
-              <Button
-                startIcon={<FolderIcon />}
-                style={{
-                  marginLeft: "14px",
-                  marginRight: "8px",
-                  minWidth: "170px",
-                }}
-                onClick={async () => {
-                  try {
-                    await fixPermissions(project.id);
-                  } catch (error) {
-                    SystemNotification.open(
-                      SystemNotifcationKind.Error,
-                      `An error occurred when attempting to fix permissions.`
-                    );
-                    console.error(error);
-                  }
-                }}
-                variant="contained"
-              >
-                Fix&nbsp;Permissions
-              </Button>
-            </Tooltip>
+            </Grid>
+            <Grid item xs={12} md={9}>
+              <Box display="flex" flexDirection="row" alignItems="center">
+                <Button
+                  style={{ marginRight: "8px", minWidth: "160px" }}
+                  className={classes.openProjectButton}
+                  variant="contained"
+                  color="primary"
+                  onClick={async () => {
+                    try {
+                      await openProject(project.id);
+                    } catch (error) {
+                      SystemNotification.open(
+                        SystemNotifcationKind.Error,
+                        `An error occurred when attempting to open the project.`
+                      );
+                      console.error(error);
+                    }
 
-            {isAdmin ? (
-              <Button
-                style={{ marginRight: "8px", minWidth: "129px" }}
-                href={"/pluto-core/project/" + project.id + "/deletedata"}
-                color="secondary"
-                variant="contained"
-              >
-                Delete&nbsp;Data
-              </Button>
-            ) : null}
-            {projectTypeData[project.projectTypeId] == "Premiere" ? (
-              <ProjectFileUpload projectId={project.id}></ProjectFileUpload>
-            ) : null}
-            {projectTypeData[project.projectTypeId] == "Audition" ||
-            projectTypeData[project.projectTypeId] == "Cubase" ? (
-              <Tooltip
-                title="View Project File Backups"
-                style={{ marginRight: "0px", minWidth: "10px" }}
-              >
-                <IconButton
-                  disableRipple
-                  className={classes.noHoverEffect}
-                  onClick={() =>
-                    history.push(`/project/${project.id}/assetfolderbackups`)
-                  }
+                    try {
+                      await updateProjectOpenedStatus(project.id);
+                    } catch (error) {
+                      console.error(error);
+                    }
+                  }}
                 >
-                  <FileCopy />
-                </IconButton>
-              </Tooltip>
-            ) : (
-              <Tooltip
-                title="View Project File Backups"
-                style={{ marginRight: "0px", minWidth: "10px" }}
-              >
-                <IconButton
-                  disableRipple
-                  className={classes.noHoverEffect}
-                  onClick={() => history.push(`/project/${project.id}/backups`)}
-                >
-                  <FileCopy />
-                </IconButton>
-              </Tooltip>
-            )}
+                  Open project
+                </Button>
+                <div style={{ marginRight: "-6px", minWidth: "160px" }}>
+                  <AssetFolderLink
+                    projectId={project.id}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                    }}
+                  />
+                </div>
+                <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
+                  <Button
+                    startIcon={<FolderIcon />}
+                    style={{
+                      marginLeft: "14px",
+                      marginRight: "8px",
+                      minWidth: "170px",
+                    }}
+                    onClick={async () => {
+                      try {
+                        await fixPermissions(project.id);
+                      } catch (error) {
+                        SystemNotification.open(
+                          SystemNotifcationKind.Error,
+                          `An error occurred when attempting to fix permissions.`
+                        );
+                        console.error(error);
+                      }
+                    }}
+                    variant="contained"
+                  >
+                    Fix&nbsp;Permissions
+                  </Button>
+                </Tooltip>
 
-            <Tooltip title="See project's media">
-              <IconButton
-                disableRipple
-                className={classes.noHoverEffect}
-                onClick={() =>
-                  window.location.assign(`/vs/project/${project.id}`)
-                }
-              >
-                <PermMedia />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </Grid>
-      </Grid>
-      <Paper className={classes.root} elevation={3}>
-        <form onSubmit={onProjectSubmit}>
-          <Grid container xs={12} direction="row" spacing={3}>
-            <Grid item xs={6}>
-              <TextField
-                label="Project name"
-                value={project.title}
-                autoFocus
-                onChange={(event) => fieldChanged(event, "title")}
-              />
-              <Tooltip title="Add a name here to make this into an obituary.">
-                <span>
-                  <ObituarySelector
-                    label="Obituary"
-                    value={project.isObitProject ?? ""}
-                    valueDidChange={(evt, newValue) =>
-                      fieldChangedValue(newValue, "isObitProject")
+                {isAdmin ? (
+                  <Button
+                    style={{ marginRight: "8px", minWidth: "129px" }}
+                    href={"/pluto-core/project/" + project.id + "/deletedata"}
+                    color="secondary"
+                    variant="contained"
+                  >
+                    Delete&nbsp;Data
+                  </Button>
+                ) : null}
+                {projectTypeData[project.projectTypeId] == "Premiere" ? (
+                  <ProjectFileUpload projectId={project.id}></ProjectFileUpload>
+                ) : null}
+                {projectTypeData[project.projectTypeId] == "Audition" ||
+                projectTypeData[project.projectTypeId] == "Cubase" ? (
+                  <Tooltip
+                    title="View Project File Backups"
+                    style={{ marginRight: "0px", minWidth: "10px" }}
+                  >
+                    <IconButton
+                      disableRipple
+                      className={classes.noHoverEffect}
+                      onClick={() =>
+                        history.push(
+                          `/project/${project.id}/assetfolderbackups`
+                        )
+                      }
+                    >
+                      <FileCopy />
+                    </IconButton>
+                  </Tooltip>
+                ) : (
+                  <Tooltip
+                    title="View Project File Backups"
+                    style={{ marginRight: "0px", minWidth: "10px" }}
+                  >
+                    <IconButton
+                      disableRipple
+                      className={classes.noHoverEffect}
+                      onClick={() =>
+                        history.push(`/project/${project.id}/backups`)
+                      }
+                    >
+                      <FileCopy />
+                    </IconButton>
+                  </Tooltip>
+                )}
+
+                <Tooltip title="See project's media">
+                  <IconButton
+                    disableRipple
+                    className={classes.noHoverEffect}
+                    onClick={() =>
+                      window.location.assign(`/vs/project/${project.id}`)
+                    }
+                  >
+                    <PermMedia />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Grid>
+          </Grid>
+          <Paper className={classes.root} elevation={3}>
+            <form onSubmit={onProjectSubmit}>
+              <Grid container xs={12} direction="row" spacing={3}>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Project name"
+                    value={project.title}
+                    autoFocus
+                    onChange={(event) => fieldChanged(event, "title")}
+                  />
+                  <Tooltip title="Add a name here to make this into an obituary.">
+                    <span>
+                      <ObituarySelector
+                        label="Obituary"
+                        value={project.isObitProject ?? ""}
+                        valueDidChange={(evt, newValue) =>
+                          fieldChangedValue(newValue, "isObitProject")
+                        }
+                      />
+                    </span>
+                  </Tooltip>
+                  <UsersAutoComplete
+                    label="Owner"
+                    shouldValidate={true}
+                    value={project.user}
+                    valueDidChange={(evt, newValue) => {
+                      if (newValue) {
+                        fieldChangedValueArray(newValue, "user");
+                      } else {
+                        fieldChangedValue(newValue, "user");
+                      }
+                    }}
+                  />
+                  <StatusSelector
+                    value={project.status}
+                    onChange={(event) => fieldChanged(event, "status")}
+                  />
+                  <ProductionOfficeSelector
+                    label="Production Office"
+                    value={project.productionOffice}
+                    onChange={(evt: any) =>
+                      fieldChanged(evt, "productionOffice")
                     }
                   />
-                </span>
-              </Tooltip>
-              <UsersAutoComplete
-                label="Owner"
-                shouldValidate={true}
-                value={project.user}
-                valueDidChange={(evt, newValue) => {
-                  if (newValue) {
-                    fieldChangedValueArray(newValue, "user");
-                  } else {
-                    fieldChangedValue(newValue, "user");
-                  }
-                }}
-              />
-              <StatusSelector
-                value={project.status}
-                onChange={(event) => fieldChanged(event, "status")}
-              />
-              <ProductionOfficeSelector
-                label="Production Office"
-                value={project.productionOffice}
-                onChange={(evt: any) => fieldChanged(evt, "productionOffice")}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                disabled={true}
-                value={moment(project.created).format("MMM Do, YYYY, hh:mm a")}
-                label="Created"
-              />
-              {projectType ? (
-                <TextField
-                  disabled={true}
-                  value={`${projectType.name} v${projectType.targetVersion}`}
-                  label="Project type"
-                />
-              ) : null}
-              <img
-                src={imagePath(projectTypeData[project.projectTypeId])}
-                style={{ marginBottom: "1em" }}
-              />
-              <ApplicableRulesSelector
-                deletable={project.deletable}
-                deep_archive={project.deep_archive}
-                sensitive={project.sensitive}
-                onChange={updateDeletableAndDeepArchive}
-                disabled={!isAdmin}
-              />
-
-              <div style={{ height: "48px" }} className={classes.formButtons}>
-                {hasChanges() && ( // Only render if changes have been made
-                  <Button type="submit" color="secondary" variant="contained">
-                    Save changes
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    disabled={true}
+                    value={moment(project.created).format(
+                      "MMM Do, YYYY, hh:mm a"
+                    )}
+                    label="Created"
+                  />
+                  {projectType ? (
+                    <TextField
+                      disabled={true}
+                      value={`${projectType.name} v${projectType.targetVersion}`}
+                      label="Project type"
+                    />
+                  ) : null}
+                  <img
+                    src={imagePath(projectTypeData[project.projectTypeId])}
+                    style={{ marginBottom: "1em" }}
+                  />
+                  <ApplicableRulesSelector
+                    deletable={project.deletable}
+                    deep_archive={project.deep_archive}
+                    sensitive={project.sensitive}
+                    onChange={updateDeletableAndDeepArchive}
+                    disabled={!isAdmin}
+                  />
+                  <br />
+                  <br />
+                  <Tooltip title="Select this option if this is a sensitive project and you do not want other users besides the project owners to be able to view or access this project via Pluto.">
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={project.confidential}
+                          name="confidential"
+                          color="primary"
+                          onChange={() =>
+                            checkboxChanged(
+                              "confidential",
+                              project.confidential
+                            )
+                          }
+                        />
+                      }
+                      label="Private"
+                    />
+                  </Tooltip>
+                  <div
+                    style={{ height: "48px" }}
+                    className={classes.formButtons}
+                  >
+                    {hasChanges() && ( // Only render if changes have been made
+                      <Button
+                        type="submit"
+                        color="secondary"
+                        variant="contained"
+                      >
+                        Save changes
+                      </Button>
+                    )}
+                  </div>
+                </Grid>
+              </Grid>
+            </form>
+          </Paper>
+          {project === EMPTY_PROJECT ? null : (
+            <ProjectEntryDeliverablesComponent
+              project={project}
+              onError={subComponentErrored}
+            />
+          )}
+          {missingFiles.length === 0 ? null : (
+            <Paper
+              className={classes.root}
+              elevation={3}
+              style={{ marginTop: "1rem" }}
+            >
+              <Grid container xs={12} direction="row" spacing={3}>
+                <Grid item xs={8}>
+                  <Typography variant="h4">Warning</Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Button
+                    style={{
+                      width: "180px",
+                    }}
+                    onClick={async () => {
+                      try {
+                        await removeWarning(project.id);
+                        getMissingFilesData();
+                      } catch (error) {
+                        SystemNotification.open(
+                          SystemNotifcationKind.Error,
+                          `An error occurred when attempting to remove the warning.`
+                        );
+                        console.error(error);
+                      }
+                    }}
+                    variant="contained"
+                  >
+                    Remove&nbsp;Warning
                   </Button>
-                )}
-              </div>
-            </Grid>
-          </Grid>
-        </form>
-      </Paper>
-      {project === EMPTY_PROJECT ? null : (
-        <ProjectEntryDeliverablesComponent
-          project={project}
-          onError={subComponentErrored}
-        />
-      )}
-      {missingFiles.length === 0 ? null : (
-        <Paper
-          className={classes.root}
-          elevation={3}
-          style={{ marginTop: "1rem" }}
-        >
-          <Grid container xs={12} direction="row" spacing={3}>
-            <Grid item xs={8}>
-              <Typography variant="h4">Warning</Typography>
-            </Grid>
-            <Grid item xs={4}>
-              <Button
-                style={{
-                  width: "180px",
-                }}
-                onClick={async () => {
-                  try {
-                    await removeWarning(project.id);
-                    getMissingFilesData();
-                  } catch (error) {
-                    SystemNotification.open(
-                      SystemNotifcationKind.Error,
-                      `An error occurred when attempting to remove the warning.`
-                    );
-                    console.error(error);
-                  }
-                }}
-                variant="contained"
-              >
-                Remove&nbsp;Warning
-              </Button>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography>
-                Some media files used in this project have been imported from
-                Internet Downloads or other areas. Please move these files to
-                the project's asset folder, otherwise these files will be lost.
-                <br />
-                <br />
-                {missingFiles.map((file, index) => (
-                  <>
-                    {file.filepath}
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography>
+                    Some media files used in this project have been imported
+                    from Internet Downloads or other areas. Please move these
+                    files to the project's asset folder, otherwise these files
+                    will be lost.
                     <br />
-                  </>
-                ))}
-              </Typography>
-            </Grid>
-          </Grid>
-        </Paper>
+                    <br />
+                    {missingFiles.map((file, index) => (
+                      <>
+                        {file.filepath}
+                        <br />
+                      </>
+                    ))}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Paper>
+          )}
+          <Dialog
+            open={errorDialog}
+            onClose={closeDialog}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                The requested project does not exist.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={closeDialog}>Close</Button>
+            </DialogActions>
+          </Dialog>
+        </>
+      ) : (
+        <div>You have no access to this project.</div>
       )}
-      <Dialog
-        open={errorDialog}
-        onClose={closeDialog}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            The requested project does not exist.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDialog}>Close</Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 };

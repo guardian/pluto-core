@@ -19,7 +19,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class ProjectEntry (id: Option[Int], projectTypeId: Int, vidispineProjectId: Option[String],
                          projectTitle: String, created:Timestamp, updated:Timestamp, user: String, workingGroupId: Option[Int],
                          commissionId: Option[Int], deletable: Option[Boolean], deep_archive: Option[Boolean],
-                         sensitive: Option[Boolean], status:EntryStatus.Value, productionOffice: ProductionOffice.Value, isObitProject:Option[String])
+                         sensitive: Option[Boolean], status:EntryStatus.Value, productionOffice: ProductionOffice.Value, isObitProject:Option[String],
+                         confidential: Option[Boolean])
 extends PlutoModel{
   def projectDefaultStorage(implicit db:slick.jdbc.PostgresProfile#Backend#Database): Future[Option[StorageEntry]] = {
     import cats.implicits._
@@ -197,8 +198,9 @@ class ProjectEntryRow(tag:Tag) extends Table[ProjectEntry](tag, "ProjectEntry") 
   def productionOffice = column[ProductionOffice.Value]("s_production_office")
 
   def isObitProject = column[Option[String]]("s_is_obit_project")
+  def confidential = column[Option[Boolean]]("b_confidential")
 
-  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, updated, user, workingGroup, commission, deletable, deep_archive, sensitive, status, productionOffice, isObitProject) <> (ProjectEntry.tupled, ProjectEntry.unapply)
+  def * = (id.?, projectType, vidispineProjectId, projectTitle, created, updated, user, workingGroup, commission, deletable, deep_archive, sensitive, status, productionOffice, isObitProject, confidential) <> (ProjectEntry.tupled, ProjectEntry.unapply)
 }
 
 trait ProjectEntrySerializer extends TimestampSerialization {
@@ -221,7 +223,8 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "sensitive").writeNullable[Boolean] and
       (JsPath \ "status").write[EntryStatus.Value] and
       (JsPath \ "productionOffice").write[ProductionOffice.Value] and
-    (JsPath \ "isObitProject").writeNullable[String]
+    (JsPath \ "isObitProject").writeNullable[String] and
+      (JsPath \ "confidential").writeNullable[Boolean]
     )(unlift(ProjectEntry.unapply))
 
   implicit val projectEntryReads:Reads[ProjectEntry] = (
@@ -239,11 +242,12 @@ trait ProjectEntrySerializer extends TimestampSerialization {
       (JsPath \ "sensitive").readNullable[Boolean] and
       (JsPath \ "status").read[EntryStatus.Value] and
       (JsPath \ "productionOffice").read[ProductionOffice.Value] and
-      (JsPath \ "isObitProject").readNullable[String]
+      (JsPath \ "isObitProject").readNullable[String] and
+      (JsPath \ "confidential").readNullable[Boolean]
     )(ProjectEntry.apply _)
 }
 
-object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean], EntryStatus.Value, ProductionOffice.Value, Option[String])=>ProjectEntry) {
+object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestamp, Timestamp, String, Option[Int], Option[Int], Option[Boolean], Option[Boolean], Option[Boolean], EntryStatus.Value, ProductionOffice.Value, Option[String], Option[Boolean])=>ProjectEntry) {
 
   def getProjectsEligibleForStatusChange(newStatus: EntryStatus.Value, commissionId: Int): DBIO[Seq[(Int, ProjectEntry)]] = {
     import EntryStatusMapper._
@@ -275,9 +279,10 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
 
   def createFromFile(sourceFile: FileEntry, projectTemplate: ProjectTemplate, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String],
-                     deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value, isObitProject:Option[String])
+                     deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value, isObitProject:Option[String],
+                     confidential: Boolean)
                     (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
-    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user, workingGroupId, commissionId, existingVidispineId, deletable, deep_archive, sensitive, productionOffice, isObitProject)
+    createFromFile(sourceFile, projectTemplate.projectTypeId, title, created, user, workingGroupId, commissionId, existingVidispineId, deletable, deep_archive, sensitive, productionOffice, isObitProject, confidential)
   }
 
   def entryForId(requestedId: Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
@@ -315,13 +320,14 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
 
   def createFromFile(sourceFile: FileEntry, projectTypeId: Int, title:String, created:Option[LocalDateTime],
                      user:String, workingGroupId: Option[Int], commissionId: Option[Int], existingVidispineId: Option[String],
-                     deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value, isObitProject:Option[String])
+                     deletable: Boolean, deep_archive: Boolean, sensitive: Boolean, productionOffice: ProductionOffice.Value, isObitProject:Option[String],
+                     confidential: Boolean)
                     (implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[ProjectEntry]] = {
 
     /* step one - create a new project entry */
     val timestamp = dateTimeToTimestamp(created.getOrElse(LocalDateTime.now()))
     val entry = ProjectEntry(None, projectTypeId, existingVidispineId, title, timestamp, timestamp,
-      user, workingGroupId, commissionId, Some(deletable), Some(deep_archive), Some(sensitive), EntryStatus.New, productionOffice, isObitProject)
+      user, workingGroupId, commissionId, Some(deletable), Some(deep_archive), Some(sensitive), EntryStatus.New, productionOffice, isObitProject, Some(confidential))
     val savedEntry = entry.save
 
     /* step two - set up file association. Project entry must be saved, so this is done as a future map */

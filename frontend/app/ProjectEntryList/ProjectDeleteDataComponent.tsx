@@ -49,6 +49,7 @@ const EMPTY_PROJECT: Project = {
   title: "",
   user: "",
   workingGroupId: 0,
+  confidential: false,
 };
 
 const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (

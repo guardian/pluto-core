@@ -38,7 +38,7 @@ class NewProjectBackupSpec extends Specification with Mockito {
 
       val nowTime = Timestamp.from(Instant.now)
       val backupRecord = (
-        ProjectEntry(Some(1234),1,None,"Test project", nowTime, nowTime, "Test", None, None, None, None, None, EntryStatus.InProduction, ProductionOffice.US, None),
+        ProjectEntry(Some(1234),1,None,"Test project", nowTime, nowTime, "Test", None, None, None, None, None, EntryStatus.InProduction, ProductionOffice.US, None, None),
         Seq(
           FileEntry(Some(2345), "/path/to/projectfile", 1, "testuser", 1, nowTime, nowTime, nowTime, true, true, None, Some(39))
         )
@@ -82,7 +82,7 @@ class NewProjectBackupSpec extends Specification with Mockito {
 
       val nowTime = Timestamp.from(Instant.now)
       val backupRecord = (
-        ProjectEntry(Some(1234),1,None,"Test project", nowTime, nowTime, "Test", None, None, None, None, None, EntryStatus.InProduction, ProductionOffice.US, None),
+        ProjectEntry(Some(1234),1,None,"Test project", nowTime, nowTime, "Test", None, None, None, None, None, EntryStatus.InProduction, ProductionOffice.US, None, None),
         Seq(
           FileEntry(Some(2345), "/path/to/projectfile", 1, "testuser", 1, nowTime, nowTime, nowTime, true, true, None, Some(39))
         )
