@@ -581,6 +581,8 @@ export const getMissingFiles = async (id: number): Promise<MissingFiles[]> => {
 };
 
 export const downloadProjectFile = async (id: number) => {
-  const url = `${deploymentRootPath}${API_PROJECTS}/${id}/fileDownload`;
+  const url = `${deploymentRootPath}${API_PROJECTS}/${id}/fileDownload?access_token=${localStorage.getItem(
+    "pluto:access-token"
+  )}`;
   window.open(url);
 };
