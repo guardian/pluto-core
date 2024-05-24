@@ -452,7 +452,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                       style={{
                         marginLeft: "14px",
                         marginRight: "8px",
-                        minWidth: "170px",
+                        minWidth: "220px",
                       }}
                       variant="contained"
                       onClick={async () => {
