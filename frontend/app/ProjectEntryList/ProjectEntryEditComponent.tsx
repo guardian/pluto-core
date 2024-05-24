@@ -24,6 +24,7 @@ import {
   updateProjectOpenedStatus,
   getSimpleProjectTypeData,
   getMissingFiles,
+  downloadProjectFile,
 } from "./helpers";
 import {
   SystemNotification,
@@ -443,6 +444,32 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 ) : null}
                 {projectTypeData[project.projectTypeId] == "Premiere" ? (
                   <ProjectFileUpload projectId={project.id}></ProjectFileUpload>
+                ) : null}
+                {projectTypeData[project.projectTypeId] ==
+                ("Premiere" || "After Effects" || "Prelude") ? (
+                  <Tooltip title="Press this button to download the project file.">
+                    <Button
+                      style={{
+                        marginLeft: "14px",
+                        marginRight: "8px",
+                        minWidth: "220px",
+                      }}
+                      variant="contained"
+                      onClick={async () => {
+                        try {
+                          await downloadProjectFile(project.id);
+                        } catch (error) {
+                          SystemNotification.open(
+                            SystemNotifcationKind.Error,
+                            `An error occurred when attempting to download the project file.`
+                          );
+                          console.error(error);
+                        }
+                      }}
+                    >
+                      Download&nbsp;Project&nbsp;File
+                    </Button>
+                  </Tooltip>
                 ) : null}
                 {projectTypeData[project.projectTypeId] == "Audition" ||
                 projectTypeData[project.projectTypeId] == "Cubase" ? (

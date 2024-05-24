@@ -4,11 +4,14 @@ import {
   SystemNotifcationKind,
   SystemNotification,
 } from "@guardian/pluto-headers";
+import { saveAs } from "file-saver";
 
 const API = "/api";
 const API_PROJECTS = `${API}/project`;
 const API_PROJECTS_FILTER = `${API_PROJECTS}/list`;
 const API_FILES = `${API}/file`;
+
+declare var deploymentRootPath: string;
 
 interface ProjectsOnPage {
   page?: number;
@@ -576,4 +579,44 @@ export const getMissingFiles = async (id: number): Promise<MissingFiles[]> => {
     console.error(error);
     throw error;
   }
+};
+
+export const downloadProjectFile = async (id: number) => {
+  const url = `${deploymentRootPath}${API_PROJECTS}/${id}/fileDownload`;
+
+  const token = localStorage.getItem("pluto:access-token");
+  if (!token) {
+    console.log("No local access token, performing request without it");
+  }
+
+  const toAddTo = {};
+
+  const newInit = Object.assign({}, toAddTo, {
+    headers: Object.assign({}, null, {
+      Authorization: `Bearer ${token}`,
+    }),
+  });
+
+  let filename = "";
+
+  fetch(url, newInit)
+    .then((response) => {
+      // @ts-ignore
+      filename = response.headers
+        .get("Content-Disposition")
+        .split('filename="')[1]
+        .split('";')[0];
+
+      if (filename.substr(filename.length - 1)) {
+        filename = filename.slice(0, -1);
+      }
+
+      return response.blob();
+    })
+    .then((blob) => {
+      saveAs(blob, filename);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 };
