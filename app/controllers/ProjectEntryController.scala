@@ -39,7 +39,7 @@ import mes.OnlineOutputMessage
 import mess.InternalOnlineOutputMessage
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, TimeUnit}
 import de.geekonaut.slickmdc.MdcExecutionContext
 import services.RabbitMqSAN.SANEvent
 import com.om.mxs.client.japi.Vault
@@ -1037,6 +1037,37 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             projectEntry.associatedAssetFolderFiles(allVersions, implicitConfig).map(fileList=>Ok(Json.obj("status"->"ok","files"->fileList)))
           case None=>
             Future(NotFound(Json.obj("status"->"error","detail"->s"project $requestedId not found")))
+        }
+    })
+  }}
+
+  def fileDownload(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
+    implicit val db = dbConfig.db
+
+    selectid(requestedId).flatMap({
+      case Failure(error)=>
+        logger.error(s"Could not download file for project ${requestedId}",error)
+        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+      case Success(someSeq)=>
+        someSeq.headOption match {
+          case Some(projectEntry)=>
+
+            val fileData = for {
+              f1 <- projectEntry.associatedFiles(false).map(fileList=>fileList(0))
+              f2 <- f1.getFullPath
+            } yield (f1, f2)
+
+            val (fileEntry, fullPath) = (fileData.map(_._1), fileData.map(_._2))
+
+            val fileEntryData = Await.result(fileEntry, Duration(10, TimeUnit.SECONDS))
+            val fullPathData = Await.result(fullPath, Duration(10, TimeUnit.SECONDS))
+
+            Future(Ok.sendFile(
+               content = new java.io.File(fullPathData),
+               fileName = _ => Some(fileEntryData.filepath)
+             ))
+          case None=>
+            Future(NotFound(Json.obj("status"->"error","detail"->s"Project $requestedId not found")))
         }
     })
   }}

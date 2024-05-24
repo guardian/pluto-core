@@ -10,6 +10,8 @@ const API_PROJECTS = `${API}/project`;
 const API_PROJECTS_FILTER = `${API_PROJECTS}/list`;
 const API_FILES = `${API}/file`;
 
+declare var deploymentRootPath: string;
+
 interface ProjectsOnPage {
   page?: number;
   pageSize?: number;
@@ -576,4 +578,9 @@ export const getMissingFiles = async (id: number): Promise<MissingFiles[]> => {
     console.error(error);
     throw error;
   }
+};
+
+export const downloadProjectFile = async (id: number) => {
+  const url = `${deploymentRootPath}${API_PROJECTS}/${id}/fileDownload`;
+  window.open(url);
 };
