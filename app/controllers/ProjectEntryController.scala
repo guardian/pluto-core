@@ -1045,6 +1045,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   }}
 
   def fileDownload(requestedId: Int): EssentialAction = IsAuthenticatedAsync { uid=>{ request=>
+    logger.info(s"Got a download request for project $requestedId")
     implicit val db = dbConfig.db
 
     selectid(requestedId).flatMap({
@@ -1056,20 +1057,21 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
           case Some(projectEntry)=>
 
             val fileData = for {
-              f1 <- projectEntry.associatedFiles(false).map(_.headOption.get)
+              f1 <- projectEntry.associatedFiles(false).map(_.head)
               f2 <- f1.getFullPath
-              f3 <- projectEntry.associatedAssetFolderFiles(false, implicitConfig).map(_.headOption.get)
-            } yield (f1, f2,f3)
+              f3 <- assetFolderForProject(requestedId)
+            } yield (f1, f2, f3)
 
             val (fileEntryFuture, fullPathFuture, assetFolderPathFuture) = (fileData.map(_._1), fileData.map(_._2), fileData.map(_._3))
+
             for {
               fileEntryData <- fileEntryFuture
               fullPathData <- fullPathFuture
               assetFolderPath <- assetFolderPathFuture
+              _ = logger.info(s"Asset folder path: $assetFolderPath")
             } yield {
               val filePath = Paths.get(fullPathData)
               logger.info(s"Attempting to download file at: $filePath")
-              logger.info(s"Asset folder path: ${assetFolderPath.filepath}")
               val fileSource: Source[ByteString, _] = FileIO.fromPath(filePath)
 
               Ok.sendEntity(HttpEntity.Streamed(fileSource, None, Some("application/octet-stream")))
