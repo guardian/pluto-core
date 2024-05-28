@@ -39,17 +39,20 @@ import mes.OnlineOutputMessage
 import mess.InternalOnlineOutputMessage
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+
 import java.util.concurrent.{Executors, TimeUnit}
 import de.geekonaut.slickmdc.MdcExecutionContext
 import services.RabbitMqSAN.SANEvent
 import com.om.mxs.client.japi.Vault
-import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.stream.scaladsl.{FileIO, Keep, Sink, Source}
+import akka.util.ByteString
 import mxscopy.streamcomponents.OMFastContentSearchSource
 import mxscopy.models.ObjectMatrixEntry
 import matrixstore.MatrixStoreEnvironmentConfigProvider
 import mxscopy.MXSConnectionBuilderImpl
 import mxscopy.MXSConnectionBuilder
 import services.RabbitMqMatrix.MatrixEvent
+
 import java.util.Date
 import java.sql.Timestamp
 
@@ -1041,31 +1044,39 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     })
   }}
 
-  def fileDownload(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
+  def fileDownload(requestedId: Int): EssentialAction = IsAuthenticatedAsync { uid=>{ request=>
     implicit val db = dbConfig.db
 
     selectid(requestedId).flatMap({
       case Failure(error)=>
         logger.error(s"Could not download file for project ${requestedId}",error)
-        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+        Future.successful(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
       case Success(someSeq)=>
         someSeq.headOption match {
           case Some(projectEntry)=>
 
             val fileData = for {
-              f1 <- projectEntry.associatedFiles(false).map(fileList=>fileList(0))
+              f1 <- projectEntry.associatedFiles(false).map(_.headOption.get)
               f2 <- f1.getFullPath
-            } yield (f1, f2)
+              f3 <- projectEntry.associatedAssetFolderFiles(false, implicitConfig).map(_.headOption.get)
+            } yield (f1, f2,f3)
 
-            val (fileEntry, fullPath) = (fileData.map(_._1), fileData.map(_._2))
+            val (fileEntryFuture, fullPathFuture, assetFolderPathFuture) = (fileData.map(_._1), fileData.map(_._2), fileData.map(_._3))
+            for {
+              fileEntryData <- fileEntryFuture
+              fullPathData <- fullPathFuture
+              assetFolderPath <- assetFolderPathFuture
+            } yield {
+              val filePath = Paths.get(fullPathData)
+              logger.info(s"Attempting to download file at: $filePath")
+              logger.info(s"Asset folder path: ${assetFolderPath.filepath}")
+              val fileSource: Source[ByteString, _] = FileIO.fromPath(filePath)
 
-            val fileEntryData = Await.result(fileEntry, Duration(10, TimeUnit.SECONDS))
-            val fullPathData = Await.result(fullPath, Duration(10, TimeUnit.SECONDS))
-
-            Future(Ok.sendFile(
-               content = new java.io.File(fullPathData),
-               fileName = _ => Some(fileEntryData.filepath)
-             ))
+              Ok.sendEntity(HttpEntity.Streamed(fileSource, None, Some("application/octet-stream")))
+                .withHeaders(
+                  "Content-Disposition" -> s"""attachment; filename="${fileEntryData.filepath}""""
+                )
+            }
           case None=>
             Future(NotFound(Json.obj("status"->"error","detail"->s"Project $requestedId not found")))
         }
