@@ -94,6 +94,7 @@ val akkaVersion = "2.8.4"
 //messaging persistence and clustering
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion,
   "com.github.dnvriend" %% "akka-persistence-jdbc" % "3.5.3",
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
