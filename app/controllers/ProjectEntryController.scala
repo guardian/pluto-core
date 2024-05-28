@@ -1073,7 +1073,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
               assetFolderPath <- assetFolderPathFuture
             } yield (fileEntryData, fullPathData, assetFolderPath)
 
-            combinedFuture.map { case (fileEntryData, fullPathData, assetFolderPath) =>
+            combinedFuture.flatMap { case (fileEntryData, fullPathData, assetFolderPath) =>
               logger.info(s"Asset folder path: $assetFolderPath")
 
               def listFiles(path: Path): Seq[Path] = {
@@ -1090,32 +1090,41 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
               val pipeIn = new PipedInputStream()
               val pipeOut = new PipedOutputStream(pipeIn)
 
-              Future {
+              val zipFuture = Future {
                 val zipOut = new ZipOutputStream(pipeOut)
 
-                val projectFile = Paths.get(fullPathData)
-                logger.info(s"Project file to be zipped: $projectFile")
-                val projectFileEntry = new ZipEntry(projectFile.getFileName.toString)
-                zipOut.putNextEntry(projectFileEntry)
-                Files.copy(projectFile, zipOut)
-                zipOut.closeEntry()
+                try {
+                  val projectFile = Paths.get(fullPathData)
+                  logger.info(s"Project file to be zipped: $projectFile")
+                  val projectFileEntry = new ZipEntry(projectFile.getFileName.toString)
+                  zipOut.putNextEntry(projectFileEntry)
+                  Files.copy(projectFile, zipOut)
+                  zipOut.closeEntry()
 
-                if (assetFolderPath != null && assetFolderPath.toString.nonEmpty) {
-
-                  val files = listFiles(Paths.get(assetFolderPath.toString))
-                  logger.info(s"Files to be zipped: $files")
-                  files.foreach { file =>
-                    val zipEntry = new ZipEntry(file.getFileName.toString)
-                    zipOut.putNextEntry(zipEntry)
-                    Files.copy(file, zipOut)
-                    zipOut.closeEntry()
+                  if (assetFolderPath != null && assetFolderPath.toString.nonEmpty) {
+                    val files = listFiles(Paths.get(assetFolderPath.toString))
+                    logger.info(s"Asset files to be zipped: $files")
+                    files.foreach { file =>
+                      val zipEntry = new ZipEntry(file.getFileName.toString)
+                      zipOut.putNextEntry(zipEntry)
+                      Files.copy(file, zipOut)
+                      zipOut.closeEntry()
+                    }
                   }
+                } finally {
+                  zipOut.close()
                 }
               }
 
               val source = StreamConverters.fromInputStream(() => pipeIn)
-              Ok.sendEntity(HttpEntity.Streamed(source.map(ByteString(_)), None, Some("application/zip")))
+              val response = Ok.sendEntity(HttpEntity.Streamed(source.map(ByteString(_)), None, Some("application/zip")))
                 .withHeaders("Content-Disposition" -> s"""attachment; filename="archive.zip"""")
+
+              zipFuture.map(_ => response).recover {
+                case ex: Exception =>
+                  logger.error("Error processing file download", ex)
+                  InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
+              }
             }.recover {
               case ex: Exception =>
                 logger.error("Error processing file download", ex)
