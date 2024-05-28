@@ -1092,8 +1092,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
               Future {
                 val zipOut = new ZipOutputStream(pipeOut)
-                val files = listFiles(Paths.get(assetFolderPath.toString))
-                logger.info(s"Files to be zipped: $files")
+
                 val projectFile = Paths.get(fullPathData)
                 logger.info(s"Project file to be zipped: $projectFile")
                 val projectFileEntry = new ZipEntry(projectFile.getFileName.toString)
@@ -1101,14 +1100,17 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                 Files.copy(projectFile, zipOut)
                 zipOut.closeEntry()
 
-                files.foreach { file =>
-                  val zipEntry = new ZipEntry(file.getFileName.toString)
-                  zipOut.putNextEntry(zipEntry)
-                  Files.copy(file, zipOut)
-                  zipOut.closeEntry()
-                }
+                if (assetFolderPath != null && assetFolderPath.toString.nonEmpty) {
 
-                zipOut.close()
+                  val files = listFiles(Paths.get(assetFolderPath.toString))
+                  logger.info(s"Files to be zipped: $files")
+                  files.foreach { file =>
+                    val zipEntry = new ZipEntry(file.getFileName.toString)
+                    zipOut.putNextEntry(zipEntry)
+                    Files.copy(file, zipOut)
+                    zipOut.closeEntry()
+                  }
+                }
               }
 
               val source = StreamConverters.fromInputStream(() => pipeIn)
