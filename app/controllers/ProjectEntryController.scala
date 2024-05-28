@@ -25,8 +25,8 @@ import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
-import java.io.File
-import java.nio.file.Paths
+import java.io.{File, PipedInputStream, PipedOutputStream}
+import java.nio.file.{Files, Path, Paths}
 import java.time.ZonedDateTime
 import javax.inject.{Inject, Named, Singleton}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -38,13 +38,13 @@ import vidispine.{VSOnlineOutputMessage, VidispineCommunicator, VidispineConfig}
 import mes.OnlineOutputMessage
 import mess.InternalOnlineOutputMessage
 import akka.actor.ActorSystem
-import akka.stream.Materializer
+import akka.stream.{IOResult, Materializer}
 
 import java.util.concurrent.{Executors, TimeUnit}
 import de.geekonaut.slickmdc.MdcExecutionContext
 import services.RabbitMqSAN.SANEvent
 import com.om.mxs.client.japi.Vault
-import akka.stream.scaladsl.{FileIO, Keep, Sink, Source}
+import akka.stream.scaladsl.{Concat, FileIO, Keep, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import mxscopy.streamcomponents.OMFastContentSearchSource
 import mxscopy.models.ObjectMatrixEntry
@@ -55,6 +55,9 @@ import services.RabbitMqMatrix.MatrixEvent
 
 import java.util.Date
 import java.sql.Timestamp
+import java.util.zip.{ZipEntry, ZipOutputStream}
+import scala.compat.java8.StreamConverters.StreamHasToScala
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
@@ -1044,18 +1047,18 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     })
   }}
 
-  def fileDownload(requestedId: Int): EssentialAction = IsAuthenticatedAsync { uid=>{ request=>
+  def fileDownload(requestedId: Int): EssentialAction = IsAuthenticatedAsync { uid => { request =>
     logger.info(s"Got a download request for project $requestedId")
     implicit val db = dbConfig.db
 
-    selectid(requestedId).flatMap({
-      case Failure(error)=>
-        logger.error(s"Could not download file for project ${requestedId}",error)
-        Future.successful(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
-      case Success(someSeq)=>
-        someSeq.headOption match {
-          case Some(projectEntry)=>
+    selectid(requestedId).flatMap {
+      case Failure(error) =>
+        logger.error(s"Could not download file for project $requestedId", error)
+        Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
 
+      case Success(someSeq) =>
+        someSeq.headOption match {
+          case Some(projectEntry) =>
             val fileData = for {
               f1 <- projectEntry.associatedFiles(false).map(_.head)
               f2 <- f1.getFullPath
@@ -1064,24 +1067,63 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
             val (fileEntryFuture, fullPathFuture, assetFolderPathFuture) = (fileData.map(_._1), fileData.map(_._2), fileData.map(_._3))
 
-            for {
+            val combinedFuture = for {
               fileEntryData <- fileEntryFuture
               fullPathData <- fullPathFuture
               assetFolderPath <- assetFolderPathFuture
-              _ = logger.info(s"Asset folder path: $assetFolderPath")
-            } yield {
-              val filePath = Paths.get(fullPathData)
-              logger.info(s"Attempting to download file at: $filePath")
-              val fileSource: Source[ByteString, _] = FileIO.fromPath(filePath)
+            } yield (fileEntryData, fullPathData, assetFolderPath)
 
-              Ok.sendEntity(HttpEntity.Streamed(fileSource, None, Some("application/octet-stream")))
-                .withHeaders(
-                  "Content-Disposition" -> s"""attachment; filename="${fileEntryData.filepath}""""
-                )
+            combinedFuture.map { case (fileEntryData, fullPathData, assetFolderPath) =>
+              logger.info(s"Asset folder path: $assetFolderPath")
+
+              def listFiles(path: Path): Seq[Path] = {
+                val stream = Files.list(path)
+                try {
+                  stream.iterator().asScala.toSeq.flatMap { p =>
+                    if (Files.isDirectory(p)) listFiles(p) else Seq(p)
+                  }
+                } finally {
+                  stream.close()
+                }
+              }
+
+              val pipeIn = new PipedInputStream()
+              val pipeOut = new PipedOutputStream(pipeIn)
+
+              Future {
+                val zipOut = new ZipOutputStream(pipeOut)
+                val files = listFiles(Paths.get(assetFolderPath.toString))
+                logger.info(s"Files to be zipped: $files")
+                val projectFile = Paths.get(fullPathData)
+                logger.info(s"Project file to be zipped: $projectFile")
+                val projectFileEntry = new ZipEntry(projectFile.getFileName.toString)
+                zipOut.putNextEntry(projectFileEntry)
+                Files.copy(projectFile, zipOut)
+                zipOut.closeEntry()
+
+                files.foreach { file =>
+                  val zipEntry = new ZipEntry(file.getFileName.toString)
+                  zipOut.putNextEntry(zipEntry)
+                  Files.copy(file, zipOut)
+                  zipOut.closeEntry()
+                }
+
+                zipOut.close()
+              }
+
+              val source = StreamConverters.fromInputStream(() => pipeIn)
+              Ok.sendEntity(HttpEntity.Streamed(source.map(ByteString(_)), None, Some("application/zip")))
+                .withHeaders("Content-Disposition" -> s"""attachment; filename="archive.zip"""")
+            }.recover {
+              case ex: Exception =>
+                logger.error("Error processing file download", ex)
+                InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
             }
-          case None=>
-            Future(NotFound(Json.obj("status"->"error","detail"->s"Project $requestedId not found")))
+
+          case None =>
+            Future.successful(NotFound(Json.obj("status" -> "error", "detail" -> s"Project $requestedId not found")))
         }
-    })
+    }
   }}
+
 }
