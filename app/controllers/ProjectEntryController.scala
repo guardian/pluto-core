@@ -75,9 +75,8 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
     with UpdateTitleRequestSerializer with FileEntrySerializer with AssetFolderFileEntrySerializer
-    with Security
-{
-  override implicit val cache:SyncCacheApi = cacheImpl
+    with Security {
+  override implicit val cache: SyncCacheApi = cacheImpl
 
   val dbConfig = dbConfigProvider.get[PostgresProfile]
   implicit val implicitConfig = config
@@ -86,22 +85,22 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     TableQuery[ProjectEntryRow].filter(_.id === requestedId).delete.asTry
   )
 
-  override def selectid(requestedId: Int):Future[Try[Seq[ProjectEntry]]] = dbConfig.db.run(
+  override def selectid(requestedId: Int): Future[Try[Seq[ProjectEntry]]] = dbConfig.db.run(
     TableQuery[ProjectEntryRow].filter(_.id === requestedId).result.asTry
   )
 
-  protected def selectVsid(vsid: String):Future[Try[Seq[ProjectEntry]]] = dbConfig.db.run(
+  protected def selectVsid(vsid: String): Future[Try[Seq[ProjectEntry]]] = dbConfig.db.run(
     TableQuery[ProjectEntryRow].filter(_.vidispineProjectId === vsid).result.asTry
   )
 
-  override def dbupdate(itemId:Int, entry:ProjectEntry) :Future[Try[Int]] = {
+  override def dbupdate(itemId: Int, entry: ProjectEntry): Future[Try[Int]] = {
     logger.info(s"Updating project id ${itemId} and status ${entry.status}")
     val newRecord = entry.id match {
-      case Some(id)=>entry
-      case None=>entry.copy(id=Some(itemId))
+      case Some(id) => entry
+      case None => entry.copy(id = Some(itemId))
     }
 
-    dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id===itemId).update(newRecord).asTry)
+    dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id === itemId).update(newRecord).asTry)
       .map(rows => {
         sendToRabbitMq(UpdateOperation(), itemId, rabbitMqPropagator)
         rows
@@ -110,9 +109,9 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
   override def notifyRequested[T](requestedId: Int, username: String, request: Request[T]): Unit = {
     request.headers.get("User-Agent") match {
-      case None=>
-      case Some(userAgent)=>
-        if(userAgent.contains("Mozilla")) { //we are only interested in logging requests that came from a browser, otherwise the log would fill with the automated requests
+      case None =>
+      case Some(userAgent) =>
+        if (userAgent.contains("Mozilla")) { //we are only interested in logging requests that came from a browser, otherwise the log would fill with the automated requests
           auditor ! Auditor.LogEvent(
             username,
             AuditAction.ViewProjectPage,
@@ -125,64 +124,68 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   }
 
   /**
-    * Fully generic container method to process an update request
-    * @param requestedId an ID to identify what should be updated, this is passed to `selector`
-    * @param selector a function that takes `requestedId` and returns a Future, containing a Try, containing a sequence of ProjectEntries
-    *                 that correspond to the provided ID
-    * @param f a function to perform the actual update.  This is only called if selector returns a valid sequence of at least one ProjectEntry,
-    *          and is called for each ProjectEntry in the sequence that `selector` returns.
-    *          It should return a Future containing a Try containing the number of rows updated.
-    * @tparam T the data type of `requestedId`
-    * @return A Future containing a sequnce of results for each invokation of f. with either a Failure indicating why
-    *         `f` was not called, or a Success with the result of `f`
-    */
-  def doUpdateGenericSelector[T](requestedId:T, selector:T=>Future[Try[Seq[ProjectEntry]]])(f: ProjectEntry=>Future[Try[Int]]):Future[Seq[Try[Int]]] = selector(requestedId).flatMap({
-    case Success(someSeq)=>
-        if(someSeq.isEmpty)
-          Future(Seq(Failure(new RecordNotFoundException(s"No records found for id $requestedId"))))
-        else
-          Future.sequence(someSeq.map(f))
-    case Failure(error)=>Future(Seq(Failure(error)))
+   * Fully generic container method to process an update request
+   *
+   * @param requestedId an ID to identify what should be updated, this is passed to `selector`
+   * @param selector    a function that takes `requestedId` and returns a Future, containing a Try, containing a sequence of ProjectEntries
+   *                    that correspond to the provided ID
+   * @param f           a function to perform the actual update.  This is only called if selector returns a valid sequence of at least one ProjectEntry,
+   *                    and is called for each ProjectEntry in the sequence that `selector` returns.
+   *                    It should return a Future containing a Try containing the number of rows updated.
+   * @tparam T the data type of `requestedId`
+   * @return A Future containing a sequnce of results for each invokation of f. with either a Failure indicating why
+   *         `f` was not called, or a Success with the result of `f`
+   */
+  def doUpdateGenericSelector[T](requestedId: T, selector: T => Future[Try[Seq[ProjectEntry]]])(f: ProjectEntry => Future[Try[Int]]): Future[Seq[Try[Int]]] = selector(requestedId).flatMap({
+    case Success(someSeq) =>
+      if (someSeq.isEmpty)
+        Future(Seq(Failure(new RecordNotFoundException(s"No records found for id $requestedId"))))
+      else
+        Future.sequence(someSeq.map(f))
+    case Failure(error) => Future(Seq(Failure(error)))
   })
 
   /**
-    * Most updates are done with the primary key, this is a convenience method to call [[doUpdateGenericSelector]]
-    * with the appropriate selector and data type for the primary key
-    * @param requestedId integer primary key value identifying what should be updated
-    * @param f a function to perform the actual update. See [[doUpdateGenericSelector]] for details
-    * @return see [[doUpdateGenericSelector]]
-    */
-  def doUpdateGeneric(requestedId:Int)(f: ProjectEntry=>Future[Try[Int]]) = doUpdateGenericSelector[Int](requestedId,selectid)(f)
+   * Most updates are done with the primary key, this is a convenience method to call [[doUpdateGenericSelector]]
+   * with the appropriate selector and data type for the primary key
+   *
+   * @param requestedId integer primary key value identifying what should be updated
+   * @param f           a function to perform the actual update. See [[doUpdateGenericSelector]] for details
+   * @return see [[doUpdateGenericSelector]]
+   */
+  def doUpdateGeneric(requestedId: Int)(f: ProjectEntry => Future[Try[Int]]) = doUpdateGenericSelector[Int](requestedId, selectid)(f)
 
   /**
-    * Update the vidisipineId on a data record
-    * @param requestedId primary key of the record to update
-    * @param newVsid new vidispine ID. Note that this is an Option[String] as the id can be null
-    * @return a Future containing a Try containing an Int describing the number of records updated
-    */
-  def doUpdateVsid(requestedId:Int, newVsid:Option[String]):Future[Seq[Try[Int]]] = doUpdateGeneric(requestedId){ record=>
-    val updatedProjectEntry = record.copy (vidispineProjectId = newVsid)
-    dbConfig.db.run (
-      TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
-    )
-    .map(rows => {
-      sendToRabbitMq(UpdateOperation(), requestedId, rabbitMqPropagator)
-      rows
-    })
+   * Update the vidisipineId on a data record
+   *
+   * @param requestedId primary key of the record to update
+   * @param newVsid     new vidispine ID. Note that this is an Option[String] as the id can be null
+   * @return a Future containing a Try containing an Int describing the number of records updated
+   */
+  def doUpdateVsid(requestedId: Int, newVsid: Option[String]): Future[Seq[Try[Int]]] = doUpdateGeneric(requestedId) { record =>
+    val updatedProjectEntry = record.copy(vidispineProjectId = newVsid)
+    dbConfig.db.run(
+        TableQuery[ProjectEntryRow].filter(_.id === requestedId).update(updatedProjectEntry).asTry
+      )
+      .map(rows => {
+        sendToRabbitMq(UpdateOperation(), requestedId, rabbitMqPropagator)
+        rows
+      })
   }
 
   /**
-    * generic code for an endpoint to update the title
-    * @param requestedId identifier of the record to update
-    * @param updater function to perform the actual update.  This is passed requestedId and a string to change the title to
-    * @tparam T type of @reqestedId
-    * @return a Future[Response]
-    */
-  def genericUpdateTitleEndpoint[T](requestedId:T)(updater:(T,String)=>Future[Seq[Try[Int]]]) = IsAuthenticatedAsync(parse.json) {uid=>{request=>
+   * generic code for an endpoint to update the title
+   *
+   * @param requestedId identifier of the record to update
+   * @param updater     function to perform the actual update.  This is passed requestedId and a string to change the title to
+   * @tparam T type of @reqestedId
+   * @return a Future[Response]
+   */
+  def genericUpdateTitleEndpoint[T](requestedId: T)(updater: (T, String) => Future[Seq[Try[Int]]]) = IsAuthenticatedAsync(parse.json) { uid => { request =>
     request.body.validate[UpdateTitleRequest].fold(
-      errors=>
-        Future(BadRequest(Json.obj("status"->"error", "detail"->JsError.toJson(errors)))),
-      updateTitleRequest=> {
+      errors =>
+        Future(BadRequest(Json.obj("status" -> "error", "detail" -> JsError.toJson(errors)))),
+      updateTitleRequest => {
         val results = updater(requestedId, updateTitleRequest.newTitle).map(_.partition(_.isSuccess))
 
         results.map(resultTuple => {
@@ -196,37 +199,40 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         })
       }
     )
-  }}
+  }
+  }
 
   /**
-    * endpoint to update project title field of record based on primary key
-    * @param requestedId
-    * @return
-    */
-  def updateTitle(requestedId:Int) = genericUpdateTitleEndpoint[Int](requestedId) { (requestedId,newTitle)=>
-    doUpdateGeneric(requestedId) {record=>
-      val updatedProjectEntry = record.copy (projectTitle = newTitle)
-      dbConfig.db.run (
-        TableQuery[ProjectEntryRow].filter (_.id === requestedId).update (updatedProjectEntry).asTry
-      )
-      .map(rows => {
-        sendToRabbitMq(UpdateOperation(), requestedId, rabbitMqPropagator)
-        rows
-      })
+   * endpoint to update project title field of record based on primary key
+   *
+   * @param requestedId
+   * @return
+   */
+  def updateTitle(requestedId: Int) = genericUpdateTitleEndpoint[Int](requestedId) { (requestedId, newTitle) =>
+    doUpdateGeneric(requestedId) { record =>
+      val updatedProjectEntry = record.copy(projectTitle = newTitle)
+      dbConfig.db.run(
+          TableQuery[ProjectEntryRow].filter(_.id === requestedId).update(updatedProjectEntry).asTry
+        )
+        .map(rows => {
+          sendToRabbitMq(UpdateOperation(), requestedId, rabbitMqPropagator)
+          rows
+        })
     }
   }
 
   /**
-    * endoint to update project title field of record based on vidispine id
-    * @param vsid
-    * @return
-    */
-  def updateTitleByVsid(vsid:String) = genericUpdateTitleEndpoint[String](vsid) { (vsid,newTitle)=>
-    doUpdateGenericSelector[String](vsid,selectVsid) { record=> //this lambda function is called once for each record
+   * endoint to update project title field of record based on vidispine id
+   *
+   * @param vsid
+   * @return
+   */
+  def updateTitleByVsid(vsid: String) = genericUpdateTitleEndpoint[String](vsid) { (vsid, newTitle) =>
+    doUpdateGenericSelector[String](vsid, selectVsid) { record => //this lambda function is called once for each record
       val updatedProjectEntry = record.copy(projectTitle = newTitle)
       dbConfig.db.run(
-        TableQuery[ProjectEntryRow].filter(_.id === record.id.get).update(updatedProjectEntry).asTry
-      )
+          TableQuery[ProjectEntryRow].filter(_.id === record.id.get).update(updatedProjectEntry).asTry
+        )
         .map(rows => {
           sendToRabbitMq(UpdateOperation(), record, rabbitMqPropagator)
           rows
@@ -235,34 +241,35 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   }
 
 
-  def genericHandleFailures[T](failures:Seq[Try[Int]], requestedId:T) = {
-    val notFoundFailures = failures.filter(_.failed.get.getClass==classOf[RecordNotFoundException])
+  def genericHandleFailures[T](failures: Seq[Try[Int]], requestedId: T) = {
+    val notFoundFailures = failures.filter(_.failed.get.getClass == classOf[RecordNotFoundException])
 
-    if(notFoundFailures.length==failures.length) {
+    if (notFoundFailures.length == failures.length) {
       NotFound(Json.obj("status" -> "error", "detail" -> s"no records found for $requestedId"))
     } else {
       InternalServerError(Json.obj("status" -> "error", "detail" -> failures.map(_.failed.get.toString)))
     }
   }
 
-  def filesList(requestedId: Int, allVersions: Boolean) = IsAuthenticatedAsync {uid=>{request=>
+  def filesList(requestedId: Int, allVersions: Boolean) = IsAuthenticatedAsync { uid => { request =>
     implicit val db = dbConfig.db
 
     selectid(requestedId).flatMap({
-      case Failure(error)=>
-        logger.error(s"could not list files from project ${requestedId}",error)
-        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
-      case Success(someSeq)=>
+      case Failure(error) =>
+        logger.error(s"could not list files from project ${requestedId}", error)
+        Future(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
+      case Success(someSeq) =>
         someSeq.headOption match { //matching on pk, so can only be one result
-          case Some(projectEntry)=>
-            projectEntry.associatedFiles(allVersions).map(fileList=>Ok(Json.obj("status"->"ok","files"->fileList)))
-          case None=>
-            Future(NotFound(Json.obj("status"->"error","detail"->s"project $requestedId not found")))
+          case Some(projectEntry) =>
+            projectEntry.associatedFiles(allVersions).map(fileList => Ok(Json.obj("status" -> "ok", "files" -> fileList)))
+          case None =>
+            Future(NotFound(Json.obj("status" -> "error", "detail" -> s"project $requestedId not found")))
         }
     })
-  }}
+  }
+  }
 
-  override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
+  override def selectall(startAt: Int, limit: Int) = dbConfig.db.run(
     TableQuery[ProjectEntryRow].length.result.zip(
       TableQuery[ProjectEntryRow].sortBy(_.created.desc).drop(startAt).take(limit).result
     )
@@ -280,93 +287,98 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     ).map(Success(_)).recover(Failure(_))
   }
 
-  override def jstranslate(result: Seq[ProjectEntry]):Json.JsValueWrapper = result
-  override def jstranslate(result: ProjectEntry):Json.JsValueWrapper = result  //implicit translation should handle this
+  override def jstranslate(result: Seq[ProjectEntry]): Json.JsValueWrapper = result
+
+  override def jstranslate(result: ProjectEntry): Json.JsValueWrapper = result //implicit translation should handle this
 
   /*this is pointless because of the override of [[create]] below, so it should not get called,
    but is needed to conform to the [[GenericDatabaseObjectController]] protocol*/
-  override def insert(entry: ProjectEntry,uid:String) = Future(Failure(new RuntimeException("ProjectEntryController::insert should not have been called")))
+  override def insert(entry: ProjectEntry, uid: String) = Future(Failure(new RuntimeException("ProjectEntryController::insert should not have been called")))
 
-  override def validate(request:Request[JsValue]) = request.body.validate[ProjectEntry]
+  override def validate(request: Request[JsValue]) = request.body.validate[ProjectEntry]
 
   override def validateFilterParams(request: Request[JsValue]): JsResult[ProjectEntryFilterTerms] = request.body.validate[ProjectEntryFilterTerms]
 
   private val vsidValidator = "^\\w{2}-\\d+$".r
 
-  def getByVsid(vsid:String) = IsAuthenticatedAsync { uid=> request=>
-    if(vsidValidator.matches(vsid)) {
-      dbConfig.db.run {
-        TableQuery[ProjectEntryRow].filter(_.vidispineProjectId===vsid).sortBy(_.created.desc).result
-      }.map(_.headOption match {
-        case Some(projectRecord)=>
-          Ok(Json.obj("status"->"ok","result"->projectRecord))
-        case None=>
-          NotFound(Json.obj("status"->"notfound","detail"->"No project with that VSID"))
-      }).recover({
-        case err:Throwable=>
-          logger.error(s"Could not look up VSID $vsid: ", err)
-          InternalServerError(Json.obj("status"->"error","detail"->"Database error looking up record, see server logs"))
-      })
-    } else {
-      Future(BadRequest(Json.obj("status"->"bad_request","detail"->"Malformed vidispine ID")))
-    }
+  def getByVsid(vsid: String) = IsAuthenticatedAsync { uid =>
+    request =>
+      if (vsidValidator.matches(vsid)) {
+        dbConfig.db.run {
+          TableQuery[ProjectEntryRow].filter(_.vidispineProjectId === vsid).sortBy(_.created.desc).result
+        }.map(_.headOption match {
+          case Some(projectRecord) =>
+            Ok(Json.obj("status" -> "ok", "result" -> projectRecord))
+          case None =>
+            NotFound(Json.obj("status" -> "notfound", "detail" -> "No project with that VSID"))
+        }).recover({
+          case err: Throwable =>
+            logger.error(s"Could not look up VSID $vsid: ", err)
+            InternalServerError(Json.obj("status" -> "error", "detail" -> "Database error looking up record, see server logs"))
+        })
+      } else {
+        Future(BadRequest(Json.obj("status" -> "bad_request", "detail" -> "Malformed vidispine ID")))
+      }
   }
 
-  def createFromFullRequest(rq:ProjectRequestFull) = {
-    implicit val timeout:akka.util.Timeout = 60.seconds
+  def createFromFullRequest(rq: ProjectRequestFull) = {
+    implicit val timeout: akka.util.Timeout = 60.seconds
 
     val initialData = ProjectCreateTransientData(None, None, None)
 
-    val msg = NewProjectRequest(rq,None,initialData)
+    val msg = NewProjectRequest(rq, None, initialData)
     (projectCreationActor ? msg).mapTo[CreationMessage].map({
-      case GenericCreationActor.ProjectCreateSucceeded(succeededRequest, projectEntry)=>
+      case GenericCreationActor.ProjectCreateSucceeded(succeededRequest, projectEntry) =>
         logger.info(s"Created new project: $projectEntry")
         sendToRabbitMq(CreateOperation(), projectEntry, rabbitMqPropagator)
-        Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))
-      case GenericCreationActor.ProjectCreateFailed(failedRequest, error)=>
+        Ok(Json.obj("status" -> "ok", "detail" -> "created project", "projectId" -> projectEntry.id.get))
+      case GenericCreationActor.ProjectCreateFailed(failedRequest, error) =>
         logger.error("Could not create new project", error)
-        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+        InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString))
     })
   }
 
-  override def create = IsAuthenticatedAsync(parse.json) {uid=>{ request =>
+  override def create = IsAuthenticatedAsync(parse.json) { uid => { request =>
     implicit val db = dbConfig.db
 
     request.body.validate[ProjectRequest].fold(
-      errors=>
-        Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
-      projectRequest=> {
-        val fullRequestFuture=projectRequest.hydrate
+      errors =>
+        Future(BadRequest(Json.obj("status" -> "error", "detail" -> JsError.toJson(errors)))),
+      projectRequest => {
+        val fullRequestFuture = projectRequest.hydrate
         fullRequestFuture.flatMap({
-          case None=>
-            Future(BadRequest(Json.obj("status"->"error","detail"->"Invalid template or storage ID")))
-          case Some(rq)=>
+          case None =>
+            Future(BadRequest(Json.obj("status" -> "error", "detail" -> "Invalid template or storage ID")))
+          case Some(rq) =>
             createFromFullRequest(rq)
         })
       })
-  }}
+  }
+  }
 
-  def getDistinctOwnersList:Future[Try[Seq[String]]] = {
+  def getDistinctOwnersList: Future[Try[Seq[String]]] = {
     //work around distinctOn bug - https://github.com/slick/slick/issues/1712
     dbConfig.db.run(sql"""select distinct(s_user) from "ProjectEntry" where s_user not like '%|%'""".as[String].asTry)
   }
 
-  def distinctOwners = IsAuthenticatedAsync {uid=>{request=>
+  def distinctOwners = IsAuthenticatedAsync { uid => { request =>
     getDistinctOwnersList.map({
-      case Success(ownerList)=>
-        Ok(Json.obj("status"->"ok","result"->ownerList))
-      case Failure(error)=>
+      case Success(ownerList) =>
+        Ok(Json.obj("status" -> "ok", "result" -> ownerList))
+      case Failure(error) =>
         logger.error("Could not look up distinct project owners: ", error)
-        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+        InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString))
     })
-  }}
+  }
+  }
 
   /**
-    * respond to CORS options requests for login from vaultdoor
-    * see https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request
-    * @return
-    */
-  def searchOptions = Action { request=>
+   * respond to CORS options requests for login from vaultdoor
+   * see https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request
+   *
+   * @return
+   */
+  def searchOptions = Action { request =>
     AllowCORSFunctions.checkCorsOrigins(config, request) match {
       case Right(allowedOrigin) =>
         val returnHeaders = Map(
@@ -384,46 +396,47 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
-  def projectWasOpened(id: Int): EssentialAction = IsAuthenticatedAsync { uid=> request =>
-    import models.EntryStatusMapper._
+  def projectWasOpened(id: Int): EssentialAction = IsAuthenticatedAsync { uid =>
+    request =>
+      import models.EntryStatusMapper._
 
-    def updateProject() = TableQuery[ProjectEntryRow]
-      .filter(_.id === id)
-      .filter(_.status === EntryStatus.New)
-      .map(_.status)
-      .update(EntryStatus.InProduction)
-      .map(rows => {
-        if (rows > 0) {
-          sendToRabbitMq(UpdateOperation(), id, rabbitMqPropagator)
-        }
-      })
-
-    def updateCommission(commissionId: Option[Int]) = TableQuery[PlutoCommissionRow]
-      .filter(_.id === commissionId)
-      .filter(_.status === EntryStatus.New)
-      .map(_.status)
-      .update(EntryStatus.InProduction).flatMap(rows => {
-      if (rows > 0) {
-        TableQuery[PlutoCommissionRow].filter(_.id === commissionId).result.map({
-          case Seq() =>
-            logger.error(s"Failed to update commission, commission not updated: $commissionId")
-            throw new IllegalStateException(s"Failed to update commission, commission not updated: $commissionId")
-          case Seq(commission) =>
-            val commissionsSerializer = new PlutoCommissionSerializer {}
-            implicit val commissionsWrites: Writes[PlutoCommission] = commissionsSerializer.plutoCommissionWrites
-            rabbitMqPropagator ! ChangeEvent(Seq(commissionsWrites.writes(commission)), getItemType(commission), UpdateOperation())
-          case _ =>
-            logger.error(s"Failed to update commission, multiple commissions updated: $commissionId")
-            throw new IllegalStateException(s"Failed to update commission, multiple commissions updated: $commissionId")
+      def updateProject() = TableQuery[ProjectEntryRow]
+        .filter(_.id === id)
+        .filter(_.status === EntryStatus.New)
+        .map(_.status)
+        .update(EntryStatus.InProduction)
+        .map(rows => {
+          if (rows > 0) {
+            sendToRabbitMq(UpdateOperation(), id, rabbitMqPropagator)
+          }
         })
-      } else {
-        DBIOAction.successful(())
-      }
-    })
 
-    auditor ! Auditor.LogEvent(uid, AuditAction.OpenProject, id, ZonedDateTime.now(), request.headers.get("User-Agent"))
+      def updateCommission(commissionId: Option[Int]) = TableQuery[PlutoCommissionRow]
+        .filter(_.id === commissionId)
+        .filter(_.status === EntryStatus.New)
+        .map(_.status)
+        .update(EntryStatus.InProduction).flatMap(rows => {
+          if (rows > 0) {
+            TableQuery[PlutoCommissionRow].filter(_.id === commissionId).result.map({
+              case Seq() =>
+                logger.error(s"Failed to update commission, commission not updated: $commissionId")
+                throw new IllegalStateException(s"Failed to update commission, commission not updated: $commissionId")
+              case Seq(commission) =>
+                val commissionsSerializer = new PlutoCommissionSerializer {}
+                implicit val commissionsWrites: Writes[PlutoCommission] = commissionsSerializer.plutoCommissionWrites
+                rabbitMqPropagator ! ChangeEvent(Seq(commissionsWrites.writes(commission)), getItemType(commission), UpdateOperation())
+              case _ =>
+                logger.error(s"Failed to update commission, multiple commissions updated: $commissionId")
+                throw new IllegalStateException(s"Failed to update commission, multiple commissions updated: $commissionId")
+            })
+          } else {
+            DBIOAction.successful(())
+          }
+        })
 
-    dbConfig.db.run(
+      auditor ! Auditor.LogEvent(uid, AuditAction.OpenProject, id, ZonedDateTime.now(), request.headers.get("User-Agent"))
+
+      dbConfig.db.run(
         TableQuery[ProjectEntryRow]
           .filter(_.id === id)
           .result
@@ -438,14 +451,14 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             }
             acts
           })
-    ).recover({
-      case err: Throwable =>
-        logger.error("Failed to mark project as opened", err)
-        InternalServerError(Json.obj("status" -> "error", "detail" -> "Failed to mark project as opened"))
-    })
+      ).recover({
+        case err: Throwable =>
+          logger.error("Failed to mark project as opened", err)
+          InternalServerError(Json.obj("status" -> "error", "detail" -> "Failed to mark project as opened"))
+      })
   }
 
-  private def updateStatusColumn(projectId:Int, newValue:EntryStatus.Value) = {
+  private def updateStatusColumn(projectId: Int, newValue: EntryStatus.Value) = {
     import EntryStatusMapper._
 
     dbConfig.db.run {
@@ -454,129 +467,137 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
-  def updateStatus(projectId: Int) = IsAuthenticatedAsync(parse.json) {uid=> request=>
-    import PlutoCommissionStatusUpdateRequestSerializer._
-    request.body.validate[PlutoCommissionStatusUpdateRequest].fold(
-      invalidErrs=>
-        Future(BadRequest(Json.obj("status"->"bad_request","detail"->JsError.toJson(invalidErrs)))),
-      requiredUpdate=>
-        updateStatusColumn(projectId, requiredUpdate.status).map(rowsUpdated=>{
-          if(rowsUpdated==0){
-            NotFound(Json.obj("status"->"not_found","detail"->s"No project with id $projectId"))
-          } else {
-            if(rowsUpdated>1) logger.error(s"Status update request for project $projectId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
-            auditor ! Auditor.LogEvent(uid, AuditAction.ChangeProjectStatus, projectId, ZonedDateTime.now, request.headers.get("User-Agent"))
-            sendToRabbitMq(UpdateOperation(), projectId, rabbitMqPropagator).foreach(_ => ())
-            Ok(Json.obj("status"->"ok","detail"->"Project status updated"))
-          }
-        }).recover({
-          case err:Throwable=>
-            logger.error(s"Could not update status of project $projectId to ${requiredUpdate.status}: ", err)
-            InternalServerError(Json.obj("status"->"db_error","detail"->"Database error, see logs for details"))
+  def updateStatus(projectId: Int) = IsAuthenticatedAsync(parse.json) { uid =>
+    request =>
+      import PlutoCommissionStatusUpdateRequestSerializer._
+      request.body.validate[PlutoCommissionStatusUpdateRequest].fold(
+        invalidErrs =>
+          Future(BadRequest(Json.obj("status" -> "bad_request", "detail" -> JsError.toJson(invalidErrs)))),
+        requiredUpdate =>
+          updateStatusColumn(projectId, requiredUpdate.status).map(rowsUpdated => {
+            if (rowsUpdated == 0) {
+              NotFound(Json.obj("status" -> "not_found", "detail" -> s"No project with id $projectId"))
+            } else {
+              if (rowsUpdated > 1) logger.error(s"Status update request for project $projectId returned $rowsUpdated rows updated, expected 1! This indicates a database problem")
+              auditor ! Auditor.LogEvent(uid, AuditAction.ChangeProjectStatus, projectId, ZonedDateTime.now, request.headers.get("User-Agent"))
+              sendToRabbitMq(UpdateOperation(), projectId, rabbitMqPropagator).foreach(_ => ())
+              Ok(Json.obj("status" -> "ok", "detail" -> "Project status updated"))
+            }
+          }).recover({
+            case err: Throwable =>
+              logger.error(s"Could not update status of project $projectId to ${requiredUpdate.status}: ", err)
+              InternalServerError(Json.obj("status" -> "db_error", "detail" -> "Database error, see logs for details"))
+          })
+      )
+  }
+
+  def queryUsersForAutocomplete(prefix: String, limit: Option[Int]) = IsAuthenticatedAsync { uid =>
+    request =>
+      implicit val db = dbConfig.db
+      implicit val ordering = Ordering.String
+      ProjectEntry.listUsers(prefix, limit.getOrElse(10))
+        .map(results => {
+          Ok(Json.obj("status" -> "ok", "users" -> results.sorted))
         })
-    )
+        .recover({
+          case err: Throwable =>
+            logger.error(s"Could not look up users with prefix $prefix and limit ${limit.getOrElse(10)}: ${err.getMessage}", err)
+            InternalServerError(Json.obj("status" -> "db_error", "detail" -> "Database error, see logs for details"))
+        })
   }
 
-  def queryUsersForAutocomplete(prefix:String, limit:Option[Int]) = IsAuthenticatedAsync { uid=> request=>
-    implicit val db = dbConfig.db
-    implicit val ordering = Ordering.String
-    ProjectEntry.listUsers(prefix, limit.getOrElse(10))
-      .map(results=>{
-        Ok(Json.obj("status"->"ok","users"->results.sorted))
-      })
-      .recover({
-        case err:Throwable=>
-          logger.error(s"Could not look up users with prefix $prefix and limit ${limit.getOrElse(10)}: ${err.getMessage}", err)
-          InternalServerError(Json.obj("status"->"db_error", "detail"->"Database error, see logs for details"))
-      })
-  }
+  def isUserKnown(uname: String) = IsAuthenticatedAsync { uid =>
+    request =>
+      implicit val db = dbConfig.db
 
-  def isUserKnown(uname:String) = IsAuthenticatedAsync { uid=> request=>
-    implicit val db = dbConfig.db
-
-    ProjectEntry.isUserKnown(uname)
-      .map(result=>Ok(Json.obj("status"->"ok", "known"->result)))
-      .recover(err=>{
-        logger.error(s"Could not check if '$uname' is known: ${err.getMessage}", err)
-        InternalServerError(Json.obj("status"->"error", "detail"->"Database error, see logs for details"))
-      })
+      ProjectEntry.isUserKnown(uname)
+        .map(result => Ok(Json.obj("status" -> "ok", "known" -> result)))
+        .recover(err => {
+          logger.error(s"Could not check if '$uname' is known: ${err.getMessage}", err)
+          InternalServerError(Json.obj("status" -> "error", "detail" -> "Database error, see logs for details"))
+        })
   }
 
   object SortDirection extends Enumeration {
     val desc, asc = Value
   }
 
-  private def getSortDirection(directionString:String):Option[SortDirection.Value] = Try { SortDirection.withName(directionString) }.toOption
+  private def getSortDirection(directionString: String): Option[SortDirection.Value] = Try {
+    SortDirection.withName(directionString)
+  }.toOption
 
-  def obitsListSorted(name:Option[String], startAt:Int, limit:Int, sort: String, sortDirection: String) = IsAuthenticatedAsync { uid => request =>
-    implicit val db = dbConfig.db
+  def obitsListSorted(name: Option[String], startAt: Int, limit: Int, sort: String, sortDirection: String) = IsAuthenticatedAsync { uid =>
+    request =>
+      implicit val db = dbConfig.db
 
-    val baseQuery = name match {
-      case None=>
-        TableQuery[ProjectEntryRow].filter(_.isObitProject.nonEmpty)
-      case Some(obitName)=>
-        TableQuery[ProjectEntryRow].filter(_.isObitProject.toLowerCase like s"%$obitName%")
-    }
+      val baseQuery = name match {
+        case None =>
+          TableQuery[ProjectEntryRow].filter(_.isObitProject.nonEmpty)
+        case Some(obitName) =>
+          TableQuery[ProjectEntryRow].filter(_.isObitProject.toLowerCase like s"%$obitName%")
+      }
 
-    val sortedQuery = (sort, getSortDirection(sortDirection).getOrElse(SortDirection.asc)) match {
-      case ("created", SortDirection.desc) => baseQuery.sortBy(_.created.desc)
-      case ("created", SortDirection.asc) => baseQuery.sortBy(_.created.asc)
-      case ("title", SortDirection.desc) => baseQuery.sortBy(_.projectTitle.desc)
-      case ("title", SortDirection.asc) => baseQuery.sortBy(_.projectTitle.asc)
-      case ("isObitProject", SortDirection.desc) => baseQuery.sortBy(_.isObitProject.desc)
-      case ("isObitProject", SortDirection.asc) => baseQuery.sortBy(_.isObitProject.asc)
-      case _ =>
-        logger.warn(s"Sort field $sort was not recognised, ignoring.")
-        baseQuery
-    }
+      val sortedQuery = (sort, getSortDirection(sortDirection).getOrElse(SortDirection.asc)) match {
+        case ("created", SortDirection.desc) => baseQuery.sortBy(_.created.desc)
+        case ("created", SortDirection.asc) => baseQuery.sortBy(_.created.asc)
+        case ("title", SortDirection.desc) => baseQuery.sortBy(_.projectTitle.desc)
+        case ("title", SortDirection.asc) => baseQuery.sortBy(_.projectTitle.asc)
+        case ("isObitProject", SortDirection.desc) => baseQuery.sortBy(_.isObitProject.desc)
+        case ("isObitProject", SortDirection.asc) => baseQuery.sortBy(_.isObitProject.asc)
+        case _ =>
+          logger.warn(s"Sort field $sort was not recognised, ignoring.")
+          baseQuery
+      }
 
-    db.run(
-      for {
-        content <- sortedQuery.drop(startAt).take(limit).result
-        count <- sortedQuery.length.result
-      } yield (content, count)
-    )
-      .map(results=>Ok(Json.obj("status"->"ok","count"->results._2,"result"->jstranslate(results._1))))
-      .recover({
-        case err:Throwable=>
-          logger.error(s"Could not query database for obituaries: ${err.getMessage}", err)
-          InternalServerError(Json.obj("status"->"error", "detail"->"Database error, see logs for details"))
-      })
+      db.run(
+          for {
+            content <- sortedQuery.drop(startAt).take(limit).result
+            count <- sortedQuery.length.result
+          } yield (content, count)
+        )
+        .map(results => Ok(Json.obj("status" -> "ok", "count" -> results._2, "result" -> jstranslate(results._1))))
+        .recover({
+          case err: Throwable =>
+            logger.error(s"Could not query database for obituaries: ${err.getMessage}", err)
+            InternalServerError(Json.obj("status" -> "error", "detail" -> "Database error, see logs for details"))
+        })
   }
 
   /**
-    * Returns a JSON object containing a list of strings for names of valid obituaries startig with the given prefix.
-    * If no prefix is supplied, then everything is returned (up to the given limit)
-    * @param prefix optional prefix to limit the search to
-    * @param limit don't return more than this number of results
-    * @return
-    */
-  def findAvailableObits(prefix:Option[String], limit:Int) = IsAuthenticatedAsync { uid=> request=>
-    implicit val db = dbConfig.db
-    implicit val ordering = Ordering.String
-    ProjectEntry.listObits(prefix.getOrElse(""), limit)
-      .map(results=>{
-        Ok(Json.obj("status"->"ok","obitNames"->results.sorted))
-      })
-      .recover({
-        case err:Throwable=>
-          logger.error(s"Could not look up obituaries with prefix $prefix and limit ${limit}: ${err.getMessage}", err)
-          InternalServerError(Json.obj("status"->"db_error", "detail"->"Database error, see logs for details"))
-      })
+   * Returns a JSON object containing a list of strings for names of valid obituaries startig with the given prefix.
+   * If no prefix is supplied, then everything is returned (up to the given limit)
+   *
+   * @param prefix optional prefix to limit the search to
+   * @param limit  don't return more than this number of results
+   * @return
+   */
+  def findAvailableObits(prefix: Option[String], limit: Int) = IsAuthenticatedAsync { uid =>
+    request =>
+      implicit val db = dbConfig.db
+      implicit val ordering = Ordering.String
+      ProjectEntry.listObits(prefix.getOrElse(""), limit)
+        .map(results => {
+          Ok(Json.obj("status" -> "ok", "obitNames" -> results.sorted))
+        })
+        .recover({
+          case err: Throwable =>
+            logger.error(s"Could not look up obituaries with prefix $prefix and limit ${limit}: ${err.getMessage}", err)
+            InternalServerError(Json.obj("status" -> "db_error", "detail" -> "Database error, see logs for details"))
+        })
   }
 
-  def assetFolderForProject(projectId:Int) = {
+  def assetFolderForProject(projectId: Int) = {
     implicit val db = dbConfig.db
     db.run(
       TableQuery[ProjectMetadataRow]
-        .filter(_.key===ProjectMetadata.ASSET_FOLDER_KEY)
-        .filter(_.projectRef===projectId)
+        .filter(_.key === ProjectMetadata.ASSET_FOLDER_KEY)
+        .filter(_.projectRef === projectId)
         .result
-    ).map(results=>{
+    ).map(results => {
       val resultCount = results.length
-      if(resultCount==0){
+      if (resultCount == 0) {
         logger.error("No asset folder registered under that project id.")
-      } else if(resultCount>1){
+      } else if (resultCount > 1) {
         logger.warn(s"Multiple asset folders found for project $projectId: $results")
       } else {
         results.head.value.getOrElse("")
@@ -587,12 +608,13 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     })
   }
 
-  def fixPermissions(projectId: Int) = IsAuthenticatedAsync {uid=> request=>
-    val assetFolderString = Await.result(assetFolderForProject(projectId), Duration.Inf).toString
-    val fileName = Paths.get(assetFolderString).getFileName.toString
-    val parentDir = Paths.get(assetFolderString).getParent.toString
-    rabbitMqSend ! FixEvent(true,false,fileName,parentDir)
-    Future(Ok(Json.obj("status"->"ok","detail"->"Fix permissions run.")))
+  def fixPermissions(projectId: Int) = IsAuthenticatedAsync { uid =>
+    request =>
+      val assetFolderString = Await.result(assetFolderForProject(projectId), Duration.Inf).toString
+      val fileName = Paths.get(assetFolderString).getFileName.toString
+      val parentDir = Paths.get(assetFolderString).getParent.toString
+      rabbitMqSend ! FixEvent(true, false, fileName, parentDir)
+      Future(Ok(Json.obj("status" -> "ok", "detail" -> "Fix permissions run.")))
   }
 
   def deleteDataRunner(projectId: Int, delay: Int, pluto: Boolean, file: Boolean, backups: Boolean, pTR: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean, buckets: Array[String], bucketBooleans: Array[Boolean]): Unit = {
@@ -607,18 +629,18 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                 fileEntryDAO
                   .deleteFromDisk(entry)
                   .andThen(_ => fileEntryDAO.deleteRecord(entry))
-                if(entry.filepath.endsWith(".cpr")) {
+                if (entry.filepath.endsWith(".cpr")) {
                   db.run(
                     TableQuery[ProjectMetadataRow]
-                      .filter(_.key===ProjectMetadata.ASSET_FOLDER_KEY)
-                      .filter(_.projectRef===projectId)
+                      .filter(_.key === ProjectMetadata.ASSET_FOLDER_KEY)
+                      .filter(_.projectRef === projectId)
                       .result
-                  ).map(results=>{
+                  ).map(results => {
                     val resultCount = results.length
-                    if(resultCount==0){
+                    if (resultCount == 0) {
                       logger.info(s"No asset folder registered for that project id.")
                     } else {
-                      logger.info(s"Found the asset folder at: ${results.head.value.get} Attempting to delete any Cubase files present." )
+                      logger.info(s"Found the asset folder at: ${results.head.value.get} Attempting to delete any Cubase files present.")
                       for {
                         files <- Option(new File(results.head.value.get).listFiles)
                         file <- files if file.getName.endsWith(".cpr")
@@ -629,8 +651,8 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                       logger.error(s"Could not look up asset folder for project id $projectId: ", err)
                   })
                 }
-                })
-              }
+              })
+            }
             )
           case Failure(error) =>
             logger.error(s"Could not look up project entry for ${projectId}: ", error)
@@ -664,11 +686,11 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       }
     }
 
-    val xtensionXtractor="^(.*)\\.([^.]+)$".r
+    val xtensionXtractor = "^(.*)\\.([^.]+)$".r
 
-    def removeProjectFileExtension(projectFileName:String) = projectFileName match {
-      case xtensionXtractor(barePath,_)=>barePath
-      case _=>
+    def removeProjectFileExtension(projectFileName: String) = projectFileName match {
+      case xtensionXtractor(barePath, _) => barePath
+      case _ =>
         logger.warn(s"The project file '$projectFileName' does not appear to have a file extension")
         projectFileName
     }
@@ -692,7 +714,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                         case None =>
                           logger.info(s"Attempt at loading storage data failed.")
                       }
-                    case Failure(err)=>
+                    case Failure(err) =>
                       logger.error(s"Attempt at loading storage data failed.", err)
                   })
               })
@@ -712,7 +734,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
     def deleteS3() = Future {
       if (s3) {
-        for((bucket,i) <- buckets.view.zipWithIndex) {
+        for ((bucket, i) <- buckets.view.zipWithIndex) {
           if (bucketBooleans(i)) {
             val assetFolderString = Await.result(assetFolderForProject(projectId), Duration.Inf).toString
             logger.info(s"Asset folder for project: $assetFolderString")
@@ -779,8 +801,8 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             Executors.newWorkStealingPool(10)
           )
         )
-        implicit lazy val actorSystem:ActorSystem = ActorSystem("pluto-core-delete", defaultExecutionContext=Some(executionContext))
-        implicit lazy val mat:Materializer = Materializer(actorSystem)
+        implicit lazy val actorSystem: ActorSystem = ActorSystem("pluto-core-delete", defaultExecutionContext = Some(executionContext))
+        implicit lazy val mat: Materializer = Materializer(actorSystem)
         implicit lazy val vidispineCommunicator = new VidispineCommunicator(vidispineConfig)
         val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 120.seconds)
         vidispineMethodOut.map(onlineOutputMessage => {
@@ -800,10 +822,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     def nearlineFilesByProject(vault: Vault, projectId: String): Future[Seq[OnlineOutputMessage]] = {
       val sinkFactory = Sink.seq[OnlineOutputMessage]
       Source.fromGraph(new OMFastContentSearchSource(vault,
-        s"""GNM_PROJECT_ID:\"$projectId\"""",
-        Array("MXFS_PATH", "MXFS_FILENAME", "GNM_PROJECT_ID", "GNM_TYPE", "__mxs__length")
-      )
-      ).filterNot(isBrandingMatrix)
+          s"""GNM_PROJECT_ID:\"$projectId\"""",
+          Array("MXFS_PATH", "MXFS_FILENAME", "GNM_PROJECT_ID", "GNM_TYPE", "__mxs__length")
+        )
+        ).filterNot(isBrandingMatrix)
         .map(InternalOnlineOutputMessage.toOnlineOutputMessage)
         .toMat(sinkFactory)(Keep.right)
         .run()
@@ -834,18 +856,18 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         implicit val db = dbConfig.db
         MatrixDeleteJobDAO.getOrCreate(projectId, "Started")
         lazy val matrixStoreConfig = new MatrixStoreEnvironmentConfigProvider().get() match {
-          case Left(err)=>
+          case Left(err) =>
             logger.error(s"Could not initialise due to incorrect matrix-store config: $err")
             sys.exit(1)
-          case Right(config)=>config
+          case Right(config) => config
         }
         implicit lazy val executionContext = new MdcExecutionContext(
           ExecutionContext.fromExecutor(
             Executors.newWorkStealingPool(10)
           )
         )
-        implicit lazy val actorSystem:ActorSystem = ActorSystem("pluto-core-delete-matrix", defaultExecutionContext=Some(executionContext))
-        implicit lazy val mat:Materializer = Materializer(actorSystem)
+        implicit lazy val actorSystem: ActorSystem = ActorSystem("pluto-core-delete-matrix", defaultExecutionContext = Some(executionContext))
+        implicit lazy val mat: Materializer = Materializer(actorSystem)
         val connectionIdleTime = sys.env.getOrElse("CONNECTION_MAX_IDLE", "750").toInt
         implicit val matrixStore = new MXSConnectionBuilderImpl(
           hosts = matrixStoreConfig.hosts,
@@ -936,53 +958,55 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
 
   def deleteData(projectId: Int) = IsAdmin { uid =>
     request =>
-    logger.info(s"Got a delete data request for project ${projectId}.")
-    logger.info(s"Pluto value is: ${request.body.asJson.get("pluto")}")
-    logger.info(s"File value is: ${request.body.asJson.get("file")}")
-    logger.info(s"Backups value is: ${request.body.asJson.get("backups")}")
-    logger.info(s"PTR value is: ${request.body.asJson.get("PTR")}")
-    logger.info(s"Deliverables value is: ${request.body.asJson.get("deliverables")}")
-    logger.info(s"SAN value is: ${request.body.asJson.get("SAN")}")
-    logger.info(s"Matrix value is: ${request.body.asJson.get("matrix")}")
-    logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
-    logger.info(s"Buckets value is: ${request.body.asJson.get("buckets")}")
-    logger.info(s"Bucket Booleans value is: ${request.body.asJson.get("bucketBooleans")}")
-    deleteDataRunner(projectId, 0, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
-    Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
+      logger.info(s"Got a delete data request for project ${projectId}.")
+      logger.info(s"Pluto value is: ${request.body.asJson.get("pluto")}")
+      logger.info(s"File value is: ${request.body.asJson.get("file")}")
+      logger.info(s"Backups value is: ${request.body.asJson.get("backups")}")
+      logger.info(s"PTR value is: ${request.body.asJson.get("PTR")}")
+      logger.info(s"Deliverables value is: ${request.body.asJson.get("deliverables")}")
+      logger.info(s"SAN value is: ${request.body.asJson.get("SAN")}")
+      logger.info(s"Matrix value is: ${request.body.asJson.get("matrix")}")
+      logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
+      logger.info(s"Buckets value is: ${request.body.asJson.get("buckets")}")
+      logger.info(s"Bucket Booleans value is: ${request.body.asJson.get("bucketBooleans")}")
+      deleteDataRunner(projectId, 0, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
+      Ok(Json.obj("status" -> "ok", "detail" -> "Delete data run."))
   }
 
-  def deleteJob(projectId: Int) = IsAdminAsync { uid => request =>
-    dbConfig.db.run(
-      TableQuery[DeleteJob].filter(_.projectEntry===projectId).result
-    ).map(_.headOption match {
-    case Some(jobRecord)=>
-      Ok(Json.obj("status"->"ok","job_status"->jobRecord.status))
-    case None=>
-      NotFound(Json.obj("status"->"notfound","detail"->s"No job with project id: $projectId"))
-    }).recover({
-      case err:Throwable=>
-        logger.error(s"Could not look up project $projectId: ", err)
-        InternalServerError(Json.obj("status"->"error","detail"->"Database error looking up job, see server logs"))
-    })
+  def deleteJob(projectId: Int) = IsAdminAsync { uid =>
+    request =>
+      dbConfig.db.run(
+        TableQuery[DeleteJob].filter(_.projectEntry === projectId).result
+      ).map(_.headOption match {
+        case Some(jobRecord) =>
+          Ok(Json.obj("status" -> "ok", "job_status" -> jobRecord.status))
+        case None =>
+          NotFound(Json.obj("status" -> "notfound", "detail" -> s"No job with project id: $projectId"))
+      }).recover({
+        case err: Throwable =>
+          logger.error(s"Could not look up project $projectId: ", err)
+          InternalServerError(Json.obj("status" -> "error", "detail" -> "Database error looking up job, see server logs"))
+      })
   }
 
-  def matrixDeleteJob(projectId: Int) = IsAdminAsync { uid => request =>
-    dbConfig.db.run(
-      TableQuery[MatrixDeleteJob].filter(_.projectEntry===projectId).result
-    ).map(_.headOption match {
-      case Some(jobRecord)=>
-        Ok(Json.obj("status"->"ok","job_status"->jobRecord.status))
-      case None=>
-        NotFound(Json.obj("status"->"notfound","detail"->s"No job with project id: $projectId"))
-    }).recover({
-      case err:Throwable=>
-        logger.error(s"Could not look up project $projectId: ", err)
-        InternalServerError(Json.obj("status"->"error","detail"->"Database error looking up job, see server logs"))
-    })
+  def matrixDeleteJob(projectId: Int) = IsAdminAsync { uid =>
+    request =>
+      dbConfig.db.run(
+        TableQuery[MatrixDeleteJob].filter(_.projectEntry === projectId).result
+      ).map(_.headOption match {
+        case Some(jobRecord) =>
+          Ok(Json.obj("status" -> "ok", "job_status" -> jobRecord.status))
+        case None =>
+          NotFound(Json.obj("status" -> "notfound", "detail" -> s"No job with project id: $projectId"))
+      }).recover({
+        case err: Throwable =>
+          logger.error(s"Could not look up project $projectId: ", err)
+          InternalServerError(Json.obj("status" -> "error", "detail" -> "Database error looking up job, see server logs"))
+      })
   }
 
   def getProjectsForCommission(commission: Int) = dbConfig.db.run(
-    TableQuery[ProjectEntryRow].filter(_.commission===commission).sortBy(_.created.desc).result
+    TableQuery[ProjectEntryRow].filter(_.commission === commission).sortBy(_.created.desc).result
   ).map(Success(_)).recover(Failure(_))
 
   def deleteCommissionData(commissionId: Int) = IsAdmin { uid =>
@@ -1003,7 +1027,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       implicit val db = dbConfig.db
 
       getProjectsForCommission(commissionId).map({
-        case Success(result)=>
+        case Success(result) =>
           result.map((project) => {
             logger.info(s"Found project ${project.id.get}.")
             deleteDataRunner(project.id.get, 400, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
@@ -1023,29 +1047,30 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                 logger.error(s"Could not look up commission entry for ${commissionId}: ")
             })
           }
-        case Failure(error)=>
+        case Failure(error) =>
           logger.error(error.toString)
       })
 
-      Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
+      Ok(Json.obj("status" -> "ok", "detail" -> "Delete data run."))
   }
 
-  def assetFolderFilesList(requestedId: Int, allVersions: Boolean) = IsAuthenticatedAsync {uid=>{request=>
+  def assetFolderFilesList(requestedId: Int, allVersions: Boolean) = IsAuthenticatedAsync { uid => { request =>
     implicit val db = dbConfig.db
 
     selectid(requestedId).flatMap({
-      case Failure(error)=>
-        logger.error(s"Could not list files from project ${requestedId}",error)
-        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
-      case Success(someSeq)=>
+      case Failure(error) =>
+        logger.error(s"Could not list files from project ${requestedId}", error)
+        Future(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
+      case Success(someSeq) =>
         someSeq.headOption match { //matching on pk, so can only be one result
-          case Some(projectEntry)=>
-            projectEntry.associatedAssetFolderFiles(allVersions, implicitConfig).map(fileList=>Ok(Json.obj("status"->"ok","files"->fileList)))
-          case None=>
-            Future(NotFound(Json.obj("status"->"error","detail"->s"project $requestedId not found")))
+          case Some(projectEntry) =>
+            projectEntry.associatedAssetFolderFiles(allVersions, implicitConfig).map(fileList => Ok(Json.obj("status" -> "ok", "files" -> fileList)))
+          case None =>
+            Future(NotFound(Json.obj("status" -> "error", "detail" -> s"project $requestedId not found")))
         }
     })
-  }}
+  }
+  }
 
   def fileDownload(requestedId: Int): EssentialAction = IsAuthenticatedAsync { uid => { request =>
     logger.info(s"Got a download request for project $requestedId")
@@ -1062,30 +1087,17 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             val fileData = for {
               f1 <- projectEntry.associatedFiles(false).map(_.head)
               f2 <- f1.getFullPath
-              f3 <- assetFolderForProject(requestedId)
-            } yield (f1, f2, f3)
+            } yield (f1, f2)
 
-            val (fileEntryFuture, fullPathFuture, assetFolderPathFuture) = (fileData.map(_._1), fileData.map(_._2), fileData.map(_._3))
+            val (fileEntryFuture, fullPathFuture) = (fileData.map(_._1), fileData.map(_._2))
 
             val combinedFuture = for {
               fileEntryData <- fileEntryFuture
               fullPathData <- fullPathFuture
-              assetFolderPath <- assetFolderPathFuture
-            } yield (fileEntryData, fullPathData, assetFolderPath)
+            } yield (fileEntryData, fullPathData)
 
-            combinedFuture.flatMap { case (fileEntryData, fullPathData, assetFolderPath) =>
-              logger.info(s"Asset folder path: $assetFolderPath")
-
-              def listFiles(path: Path): Seq[Path] = {
-                val stream = Files.list(path)
-                try {
-                  stream.iterator().asScala.toSeq.flatMap { p =>
-                    if (Files.isDirectory(p)) listFiles(p) else Seq(p)
-                  }
-                } finally {
-                  stream.close()
-                }
-              }
+            combinedFuture.flatMap { case (fileEntryData, fullPathData) =>
+              logger.info(s"Full path to the project file: $fullPathData")
 
               val pipeIn = new PipedInputStream()
               val pipeOut = new PipedOutputStream(pipeIn)
@@ -1100,17 +1112,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                   zipOut.putNextEntry(projectFileEntry)
                   Files.copy(projectFile, zipOut)
                   zipOut.closeEntry()
-
-                  if (assetFolderPath != null && assetFolderPath.toString.nonEmpty) {
-                    val files = listFiles(Paths.get(assetFolderPath.toString))
-                    logger.info(s"Asset files to be zipped: $files")
-                    files.foreach { file =>
-                      val zipEntry = new ZipEntry(file.getFileName.toString)
-                      zipOut.putNextEntry(zipEntry)
-                      Files.copy(file, zipOut)
-                      zipOut.closeEntry()
-                    }
-                  }
                 } finally {
                   zipOut.close()
                 }
@@ -1130,11 +1131,10 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                 logger.error("Error processing file download", ex)
                 InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
             }
-
           case None =>
             Future.successful(NotFound(Json.obj("status" -> "error", "detail" -> s"Project $requestedId not found")))
         }
     }
-  }}
-
+  }
+  }
 }
