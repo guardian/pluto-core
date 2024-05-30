@@ -48,7 +48,7 @@ class PlutoCommissionControllerSpec extends Specification with Mockito with Afte
       protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
 
       val initialTestRecord = PlutoCommission(None,None,None,Timestamp.from(Instant.now),Timestamp.from(Instant.now),
-        "test commission", EntryStatus.New, None, 1, None,Timestamp.from(Instant.now), "TestUser", None, ProductionOffice.UK, None, None)
+        "test commission", EntryStatus.New, None, 1, None,Timestamp.from(Instant.now), "TestUser", None, ProductionOffice.UK, None, None, None)
 
       val saveResult  = Await.result(initialTestRecord.save(db), 1 second)
       saveResult must beSuccessfulTry
@@ -79,7 +79,7 @@ class PlutoCommissionControllerSpec extends Specification with Mockito with Afte
       protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
 
       val initialTestRecord = PlutoCommission(None,None,None,Timestamp.from(Instant.now),Timestamp.from(Instant.now), "test commission", EntryStatus.New,
-        None, 1, None,Timestamp.from(Instant.now), "TestUser", None, ProductionOffice.UK, None, None)
+        None, 1, None,Timestamp.from(Instant.now), "TestUser", None, ProductionOffice.UK, None, None, None)
 
       val saveResult  = Await.result(initialTestRecord.save(db), 1 second)
       saveResult must beSuccessfulTry
