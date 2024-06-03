@@ -581,7 +581,7 @@ export const getMissingFiles = async (id: number): Promise<MissingFiles[]> => {
   }
 };
 
-export const downloadProjectFile = async (id: number) => {
+export const downloadProject = async (id: number) => {
   const url = `${deploymentRootPath}${API_PROJECTS}/${id}/fileDownload`;
 
   const token = localStorage.getItem("pluto:access-token");
@@ -599,24 +599,31 @@ export const downloadProjectFile = async (id: number) => {
 
   let filename = "";
 
-  fetch(url, newInit)
-    .then((response) => {
-      // @ts-ignore
-      filename = response.headers
-        .get("Content-Disposition")
-        .split('filename="')[1]
-        .split('";')[0];
+  try {
+    const response = await fetch(url, newInit);
 
-      if (filename.substr(filename.length - 1)) {
-        filename = filename.slice(0, -1);
-      }
+    if (!response.ok) {
+      throw new Error(
+        `HTTP error! status: ${response.status} ${response.statusText}`
+      );
+    }
 
-      return response.blob();
-    })
-    .then((blob) => {
-      saveAs(blob, filename);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+    // @ts-ignore
+    filename = response.headers
+      .get("Content-Disposition")
+      .split('filename="')[1]
+      .split('";')[0];
+
+    if (filename.substr(filename.length - 1)) {
+      filename = filename.slice(0, -1);
+    }
+
+    const blob = await response.blob();
+    saveAs(blob, filename);
+  } catch (err) {
+    console.error(err);
+    // Display the error to the user
+    // replace this with your notification or alert system
+    alert(`An error occurred while downloading the project: ${err.message}`);
+  }
 };
