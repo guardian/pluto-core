@@ -10,6 +10,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.JsValue
 import play.api.test.Helpers._
 import play.api.test._
+import services.ZipService
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Await
@@ -248,4 +249,12 @@ class ProjectEntryControllerSpec extends Specification with utils.BuildMyApp wit
       resultList.length mustEqual 0
     }
   }
+//
+//  "ProjectEntryController fileDownload" should {
+//    "Return 200 OK for a valid file download request" in new WithApplication(buildApp) {
+//      val response = route(app, FakeRequest(GET, "/api/project/1/fileDownload").withSession("uid" -> "testuser")).get
+//
+//      status(response) mustEqual OK
+//    }
+//  }
 }

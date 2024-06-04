@@ -19,7 +19,7 @@ import services.RabbitMqSend.FixEvent
 import services.actors.Auditor
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateTransientData}
 import services.actors.creation.{CreationMessage, GenericCreationActor}
-import services.{CreateOperation, UpdateOperation}
+import services.{CreateOperation, UpdateOperation, ZipService}
 import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
@@ -41,11 +41,11 @@ import akka.actor.ActorSystem
 import akka.stream.{IOResult, Materializer}
 import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
+
 import java.io._
 import java.nio.file._
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import scala.concurrent.Future
-
 import java.util.concurrent.{Executors, TimeUnit}
 import de.geekonaut.slickmdc.MdcExecutionContext
 import services.RabbitMqSAN.SANEvent
@@ -76,7 +76,8 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         @Named("rabbitmq-san") rabbitMqSAN:ActorRef,
                                         @Named("rabbitmq-matrix") rabbitMqMatrix:ActorRef,
                                         @Named("auditor") auditor:ActorRef,
-                                        override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
+
+                                        override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth, zipService: ZipService)
                                        (implicit fileEntryDAO:FileEntryDAO, injector: Injector, mat: Materializer)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
@@ -1100,244 +1101,58 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
-  def addFileToZip(zipOut: ZipOutputStream, file: File, baseDirPath: Path): Unit = {
-    if (file.isDirectory) {
-      // If it's a directory, recursively add its files
-      file.listFiles().foreach(addFileToZip(zipOut, _, baseDirPath))
-    } else {
-      // Create a ZipEntry with the relative path and add it to the ZipOutputStream
-      val filePath = file.toPath
-      val zipEntryName = baseDirPath.relativize(filePath).toString
-      zipOut.putNextEntry(new ZipEntry(zipEntryName))
+  def fileDownload(requestedId: Int): Action[AnyContent] = Action.async { request =>
+    logger.info(s"Got a download request for project $requestedId")
+    implicit val db = dbConfig.db
+    logAssetFolderContents(requestedId)
 
-      // Write the file contents to the ZipOutputStream using a stream
-      val fileInputStream = new FileInputStream(file)
-      val bufferedInputStream = new BufferedInputStream(fileInputStream)
-      val fileSource = StreamConverters.fromInputStream(() => bufferedInputStream)
-      fileSource.runForeach { bs: ByteString =>
-        zipOut.write(bs.toArray)
-      }
+    selectid(requestedId).flatMap {
+      case Failure(error) =>
+        logger.error(s"Could not download file for project $requestedId", error)
+        Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
 
-      // Close the ZipEntry
-      zipOut.closeEntry()
-    }
-  }
+      case Success(someSeq) =>
+        someSeq.headOption match {
+          case Some(projectEntry) =>
+            val fileData = for {
+              f1 <- projectEntry.associatedFiles(false).map(_.head)
+              f2 <- f1.getFullPath
+            } yield (f1, f2)
 
-//  def fileDownload(requestedId: Int): EssentialAction = IsAuthenticatedAsync { uid => { request =>
-//    logger.info(s"Got a download request for project $requestedId")
-//    implicit val db = dbConfig.db
-//    logAssetFolderContents(requestedId)
-//
-//    selectid(requestedId).flatMap {
-//      case Failure(error) =>
-//        logger.error(s"Could not download file for project $requestedId", error)
-//        Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
-//
-//      case Success(someSeq) =>
-//        someSeq.headOption match {
-//          case Some(projectEntry) =>
-//            val fileData = for {
-//              f1 <- projectEntry.associatedFiles(false).map(_.head)
-//              f2 <- f1.getFullPath
-//            } yield (f1, f2)
-//
-//            val (fileEntryFuture, fullPathFuture) = (fileData.map(_._1), fileData.map(_._2))
-//
-//            val combinedFuture = for {
-//              fileEntryData <- fileEntryFuture
-//              fullPathData <- fullPathFuture
-//            } yield (fileEntryData, fullPathData)
-//
-//            combinedFuture.flatMap { case (fileEntryData, fullPathData) =>
-//              logger.info(s"Full path to the project file: $fullPathData")
-//
-//              // Verify the file existence
-//              if (!Files.exists(Paths.get(fullPathData))) {
-//                val errorMessage = s"Project file not found at path: $fullPathData"
-//                logger.error(errorMessage)
-//                Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> errorMessage)))
-//              } else {
-//                // Get the asset folder path
-//                val assetFolderPathFuture = assetFolderForProject(requestedId)
-//
-//                assetFolderPathFuture.flatMap { assetFolderPath =>
-//                  // Create Piped streams
-//                  val pipeIn = new PipedInputStream()
-//                  val pipeOut = new PipedOutputStream(pipeIn)
-//
-//                  // Create a separate Future to write the ZIP file
-//                  val zipFuture = Future {
-//                    val zipOut = new ZipOutputStream(pipeOut)
-//
-//                    try {
-//                      // Add project file to zip
-//                      val projectFile = Paths.get(fullPathData)
-//                      logger.info(s"Zipping project file: $projectFile")
-//                      val projectFileEntry = new ZipEntry(projectFile.getFileName.toString)
-//                      zipOut.putNextEntry(projectFileEntry)
-//                      Files.copy(projectFile, zipOut)
-//                      zipOut.closeEntry()
-//
-//                      // Add asset folder contents to zip
-//                      def addFolderToZip(folder: File, parentFolder: String): Unit = {
-//                        val files = folder.listFiles()
-//                        if (files != null && files.nonEmpty) {
-//                          logger.info(s"Adding folder to zip: $folder, files: ${files.mkString(", ")}")
-//
-//                          files.foreach { file =>
-//                            val entryName = parentFolder + "/" + file.getName
-//                            logger.info(s"Adding file to zip: $entryName")
-//                            if (file.isDirectory) {
-//                              addFolderToZip(file, entryName)
-//                            } else {
-//                              zipOut.putNextEntry(new ZipEntry(entryName))
-//                              Files.copy(file.toPath, zipOut)
-//                              zipOut.closeEntry()
-//                            }
-//                          }
-//                        } else {
-//                          logger.info(s"Adding empty folder to zip: $folder")
-//                          zipOut.putNextEntry(new ZipEntry(parentFolder + "/"))
-//                          zipOut.closeEntry()
-//                        }
-//                      }
-//
-//                      val assetFolder = new File(assetFolderPath.toString)
-//                      logger.info(s"Zipping asset folder: $assetFolder")
-//                      addFolderToZip(assetFolder, assetFolder.getName)
-//                    } finally {
-//                      zipOut.close()
-//                      pipeOut.close()
-//                    }
-//                  }
-//
-//                  val source = StreamConverters.fromInputStream(() => pipeIn)
-//                  val response = Ok.sendEntity(HttpEntity.Streamed(source, None, Some("application/zip")))
-//                    .withHeaders("Content-Disposition" -> s"""attachment; filename="archive.zip"""")
-//
-//                  zipFuture.map(_ => response).recover {
-//                    case ex: Exception =>
-//                      logger.error("Error processing file download", ex)
-//                      InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
-//                  }
-//                }
-//              }
-//            }.recover {
-//              case ex: Exception =>
-//                logger.error("Error processing file download", ex)
-//                InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
-//            }
-//
-//          case None =>
-//            Future.successful(NotFound(Json.obj("status" -> "error", "detail" -> s"Project $requestedId not found")))
-//        }
-//    }
-//  }}
-def fileDownload(requestedId: Int): EssentialAction = IsAuthenticatedAsync { uid => { request =>
-  logger.info(s"Got a download request for project $requestedId")
-  implicit val db = dbConfig.db
-  logAssetFolderContents(requestedId)
+            val (fileEntryFuture, fullPathFuture) = (fileData.map(_._1), fileData.map(_._2))
 
-  selectid(requestedId).flatMap {
-    case Failure(error) =>
-      logger.error(s"Could not download file for project $requestedId", error)
-      Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
+            val combinedFuture = for {
+              fileEntryData <- fileEntryFuture
+              fullPathData <- fullPathFuture
+            } yield (fileEntryData, fullPathData)
 
-    case Success(someSeq) =>
-      someSeq.headOption match {
-        case Some(projectEntry) =>
-          val fileData = for {
-            f1 <- projectEntry.associatedFiles(false).map(_.head)
-            f2 <- f1.getFullPath
-          } yield (f1, f2)
-
-          val (fileEntryFuture, fullPathFuture) = (fileData.map(_._1), fileData.map(_._2))
-
-          val combinedFuture = for {
-            fileEntryData <- fileEntryFuture
-            fullPathData <- fullPathFuture
-          } yield (fileEntryData, fullPathData)
-
-          combinedFuture.flatMap { case (fileEntryData, fullPathData) =>
-            logger.info(s"Full path to the project file: $fullPathData")
-
-            // Verify the file existence
-            if (!Files.exists(Paths.get(fullPathData))) {
-              val errorMessage = s"Project file not found at path: $fullPathData"
-              logger.error(errorMessage)
-              Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> errorMessage)))
-            } else {
-              // Get the asset folder path
-              val assetFolderPathFuture = assetFolderForProject(requestedId)
-
-              assetFolderPathFuture.flatMap { assetFolderPath =>
-                // Use a custom OutputStream to Source converter
-                val source: Source[ByteString, _] = StreamConverters.asOutputStream().mapMaterializedValue { os =>
-                  Future {
-                    val zipOut = new ZipOutputStream(os)
-                    try {
-                      // Add project file to zip
-                      val projectFile = Paths.get(fullPathData)
-                      logger.info(s"Zipping project file: $projectFile")
-                      val projectFileEntry = new ZipEntry(projectFile.getFileName.toString)
-                      zipOut.putNextEntry(projectFileEntry)
-                      Files.copy(projectFile, zipOut)
-                      zipOut.closeEntry()
-
-                      // Add asset folder contents to zip
-                      def addFolderToZip(folder: File, parentFolder: String): Unit = {
-                        val files = folder.listFiles()
-                        if (files != null && files.nonEmpty) {
-                          logger.info(s"Adding folder to zip: $folder, files: ${files.mkString(", ")}")
-
-                          files.foreach { file =>
-                            val entryName = parentFolder + "/" + file.getName
-                            if (file.isDirectory) {
-                              addFolderToZip(file, entryName)
-                            } else {
-                              logger.info(s"Adding file to zip: $file with entry name: $entryName")
-                              zipOut.putNextEntry(new ZipEntry(entryName))
-                              Files.copy(file.toPath, zipOut)
-                              zipOut.closeEntry()
-                            }
-                          }
-                        } else {
-                          logger.info(s"Adding empty folder to zip: $folder")
-                          zipOut.putNextEntry(new ZipEntry(parentFolder + "/"))
-                          zipOut.closeEntry()
-                        }
-                      }
-
-                      val assetFolder = new File(assetFolderPath.toString)
-                      logger.info(s"Zipping asset folder: $assetFolder")
-                      addFolderToZip(assetFolder, assetFolder.getName)
-                    } finally {
-                      zipOut.close()
-                    }
+            combinedFuture.flatMap { case (_, fullPathData) =>
+              if (!Files.exists(Paths.get(fullPathData))) {
+                val errorMessage = s"Project file not found at path: $fullPathData"
+                logger.error(errorMessage)
+                Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> errorMessage)))
+              } else {
+                val assetFolderPathFuture = assetFolderForProject(requestedId)
+                assetFolderPathFuture.flatMap { assetFolderPath =>
+                  val source: Source[ByteString, _] = zipService.zipProjectAndAssets(fullPathData, assetFolderPath.toString)
+                  val response = Ok.sendEntity(HttpEntity.Streamed(source, None, Some("application/zip")))
+                    .withHeaders("Content-Disposition" -> s"""attachment; filename="archive.zip"""")
+                  Future.successful(response).recover {
+                    case ex: Exception =>
+                      logger.error("Error processing file download", ex)
+                      InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
                   }
                 }
-
-                val response = Ok.sendEntity(HttpEntity.Streamed(source, None, Some("application/zip")))
-                  .withHeaders("Content-Disposition" -> s"""attachment; filename="archive.zip"""")
-
-                Future.successful(response).recover {
-                  case ex: Exception =>
-                    logger.error("Error processing file download", ex)
-                    InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
-                }
               }
+            }.recover {
+              case ex: Exception =>
+                logger.error("Error processing file download", ex)
+                InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
             }
-          }.recover {
-            case ex: Exception =>
-              logger.error("Error processing file download", ex)
-              InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
-          }
 
-        case None =>
-          Future.successful(NotFound(Json.obj("status" -> "error", "detail" -> s"Project $requestedId not found")))
-      }
+          case None =>
+            Future.successful(NotFound(Json.obj("status" -> "error", "detail" -> s"Project $requestedId not found")))
+        }
+    }
   }
-}}
-
-
 }
