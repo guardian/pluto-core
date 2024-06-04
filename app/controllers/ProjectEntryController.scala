@@ -39,6 +39,12 @@ import mes.OnlineOutputMessage
 import mess.InternalOnlineOutputMessage
 import akka.actor.ActorSystem
 import akka.stream.{IOResult, Materializer}
+import akka.stream.scaladsl.{Source, StreamConverters}
+import akka.util.ByteString
+import java.io._
+import java.nio.file._
+import java.util.zip.{ZipEntry, ZipOutputStream}
+import scala.concurrent.Future
 
 import java.util.concurrent.{Executors, TimeUnit}
 import de.geekonaut.slickmdc.MdcExecutionContext
@@ -1117,102 +1123,221 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     }
   }
 
-  def fileDownload(requestedId: Int): EssentialAction = IsAuthenticatedAsync { uid => { request =>
-    logger.info(s"Got a download request for project $requestedId")
-    implicit val db = dbConfig.db
-    logAssetFolderContents(requestedId)
+//  def fileDownload(requestedId: Int): EssentialAction = IsAuthenticatedAsync { uid => { request =>
+//    logger.info(s"Got a download request for project $requestedId")
+//    implicit val db = dbConfig.db
+//    logAssetFolderContents(requestedId)
+//
+//    selectid(requestedId).flatMap {
+//      case Failure(error) =>
+//        logger.error(s"Could not download file for project $requestedId", error)
+//        Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
+//
+//      case Success(someSeq) =>
+//        someSeq.headOption match {
+//          case Some(projectEntry) =>
+//            val fileData = for {
+//              f1 <- projectEntry.associatedFiles(false).map(_.head)
+//              f2 <- f1.getFullPath
+//            } yield (f1, f2)
+//
+//            val (fileEntryFuture, fullPathFuture) = (fileData.map(_._1), fileData.map(_._2))
+//
+//            val combinedFuture = for {
+//              fileEntryData <- fileEntryFuture
+//              fullPathData <- fullPathFuture
+//            } yield (fileEntryData, fullPathData)
+//
+//            combinedFuture.flatMap { case (fileEntryData, fullPathData) =>
+//              logger.info(s"Full path to the project file: $fullPathData")
+//
+//              // Verify the file existence
+//              if (!Files.exists(Paths.get(fullPathData))) {
+//                val errorMessage = s"Project file not found at path: $fullPathData"
+//                logger.error(errorMessage)
+//                Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> errorMessage)))
+//              } else {
+//                // Get the asset folder path
+//                val assetFolderPathFuture = assetFolderForProject(requestedId)
+//
+//                assetFolderPathFuture.flatMap { assetFolderPath =>
+//                  // Create Piped streams
+//                  val pipeIn = new PipedInputStream()
+//                  val pipeOut = new PipedOutputStream(pipeIn)
+//
+//                  // Create a separate Future to write the ZIP file
+//                  val zipFuture = Future {
+//                    val zipOut = new ZipOutputStream(pipeOut)
+//
+//                    try {
+//                      // Add project file to zip
+//                      val projectFile = Paths.get(fullPathData)
+//                      logger.info(s"Zipping project file: $projectFile")
+//                      val projectFileEntry = new ZipEntry(projectFile.getFileName.toString)
+//                      zipOut.putNextEntry(projectFileEntry)
+//                      Files.copy(projectFile, zipOut)
+//                      zipOut.closeEntry()
+//
+//                      // Add asset folder contents to zip
+//                      def addFolderToZip(folder: File, parentFolder: String): Unit = {
+//                        val files = folder.listFiles()
+//                        if (files != null && files.nonEmpty) {
+//                          logger.info(s"Adding folder to zip: $folder, files: ${files.mkString(", ")}")
+//
+//                          files.foreach { file =>
+//                            val entryName = parentFolder + "/" + file.getName
+//                            logger.info(s"Adding file to zip: $entryName")
+//                            if (file.isDirectory) {
+//                              addFolderToZip(file, entryName)
+//                            } else {
+//                              zipOut.putNextEntry(new ZipEntry(entryName))
+//                              Files.copy(file.toPath, zipOut)
+//                              zipOut.closeEntry()
+//                            }
+//                          }
+//                        } else {
+//                          logger.info(s"Adding empty folder to zip: $folder")
+//                          zipOut.putNextEntry(new ZipEntry(parentFolder + "/"))
+//                          zipOut.closeEntry()
+//                        }
+//                      }
+//
+//                      val assetFolder = new File(assetFolderPath.toString)
+//                      logger.info(s"Zipping asset folder: $assetFolder")
+//                      addFolderToZip(assetFolder, assetFolder.getName)
+//                    } finally {
+//                      zipOut.close()
+//                      pipeOut.close()
+//                    }
+//                  }
+//
+//                  val source = StreamConverters.fromInputStream(() => pipeIn)
+//                  val response = Ok.sendEntity(HttpEntity.Streamed(source, None, Some("application/zip")))
+//                    .withHeaders("Content-Disposition" -> s"""attachment; filename="archive.zip"""")
+//
+//                  zipFuture.map(_ => response).recover {
+//                    case ex: Exception =>
+//                      logger.error("Error processing file download", ex)
+//                      InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
+//                  }
+//                }
+//              }
+//            }.recover {
+//              case ex: Exception =>
+//                logger.error("Error processing file download", ex)
+//                InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
+//            }
+//
+//          case None =>
+//            Future.successful(NotFound(Json.obj("status" -> "error", "detail" -> s"Project $requestedId not found")))
+//        }
+//    }
+//  }}
+def fileDownload(requestedId: Int): EssentialAction = IsAuthenticatedAsync { uid => { request =>
+  logger.info(s"Got a download request for project $requestedId")
+  implicit val db = dbConfig.db
+  logAssetFolderContents(requestedId)
 
-    selectid(requestedId).flatMap {
-      case Failure(error) =>
-        logger.error(s"Could not download file for project $requestedId", error)
-        Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
+  selectid(requestedId).flatMap {
+    case Failure(error) =>
+      logger.error(s"Could not download file for project $requestedId", error)
+      Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
 
-      case Success(someSeq) =>
-        someSeq.headOption match {
-          case Some(projectEntry) =>
-            val fileData = for {
-              f1 <- projectEntry.associatedFiles(false).map(_.head)
-              f2 <- f1.getFullPath
-            } yield (f1, f2)
+    case Success(someSeq) =>
+      someSeq.headOption match {
+        case Some(projectEntry) =>
+          val fileData = for {
+            f1 <- projectEntry.associatedFiles(false).map(_.head)
+            f2 <- f1.getFullPath
+          } yield (f1, f2)
 
-            val (fileEntryFuture, fullPathFuture) = (fileData.map(_._1), fileData.map(_._2))
+          val (fileEntryFuture, fullPathFuture) = (fileData.map(_._1), fileData.map(_._2))
 
-            val combinedFuture = for {
-              fileEntryData <- fileEntryFuture
-              fullPathData <- fullPathFuture
-            } yield (fileEntryData, fullPathData)
+          val combinedFuture = for {
+            fileEntryData <- fileEntryFuture
+            fullPathData <- fullPathFuture
+          } yield (fileEntryData, fullPathData)
 
-            combinedFuture.flatMap { case (fileEntryData, fullPathData) =>
-              logger.info(s"Full path to the project file: $fullPathData")
+          combinedFuture.flatMap { case (fileEntryData, fullPathData) =>
+            logger.info(s"Full path to the project file: $fullPathData")
 
-              // Verify the file existence
-              if (!Files.exists(Paths.get(fullPathData))) {
-                val errorMessage = s"Project file not found at path: $fullPathData"
-                logger.error(errorMessage)
-              }
-
+            // Verify the file existence
+            if (!Files.exists(Paths.get(fullPathData))) {
+              val errorMessage = s"Project file not found at path: $fullPathData"
+              logger.error(errorMessage)
+              Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> errorMessage)))
+            } else {
               // Get the asset folder path
               val assetFolderPathFuture = assetFolderForProject(requestedId)
 
               assetFolderPathFuture.flatMap { assetFolderPath =>
-                val pipeIn = new PipedInputStream()
-                val pipeOut = new PipedOutputStream(pipeIn)
+                // Use a custom OutputStream to Source converter
+                val source: Source[ByteString, _] = StreamConverters.asOutputStream().mapMaterializedValue { os =>
+                  Future {
+                    val zipOut = new ZipOutputStream(os)
+                    try {
+                      // Add project file to zip
+                      val projectFile = Paths.get(fullPathData)
+                      logger.info(s"Zipping project file: $projectFile")
+                      val projectFileEntry = new ZipEntry(projectFile.getFileName.toString)
+                      zipOut.putNextEntry(projectFileEntry)
+                      Files.copy(projectFile, zipOut)
+                      zipOut.closeEntry()
 
-                val zipFuture = Future {
-                  val zipOut = new ZipOutputStream(pipeOut)
+                      // Add asset folder contents to zip
+                      def addFolderToZip(folder: File, parentFolder: String): Unit = {
+                        val files = folder.listFiles()
+                        if (files != null && files.nonEmpty) {
+                          logger.info(s"Adding folder to zip: $folder, files: ${files.mkString(", ")}")
 
-                  try {
-                    // Add project file to zip
-                    val projectFile = Paths.get(fullPathData)
-                    logger.info(s"Zipping project file: $projectFile")
-                    val projectFileEntry = new ZipEntry(projectFile.getFileName.toString)
-                    zipOut.putNextEntry(projectFileEntry)
-                    Files.copy(projectFile, zipOut)
-                    zipOut.closeEntry()
-
-                    // Add asset folder contents to zip
-                    def addFolderToZip(folder: File, parentFolder: String): Unit = {
-                      val files = folder.listFiles()
-                      files.foreach { file =>
-                        val entryName = parentFolder + "/" + file.getName
-                        if (file.isDirectory) {
-                          addFolderToZip(file, entryName)
+                          files.foreach { file =>
+                            val entryName = parentFolder + "/" + file.getName
+                            if (file.isDirectory) {
+                              addFolderToZip(file, entryName)
+                            } else {
+                              logger.info(s"Adding file to zip: $file with entry name: $entryName")
+                              zipOut.putNextEntry(new ZipEntry(entryName))
+                              Files.copy(file.toPath, zipOut)
+                              zipOut.closeEntry()
+                            }
+                          }
                         } else {
-                          zipOut.putNextEntry(new ZipEntry(entryName))
-                          Files.copy(file.toPath, zipOut)
+                          logger.info(s"Adding empty folder to zip: $folder")
+                          zipOut.putNextEntry(new ZipEntry(parentFolder + "/"))
                           zipOut.closeEntry()
                         }
                       }
-                    }
 
-                    val assetFolder = new File(assetFolderPath.toString)
-                    logger.info(s"Zipping asset folder: $assetFolder")
-                    addFolderToZip(assetFolder, assetFolder.getName)
-                  } finally {
-                    zipOut.close()
+                      val assetFolder = new File(assetFolderPath.toString)
+                      logger.info(s"Zipping asset folder: $assetFolder")
+                      addFolderToZip(assetFolder, assetFolder.getName)
+                    } finally {
+                      zipOut.close()
+                    }
                   }
                 }
 
-                val source = StreamConverters.fromInputStream(() => pipeIn)
-                val response = Ok.sendEntity(HttpEntity.Streamed(source.map(ByteString(_)), None, Some("application/zip")))
+                val response = Ok.sendEntity(HttpEntity.Streamed(source, None, Some("application/zip")))
                   .withHeaders("Content-Disposition" -> s"""attachment; filename="archive.zip"""")
 
-                zipFuture.map(_ => response).recover {
+                Future.successful(response).recover {
                   case ex: Exception =>
                     logger.error("Error processing file download", ex)
                     InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
                 }
               }
-            }.recover {
-              case ex: Exception =>
-                logger.error("Error processing file download", ex)
-                InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
             }
+          }.recover {
+            case ex: Exception =>
+              logger.error("Error processing file download", ex)
+              InternalServerError(Json.obj("status" -> "error", "detail" -> "Error processing file download"))
+          }
 
-          case None =>
-            Future.successful(NotFound(Json.obj("status" -> "error", "detail" -> s"Project $requestedId not found")))
-        }
-    }
-  }}
+        case None =>
+          Future.successful(NotFound(Json.obj("status" -> "error", "detail" -> s"Project $requestedId not found")))
+      }
+  }
+}}
+
 
 }
