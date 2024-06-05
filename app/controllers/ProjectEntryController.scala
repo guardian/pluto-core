@@ -1102,7 +1102,24 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   }
 
   def fileDownload(requestedId: Int): Action[AnyContent] = Action.async { request =>
-    logger.info(s"Got a download request for project $requestedId")
+    logger.info(s"Attempting to zip files for project ${requestedId}")
+
+    lazy val vidispineConfig = VidispineConfig.fromEnvironment.toOption.get
+    implicit lazy val executionContext = new MdcExecutionContext(
+      ExecutionContext.fromExecutor(
+        Executors.newWorkStealingPool(10)
+      )
+    )
+    implicit lazy val actorSystem: ActorSystem = ActorSystem("pluto-core-delete", defaultExecutionContext = Some(executionContext))
+    implicit lazy val mat: Materializer = Materializer(actorSystem)
+    implicit lazy val vidispineCommunicator = new VidispineCommunicator(vidispineConfig)
+    val vidispineMethodOut = Await.result(vidispineCommunicator.getFilesOfProject(requestedId), 120.seconds)
+
+    vidispineMethodOut.map(_.filePath).map(filePath => {
+      logger.info(s"Vidispine file paths for project are: $filePath")
+    })
+
+      logger.info(s"Got a download request for project $requestedId")
     implicit val db = dbConfig.db
     logAssetFolderContents(requestedId)
 
