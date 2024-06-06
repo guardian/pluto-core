@@ -101,4 +101,43 @@ class PlutoCommissionControllerSpec extends Specification with Mockito with Afte
       (parsedJson \ "detail" \ "obj.status" \ 0 \ "msg" \ 0).get.toString() mustEqual "\"error.expected.validenumvalue\""
     }
   }
+
+  "PlutoCommissionController.updateByAnyone" should {
+    "update the given record" in new WithApplication(buildApp) {
+      private val injector = app.injector
+
+      protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
+      protected implicit val db:JdbcProfile#Backend#Database = dbConfigProvider.get[PostgresProfile].db
+
+      val initialTestRecord = PlutoCommission(None,None,None,Timestamp.from(Instant.now),Timestamp.from(Instant.now),
+        "test commission", EntryStatus.New, None, 1, None,Timestamp.from(Instant.now), "TestUser", None, ProductionOffice.UK, None, None, None)
+
+      val saveResult  = Await.result(initialTestRecord.save(db), 1 second)
+      saveResult must beSuccessfulTry
+      val savedRecord = saveResult.get
+
+      val testDocument = s"""{"id":${savedRecord.id.get},"created":"2023-09-22T12:42:20Z","updated":"2023-09-22T12:42:20Z","title":"Test6","status":"New","workingGroupId":1,"scheduledCompletion":"2023-10-20T12:42:05Z","owner":"admin","productionOffice":"UK","confidential":true}"""
+
+      println(s"Saved record id. is ${savedRecord.id}")
+      val rq = FakeRequest(
+        PUT,
+        s"/api/pluto/commission/${savedRecord.id.get}",
+        FakeHeaders(Seq("Content-Type"->"application/json")),
+        testDocument
+      ).withSession("uid"->"testuser")
+      val response = Await.result(route(app, rq).get, 5 seconds)
+      val responseContent = Await.result(response.body.consumeData.map(_.decodeString("UTF-8")), 5 seconds)
+      println(responseContent)
+      response.header.status mustEqual 200
+
+      val updatedRecords = Await.result(db.run(TableQuery[PlutoCommissionRow].filter(_.id===savedRecord.id.get).result), 1 second)
+      updatedRecords.isEmpty must beFalse
+      updatedRecords.head.status mustEqual EntryStatus.New
+      updatedRecords.head.confidential mustEqual Some(true)
+      updatedRecords.head.workingGroup mustEqual 1
+      updatedRecords.head.title mustEqual "Test6"
+      updatedRecords.head.owner mustEqual "admin"
+      updatedRecords.head.productionOffice mustEqual ProductionOffice.UK
+    }
+  }
 }
