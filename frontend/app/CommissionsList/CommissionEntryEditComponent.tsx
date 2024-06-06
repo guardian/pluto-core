@@ -18,6 +18,8 @@ import {
   Input,
   InputLabel,
   Box,
+  FormControlLabel,
+  Checkbox,
 } from "@material-ui/core";
 import {
   SystemNotification,
@@ -84,6 +86,14 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = ({
 
   const hasUnsavedChanges =
     JSON.stringify(formState) !== JSON.stringify(commission);
+
+  const handlePrivateChange = (value: any) => {
+    if (value) {
+      setFormState((prevState) => ({ ...prevState, ["confidential"]: false }));
+    } else {
+      setFormState((prevState) => ({ ...prevState, ["confidential"]: true }));
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className={classes.root}>
@@ -197,6 +207,23 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = ({
               )}
             </div>
           ) : null}
+          <br />
+          <br />
+          <Tooltip title="Select this option if this is a sensitive commission and you do not want other users besides the commission owners to be able to view or access this commission via Pluto.">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formState.confidential}
+                  name="confidential"
+                  color="primary"
+                  onChange={(evt) =>
+                    handlePrivateChange(formState.confidential)
+                  }
+                />
+              }
+              label="Private"
+            />
+          </Tooltip>
 
           <div className={classes.formButtons}>
             {hasUnsavedChanges && !isSaving ? (
@@ -250,6 +277,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
     string
   >("");
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [userAllowedBoolean, setUserAllowedBoolean] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchCommissionData = async () => {
@@ -438,193 +466,234 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
     return inputString;
   };
 
+  useEffect(() => {
+    const userAllowed = async () => {
+      try {
+        const loggedIn = await isLoggedIn();
+        if (loggedIn.isAdmin) {
+          setUserAllowedBoolean(true);
+        } else if (commissionData?.owner.split("|").includes(loggedIn.uid)) {
+          setUserAllowedBoolean(true);
+        } else {
+          setUserAllowedBoolean(false);
+        }
+      } catch {
+        console.error(
+          "Error attempting to check if user is allowed access to this page."
+        );
+      }
+    };
+
+    if (commissionData?.confidential) {
+      userAllowed();
+    }
+  }, [commissionData?.owner]);
+
   return (
     <>
-      {commissionData ? (
-        <Helmet>
-          <title>[{commissionData.title}] Details</title>
-        </Helmet>
-      ) : null}
-      <Grid
-        container
-        justifyContent="space-between"
-        style={{ marginBottom: "0.2em" }}
-        spacing={3}
-      >
-        <Grid item>
-          <Breadcrumb
-            commissionId={commissionId}
-            plutoCoreBaseUri={
-              deploymentRootPath.endsWith("/")
-                ? deploymentRootPath.substr(0, deploymentRootPath.length - 1)
-                : deploymentRootPath
-            }
-          />
-        </Grid>
-        <Grid item xs={5}>
-          <Box display="flex" justifyContent="flex-end">
-            {isAdmin ? (
-              <div>
-                <Button
-                  href={
-                    "/pluto-core/commission/" + commissionId + "/deletedata"
-                  }
-                  color="secondary"
-                  variant="contained"
-                >
-                  Delete&nbsp;Data
-                </Button>
-              </div>
+      {userAllowedBoolean ? (
+        <>
+          {commissionData ? (
+            <Helmet>
+              <title>[{commissionData.title}] Details</title>
+            </Helmet>
+          ) : null}
+          <Grid
+            container
+            justifyContent="space-between"
+            style={{ marginBottom: "0.2em" }}
+            spacing={3}
+          >
+            <Grid item>
+              <Breadcrumb
+                commissionId={commissionId}
+                plutoCoreBaseUri={
+                  deploymentRootPath.endsWith("/")
+                    ? deploymentRootPath.substr(
+                        0,
+                        deploymentRootPath.length - 1
+                      )
+                    : deploymentRootPath
+                }
+              />
+            </Grid>
+            <Grid item xs={5}>
+              <Box display="flex" justifyContent="flex-end">
+                {isAdmin ? (
+                  <div>
+                    <Button
+                      href={
+                        "/pluto-core/commission/" + commissionId + "/deletedata"
+                      }
+                      color="secondary"
+                      variant="contained"
+                    >
+                      Delete&nbsp;Data
+                    </Button>
+                  </div>
+                ) : null}
+              </Box>
+            </Grid>
+          </Grid>
+          <Paper elevation={3}>
+            {isLoading ? (
+              <Grid
+                container
+                direction="row"
+                justifyContent="space-around"
+                alignContent="center"
+              >
+                <Grid item xs>
+                  <CircularProgress
+                    className={classes.inlineThrobber}
+                    color="secondary"
+                  />
+                  <Typography className={classes.inlineText}>
+                    Loading...
+                  </Typography>
+                </Grid>
+              </Grid>
             ) : null}
-          </Box>
-        </Grid>
-      </Grid>
-      <Paper elevation={3}>
-        {isLoading ? (
+            {lastError ? (
+              <Grid container direction="row" justifyContent="space-around">
+                <Grid item xs className={classes.errorBlock}>
+                  <ErrorIcon className={classes.inlineThrobber} />
+                  <Typography className={classes.inlineText}>
+                    {lastError}
+                  </Typography>
+                </Grid>
+              </Grid>
+            ) : null}
+            {commissionData ? (
+              <CommissionEntryForm
+                commission={commissionData}
+                workingGroupName="test"
+                isSaving={isSaving}
+                onSubmit={handleFormSubmit} // Handle the updated commission data
+              />
+            ) : null}
+          </Paper>
+          {/*will repace this with an icon*/}
+          <Grid container direction="row" justifyContent="space-between">
+            <Grid item>
+              <Typography variant="h4">Projects</Typography>
+            </Grid>
+            <Grid item>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() =>
+                  history.push(
+                    `/project/new?commissionId=${commissionId}&workingGroupId=${commissionData?.workingGroupId}`
+                  )
+                }
+              >
+                New Project
+              </Button>
+            </Grid>
+          </Grid>
+          <Grid container>
+            {filterTerms ? (
+              <Grid item>
+                <ProjectFilterComponent
+                  filterTerms={filterTerms}
+                  filterDidUpdate={(newFilters: ProjectFilterTerms) => {
+                    console.log(
+                      "ProjectFilterComponent filterDidUpdate ",
+                      newFilters
+                    );
+                    const updatedUrlParams = filterTermsToQuerystring(
+                      newFilters
+                    );
+
+                    if (newFilters.user === "Everyone") {
+                      newFilters.user = undefined;
+                    }
+
+                    if (newFilters.title) {
+                      newFilters.match = "W_CONTAINS";
+                    }
+
+                    if (newFilters.user === "Mine" && user) {
+                      newFilters.user = user.uid;
+                    }
+                    setFilterTerms(newFilters);
+
+                    history.push("?" + updatedUrlParams);
+                  }}
+                />
+              </Grid>
+            ) : null}
+          </Grid>
+          <Paper elevation={3}>
+            {projectList ? (
+              <ProjectsTable
+                className={classes.table}
+                pageSizeOptions={[5, 10, 20]}
+                updateRequired={(page, pageSize) => {
+                  projectsForCommission(
+                    commissionId,
+                    page,
+                    pageSize,
+                    filterTerms
+                  )
+                    .then(([projects, count]) => {
+                      setProjectList(projects);
+                      setProjectCount(count);
+                    })
+                    .catch((err) =>
+                      console.error("Could not update project list: ", err)
+                    );
+                }}
+                projects={projectList}
+                projectCount={projectCount}
+                user={user}
+              />
+            ) : null}
+          </Paper>
           <Grid
             container
             direction="row"
-            justifyContent="space-around"
-            alignContent="center"
+            justifyContent="space-between"
+            style={{ marginTop: "20px", marginBottom: "10px" }}
           >
-            <Grid item xs>
-              <CircularProgress
-                className={classes.inlineThrobber}
-                color="secondary"
+            <Grid item>
+              <Typography variant="h4">Deliverables</Typography>
+            </Grid>
+            <Grid item>
+              <FormControl>
+                <InputLabel>Name Filter</InputLabel>
+                <Input onChange={(event) => stringUpdated(event)} />
+              </FormControl>
+            </Grid>
+          </Grid>
+          <Paper elevation={3}>
+            {commissionData ? (
+              <CommissionEntryDeliverablesComponent
+                commission={commissionData}
+                searchString={deliverablesSearchString}
               />
-              <Typography className={classes.inlineText}>Loading...</Typography>
-            </Grid>
-          </Grid>
-        ) : null}
-        {lastError ? (
-          <Grid container direction="row" justifyContent="space-around">
-            <Grid item xs className={classes.errorBlock}>
-              <ErrorIcon className={classes.inlineThrobber} />
-              <Typography className={classes.inlineText}>
-                {lastError}
-              </Typography>
-            </Grid>
-          </Grid>
-        ) : null}
-        {commissionData ? (
-          <CommissionEntryForm
-            commission={commissionData}
-            workingGroupName="test"
-            isSaving={isSaving}
-            onSubmit={handleFormSubmit} // Handle the updated commission data
-          />
-        ) : null}
-      </Paper>
-      {/*will repace this with an icon*/}
-      <Grid container direction="row" justifyContent="space-between">
-        <Grid item>
-          <Typography variant="h4">Projects</Typography>
-        </Grid>
-        <Grid item>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() =>
-              history.push(
-                `/project/new?commissionId=${commissionId}&workingGroupId=${commissionData?.workingGroupId}`
-              )
-            }
+            ) : null}
+          </Paper>
+          <Dialog
+            open={errorDialog}
+            onClose={closeDialog}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
           >
-            New Project
-          </Button>
-        </Grid>
-      </Grid>
-      <Grid container>
-        {filterTerms ? (
-          <Grid item>
-            <ProjectFilterComponent
-              filterTerms={filterTerms}
-              filterDidUpdate={(newFilters: ProjectFilterTerms) => {
-                console.log(
-                  "ProjectFilterComponent filterDidUpdate ",
-                  newFilters
-                );
-                const updatedUrlParams = filterTermsToQuerystring(newFilters);
-
-                if (newFilters.user === "Everyone") {
-                  newFilters.user = undefined;
-                }
-
-                if (newFilters.title) {
-                  newFilters.match = "W_CONTAINS";
-                }
-
-                if (newFilters.user === "Mine" && user) {
-                  newFilters.user = user.uid;
-                }
-                setFilterTerms(newFilters);
-
-                history.push("?" + updatedUrlParams);
-              }}
-            />
-          </Grid>
-        ) : null}
-      </Grid>
-      <Paper elevation={3}>
-        {projectList ? (
-          <ProjectsTable
-            className={classes.table}
-            pageSizeOptions={[5, 10, 20]}
-            updateRequired={(page, pageSize) => {
-              projectsForCommission(commissionId, page, pageSize, filterTerms)
-                .then(([projects, count]) => {
-                  setProjectList(projects);
-                  setProjectCount(count);
-                })
-                .catch((err) =>
-                  console.error("Could not update project list: ", err)
-                );
-            }}
-            projects={projectList}
-            projectCount={projectCount}
-            user={user}
-          />
-        ) : null}
-      </Paper>
-      <Grid
-        container
-        direction="row"
-        justifyContent="space-between"
-        style={{ marginTop: "20px", marginBottom: "10px" }}
-      >
-        <Grid item>
-          <Typography variant="h4">Deliverables</Typography>
-        </Grid>
-        <Grid item>
-          <FormControl>
-            <InputLabel>Name Filter</InputLabel>
-            <Input onChange={(event) => stringUpdated(event)} />
-          </FormControl>
-        </Grid>
-      </Grid>
-      <Paper elevation={3}>
-        {commissionData ? (
-          <CommissionEntryDeliverablesComponent
-            commission={commissionData}
-            searchString={deliverablesSearchString}
-          />
-        ) : null}
-      </Paper>
-      <Dialog
-        open={errorDialog}
-        onClose={closeDialog}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            The requested commission does not exist.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDialog}>Close</Button>
-        </DialogActions>
-      </Dialog>
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                The requested commission does not exist.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={closeDialog}>Close</Button>
+            </DialogActions>
+          </Dialog>
+        </>
+      ) : (
+        <div>You have no access to this commission.</div>
+      )}
     </>
   );
 };

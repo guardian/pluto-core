@@ -6,6 +6,7 @@ interface Commission {
   workingGroupId: number;
   status: string;
   owner: string;
+  confidential: boolean;
 }
 
 interface CommissionFullRecord {
@@ -26,6 +27,7 @@ interface CommissionFullRecord {
   productionOffice: string;
   originalTitle: string;
   googleFolder: string;
+  confidential: boolean;
 }
 
 interface CreateWorkingGroup {
