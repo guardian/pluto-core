@@ -24,7 +24,7 @@ import {
   updateProjectOpenedStatus,
   getSimpleProjectTypeData,
   getMissingFiles,
-  downloadProjectFile,
+  downloadProject,
 } from "./helpers";
 import {
   SystemNotification,
@@ -457,7 +457,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                       variant="contained"
                       onClick={async () => {
                         try {
-                          await downloadProjectFile(project.id);
+                          await downloadProject(project.id);
                         } catch (error) {
                           SystemNotification.open(
                             SystemNotifcationKind.Error,
@@ -467,7 +467,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                         }
                       }}
                     >
-                      Download&nbsp;Project&nbsp;File
+                      Download&nbsp;Project
                     </Button>
                   </Tooltip>
                 ) : null}
