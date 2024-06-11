@@ -15,6 +15,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  styled,
 } from "@material-ui/core";
 import {
   getProject,
@@ -40,7 +41,7 @@ import ProductionOfficeSelector from "../common/ProductionOfficeSelector";
 import StatusSelector from "../common/StatusSelector";
 import { Helmet } from "react-helmet";
 import ProjectEntryVaultComponent from "./ProjectEntryVaultComponent";
-import { FileCopy, PermMedia, CloudUpload } from "@material-ui/icons";
+import { FileCopy, PermMedia, CloudDownload } from "@material-ui/icons";
 import UsersAutoComplete from "../common/UsersAutoComplete";
 import { useGuardianStyles } from "~/misc/utils";
 import ObituarySelector from "~/common/ObituarySelector";
@@ -48,6 +49,8 @@ import AssetFolderLink from "~/ProjectEntryList/AssetFolderLink";
 import { isLoggedIn } from "~/utils/api";
 import ProjectFileUpload from "./ProjectFileUpload";
 import FolderIcon from "@material-ui/icons/Folder";
+import BuildIcon from "@material-ui/icons/Build";
+import LaunchIcon from "@material-ui/icons/Launch";
 
 declare var deploymentRootPath: string;
 
@@ -75,6 +78,23 @@ const EMPTY_PROJECT: Project = {
   workingGroupId: 0,
   confidential: false,
 };
+
+const FixPermissionsButton = styled(Button)({
+  marginRight: "8px",
+  minWidth: "170px",
+  "&:hover": {
+    backgroundColor: "#A9A9A9",
+  },
+});
+
+const DownloadProjectButton = styled(Button)({
+  marginLeft: "0px",
+  marginRight: "8px",
+  minWidth: "240px",
+  "&:hover": {
+    backgroundColor: "#A9A9A9",
+  },
+});
 
 const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   props
@@ -373,153 +393,155 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
               />
             </Grid>
             <Grid item xs={12} md={9}>
-              <Box display="flex" flexDirection="row" alignItems="center">
-                <Button
-                  style={{ marginRight: "8px", minWidth: "160px" }}
-                  className={classes.openProjectButton}
-                  variant="contained"
-                  color="primary"
-                  onClick={async () => {
-                    try {
-                      await openProject(project.id);
-                    } catch (error) {
-                      SystemNotification.open(
-                        SystemNotifcationKind.Error,
-                        `An error occurred when attempting to open the project.`
-                      );
-                      console.error(error);
-                    }
-
-                    try {
-                      await updateProjectOpenedStatus(project.id);
-                    } catch (error) {
-                      console.error(error);
-                    }
-                  }}
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="start"
+                flexWrap="wrap"
+              >
+                <Box
+                  display="flex"
+                  flexDirection="row"
+                  alignItems="center"
+                  style={{ marginBottom: "10px" }}
                 >
-                  Open project
-                </Button>
-                <div style={{ marginRight: "-6px", minWidth: "160px" }}>
-                  <AssetFolderLink
-                    projectId={project.id}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                    }}
-                  />
-                </div>
-                <Tooltip title="Press this button to fix any permissions issues in this projects' asset folder.">
                   <Button
-                    startIcon={<FolderIcon />}
-                    style={{
-                      marginLeft: "14px",
-                      marginRight: "8px",
-                      minWidth: "170px",
-                    }}
+                    startIcon={<LaunchIcon />}
+                    style={{ marginRight: "8px", minWidth: "160px" }}
+                    className={classes.openProjectButton}
+                    variant="contained"
+                    color="primary"
                     onClick={async () => {
                       try {
-                        await fixPermissions(project.id);
+                        await openProject(project.id);
                       } catch (error) {
                         SystemNotification.open(
                           SystemNotifcationKind.Error,
-                          `An error occurred when attempting to fix permissions.`
+                          `An error occurred when attempting to open the project.`
                         );
                         console.error(error);
                       }
-                    }}
-                    variant="contained"
-                  >
-                    Fix&nbsp;Permissions
-                  </Button>
-                </Tooltip>
 
-                {isAdmin ? (
-                  <Button
-                    style={{ marginRight: "8px", minWidth: "129px" }}
-                    href={"/pluto-core/project/" + project.id + "/deletedata"}
-                    color="secondary"
-                    variant="contained"
+                      try {
+                        await updateProjectOpenedStatus(project.id);
+                      } catch (error) {
+                        console.error(error);
+                      }
+                    }}
                   >
-                    Delete&nbsp;Data
+                    Open project
                   </Button>
-                ) : null}
-                {projectTypeData[project.projectTypeId] == "Premiere" ? (
-                  <ProjectFileUpload projectId={project.id}></ProjectFileUpload>
-                ) : null}
-                {projectTypeData[project.projectTypeId] ==
-                ("Premiere" || "After Effects" || "Prelude") ? (
-                  <Tooltip title="Press this button to download the project file.">
-                    <Button
-                      style={{
-                        marginLeft: "14px",
-                        marginRight: "8px",
-                        minWidth: "220px",
+                  <div style={{ marginRight: "-6px", minWidth: "160px" }}>
+                    <AssetFolderLink
+                      projectId={project.id}
+                      onClick={(event) => {
+                        event.stopPropagation();
                       }}
-                      variant="contained"
+                    />
+                  </div>
+                  {projectTypeData[project.projectTypeId] == "Audition" ||
+                  projectTypeData[project.projectTypeId] == "Cubase" ? (
+                    <Tooltip
+                      title="View Project File Backups"
+                      style={{ marginRight: "0px", minWidth: "10px" }}
+                    >
+                      <IconButton
+                        disableRipple
+                        className={classes.noHoverEffect}
+                        onClick={() =>
+                          history.push(
+                            `/project/${project.id}/assetfolderbackups`
+                          )
+                        }
+                      >
+                        <FileCopy />
+                      </IconButton>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip
+                      title="View Project File Backups"
+                      style={{ marginLeft: "5px", minWidth: "10px" }}
+                    >
+                      <IconButton
+                        disableRipple
+                        className={classes.noHoverEffect}
+                        onClick={() =>
+                          history.push(`/project/${project.id}/backups`)
+                        }
+                      >
+                        <FileCopy />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  <Tooltip title="View project's media">
+                    <IconButton
+                      disableRipple
+                      className={classes.noHoverEffect}
+                      onClick={() =>
+                        window.location.assign(`/vs/project/${project.id}`)
+                      }
+                    >
+                      <PermMedia />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+                <Box
+                  display="flex"
+                  flexDirection="row"
+                  alignItems="center"
+                  style={{ marginBottom: "10px" }}
+                >
+                  <Tooltip title="Fix permissions issues in this projects' asset folder.">
+                    <FixPermissionsButton
+                      startIcon={<BuildIcon />}
                       onClick={async () => {
                         try {
-                          await downloadProjectFile(project.id);
+                          await fixPermissions(project.id);
                         } catch (error) {
                           SystemNotification.open(
                             SystemNotifcationKind.Error,
-                            `An error occurred when attempting to download the project file.`
+                            `An error occurred when attempting to fix permissions.`
                           );
                           console.error(error);
                         }
                       }}
+                      variant="contained"
                     >
-                      Download&nbsp;Project&nbsp;File
-                    </Button>
+                      Fix&nbsp;Permissions
+                    </FixPermissionsButton>
                   </Tooltip>
-                ) : null}
-                {projectTypeData[project.projectTypeId] == "Audition" ||
-                projectTypeData[project.projectTypeId] == "Cubase" ? (
-                  <Tooltip
-                    title="View Project File Backups"
-                    style={{ marginRight: "0px", minWidth: "10px" }}
-                  >
-                    <IconButton
-                      disableRipple
-                      className={classes.noHoverEffect}
-                      onClick={() =>
-                        history.push(
-                          `/project/${project.id}/assetfolderbackups`
-                        )
-                      }
-                    >
-                      <FileCopy />
-                    </IconButton>
-                  </Tooltip>
-                ) : (
-                  <Tooltip
-                    title="View Project File Backups"
-                    style={{ marginRight: "0px", minWidth: "10px" }}
-                  >
-                    <IconButton
-                      disableRipple
-                      className={classes.noHoverEffect}
-                      onClick={() =>
-                        history.push(`/project/${project.id}/backups`)
-                      }
-                    >
-                      <FileCopy />
-                    </IconButton>
-                  </Tooltip>
-                )}
-
-                <Tooltip title="See project's media">
-                  <IconButton
-                    disableRipple
-                    className={classes.noHoverEffect}
-                    onClick={() =>
-                      window.location.assign(`/vs/project/${project.id}`)
-                    }
-                  >
-                    <PermMedia />
-                  </IconButton>
-                </Tooltip>
+                  {projectTypeData[project.projectTypeId] == "Premiere" ? (
+                    <ProjectFileUpload
+                      projectId={project.id}
+                    ></ProjectFileUpload>
+                  ) : null}
+                  {projectTypeData[project.projectTypeId] ==
+                  ("Premiere" || "After Effects" || "Prelude") ? (
+                    <Tooltip title="Download project file">
+                      <DownloadProjectButton
+                        startIcon={<CloudDownload />}
+                        variant="contained"
+                        onClick={async () => {
+                          try {
+                            await downloadProjectFile(project.id);
+                          } catch (error) {
+                            SystemNotification.open(
+                              SystemNotifcationKind.Error,
+                              `An error occurred when attempting to download the project file.`
+                            );
+                            console.error(error);
+                          }
+                        }}
+                      >
+                        Download&nbsp;Project&nbsp;File
+                      </DownloadProjectButton>
+                    </Tooltip>
+                  ) : null}
+                </Box>
               </Box>
             </Grid>
           </Grid>
+
           <Paper className={classes.root} elevation={3}>
             <form onSubmit={onProjectSubmit}>
               <Grid container xs={12} direction="row" spacing={3}>
@@ -564,6 +586,16 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                       fieldChanged(evt, "productionOffice")
                     }
                   />
+                  {isAdmin ? (
+                    <Button
+                      style={{ minWidth: "129px", marginTop: "16px" }}
+                      href={"/pluto-core/project/" + project.id + "/deletedata"}
+                      color="secondary"
+                      variant="contained"
+                    >
+                      Delete&nbsp;Data
+                    </Button>
+                  ) : null}
                 </Grid>
                 <Grid item xs={6}>
                   <TextField

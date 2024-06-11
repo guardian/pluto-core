@@ -236,13 +236,18 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
       />
 
       <Tooltip title="Update Premiere Pro project file">
-        <IconButton
-          disableRipple
-          className={classes.noHoverEffect}
+        <Button
+          style={{
+            marginLeft: "0px",
+            marginRight: "8px",
+            minWidth: "210px",
+          }}
+          startIcon={<CloudUpload />}
+          variant="contained"
           onClick={handleClickOpenDialog}
         >
-          <CloudUpload />
-        </IconButton>
+          Update&nbsp;Project&nbsp;File
+        </Button>
       </Tooltip>
     </>
   );
