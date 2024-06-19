@@ -77,7 +77,12 @@ interface ProjectsTableProps {
   //array of page sizes to present to the user
   pageSizeOptions: number[];
   //callback to tell the parent to update the source data
-  updateRequired: (page: number, pageSize: number) => void;
+  updateRequired: (
+    page: number,
+    pageSize: number,
+    order: SortDirection,
+    orderBy: keyof Project
+  ) => void;
   //list of projects to display
   projects: Project[];
   //is the user an admin
@@ -105,7 +110,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
 
   useEffect(() => {
     console.log("filter terms or search changed, updating...");
-    props.updateRequired(page, rowsPerPage);
+    props.updateRequired(page, rowsPerPage, order, orderBy);
   }, [page, rowsPerPage, order, orderBy, refreshGeneration]);
 
   const handleChangePage = (
@@ -270,7 +275,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortListByOrder(props.projects, orderBy, order).map((project) => {
+            {props.projects.map((project) => {
               const {
                 id,
                 title,
@@ -363,7 +368,12 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                           try {
                             await updateProjectOpenedStatus(id);
 
-                            await props.updateRequired(page, rowsPerPage);
+                            await props.updateRequired(
+                              page,
+                              rowsPerPage,
+                              order,
+                              orderBy
+                            );
                           } catch (error) {
                             console.error(error);
                           }

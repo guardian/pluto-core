@@ -8,6 +8,7 @@ import ProjectsTable from "./ProjectsTable";
 import { Helmet } from "react-helmet";
 import { buildFilterTerms, filterTermsToQuerystring } from "../filter/terms";
 import { useGuardianStyles } from "~/misc/utils";
+import { SortDirection } from "~/utils/lists";
 
 const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // React Router
@@ -18,6 +19,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   const [user, setUser] = useState<PlutoUser | null>(null);
   const [pageSize, setPageSize] = useState<number>(25);
   const [page, setPage] = useState<number>(1);
+  const [order, setOrder] = useState<SortDirection>("desc");
+  const [orderBy, setOrderBy] = useState<keyof Project>("created");
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectCount, setProjectCount] = useState<number>(0);
 
@@ -41,6 +44,8 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
       page,
       pageSize,
       filterTerms: filterTerms,
+      order,
+      orderBy,
     });
 
     setProjects(projects);
@@ -51,7 +56,7 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
     if (filterTerms) {
       fetchProjectsOnPage();
     }
-  }, [filterTerms, page, pageSize]);
+  }, [filterTerms, page, pageSize, order, orderBy]);
 
   useEffect(() => {
     const fetchWhoIsLoggedIn = async () => {
@@ -144,10 +149,12 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
         <ProjectsTable
           className={classes.table}
           pageSizeOptions={[25, 50, 100]}
-          updateRequired={(page, pageSize) => {
+          updateRequired={(page, pageSize, order, orderBy) => {
             console.log("ProjectsTable updateRequired");
             setPageSize(pageSize);
             setPage(page);
+            setOrder(order);
+            setOrderBy(orderBy);
           }}
           projects={projects}
           projectCount={projectCount}
