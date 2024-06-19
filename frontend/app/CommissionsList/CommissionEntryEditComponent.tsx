@@ -52,6 +52,7 @@ import ProjectFilterComponent from "~/filter/ProjectFilterComponent";
 import { filterTermsToQuerystring } from "~/filter/terms";
 import { isLoggedIn } from "~/utils/api";
 import { set } from "js-cookie";
+import {SortDirection} from "~/utils/lists";
 declare var deploymentRootPath: string;
 
 interface CommissionEntryFormProps {
@@ -278,6 +279,8 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   >("");
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [userAllowedBoolean, setUserAllowedBoolean] = useState<boolean>(true);
+  const [order, setOrder] = useState<SortDirection>("desc");
+  const [orderBy, setOrderBy] = useState<keyof Project>("created");
 
   useEffect(() => {
     const fetchCommissionData = async () => {
@@ -334,7 +337,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
    */
   useEffect(() => {
     const doLoadIn = () => {
-      projectsForCommission(commissionId, 0, 5, filterTerms)
+      projectsForCommission(commissionId, 0, 5, filterTerms, order, orderBy)
         .then(([projects, count]) => {
           setProjectList(projects);
           setProjectCount(count);
@@ -630,12 +633,14 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
               <ProjectsTable
                 className={classes.table}
                 pageSizeOptions={[5, 10, 20]}
-                updateRequired={(page, pageSize) => {
+                updateRequired={(page, pageSize, order, orderBy) => {
                   projectsForCommission(
                     commissionId,
                     page,
                     pageSize,
-                    filterTerms
+                    filterTerms,
+                    order,
+                    orderBy,
                   )
                     .then(([projects, count]) => {
                       setProjectList(projects);
