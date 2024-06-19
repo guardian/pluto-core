@@ -77,7 +77,12 @@ interface ProjectsTableProps {
   //array of page sizes to present to the user
   pageSizeOptions: number[];
   //callback to tell the parent to update the source data
-  updateRequired: (page: number, pageSize: number, order: SortDirection, orderBy: keyof Project) => void;
+  updateRequired: (
+    page: number,
+    pageSize: number,
+    order: SortDirection,
+    orderBy: keyof Project
+  ) => void;
   //list of projects to display
   projects: Project[];
   //is the user an admin
@@ -363,7 +368,12 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                           try {
                             await updateProjectOpenedStatus(id);
 
-                            await props.updateRequired(page, rowsPerPage, order, orderBy);
+                            await props.updateRequired(
+                              page,
+                              rowsPerPage,
+                              order,
+                              orderBy
+                            );
                           } catch (error) {
                             console.error(error);
                           }

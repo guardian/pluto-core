@@ -110,7 +110,7 @@ const CommissionDeleteDataComponent: React.FC<CommissionDeleteDataComponentProps
         1000,
         filterTerms,
         "desc",
-        "created",
+        "created"
       )
         .then(([projects, count]) => {
           setProjectList(projects);

@@ -8,7 +8,7 @@ import ProjectsTable from "./ProjectsTable";
 import { Helmet } from "react-helmet";
 import { buildFilterTerms, filterTermsToQuerystring } from "../filter/terms";
 import { useGuardianStyles } from "~/misc/utils";
-import {SortDirection} from "~/utils/lists";
+import { SortDirection } from "~/utils/lists";
 
 const ProjectEntryList: React.FC<RouteComponentProps> = () => {
   // React Router

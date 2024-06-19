@@ -52,7 +52,7 @@ import ProjectFilterComponent from "~/filter/ProjectFilterComponent";
 import { filterTermsToQuerystring } from "~/filter/terms";
 import { isLoggedIn } from "~/utils/api";
 import { set } from "js-cookie";
-import {SortDirection} from "~/utils/lists";
+import { SortDirection } from "~/utils/lists";
 declare var deploymentRootPath: string;
 
 interface CommissionEntryFormProps {
@@ -640,7 +640,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
                     pageSize,
                     filterTerms,
                     order,
-                    orderBy,
+                    orderBy
                   )
                     .then(([projects, count]) => {
                       setProjectList(projects);
