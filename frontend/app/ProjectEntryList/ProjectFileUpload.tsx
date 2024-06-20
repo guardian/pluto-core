@@ -235,7 +235,7 @@ const UploadButton: React.FC<ProjectFileUploadProps> = (props) => {
         onChange={handleFileChange}
       />
 
-      <Tooltip title="Update Premiere Pro project file">
+      <Tooltip title="Upload a newer, up to date version of the Premiere Pro file for this project">
         <Button
           style={{
             marginLeft: "0px",

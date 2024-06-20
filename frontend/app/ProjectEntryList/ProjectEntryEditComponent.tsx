@@ -517,7 +517,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                   ) : null}
                   {projectTypeData[project.projectTypeId] ==
                   ("Premiere" || "After Effects" || "Prelude") ? (
-                    <Tooltip title="Download project file">
+                    <Tooltip title="Download the Premiere Pro file for this project, to work on a laptop or elsewhere">
                       <DownloadProjectButton
                         startIcon={<CloudDownload />}
                         variant="contained"
