@@ -256,7 +256,46 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     })
   }}
 
-  override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
+  def withRequiredSort(query: =>Query[ProjectEntryRow, ProjectEntry, Seq], sort:String, sortDirection:SortDirection.Value):Query[ProjectEntryRow, ProjectEntry, Seq] = {
+    import EntryStatusMapper._
+    (sort, sortDirection) match {
+      case ("created", SortDirection.desc) => query.sortBy(_.created.desc)
+      case ("created", SortDirection.asc) => query.sortBy(_.created.asc)
+      case ("title", SortDirection.desc) => query.sortBy(_.projectTitle.desc)
+      case ("title", SortDirection.asc) => query.sortBy(_.projectTitle.asc)
+      case ("workingGroupId", SortDirection.desc) => query.sortBy(_.workingGroup.desc)
+      case ("workingGroupId", SortDirection.asc) => query.sortBy(_.workingGroup.asc)
+      case ("status", SortDirection.desc) => query.sortBy(_.status.desc)
+      case ("status", SortDirection.asc) => query.sortBy(_.status.asc)
+      case ("user", SortDirection.desc) => query.sortBy(_.user.desc)
+      case ("user", SortDirection.asc) => query.sortBy(_.user.asc)
+      case ("commissionId", SortDirection.desc) => query.sortBy(_.commission.desc)
+      case ("commissionId", SortDirection.asc) => query.sortBy(_.commission.asc)
+      case _ =>
+        logger.warn(s"Sort field $sort was not recognised, ignoring")
+        query
+    }
+  }
+
+  def listFilteredAndSorted(startAt:Int, limit:Int, sort: String, sortDirection: String) = IsAuthenticatedAsync(parse.json) {uid=>{request=>
+    this.validateFilterParams(request).fold(
+      errors => {
+        logger.error(s"Errors parsing content: $errors")
+        Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
+      },
+      filterTerms => {
+        this.selectFilteredAndSorted(startAt, limit, filterTerms, sort, getSortDirection(sortDirection).getOrElse(SortDirection.desc)).map({
+          case Success((count,result))=>Ok(Json.obj("status" -> "ok","count"->count,"result"->this.jstranslate(result)))
+          case Failure(error)=>
+            logger.error(error.toString)
+            InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+        }
+        )
+      }
+    )
+  }}
+
+  def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
     TableQuery[ProjectEntryRow].length.result.zip(
       TableQuery[ProjectEntryRow].sortBy(_.created.desc).drop(startAt).take(limit).result
     )
@@ -270,6 +309,18 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     dbConfig.db.run(
       basequery.length.result.zip(
         basequery.sortBy(_.created.desc).drop(startAt).take(limit).result
+      )
+    ).map(Success(_)).recover(Failure(_))
+  }
+
+  def selectFilteredAndSorted(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms, sort: String, sortDirection: SortDirection.Value): Future[Try[(Int, Seq[ProjectEntry])]] = {
+    val basequery = terms.addFilterTerms {
+      TableQuery[ProjectEntryRow]
+    }
+
+    dbConfig.db.run(
+      basequery.length.result.zip(
+        withRequiredSort(basequery, sort, sortDirection).drop(startAt).take(limit).result
       )
     ).map(Success(_)).recover(Failure(_))
   }

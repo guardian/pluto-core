@@ -17,6 +17,8 @@ interface ProjectsOnPage {
   page?: number;
   pageSize?: number;
   filterTerms?: FilterTerms;
+  order?: string;
+  orderBy?: string | number | symbol;
 }
 
 interface PlutoFilesAPIResponse<T> {
@@ -39,6 +41,8 @@ export const getProjectsOnPage = async ({
   page = 0,
   pageSize = 25,
   filterTerms,
+  order,
+  orderBy,
 }: ProjectsOnPage): Promise<[Project[], number]> => {
   try {
     const {
@@ -49,7 +53,7 @@ export const getProjectsOnPage = async ({
       ? await Axios.put<PlutoApiResponseWithCount<Project[]>>(
           `${API_PROJECTS_FILTER}?startAt=${
             page * pageSize
-          }&length=${pageSize}`,
+          }&length=${pageSize}&sort=${String(orderBy)}&sortDirection=${order}`,
           filterTerms
         )
       : await Axios.get<PlutoApiResponseWithCount<Project[]>>(

@@ -129,18 +129,24 @@ export const projectsForCommission: (
   commissionId: number,
   page: number,
   pageSize: number,
-  filterTerms: ProjectFilterTerms
+  filterTerms: ProjectFilterTerms,
+  order: string,
+  orderBy: string | number | symbol
 ) => Promise<[Project[], number]> = async (
   commissionId: number,
   page: number,
   pageSize: number,
-  filterTerms: ProjectFilterTerms
+  filterTerms: ProjectFilterTerms,
+  order: string,
+  orderBy: string | number | symbol
 ) => {
   filterTerms["commissionId"] = commissionId;
   return getProjectsOnPage({
     page: page,
     pageSize: pageSize,
     filterTerms: filterTerms,
+    order: order,
+    orderBy: orderBy,
   });
 };
 
