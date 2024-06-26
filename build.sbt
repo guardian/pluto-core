@@ -125,7 +125,8 @@ val awsSdk2Version = "2.20.143"
 libraryDependencies ++= Seq(
   "software.amazon.awssdk" % "s3" % awsSdk2Version,
   "software.amazon.awssdk" % "s3-transfer-manager" % "2.17.177-PREVIEW",
-  "software.amazon.awssdk" % "url-connection-client" % awsSdk2Version
+  "software.amazon.awssdk" % "url-connection-client" % awsSdk2Version,
+  "software.amazon.awssdk" % "athena" % "2.17.89"
 )
 
 enablePlugins(UniversalPlugin)

@@ -640,6 +640,43 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     Future(Ok(Json.obj("status"->"ok","detail"->"Fix permissions run.")))
   }
 
+  def extractAfterAssets(path: String): String = {
+    val pattern = """.*/Assets/(.*)""".r
+    path match {
+      case pattern(extractedPath) => extractedPath
+      case _ => path
+    }
+  }
+
+  def executeAthenaQuery(projectId: Int) = Action.async { implicit request =>
+    val assetFolderString = Await.result(assetFolderForProject(projectId), Duration.Inf).toString
+    val projectPath = extractAfterAssets(assetFolderString)
+
+    val query = s"""
+      SELECT DISTINCT
+      regexp_extract(key, '^${projectPath}/([^/]*)', 1) AS root_directory
+      FROM data
+      ORDER BY
+      root_directory;
+    """
+    val database = "2019-db"
+    val bucketName = "gnm-multimedia-ukarchive2019"
+    S3Helper.createFromBucketName(bucketName) match {
+      case Left(error) =>
+        Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> error)))
+
+      case Right(helper) =>
+        Future {
+          helper.executeAthenaQuery(query, database)
+        }.map { results =>
+          Ok(Json.obj("status" -> "ok", "data" -> results))
+        }.recover {
+          case ex: Exception =>
+            InternalServerError(Json.obj("status" -> "error", "detail" -> ex.getMessage))
+        }
+    }
+  }
+
   def deleteDataRunner(projectId: Int, delay: Int, pluto: Boolean, file: Boolean, backups: Boolean, pTR: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean, buckets: Array[String], bucketBooleans: Array[Boolean]): Unit = {
     def deleteFileJob() = Future {
       if (file) {
