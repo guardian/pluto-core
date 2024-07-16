@@ -48,7 +48,7 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
           <Paper className={classes.paperWithPadding}>
             <Grid item xs={6} sm={6}>
               <TextField
-                style={{ width: 300 }}
+                style={{ width: 340 }}
                 label="Commission Title"
                 placeholder="My commission title"
                 helperText="Enter a good descriptive Commission title"
@@ -64,6 +64,8 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
                   }
                 }}
                 value={props.title}
+                FormHelperTextProps={{style: {fontSize: "0.86rem"}}}
+                InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
               />
             </Grid>
           </Paper>
@@ -71,7 +73,7 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
             <Grid item xs={6} sm={6}>
               <KeyboardDatePicker
                 className={classes.inputBox}
-                style={{ width: 300 }}
+                style={{ width: 340 }}
                 disableToolbar
                 variant="inline"
                 format="dd/MM/yyyy"
@@ -82,6 +84,8 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
                 onChange={(newValue) =>
                   newValue ? props.onExpirationChanged(newValue) : undefined
                 }
+                FormHelperTextProps={{style: {fontSize: "0.86rem"}}}
+                InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
               />
             </Grid>
           </Paper>
@@ -100,9 +104,10 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
                 getOptionLabel={(option) => option.name}
                 renderInput={(params) => (
                   <TextField
-                    style={{ width: 300 }}
+                    style={{ width: 340 }}
                     {...params}
                     label="Working Group"
+                    InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
                   />
                 )}
                 onChange={(event, newValue) => {

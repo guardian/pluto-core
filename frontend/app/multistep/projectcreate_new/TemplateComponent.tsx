@@ -116,7 +116,7 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
         {props.templateValue ? (
           <TextField
             select
-            style={{ width: 300 }}
+            style={{ width: 340 }}
             label="Project template"
             helperText="Please select a project template"
             value={props.templateValue}
@@ -125,6 +125,8 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
                 (evt.target.value as unknown) as number
               )
             }
+            FormHelperTextProps={{style: {fontSize: "0.86rem"}}}
+            InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
           >
             {knownProjectTemplates.map((template, idx) => (
               <MenuItem value={template.id} key={idx}>

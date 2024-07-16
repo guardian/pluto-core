@@ -137,7 +137,7 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
           <Grid container spacing={4} alignItems="center">
             <Grid item xs={6} sm={6}>
               <TextField
-                style={{ width: 300 }}
+                style={{ width: 340 }}
                 label="Project Title"
                 placeholder="My project title"
                 helperText="Enter a good descriptive project name"
@@ -155,6 +155,8 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
                   }
                 }}
                 value={props.projectName}
+                FormHelperTextProps={{style: {fontSize: "0.86rem"}}}
+                InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
               />
             </Grid>
             {isAdmin && (
