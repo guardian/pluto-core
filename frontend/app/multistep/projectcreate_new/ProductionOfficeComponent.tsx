@@ -29,13 +29,15 @@ const ProductionOfficeComponent: React.FC<ProductionOfficeComponentProps> = (
       <div>
         <TextField
           select
-          style={{ width: 300 }}
+          style={{ width: 340 }}
           label="Production Office"
           helperText="Production office you are working from"
           value={props.productionOfficeValue}
           onChange={(evt) =>
             props.valueWasSet(evt.target.value as ProductionOffice)
           }
+          FormHelperTextProps={{ style: { fontSize: "0.86rem" } }}
+          InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
         >
           {validProductionOffices.map((officeName, idx) => (
             <MenuItem key={idx} value={officeName}>
