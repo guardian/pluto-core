@@ -36,7 +36,7 @@ const ProductionOfficeComponent: React.FC<ProductionOfficeComponentProps> = (
           onChange={(evt) =>
             props.valueWasSet(evt.target.value as ProductionOffice)
           }
-          FormHelperTextProps={{style: {fontSize: "0.86rem"}}}
+          FormHelperTextProps={{ style: { fontSize: "0.86rem" } }}
           InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
         >
           {validProductionOffices.map((officeName, idx) => (

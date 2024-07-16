@@ -64,8 +64,11 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
                   }
                 }}
                 value={props.title}
-                FormHelperTextProps={{style: {fontSize: "0.86rem"}}}
-                InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
+                FormHelperTextProps={{ style: { fontSize: "0.86rem" } }}
+                InputLabelProps={{
+                  shrink: true,
+                  style: { fontSize: "1.2rem" },
+                }}
               />
             </Grid>
           </Paper>
@@ -84,8 +87,11 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
                 onChange={(newValue) =>
                   newValue ? props.onExpirationChanged(newValue) : undefined
                 }
-                FormHelperTextProps={{style: {fontSize: "0.86rem"}}}
-                InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
+                FormHelperTextProps={{ style: { fontSize: "0.86rem" } }}
+                InputLabelProps={{
+                  shrink: true,
+                  style: { fontSize: "1.2rem" },
+                }}
               />
             </Grid>
           </Paper>
@@ -107,7 +113,10 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
                     style={{ width: 340 }}
                     {...params}
                     label="Working Group"
-                    InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
+                    InputLabelProps={{
+                      shrink: true,
+                      style: { fontSize: "1.2rem" },
+                    }}
                   />
                 )}
                 onChange={(event, newValue) => {

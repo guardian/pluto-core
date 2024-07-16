@@ -125,7 +125,7 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
                 (evt.target.value as unknown) as number
               )
             }
-            FormHelperTextProps={{style: {fontSize: "0.86rem"}}}
+            FormHelperTextProps={{ style: { fontSize: "0.86rem" } }}
             InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
           >
             {knownProjectTemplates.map((template, idx) => (

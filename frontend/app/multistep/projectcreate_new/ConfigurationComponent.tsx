@@ -155,8 +155,11 @@ const ConfigurationComponent: React.FC<ConfigurationComponentProps> = (
                   }
                 }}
                 value={props.projectName}
-                FormHelperTextProps={{style: {fontSize: "0.86rem"}}}
-                InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
+                FormHelperTextProps={{ style: { fontSize: "0.86rem" } }}
+                InputLabelProps={{
+                  shrink: true,
+                  style: { fontSize: "1.2rem" },
+                }}
               />
             </Grid>
             {isAdmin && (
