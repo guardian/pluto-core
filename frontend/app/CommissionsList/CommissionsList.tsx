@@ -152,6 +152,9 @@ const CommissionsList: React.FC = () => {
   };
 
   const userAllowed = (confidential: Boolean, commissionUser: string) => {
+    if (confidential == undefined) {
+      return true;
+    }
     if (confidential == false) {
       return true;
     }
@@ -163,6 +166,8 @@ const CommissionsList: React.FC = () => {
       } else {
         return false;
       }
+    } else {
+      return true;
     }
   };
 
@@ -247,30 +252,38 @@ const CommissionsList: React.FC = () => {
                   status,
                   owner,
                   confidential,
-                }) => (
-                  <TableRow
-                    hover={true}
-                    onClick={() => {
-                      window.open(
-                        `${deploymentRootPath}commission/${id}`,
-                        "_blank"
-                      );
-                    }}
-                    key={id}
-                    onContextMenu={(e) => {
-                      handleContextMenu(e, id);
-                    }}
-                  >
-                    <TableCell>{title}</TableCell>
-                    <TableCell>{projectCount}</TableCell>
-                    <TableCell>{new Date(created).toLocaleString()}</TableCell>
-                    <TableCell>
-                      {workingGroups.get(workingGroupId) ?? "<Unknown>"}
-                    </TableCell>
-                    <TableCell>{status}</TableCell>
-                    <TableCell>{owner.replace(/\|/g, " ")}</TableCell>
-                  </TableRow>
-                )
+                }) => {
+                  if (userAllowed(confidential, owner)) {
+                    return (
+                      <TableRow
+                        hover={true}
+                        onClick={() => {
+                          window.open(
+                            `${deploymentRootPath}commission/${id}`,
+                            "_blank"
+                          );
+                        }}
+                        key={id}
+                        onContextMenu={(e) => {
+                          handleContextMenu(e, id);
+                        }}
+                      >
+                        <TableCell>{title}</TableCell>
+                        <TableCell>{projectCount}</TableCell>
+                        <TableCell>
+                          {new Date(created).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          {workingGroups.get(workingGroupId) ?? "<Unknown>"}
+                        </TableCell>
+                        <TableCell>{status}</TableCell>
+                        <TableCell>{owner.replace(/\|/g, " ")}</TableCell>
+                      </TableRow>
+                    );
+                  } else {
+                    return null;
+                  }
+                }
               )}
             </TableBody>
           </Table>
