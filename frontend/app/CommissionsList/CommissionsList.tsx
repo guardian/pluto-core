@@ -247,38 +247,30 @@ const CommissionsList: React.FC = () => {
                   status,
                   owner,
                   confidential,
-                }) => {
-                  if (userAllowed(confidential, owner)) {
-                    return (
-                      <TableRow
-                        hover={true}
-                        onClick={() => {
-                          window.open(
-                            `${deploymentRootPath}commission/${id}`,
-                            "_blank"
-                          );
-                        }}
-                        key={id}
-                        onContextMenu={(e) => {
-                          handleContextMenu(e, id);
-                        }}
-                      >
-                        <TableCell>{title}</TableCell>
-                        <TableCell>{projectCount}</TableCell>
-                        <TableCell>
-                          {new Date(created).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          {workingGroups.get(workingGroupId) ?? "<Unknown>"}
-                        </TableCell>
-                        <TableCell>{status}</TableCell>
-                        <TableCell>{owner.replace(/\|/g, " ")}</TableCell>
-                      </TableRow>
-                    );
-                  } else {
-                    return null;
-                  }
-                }
+                }) => (
+                  <TableRow
+                    hover={true}
+                    onClick={() => {
+                      window.open(
+                        `${deploymentRootPath}commission/${id}`,
+                        "_blank"
+                      );
+                    }}
+                    key={id}
+                    onContextMenu={(e) => {
+                      handleContextMenu(e, id);
+                    }}
+                  >
+                    <TableCell>{title}</TableCell>
+                    <TableCell>{projectCount}</TableCell>
+                    <TableCell>{new Date(created).toLocaleString()}</TableCell>
+                    <TableCell>
+                      {workingGroups.get(workingGroupId) ?? "<Unknown>"}
+                    </TableCell>
+                    <TableCell>{status}</TableCell>
+                    <TableCell>{owner.replace(/\|/g, " ")}</TableCell>
+                  </TableRow>
+                )
               )}
             </TableBody>
           </Table>
