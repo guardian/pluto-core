@@ -234,6 +234,9 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   };
 
   const userAllowed = (confidential: Boolean, projectUser: string) => {
+    if (confidential == undefined) {
+      return true;
+    }
     if (confidential == false) {
       return true;
     }
@@ -245,6 +248,8 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
       } else {
         return false;
       }
+    } else {
+      return true;
     }
   };
 
