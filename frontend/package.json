@@ -137,5 +137,8 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,css,md}": "prettier --write"
+  },
+  "resolutions": {
+    "elliptic": "^6.5.7"
   }
 }
