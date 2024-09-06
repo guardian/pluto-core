@@ -318,7 +318,9 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         const loggedIn = await isLoggedIn();
         if (loggedIn.isAdmin) {
           setUserAllowedBoolean(true);
-        } else if (project.user.split("|").includes(loggedIn.uid)) {
+        } else if (
+          project.user.split("|").includes(loggedIn.uid.toLowerCase())
+        ) {
           setUserAllowedBoolean(true);
         } else {
           setUserAllowedBoolean(false);
