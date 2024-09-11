@@ -243,7 +243,9 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
     if (props.user != null) {
       if (props.user.isAdmin) {
         return true;
-      } else if (projectUser.split("|").includes(props.user.uid)) {
+      } else if (
+        projectUser.split("|").includes(props.user.uid.toLowerCase())
+      ) {
         return true;
       } else {
         return false;
