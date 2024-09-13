@@ -312,6 +312,15 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     fetchProjectTypeData();
   }, []);
 
+  const generateUserName = (inputString: string) => {
+    if (inputString.includes("@")) {
+      const splitString = inputString.split("@", 1)[0];
+      const userNameConst = splitString.replace(".", "_");
+      return userNameConst;
+    }
+    return inputString;
+  };
+
   useEffect(() => {
     const userAllowed = async () => {
       try {
@@ -319,7 +328,9 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         if (loggedIn.isAdmin) {
           setUserAllowedBoolean(true);
         } else if (
-          project.user.split("|").includes(loggedIn.uid.toLowerCase())
+          project.user
+            .split("|")
+            .includes(generateUserName(loggedIn.uid).toLowerCase())
         ) {
           setUserAllowedBoolean(true);
         } else {

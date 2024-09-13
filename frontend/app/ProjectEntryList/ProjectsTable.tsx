@@ -233,6 +233,15 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
     setContextMenu(null);
   };
 
+  const generateUserName = (inputString: string) => {
+    if (inputString.includes("@")) {
+      const splitString = inputString.split("@", 1)[0];
+      const userNameConst = splitString.replace(".", "_");
+      return userNameConst;
+    }
+    return inputString;
+  };
+
   const userAllowed = (confidential: Boolean, projectUser: string) => {
     if (confidential == undefined) {
       return true;
@@ -244,7 +253,9 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
       if (props.user.isAdmin) {
         return true;
       } else if (
-        projectUser.split("|").includes(props.user.uid.toLowerCase())
+        projectUser
+          .split("|")
+          .includes(generateUserName(props.user.uid).toLowerCase())
       ) {
         return true;
       } else {
