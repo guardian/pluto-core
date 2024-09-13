@@ -476,7 +476,9 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
         if (loggedIn.isAdmin) {
           setUserAllowedBoolean(true);
         } else if (
-          commissionData?.owner.split("|").includes(loggedIn.uid.toLowerCase())
+          commissionData?.owner
+            .split("|")
+            .includes(generateUserName(loggedIn.uid).toLowerCase())
         ) {
           setUserAllowedBoolean(true);
         } else {

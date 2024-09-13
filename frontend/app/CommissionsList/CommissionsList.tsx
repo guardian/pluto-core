@@ -161,7 +161,11 @@ const CommissionsList: React.FC = () => {
     if (user != null) {
       if (user.isAdmin) {
         return true;
-      } else if (commissionUser.split("|").includes(user.uid.toLowerCase())) {
+      } else if (
+        commissionUser
+          .split("|")
+          .includes(generateUserName(user.uid).toLowerCase())
+      ) {
         return true;
       } else {
         return false;
