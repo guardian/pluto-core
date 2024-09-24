@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
+
 import {
   Box,
   Button,
@@ -90,6 +91,15 @@ const FixPermissionsButton = styled(Button)({
 const DownloadProjectButton = styled(Button)({
   marginLeft: "0px",
   marginRight: "8px",
+  minWidth: "240px",
+  "&:hover": {
+    backgroundColor: "#A9A9A9",
+  },
+});
+
+const RestoreButton = styled(Button)({
+  marginLeft: "8px",
+  marginRight: "0px",
   minWidth: "240px",
   "&:hover": {
     backgroundColor: "#A9A9A9",
@@ -550,6 +560,15 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                       </DownloadProjectButton>
                     </Tooltip>
                   ) : null}
+
+                  <Tooltip title="Restore project from backup">
+                    <RestoreButton
+                      variant="contained"
+                      onClick={() => console.log("Button clicked")} // Added onClick handler
+                    >
+                      Restore&nbsp;Project
+                    </RestoreButton>
+                  </Tooltip>
                 </Box>
               </Box>
             </Grid>
