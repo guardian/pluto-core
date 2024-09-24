@@ -136,6 +136,46 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     }
   };
 
+  const restoreProject = async () => {
+    try {
+      // Fetch the project path
+      const path = await getProjectPath(project.id);
+      if (!path) {
+        throw new Error("Project path not found.");
+      }
+      console.log(
+        "Sending restore request for project:",
+        project.id,
+        "with path:",
+        path
+      );
+      // await axios.post(`/api/project/restore`, {
+      //   id: project.id,
+      //   path: path,
+      // });
+
+      // Update the project status to "In Production"
+      // const updatedProject = { ...project, status: "In Production" };
+      await updateProject({ ...project, status: "In Production" });
+
+      // Update local state
+      setProject({ ...project, status: "In Production" });
+      setInitialProject({ ...project, status: "In Production" });
+
+      // Notify the user of success
+      SystemNotification.open(
+        SystemNotifcationKind.Success,
+        `Successfully restored project "${project.title}" to "In Production" status.`
+      );
+    } catch (error) {
+      console.error("Failed to restore project:", error);
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        `Failed to restore the project. Please try again.`
+      );
+    }
+  };
+
   const getProjectPath = async (projectId: number) => {
     try {
       const response = await axios.get(`/api/project/${projectId}/assetfolder`);
@@ -580,24 +620,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                     <Tooltip title="Restore project from backup">
                       <RestoreButton
                         variant="contained"
-                        onClick={async () => {
-                          try {
-                            getProjectPath(project.id).then((path) => {
-                              console.log("project path is ", path);
-                            });
-                            await updateProject({
-                              ...project,
-                              status: "In Production",
-                            });
-                            setProject({ ...project, status: "In Production" });
-                          } catch (error) {
-                            SystemNotification.open(
-                              SystemNotifcationKind.Error,
-                              `An error occurred when attempting to restore the project.`
-                            );
-                            console.error(error);
-                          }
-                        }}
+                        onClick={restoreProject}
                       >
                         Restore&nbsp;Project
                       </RestoreButton>
