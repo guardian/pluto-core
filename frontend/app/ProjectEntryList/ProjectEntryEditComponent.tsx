@@ -136,6 +136,22 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     }
   };
 
+  const getProjectPath = async (projectId: number) => {
+    try {
+      const response = await axios.get(`/api/project/${projectId}/assetfolder`);
+      const projectPath = response.data.result.value;
+      console.log(
+        "project path request got ",
+        projectPath,
+        "for project id",
+        projectId
+      );
+      return projectPath;
+    } catch (err) {
+      console.error("Could not load project path information: ", err);
+    }
+  };
+
   const hasChanges = () => {
     // Perform deep equality check
     return JSON.stringify(initialProject) !== JSON.stringify(project);
@@ -560,15 +576,33 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                       </DownloadProjectButton>
                     </Tooltip>
                   ) : null}
-
-                  <Tooltip title="Restore project from backup">
-                    <RestoreButton
-                      variant="contained"
-                      onClick={() => console.log("Button clicked")} // Added onClick handler
-                    >
-                      Restore&nbsp;Project
-                    </RestoreButton>
-                  </Tooltip>
+                  {project.status == "Completed" && isAdmin ? (
+                    <Tooltip title="Restore project from backup">
+                      <RestoreButton
+                        variant="contained"
+                        onClick={async () => {
+                          try {
+                            getProjectPath(project.id).then((path) => {
+                              console.log("project path is ", path);
+                            });
+                            await updateProject({
+                              ...project,
+                              status: "In Production",
+                            });
+                            setProject({ ...project, status: "In Production" });
+                          } catch (error) {
+                            SystemNotification.open(
+                              SystemNotifcationKind.Error,
+                              `An error occurred when attempting to restore the project.`
+                            );
+                            console.error(error);
+                          }
+                        }}
+                      >
+                        Restore&nbsp;Project
+                      </RestoreButton>
+                    </Tooltip>
+                  ) : null}
                 </Box>
               </Box>
             </Grid>
