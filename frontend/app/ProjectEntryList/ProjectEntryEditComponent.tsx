@@ -136,26 +136,24 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     }
   };
 
+  const API_PROJECT_RESTORE = "/project-restore";
+
   const restoreProject = async () => {
     try {
-      // Fetch the project path
       const path = await getProjectPath(project.id);
-      if (!path) {
-        throw new Error("Project path not found.");
-      }
-      console.log(
-        "Sending restore request for project:",
-        project.id,
-        "with path:",
-        path
-      );
-      // await axios.post(`/api/project/restore`, {
-      //   id: project.id,
-      //   path: path,
-      // });
+      const response = await axios.post(`${API_PROJECT_RESTORE}/`, {
+        id: project.id,
+        path: path,
+      });
 
-      // Update the project status to "In Production"
-      // const updatedProject = { ...project, status: "In Production" };
+      if (response.status === 200) {
+        console.log("Project restore initiated successfully:", response.data);
+      } else {
+        throw new Error(
+          `Project restore failed with status: ${response.status}`
+        );
+      }
+
       await updateProject({ ...project, status: "In Production" });
 
       // Update local state
