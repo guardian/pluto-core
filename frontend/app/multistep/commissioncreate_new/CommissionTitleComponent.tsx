@@ -113,6 +113,7 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
                     style={{ width: 340 }}
                     {...params}
                     label="Working Group"
+                    placeholder="Start typing category name"
                     InputLabelProps={{
                       shrink: true,
                       style: { fontSize: "1.2rem" },
