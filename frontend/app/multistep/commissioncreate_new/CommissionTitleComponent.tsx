@@ -126,9 +126,7 @@ const CommissionTitleComponent: React.FC<CommissionTitleComponentProps> = (
                   }
                 }}
                 PaperComponent={({ children, ...other }) => (
-                  <Paper {...other} style={{ maxHeight: 370 }}>
-                    {children}
-                  </Paper>
+                  <Paper {...other}>{children}</Paper>
                 )}
               />
             </Grid>
