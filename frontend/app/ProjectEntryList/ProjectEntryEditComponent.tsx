@@ -17,6 +17,8 @@ import {
   Tooltip,
   Typography,
   styled,
+  Icon,
+  DialogTitle,
 } from "@material-ui/core";
 import {
   getProject,
@@ -52,6 +54,7 @@ import ProjectFileUpload from "./ProjectFileUpload";
 import FolderIcon from "@material-ui/icons/Folder";
 import BuildIcon from "@material-ui/icons/Build";
 import LaunchIcon from "@material-ui/icons/Launch";
+import RestoreIcon from "@material-ui/icons/Restore";
 
 declare var deploymentRootPath: string;
 
@@ -125,6 +128,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [initialProject, setInitialProject] = useState<Project | null>(null);
   const [missingFiles, setMissingFiles] = useState<MissingFiles[]>([]);
   const [userAllowedBoolean, setUserAllowedBoolean] = useState<boolean>(true);
+  const [openRestoreDialog, setOpenRestoreDialog] = useState(false);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -454,6 +458,19 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     }
   };
 
+  const handleRestoreClick = () => {
+    setOpenRestoreDialog(true);
+  };
+
+  const handleCloseRestoreDialog = () => {
+    setOpenRestoreDialog(false);
+  };
+
+  const handleConfirmRestore = () => {
+    handleCloseRestoreDialog();
+    restoreProject();
+  };
+
   return (
     <>
       {userAllowedBoolean ? (
@@ -621,13 +638,14 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                     </Tooltip>
                   ) : null}
                   {project.status == "Completed" && isAdmin ? (
-                    <Tooltip title="Restore project from backup">
-                      <RestoreButton
-                        variant="contained"
-                        onClick={restoreProject}
+                    <Tooltip title="Restore project assets from deep archive">
+                      <IconButton
+                        disableRipple
+                        className={classes.noHoverEffect}
+                        onClick={handleRestoreClick}
                       >
-                        Restore&nbsp;Project
-                      </RestoreButton>
+                        <RestoreIcon />
+                      </IconButton>
                     </Tooltip>
                   ) : null}
                 </Box>
@@ -824,6 +842,35 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             </DialogContent>
             <DialogActions>
               <Button onClick={closeDialog}>Close</Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
+            open={openRestoreDialog}
+            onClose={handleCloseRestoreDialog}
+            aria-labelledby="restore-dialog-title"
+            aria-describedby="restore-dialog-description"
+          >
+            <DialogTitle id="restore-dialog-title">
+              Confirm Project Restore
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="restore-dialog-description">
+                <strong>
+                  Are you sure you want to restore this project's assets from
+                  deep archive?
+                </strong>
+                It may take up to 4 hours for the assets to be restored and will
+                incur a cost.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseRestoreDialog} color="primary">
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmRestore} color="primary" autoFocus>
+                Proceed
+              </Button>
             </DialogActions>
           </Dialog>
         </>
