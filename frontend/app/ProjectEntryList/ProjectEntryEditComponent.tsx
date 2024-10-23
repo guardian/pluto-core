@@ -141,12 +141,18 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const restoreProject = async () => {
     try {
       const path = await getProjectPath(project.id);
+      console.log("project.id", project.id);
+      console.log("path", path);
+      console.log("isLoggedIn.uid", (await isLoggedIn()).uid);
+      console.log("project.name", project.title);
       const response = await axios.post(`${API_PROJECT_RESTORE}/`, {
         id: project.id,
         path: path,
+        user: (await isLoggedIn()).uid,
+        project: project.title,
       });
 
-      if (response.status === 200) {
+      if (response.status === 200 || 202) {
         console.log("Project restore initiated successfully:", response.data);
       } else {
         throw new Error(
