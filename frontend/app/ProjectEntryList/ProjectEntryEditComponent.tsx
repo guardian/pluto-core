@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
+
 import {
   Box,
   Button,
@@ -16,6 +17,8 @@ import {
   Tooltip,
   Typography,
   styled,
+  Icon,
+  DialogTitle,
 } from "@material-ui/core";
 import {
   getProject,
@@ -51,6 +54,7 @@ import ProjectFileUpload from "./ProjectFileUpload";
 import FolderIcon from "@material-ui/icons/Folder";
 import BuildIcon from "@material-ui/icons/Build";
 import LaunchIcon from "@material-ui/icons/Launch";
+import RestoreIcon from "@material-ui/icons/Restore";
 
 declare var deploymentRootPath: string;
 
@@ -96,6 +100,15 @@ const DownloadProjectButton = styled(Button)({
   },
 });
 
+const RestoreButton = styled(Button)({
+  marginLeft: "8px",
+  marginRight: "0px",
+  minWidth: "240px",
+  "&:hover": {
+    backgroundColor: "#A9A9A9",
+  },
+});
+
 const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   props
 ) => {
@@ -115,6 +128,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [initialProject, setInitialProject] = useState<Project | null>(null);
   const [missingFiles, setMissingFiles] = useState<MissingFiles[]>([]);
   const [userAllowedBoolean, setUserAllowedBoolean] = useState<boolean>(true);
+  const [openRestoreDialog, setOpenRestoreDialog] = useState(false);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -123,6 +137,66 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       setProjectType(response.data.result as ProjectType);
     } catch (err) {
       console.error("Could not load project type information: ", err);
+    }
+  };
+
+  const API_PROJECT_RESTORE = "/project-restore";
+
+  const restoreProject = async () => {
+    try {
+      const path = await getProjectPath(project.id);
+      console.log("project.id", project.id);
+      console.log("path", path);
+      console.log("isLoggedIn.uid", (await isLoggedIn()).uid);
+      console.log("project.name", project.title);
+      const response = await axios.post(`${API_PROJECT_RESTORE}/`, {
+        id: project.id,
+        path: path,
+        user: (await isLoggedIn()).uid,
+        project: project.title,
+      });
+
+      if (response.status === 200 || 202) {
+        console.log("Project restore initiated successfully:", response.data);
+      } else {
+        throw new Error(
+          `Project restore failed with status: ${response.status}`
+        );
+      }
+
+      await updateProject({ ...project, status: "In Production" });
+
+      // Update local state
+      setProject({ ...project, status: "In Production" });
+      setInitialProject({ ...project, status: "In Production" });
+
+      // Notify the user of success
+      SystemNotification.open(
+        SystemNotifcationKind.Success,
+        `Successfully restored project "${project.title}" to "In Production" status.`
+      );
+    } catch (error) {
+      console.error("Failed to restore project:", error);
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        `Failed to restore the project. Please try again.`
+      );
+    }
+  };
+
+  const getProjectPath = async (projectId: number) => {
+    try {
+      const response = await axios.get(`/api/project/${projectId}/assetfolder`);
+      const projectPath = response.data.result.value;
+      console.log(
+        "project path request got ",
+        projectPath,
+        "for project id",
+        projectId
+      );
+      return projectPath;
+    } catch (err) {
+      console.error("Could not load project path information: ", err);
     }
   };
 
@@ -384,6 +458,19 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     }
   };
 
+  const handleRestoreClick = () => {
+    setOpenRestoreDialog(true);
+  };
+
+  const handleCloseRestoreDialog = () => {
+    setOpenRestoreDialog(false);
+  };
+
+  const handleConfirmRestore = () => {
+    handleCloseRestoreDialog();
+    restoreProject();
+  };
+
   return (
     <>
       {userAllowedBoolean ? (
@@ -497,6 +584,19 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                       <PermMedia />
                     </IconButton>
                   </Tooltip>
+                  <Box flexGrow={1} />
+                  {project.status == "Completed" && isAdmin && (
+                    <Tooltip title="Restore project assets from deep archive">
+                      <IconButton
+                        style={{ padding: "4px" }}
+                        disableRipple
+                        className={classes.noHoverEffect}
+                        onClick={() => setOpenRestoreDialog(true)}
+                      >
+                        <RestoreIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </Box>
                 <Box
                   display="flex"
@@ -744,6 +844,42 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             </DialogContent>
             <DialogActions>
               <Button onClick={closeDialog}>Close</Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
+            open={openRestoreDialog}
+            onClose={handleCloseRestoreDialog}
+            aria-labelledby="restore-dialog-title"
+            aria-describedby="restore-dialog-description"
+          >
+            <DialogTitle id="restore-dialog-title">
+              Confirm Project Restore
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="restore-dialog-description">
+                <strong>
+                  Are you sure you want to restore this project's assets from
+                  deep archive?
+                </strong>
+                <br />
+                You are about to restore this project's assets from deep
+                archive.
+                <br />
+                <br />
+                <strong>Please Note:</strong>
+                <br />
+                It may take up to 4 hours for the assets to be restored and will
+                incur a cost.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseRestoreDialog} color="primary">
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmRestore} color="primary" autoFocus>
+                Proceed
+              </Button>
             </DialogActions>
           </Dialog>
         </>
