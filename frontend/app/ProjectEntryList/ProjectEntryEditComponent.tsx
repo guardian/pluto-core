@@ -584,6 +584,19 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                       <PermMedia />
                     </IconButton>
                   </Tooltip>
+                  <Box flexGrow={1} />
+                  {project.status == "Completed" && isAdmin && (
+                    <Tooltip title="Restore project assets from deep archive">
+                      <IconButton
+                        style={{ padding: "4px" }}
+                        disableRipple
+                        className={classes.noHoverEffect}
+                        onClick={() => setOpenRestoreDialog(true)}
+                      >
+                        <RestoreIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </Box>
                 <Box
                   display="flex"
@@ -635,17 +648,6 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                       >
                         Download&nbsp;Project&nbsp;File
                       </DownloadProjectButton>
-                    </Tooltip>
-                  ) : null}
-                  {project.status == "Completed" && isAdmin ? (
-                    <Tooltip title="Restore project assets from deep archive">
-                      <IconButton
-                        disableRipple
-                        className={classes.noHoverEffect}
-                        onClick={handleRestoreClick}
-                      >
-                        <RestoreIcon />
-                      </IconButton>
                     </Tooltip>
                   ) : null}
                 </Box>
@@ -860,6 +862,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                   Are you sure you want to restore this project's assets from
                   deep archive?
                 </strong>
+                <br />
+                You are about to restore this project's assets from deep
+                archive.
+                <br />
+                <br />
+                <strong>Please Note:</strong>
+                <br />
                 It may take up to 4 hours for the assets to be restored and will
                 incur a cost.
               </DialogContentText>
