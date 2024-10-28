@@ -19,6 +19,9 @@ import {
   styled,
   Icon,
   DialogTitle,
+  RadioGroup,
+  FormControl,
+  Radio,
 } from "@material-ui/core";
 import {
   getProject,
@@ -129,6 +132,9 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [missingFiles, setMissingFiles] = useState<MissingFiles[]>([]);
   const [userAllowedBoolean, setUserAllowedBoolean] = useState<boolean>(true);
   const [openRestoreDialog, setOpenRestoreDialog] = useState(false);
+  const [retrievalType, setRetrievalType] = useState<"Bulk" | "Standard">(
+    "Bulk"
+  );
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -149,12 +155,17 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       console.log("path", path);
       console.log("isLoggedIn.uid", (await isLoggedIn()).uid);
       console.log("project.name", project.title);
-      const response = await axios.post(`${API_PROJECT_RESTORE}/`, {
-        id: project.id,
-        path: path,
-        user: (await isLoggedIn()).uid,
-        project: project.title,
-      });
+      console.log("retrievalType", retrievalType);
+      const response = await axios.post(
+        `${API_PROJECT_RESTORE}/api/v1/restore`,
+        {
+          id: project.id,
+          path: path,
+          user: (await isLoggedIn()).uid,
+          project: project.title,
+          retrievalType: retrievalType,
+        }
+      );
 
       if (response.status === 200 || 202) {
         console.log("Project restore initiated successfully:", response.data);
@@ -869,9 +880,27 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 <br />
                 <strong>Please Note:</strong>
                 <br />
-                It may take up to 4 hours for the assets to be restored and will
-                incur a cost.
+                Retrieval times and costs vary by type:
               </DialogContentText>
+              <FormControl component="fieldset" style={{ marginTop: "1rem" }}>
+                <RadioGroup
+                  value={retrievalType}
+                  onChange={(e) =>
+                    setRetrievalType(e.target.value as "Bulk" | "Standard")
+                  }
+                >
+                  <FormControlLabel
+                    value="Bulk"
+                    control={<Radio />}
+                    label="Bulk (5-12 hours, lowest cost)"
+                  />
+                  <FormControlLabel
+                    value="Standard"
+                    control={<Radio />}
+                    label="Standard (2-5 hours, highest cost)"
+                  />
+                </RadioGroup>
+              </FormControl>
             </DialogContent>
             <DialogActions>
               <Button onClick={handleCloseRestoreDialog} color="primary">
