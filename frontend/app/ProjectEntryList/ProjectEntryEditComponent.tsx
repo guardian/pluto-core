@@ -135,6 +135,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [retrievalType, setRetrievalType] = useState<"Bulk" | "Standard">(
     "Bulk"
   );
+  const [restoreStats, setRestoreStats] = useState<{
+    numberOfFiles: number;
+    totalSize: number;
+    standardRetrievalCost: number;
+    bulkRetrievalCost: number;
+  } | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -156,16 +163,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       console.log("isLoggedIn.uid", (await isLoggedIn()).uid);
       console.log("project.name", project.title);
       console.log("retrievalType", retrievalType);
-      const response = await axios.post(
-        `${API_PROJECT_RESTORE}/api/v1/restore`,
-        {
-          id: project.id,
-          path: path,
-          user: (await isLoggedIn()).uid,
-          project: project.title,
-          retrievalType: retrievalType,
-        }
-      );
+      const response = await axios.post(`${API_PROJECT_RESTORE}/restore`, {
+        id: project.id,
+        path: path,
+        user: (await isLoggedIn()).uid,
+        project: project.title,
+        retrievalType: retrievalType,
+      });
 
       if (response.status === 200 || 202) {
         console.log("Project restore initiated successfully:", response.data);
@@ -469,8 +473,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     }
   };
 
-  const handleRestoreClick = () => {
-    setOpenRestoreDialog(true);
+  const handleRestoreClick = async () => {
+    const path = await getProjectPath(project.id);
+    if (path) {
+      console.log("Calling getRestoreStats with path: ", path);
+      await getRestoreStats(path);
+      setOpenRestoreDialog(true);
+    }
   };
 
   const handleCloseRestoreDialog = () => {
@@ -480,6 +489,22 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const handleConfirmRestore = () => {
     handleCloseRestoreDialog();
     restoreProject();
+  };
+
+  const getRestoreStats = async (projectPath: string) => {
+    console.log("Calling getRestoreStats with path: ", projectPath);
+    try {
+      setIsLoadingStats(true);
+      const response = await axios.post(`${API_PROJECT_RESTORE}/stats`, {
+        path: projectPath,
+      });
+      console.log("Raw response data:", response.data);
+      setRestoreStats(response.data);
+    } catch (error) {
+      console.error("Failed to get restore stats:", error);
+    } finally {
+      setIsLoadingStats(false);
+    }
   };
 
   return (
@@ -602,7 +627,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                         style={{ padding: "4px" }}
                         disableRipple
                         className={classes.noHoverEffect}
-                        onClick={() => setOpenRestoreDialog(true)}
+                        onClick={handleRestoreClick}
                       >
                         <RestoreIcon />
                       </IconButton>
@@ -874,13 +899,20 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                   deep archive?
                 </strong>
                 <br />
-                You are about to restore this project's assets from deep
-                archive.
-                <br />
-                <br />
-                <strong>Please Note:</strong>
-                <br />
-                Retrieval times and costs vary by type:
+                {console.log("Current restoreStats in render:", restoreStats)}
+                {isLoadingStats ? (
+                  "Loading project statistics..."
+                ) : restoreStats ? (
+                  <>
+                    <br />
+                    This restore will retrieve:
+                    <br />• {restoreStats.numberOfFiles.toLocaleString()} files
+                    <br />• {restoreStats.totalSize.toFixed(4)} GB total
+                    <br />
+                  </>
+                ) : (
+                  "No stats available"
+                )}
               </DialogContentText>
               <FormControl component="fieldset" style={{ marginTop: "1rem" }}>
                 <RadioGroup
@@ -889,16 +921,27 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                     setRetrievalType(e.target.value as "Bulk" | "Standard")
                   }
                 >
-                  <FormControlLabel
-                    value="Bulk"
-                    control={<Radio />}
-                    label="Bulk (5-12 hours, lowest cost)"
-                  />
-                  <FormControlLabel
-                    value="Standard"
-                    control={<Radio />}
-                    label="Standard (2-5 hours, highest cost)"
-                  />
+                  {restoreStats &&
+                    (() => {
+                      return (
+                        <>
+                          <FormControlLabel
+                            value="Bulk"
+                            control={<Radio />}
+                            label={`Bulk Restore (5-12 hours, Estimated cost: $${restoreStats.bulkRetrievalCost.toFixed(
+                              4
+                            )} USD)`}
+                          />
+                          <FormControlLabel
+                            value="Standard"
+                            control={<Radio />}
+                            label={`Standard Restore(2-5 hours, Estimated cost: $${restoreStats.standardRetrievalCost.toFixed(
+                              4
+                            )} USD)`}
+                          />
+                        </>
+                      );
+                    })()}
                 </RadioGroup>
               </FormControl>
             </DialogContent>
