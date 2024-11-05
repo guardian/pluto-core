@@ -489,7 +489,11 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const handleConfirmRestore = async () => {
     handleCloseRestoreDialog();
     try {
-      await axios.get(`${API_PROJECT_RESTORE}/notify`);
+      console.log("Sending notification to restore project");
+      await axios.post(`${API_PROJECT_RESTORE}/notify`, {
+        id: project.id,
+      });
+      console.log("Notification sent, restoring project");
       await restoreProject();
     } catch (error) {
       console.error("Failed to send notification:", error);
