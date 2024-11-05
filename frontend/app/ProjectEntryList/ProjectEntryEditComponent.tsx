@@ -486,9 +486,18 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     setOpenRestoreDialog(false);
   };
 
-  const handleConfirmRestore = () => {
+  const handleConfirmRestore = async () => {
     handleCloseRestoreDialog();
-    restoreProject();
+    try {
+      await axios.get(`${API_PROJECT_RESTORE}/notify`);
+      await restoreProject();
+    } catch (error) {
+      console.error("Failed to send notification:", error);
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        "Failed to send restore notification"
+      );
+    }
   };
 
   const getRestoreStats = async (projectPath: string) => {
