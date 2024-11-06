@@ -142,6 +142,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     bulkRetrievalCost: number;
   } | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [canDirectRestore, setCanDirectRestore] = useState<boolean>(false);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -489,17 +490,26 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const handleConfirmRestore = async () => {
     handleCloseRestoreDialog();
     try {
-      console.log("Sending notification to restore project");
-      await axios.post(`${API_PROJECT_RESTORE}/notify`, {
-        id: project.id,
-      });
-      console.log("Notification sent, restoring project");
-      await restoreProject();
+      if (!canDirectRestore) {
+        const loggedIn = await isLoggedIn();
+        await axios.post(`${API_PROJECT_RESTORE}/notify`, {
+          id: project.id,
+          user: loggedIn.uid,
+        });
+        SystemNotification.open(
+          SystemNotifcationKind.Success,
+          "Restore request has been sent for approval"
+        );
+      } else {
+        await restoreProject();
+      }
     } catch (error) {
-      console.error("Failed to send notification:", error);
+      console.error("Failed to process restore:", error);
       SystemNotification.open(
         SystemNotifcationKind.Error,
-        "Failed to send restore notification"
+        canDirectRestore
+          ? "Failed to restore project"
+          : "Failed to send restore request"
       );
     }
   };
@@ -520,6 +530,30 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       setIsLoadingStats(false);
     }
   };
+
+  useEffect(() => {
+    const checkRestorePermissions = async () => {
+      try {
+        const loggedIn = await isLoggedIn();
+        // if (loggedIn.isAdmin) {
+        //   setCanDirectRestore(true);
+        //   return;
+        // }
+        const response = await axios.post(
+          `${API_PROJECT_RESTORE}/permissions`,
+          {
+            user: loggedIn.uid,
+          }
+        );
+        setCanDirectRestore(response.data.allowed);
+      } catch (error) {
+        console.error("Failed to check restore permissions:", error);
+        setCanDirectRestore(false);
+      }
+    };
+
+    checkRestorePermissions();
+  }, []);
 
   return (
     <>
@@ -904,67 +938,74 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             aria-describedby="restore-dialog-description"
           >
             <DialogTitle id="restore-dialog-title">
-              Confirm Project Restore
+              {canDirectRestore
+                ? "Confirm Project Restore"
+                : "Request Project Restore"}
             </DialogTitle>
             <DialogContent>
               <DialogContentText id="restore-dialog-description">
-                <strong>
-                  Are you sure you want to restore this project's assets from
-                  deep archive?
-                </strong>
-                <br />
-                {console.log("Current restoreStats in render:", restoreStats)}
                 {isLoadingStats ? (
                   "Loading project statistics..."
                 ) : restoreStats ? (
                   <>
+                    <strong>
+                      {canDirectRestore
+                        ? "Are you sure you want to restore this project's assets from deep archive?"
+                        : "Request to restore this project's assets from deep archive"}
+                    </strong>
+                    <br />
                     <br />
                     This restore will retrieve:
                     <br />• {restoreStats.numberOfFiles.toLocaleString()} files
                     <br />• {restoreStats.totalSize.toFixed(4)} GB total
                     <br />
+                    <br />
+                    {!canDirectRestore &&
+                      "If you proceed, a request will be sent to the admin team. Once approved, the restore process will take approximately 24 hours to complete."}
                   </>
                 ) : (
                   "No stats available"
                 )}
               </DialogContentText>
-              <FormControl component="fieldset" style={{ marginTop: "1rem" }}>
-                <RadioGroup
-                  value={retrievalType}
-                  onChange={(e) =>
-                    setRetrievalType(e.target.value as "Bulk" | "Standard")
-                  }
-                >
-                  {restoreStats &&
-                    (() => {
-                      return (
-                        <>
-                          <FormControlLabel
-                            value="Bulk"
-                            control={<Radio />}
-                            label={`Bulk Restore (5-12 hours, Estimated cost: $${restoreStats.bulkRetrievalCost.toFixed(
-                              4
-                            )} USD)`}
-                          />
-                          <FormControlLabel
-                            value="Standard"
-                            control={<Radio />}
-                            label={`Standard Restore(2-5 hours, Estimated cost: $${restoreStats.standardRetrievalCost.toFixed(
-                              4
-                            )} USD)`}
-                          />
-                        </>
-                      );
-                    })()}
-                </RadioGroup>
-              </FormControl>
+              {canDirectRestore && (
+                <FormControl component="fieldset" style={{ marginTop: "1rem" }}>
+                  <RadioGroup
+                    value={retrievalType}
+                    onChange={(e) =>
+                      setRetrievalType(e.target.value as "Bulk" | "Standard")
+                    }
+                  >
+                    {restoreStats &&
+                      (() => {
+                        return (
+                          <>
+                            <FormControlLabel
+                              value="Bulk"
+                              control={<Radio />}
+                              label={`Bulk Restore (5-12 hours, Estimated cost: $${restoreStats.bulkRetrievalCost.toFixed(
+                                4
+                              )} USD)`}
+                            />
+                            <FormControlLabel
+                              value="Standard"
+                              control={<Radio />}
+                              label={`Standard Restore(2-5 hours, Estimated cost: $${restoreStats.standardRetrievalCost.toFixed(
+                                4
+                              )} USD)`}
+                            />
+                          </>
+                        );
+                      })()}
+                  </RadioGroup>
+                </FormControl>
+              )}
             </DialogContent>
             <DialogActions>
               <Button onClick={handleCloseRestoreDialog} color="primary">
                 Cancel
               </Button>
               <Button onClick={handleConfirmRestore} color="primary" autoFocus>
-                Proceed
+                {canDirectRestore ? "Proceed" : "Request Restore"}
               </Button>
             </DialogActions>
           </Dialog>
