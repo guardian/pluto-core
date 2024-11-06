@@ -510,6 +510,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       setIsLoadingStats(true);
       const response = await axios.post(`${API_PROJECT_RESTORE}/stats`, {
         path: projectPath,
+        id: project.id,
       });
       console.log("Raw response data:", response.data);
       setRestoreStats(response.data);
