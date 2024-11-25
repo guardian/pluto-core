@@ -495,6 +495,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         await axios.post(`${API_PROJECT_RESTORE}/notify`, {
           id: project.id,
           user: loggedIn.uid,
+          retrievalType: retrievalType,
         });
         SystemNotification.open(
           SystemNotifcationKind.Success,
@@ -961,44 +962,31 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                     <br />
                     <br />
                     {!canDirectRestore &&
-                      "If you proceed, a request will be sent to the admin team. Once approved, the restore process will take approximately 24 hours to complete."}
+                      "If you proceed, a request will be sent to the admin team for approval. Once approved, the restore process will take:"}
                   </>
                 ) : (
                   "No stats available"
                 )}
               </DialogContentText>
-              {canDirectRestore && (
-                <FormControl component="fieldset" style={{ marginTop: "1rem" }}>
-                  <RadioGroup
-                    value={retrievalType}
-                    onChange={(e) =>
-                      setRetrievalType(e.target.value as "Bulk" | "Standard")
-                    }
-                  >
-                    {restoreStats &&
-                      (() => {
-                        return (
-                          <>
-                            <FormControlLabel
-                              value="Bulk"
-                              control={<Radio />}
-                              label={`Bulk Restore (5-12 hours, Estimated cost: $${restoreStats.bulkRetrievalCost.toFixed(
-                                4
-                              )} USD)`}
-                            />
-                            <FormControlLabel
-                              value="Standard"
-                              control={<Radio />}
-                              label={`Standard Restore(2-5 hours, Estimated cost: $${restoreStats.standardRetrievalCost.toFixed(
-                                4
-                              )} USD)`}
-                            />
-                          </>
-                        );
-                      })()}
-                  </RadioGroup>
-                </FormControl>
-              )}
+              <FormControl component="fieldset" style={{ marginTop: "1rem" }}>
+                <RadioGroup
+                  value={retrievalType}
+                  onChange={(e) =>
+                    setRetrievalType(e.target.value as "Bulk" | "Standard")
+                  }
+                >
+                  <FormControlLabel
+                    value="Bulk"
+                    control={<Radio />}
+                    label={`Bulk (5-12 hours, cheaper option)`}
+                  />
+                  <FormControlLabel
+                    value="Standard"
+                    control={<Radio />}
+                    label={`Standard (2-5 hours, more expensive option)`}
+                  />
+                </RadioGroup>
+              </FormControl>
             </DialogContent>
             <DialogActions>
               <Button onClick={handleCloseRestoreDialog} color="primary">
