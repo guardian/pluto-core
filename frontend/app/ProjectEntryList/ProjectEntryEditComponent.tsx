@@ -962,7 +962,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                     <br />
                     <br />
                     {!canDirectRestore &&
-                      "If you proceed, a request will be sent to the admin team for approval. Once approved, the restore process will take:"}
+                      "If you proceed, a request will be sent to the Multimedia Tech admin team for approval. Please select your preferred restore speed:"}
                   </>
                 ) : (
                   "No stats available"
@@ -978,12 +978,12 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                   <FormControlLabel
                     value="Bulk"
                     control={<Radio />}
-                    label={`Bulk (5-12 hours, cheaper option)`}
+                    label={`Non urgent (5-12 hours, cheaper option)`}
                   />
                   <FormControlLabel
                     value="Standard"
                     control={<Radio />}
-                    label={`Standard (2-5 hours, more expensive option)`}
+                    label={`Urgent (2-5 hours, more expensive option)`}
                   />
                 </RadioGroup>
               </FormControl>
