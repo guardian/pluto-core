@@ -5,7 +5,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.module.scala.JsonScalaEnumeration
 import com.google.inject.Inject
-import models.{EntryStatus, ProjectEntry, ProjectEntryRow, ProjectEntrySerializer}
+import models.{EntryStatus, ProjectEntry, ProjectEntryRow, ProjectEntrySerializer, EntryStatusMapper}
 import org.slf4j.LoggerFactory
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
@@ -111,23 +111,51 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
       val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.getProjectsEligibleForStatusChange(newStatus, commissionId)
 
       dbConfig.db.run(action).flatMap { projectTuples =>
-
-        // Map over each tuple, update the project's status and then update it in the database
-        val updateActions = projectTuples.map { case (id, project) =>
-          val updatedProject = project.copy(status = newStatus)
-          val dbUpdateAction = dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id === id).update(updatedProject))
-          // Convert the DB update future to a Try and then send the updated project to RabbitMQ
-          dbUpdateAction.transformWith {
-            case Success(_) =>
-              val projectSerializer = new ProjectEntrySerializer {}
-              implicit val projectsWrites: Writes[ProjectEntry] = projectSerializer.projectEntryWrites
-              rabbitMqPropagator ! ChangeEvent(Seq(projectsWrites.writes(updatedProject)), Some("project"), UpdateOperation())
-              Future.successful(Success(id))
-            case Failure(err) => Future.successful(Failure(err))
+        if (projectTuples.isEmpty) {
+          logger.info(s"No projects found needing status update to $newStatus for commission $commissionId")
+          Future.successful(Seq.empty)
+        } else {
+          logger.info(s"Found ${projectTuples.length} projects to update to $newStatus for commission $commissionId")
+          logger.info(s"Project IDs to update: ${projectTuples.map(_._1).mkString(", ")}")
+          
+          // Create a batch update action
+          val updateActions = projectTuples.map { case (id, project) =>
+            val updatedProject = project.copy(status = newStatus)
+            
+            // Wrap the update in a transaction
+            val updateAction = (for {
+              updateCount <- TableQuery[ProjectEntryRow].filter(_.id === id).update(updatedProject).transactionally
+              _ = logger.info(s"Updated project $id to status $newStatus (affected rows: $updateCount)")
+            } yield updateCount).asTry
+            
+            dbConfig.db.run(updateAction).map { result =>
+              result match {
+                case Success(count) if count > 0 =>
+                  // Only send RabbitMQ message if update was successful
+                  val projectSerializer = new ProjectEntrySerializer {}
+                  implicit val projectsWrites: Writes[ProjectEntry] = projectSerializer.projectEntryWrites
+                  rabbitMqPropagator ! ChangeEvent(Seq(projectsWrites.writes(updatedProject)), Some("project"), UpdateOperation())
+                  logger.info(s"Successfully updated project $id and sent to RabbitMQ")
+                  Success(id)
+                case Success(0) =>
+                  logger.error(s"Project $id update affected 0 rows")
+                  Failure(new Exception(s"Project $id update failed - no rows affected"))
+                case Failure(err) =>
+                  logger.error(s"Failed to update project $id", err)
+                  Failure(err)
+              }
+            }
+          }
+          
+          Future.sequence(updateActions).map { results =>
+            val (successes, failures) = results.partition(_.isSuccess)
+            logger.info(s"Update complete: ${successes.length} successes, ${failures.length} failures")
+            if (failures.nonEmpty) {
+              logger.error(s"Failed project updates: ${failures.map(_.failed.get.getMessage).mkString(", ")}")
+            }
+            results
           }
         }
-        // Execute all update actions concurrently using Future.sequence
-        Future.sequence(updateActions)
       }
     }
   }
