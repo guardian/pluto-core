@@ -108,25 +108,24 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
   }
 
     def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int): Future[Seq[Try[Int]]] = {
-      val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.getProjectsEligibleForStatusChange(newStatus, commissionId)
+      val action = ProjectEntry.getProjectsEligibleForStatusChange(newStatus, commissionId)
 
-      dbConfig.db.run(action).flatMap { projectTuples =>
-
-        // Map over each tuple, update the project's status and then update it in the database
-        val updateActions = projectTuples.map { case (id, project) =>
+      dbConfig.db.run(action).flatMap { projectsWithIds =>
+        val updateActions = projectsWithIds.map { case (projectId, project) =>
           val updatedProject = project.copy(status = newStatus)
-          val dbUpdateAction = dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id === id).update(updatedProject))
-          // Convert the DB update future to a Try and then send the updated project to RabbitMQ
+          val dbUpdateAction = dbConfig.db.run(
+            TableQuery[ProjectEntryRow].filter(_.id === projectId).update(updatedProject)
+          )
+          
           dbUpdateAction.transformWith {
             case Success(_) =>
               val projectSerializer = new ProjectEntrySerializer {}
               implicit val projectsWrites: Writes[ProjectEntry] = projectSerializer.projectEntryWrites
               rabbitMqPropagator ! ChangeEvent(Seq(projectsWrites.writes(updatedProject)), Some("project"), UpdateOperation())
-              Future.successful(Success(id))
+              Future.successful(Success(projectId))
             case Failure(err) => Future.successful(Failure(err))
           }
         }
-        // Execute all update actions concurrently using Future.sequence
         Future.sequence(updateActions)
       }
     }
