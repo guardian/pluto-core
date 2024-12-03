@@ -284,8 +284,8 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
         )
         getProjects(filteredQuery)
 
-      case EntryStatus.InProgress =>
-        // No changes needed for In Progress
+      case EntryStatus.InProduction =>
+        // No changes needed for In Production
         DBIO.successful(Seq.empty[(Int, ProjectEntry)])
 
       case _ => 
