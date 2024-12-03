@@ -99,12 +99,8 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
           val successfulProjects = updatedProjects.collect { case Success(project) => project }
           logger.info(s"Project status change to $newStatus for ${successfulProjects.length} projects.")
           originalSender ! akka.actor.Status.Success(successfulProjects.length)
-
-          if (successfulProjects.nonEmpty) {
-            logger.info(s"Sending ${successfulProjects.length} updates to RabbitMQ.")
-            }
-          }
-          confirmHandled(evt)
+      }
+      confirmHandled(evt)
   }
 
     def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int): Future[Seq[Try[Int]]] = {
@@ -118,11 +114,9 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
           logger.info(s"Found ${projectTuples.length} projects to update to $newStatus for commission $commissionId")
           logger.info(s"Project IDs to update: ${projectTuples.map(_._1).mkString(", ")}")
           
-          // Create a batch update action
           val updateActions = projectTuples.map { case (id, project) =>
             val updatedProject = project.copy(status = newStatus)
             
-            // Wrap the update in a transaction
             val updateAction = (for {
               updateCount <- TableQuery[ProjectEntryRow].filter(_.id === id).update(updatedProject).transactionally
               _ = logger.info(s"Updated project $id to status $newStatus (affected rows: $updateCount)")
@@ -131,10 +125,13 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
             dbConfig.db.run(updateAction).map { result =>
               result match {
                 case Success(count) if count > 0 =>
-                  // Only send RabbitMQ message if update was successful
+                  // Send RabbitMQ message without capturing the result
                   val projectSerializer = new ProjectEntrySerializer {}
                   implicit val projectsWrites: Writes[ProjectEntry] = projectSerializer.projectEntryWrites
-                  rabbitMqPropagator ! ChangeEvent(Seq(projectsWrites.writes(updatedProject)), Some("project"), UpdateOperation())
+                  rabbitMqPropagator.tell(
+                    ChangeEvent(Seq(projectsWrites.writes(updatedProject)), Some("project"), UpdateOperation()),
+                    Actor.noSender
+                  )
                   logger.info(s"Successfully updated project $id and sent to RabbitMQ")
                   Success(id)
                 case Success(0) =>
