@@ -108,25 +108,42 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
   }
 
     def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int): Future[Seq[Try[Int]]] = {
-      val action = ProjectEntry.getProjectsEligibleForStatusChange(newStatus, commissionId)
-
-      dbConfig.db.run(action).flatMap { projectsWithIds =>
-        val updateActions = projectsWithIds.map { case (projectId, project) =>
+      // Wrap all operations in a single transaction
+      val action = for {
+        projectsWithIds <- ProjectEntry.getProjectsEligibleForStatusChange(newStatus, commissionId)
+        _ = logger.info(s"Commission $commissionId status change to $newStatus: Found ${projectsWithIds.length} eligible projects: ${projectsWithIds.map(_._1).mkString(", ")}")
+        updates <- DBIO.sequence(projectsWithIds.map { case (projectId, project) =>
           val updatedProject = project.copy(status = newStatus)
-          val dbUpdateAction = dbConfig.db.run(
-            TableQuery[ProjectEntryRow].filter(_.id === projectId).update(updatedProject)
-          )
-          
-          dbUpdateAction.transformWith {
-            case Success(_) =>
-              val projectSerializer = new ProjectEntrySerializer {}
-              implicit val projectsWrites: Writes[ProjectEntry] = projectSerializer.projectEntryWrites
-              rabbitMqPropagator ! ChangeEvent(Seq(projectsWrites.writes(updatedProject)), Some("project"), UpdateOperation())
-              Future.successful(Success(projectId))
-            case Failure(err) => Future.successful(Failure(err))
+          TableQuery[ProjectEntryRow]
+            .filter(_.id === projectId)
+            .update(updatedProject)
+            .map(result => (result, updatedProject))
+        }).transactionally
+      } yield projectsWithIds.zip(updates)
+
+      dbConfig.db.run(action).flatMap { results =>
+        // Handle RabbitMQ notifications after successful DB transaction
+        val successfulUpdates = results.collect { 
+          case ((projectId, _), (updateResult, _)) if updateResult > 0 => projectId 
+        }
+        logger.info(s"Commission $commissionId status change to $newStatus: Successfully updated ${successfulUpdates.length} projects: ${successfulUpdates.mkString(", ")}")
+        
+        results.map { case ((projectId, _), (updateResult, updatedProject)) =>
+          if (updateResult > 0) {
+            val projectSerializer = new ProjectEntrySerializer {}
+            implicit val projectsWrites: Writes[ProjectEntry] = projectSerializer.projectEntryWrites
+            rabbitMqPropagator ! ChangeEvent(Seq(projectsWrites.writes(updatedProject)), Some("project"), UpdateOperation())
+            Future.successful(Success(projectId))
+          } else {
+            logger.error(s"Commission $commissionId status change to $newStatus: Failed to update project $projectId")
+            Future.successful(Failure(new RuntimeException(s"Failed to update project $projectId")))
           }
         }
-        Future.sequence(updateActions)
+        Future.sequence(results.map(_._2))
+      }.recover {
+        case err =>
+          logger.error(s"Failed to update projects for commission $commissionId to status $newStatus", err)
+          Seq(Failure(err))
       }
     }
   }

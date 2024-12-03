@@ -261,15 +261,21 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
     newStatus match {
       case EntryStatus.Completed | EntryStatus.Killed =>
         val filteredQuery = baseQuery
-          .filter(_.status =!= EntryStatus.Completed)
-          .filter(_.status =!= EntryStatus.Killed)
+          .filter(p => 
+            p.status.isDefined && // Make sure status is not null
+            p.status =!= EntryStatus.Completed && 
+            p.status =!= EntryStatus.Killed
+          )
         getProjects(filteredQuery)
 
       case EntryStatus.Held =>
         val filteredQuery = baseQuery
-          .filter(_.status =!= EntryStatus.Completed)
-          .filter(_.status =!= EntryStatus.Killed)
-          .filter(_.status =!= EntryStatus.Held)
+          .filter(p => 
+            p.status.isDefined && // Make sure status is not null
+            p.status =!= EntryStatus.Completed && 
+            p.status =!= EntryStatus.Killed && 
+            p.status =!= EntryStatus.Held
+          )
         getProjects(filteredQuery)
 
       case _ => DBIO.successful(Seq.empty[(Int, ProjectEntry)])
