@@ -108,26 +108,62 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
   }
 
     def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int): Future[Seq[Try[Int]]] = {
-      val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.getProjectsEligibleForStatusChange(newStatus, commissionId)
-
-      dbConfig.db.run(action).flatMap { projectTuples =>
-
-        // Map over each tuple, update the project's status and then update it in the database
-        val updateActions = projectTuples.map { case (id, project) =>
+      logger.info(s"Starting project updates for commission $commissionId to status $newStatus")
+      
+      // First, get current commission status to verify
+      val action = for {
+        commission <- TableQuery[PlutoCommissionRow]
+          .filter(_.id === commissionId)
+          .result
+          .headOption
+        _ = if (commission.isEmpty) throw new RuntimeException(s"Commission $commissionId not found")
+        _ = if (commission.get.status != newStatus) throw new RuntimeException(s"Commission $commissionId status mismatch: expected $newStatus but found ${commission.get.status}")
+        
+        projectsWithIds <- ProjectEntry.getProjectsEligibleForStatusChange(newStatus, commissionId)
+        _ = logger.info(s"Commission $commissionId status change to $newStatus: Found ${projectsWithIds.length} eligible projects: ${projectsWithIds.map { case (id, proj) => s"$id (current: ${proj.status})" }.mkString(", ")}")
+        
+        updates <- DBIO.sequence(projectsWithIds.map { case (projectId, project) =>
           val updatedProject = project.copy(status = newStatus)
-          val dbUpdateAction = dbConfig.db.run(TableQuery[ProjectEntryRow].filter(_.id === id).update(updatedProject))
-          // Convert the DB update future to a Try and then send the updated project to RabbitMQ
-          dbUpdateAction.transformWith {
-            case Success(_) =>
+          TableQuery[ProjectEntryRow]
+            .filter(_.id === projectId)
+            .update(updatedProject)
+            .map(result => (result, updatedProject))
+        }).transactionally
+      } yield (projectsWithIds, updates)
+
+      dbConfig.db.run(action).flatMap { case (projectsWithIds, results) =>
+        val successfulUpdates = results.collect { 
+          case (updateResult, _) if updateResult > 0 => updateResult 
+        }
+        
+        logger.info(s"Commission $commissionId status change to $newStatus: Successfully updated ${successfulUpdates.length}/${projectsWithIds.length} projects")
+        
+        val updateResults = projectsWithIds.zip(results).map { 
+          case ((projectId, _), (updateResult, updatedProject)) =>
+            if (updateResult > 0) {
               val projectSerializer = new ProjectEntrySerializer {}
               implicit val projectsWrites: Writes[ProjectEntry] = projectSerializer.projectEntryWrites
               rabbitMqPropagator ! ChangeEvent(Seq(projectsWrites.writes(updatedProject)), Some("project"), UpdateOperation())
-              Future.successful(Success(id))
-            case Failure(err) => Future.successful(Failure(err))
+              Success(projectId)
+            } else {
+              logger.error(s"Commission $commissionId: Failed to update project $projectId to status $newStatus")
+              Failure(new RuntimeException(s"Failed to update project $projectId"))
+            }
+        }
+        
+        // If not all projects were updated, retry the entire operation
+        if (successfulUpdates.length < projectsWithIds.length) {
+          logger.warn(s"Commission $commissionId: Not all projects were updated (${successfulUpdates.length}/${projectsWithIds.length}). Scheduling retry...")
+          context.system.scheduler.scheduleOnce(5.seconds) {
+            self ! CommissionStatusUpdate(commissionId, newStatus)
           }
         }
-        // Execute all update actions concurrently using Future.sequence
-        Future.sequence(updateActions)
+        
+        Future.successful(updateResults)
+      }.recover {
+        case err =>
+          logger.error(s"Failed to update projects for commission $commissionId to status $newStatus", err)
+          Seq(Failure(err))
       }
     }
   }
