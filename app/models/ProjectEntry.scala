@@ -259,20 +259,37 @@ object ProjectEntry extends ((Option[Int], Int, Option[String], String, Timestam
     val baseQuery = TableQuery[ProjectEntryRow].filter(_.commission === commissionId)
 
     newStatus match {
-      case EntryStatus.Completed | EntryStatus.Killed =>
-        val filteredQuery = baseQuery
-          .filter(_.status =!= EntryStatus.Completed)
-          .filter(_.status =!= EntryStatus.Killed)
+      case EntryStatus.Completed =>
+        // All projects NOT Completed or Killed should be set to Completed
+        val filteredQuery = baseQuery.filter(p => 
+          p.status =!= EntryStatus.Completed && 
+          p.status =!= EntryStatus.Killed
+        )
+        getProjects(filteredQuery)
+
+      case EntryStatus.Killed =>
+        // All projects NOT Completed or Killed should be set to Killed
+        val filteredQuery = baseQuery.filter(p => 
+          p.status =!= EntryStatus.Completed && 
+          p.status =!= EntryStatus.Killed
+        )
         getProjects(filteredQuery)
 
       case EntryStatus.Held =>
-        val filteredQuery = baseQuery
-          .filter(_.status =!= EntryStatus.Completed)
-          .filter(_.status =!= EntryStatus.Killed)
-          .filter(_.status =!= EntryStatus.Held)
+        // All projects NOT Completed, Killed or Held should be set to Held
+        val filteredQuery = baseQuery.filter(p => 
+          p.status =!= EntryStatus.Completed && 
+          p.status =!= EntryStatus.Killed &&
+          p.status =!= EntryStatus.Held
+        )
         getProjects(filteredQuery)
 
-      case _ => DBIO.successful(Seq.empty[(Int, ProjectEntry)])
+      case EntryStatus.InProgress =>
+        // No changes needed for In Progress
+        DBIO.successful(Seq.empty[(Int, ProjectEntry)])
+
+      case _ => 
+        DBIO.successful(Seq.empty[(Int, ProjectEntry)])
     }
   }
 
