@@ -103,7 +103,7 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
       confirmHandled(evt)
   }
 
-    def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int): Future[Seq[Try[Int]]] = {
+    def updateCommissionProjects(newStatus: EntryStatus.Value, commissionId: Int, projectsToVerify: Set[Int] = Set.empty): Future[Seq[Try[Int]]] = {
       val action: DBIO[Seq[(Int, ProjectEntry)]] = ProjectEntry.getProjectsEligibleForStatusChange(newStatus, commissionId)
 
       dbConfig.db.run(action).flatMap { projectTuples =>
@@ -117,15 +117,26 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
           val updateActions = projectTuples.map { case (id, project) =>
             val updatedProject = project.copy(status = newStatus)
             
+            // Create a transaction with explicit commit logging
             val updateAction = (for {
+              _ <- DBIO.successful(logger.info(s"Starting transaction for project $id"))
               updateCount <- TableQuery[ProjectEntryRow].filter(_.id === id).update(updatedProject).transactionally
-              _ = logger.info(s"Updated project $id to status $newStatus (affected rows: $updateCount)")
+              _ = logger.info(s"Database update for project $id completed with count: $updateCount")
+              // Verify the update by reading back the data
+              verification <- TableQuery[ProjectEntryRow].filter(_.id === id).result.headOption
+              _ = verification match {
+                case Some(updated) if updated.status == newStatus => 
+                  logger.info(s"Verified project $id is now status: ${updated.status}")
+                case Some(updated) => 
+                  logger.warn(s"Project $id status mismatch - expected: $newStatus, actual: ${updated.status}")
+                case None =>
+                  logger.error(s"Could not verify project $id - not found after update")
+              }
             } yield updateCount).asTry
             
             dbConfig.db.run(updateAction).map { result =>
               result match {
                 case Success(count) if count > 0 =>
-                  // Send RabbitMQ message without capturing the result
                   val projectSerializer = new ProjectEntrySerializer {}
                   implicit val projectsWrites: Writes[ProjectEntry] = projectSerializer.projectEntryWrites
                   rabbitMqPropagator.tell(
@@ -135,7 +146,7 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
                   logger.info(s"Successfully updated project $id and sent to RabbitMQ")
                   Success(id)
                 case Success(0) =>
-                  logger.error(s"Project $id update affected 0 rows")
+                  logger.error(s"Project $id update affected 0 rows - possible concurrency issue or project already updated")
                   Failure(new Exception(s"Project $id update failed - no rows affected"))
                 case Failure(err) =>
                   logger.error(s"Failed to update project $id", err)
@@ -149,6 +160,9 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
             logger.info(s"Update complete: ${successes.length} successes, ${failures.length} failures")
             if (failures.nonEmpty) {
               logger.error(s"Failed project updates: ${failures.map(_.failed.get.getMessage).mkString(", ")}")
+            }
+            if (projectsToVerify.nonEmpty) {
+              logger.info(s"Final status check for specific projects: ${projectsToVerify.mkString(", ")}")
             }
             results
           }
