@@ -69,6 +69,7 @@ import CommissionDeleteDataComponent from "./CommissionsList/CommissionDeleteDat
 import AssetFolderProjectBackups from "./ProjectEntryList/AssetFolderProjectBackups";
 import DeletionRecords from "./DeletionRecords/DeletionRecords.tsx";
 import DeletionRecord from "./DeletionRecords/DeletionRecord.tsx";
+import HelpPage from "./HelpPage/HelpPage.tsx";
 
 library.add(faSearch);
 
@@ -398,6 +399,7 @@ class App extends React.Component {
                     <Route path="/defaults/" component={ServerDefaults} />
                     <Route path="/deleted/:id" component={DeletionRecord} />
                     <Route path="/deleted/" component={DeletionRecords} />
+                    <Route path="/help/" component={HelpPage} />
                     <Route
                       exact
                       path="/"
