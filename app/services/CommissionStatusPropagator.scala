@@ -18,6 +18,8 @@ import javax.inject.Named
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
+import scala.concurrent.duration._
+import scala.util.control.NonFatal
 object CommissionStatusPropagator {
   private val logger = LoggerFactory.getLogger(getClass)
   def props = Props[CommissionStatusPropagator]
@@ -50,32 +52,33 @@ object CommissionStatusPropagator {
  * @param configuration
  * @param dbConfigProvider
  */
-class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProvider,@Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef) extends Actor with models.ProjectEntrySerializer
-  {
+class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProvider, @Named("rabbitmq-propagator") implicit val rabbitMqPropagator: ActorRef)(implicit system: akka.actor.ActorSystem) extends Actor with models.ProjectEntrySerializer {
   import CommissionStatusPropagator._
+  import scala.concurrent.duration._
 
-  private final var state:CommissionStatusPropagatorState = CommissionStatusPropagatorState(Map())
+  private final var state: CommissionStatusPropagatorState = CommissionStatusPropagatorState(Map())
   private final var restoreCompleted = false
-    val logger = Logger(getClass)
-    val dbConfig = dbConfigProvider.get[PostgresProfile]
+  val logger = Logger(getClass)
+  val dbConfig = dbConfigProvider.get[PostgresProfile]
 
-    /**
-   * Logs to the journal that this event has been handled, so it won't be re-tried
-   * @param evtAsObject event object
-   */
-  def confirmHandled(evtAsObject:  CommissionStatusEvent):Unit = {
-//    persist(EventHandled(evtAsObject.uuid)){ handledEventMarker=>
-//      logger.debug(s"marked event ${evtAsObject.uuid} as handled")
-//      state = state.removed(evtAsObject)
-//    }
+  // Use a mutable map to track handled events
+  private val handledEvents = scala.collection.mutable.Set[UUID]()
+
+  private def withRetry[T](maxRetries: Int, delay: FiniteDuration)(block: => Future[T]): Future[T] = {
+    block.recoverWith {
+      case NonFatal(e) if maxRetries > 0 =>
+        logger.warn(s"Operation failed, retrying in $delay... ($maxRetries retries left)", e)
+        akka.pattern.after(delay, using = system.scheduler)(withRetry(maxRetries - 1, delay)(block))
+    }
   }
 
-    override def receive: Receive = {
-    /**
-      * re-run any messages stuck in the actor's state. This is sent at 5 minute intervals by ClockSingleton and
-      * is there to ensure that events get retried (e.g. one instance loses network connectivity before postgres update is sent,
-      * it is restarted, so another instance will pick up the update)
-      */
+  def confirmHandled(evtAsObject: CommissionStatusEvent): Unit = {
+    handledEvents += evtAsObject.uuid
+    logger.debug(s"Marked event ${evtAsObject.uuid} as handled")
+    state = state.removed(evtAsObject)
+  }
+
+  override def receive: Receive = {
     case RetryFromState =>
       if (state.size != 0) logger.warn(s"CommissionStatusPropagator retrying ${state.size} events from state")
 
@@ -89,7 +92,9 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
 
       logger.info(s"$uuid: Received notification that commission $commissionId changed to $newStatus")
 
-      val futureResult: Future[Seq[Try[Int]]] = updateCommissionProjects(newStatus, commissionId)
+      val futureResult = withRetry(3, 1.second) {
+        updateCommissionProjects(newStatus, commissionId)
+      }
 
       futureResult.onComplete {
         case Failure(err) =>
