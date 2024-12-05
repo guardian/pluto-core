@@ -114,51 +114,51 @@ class CommissionStatusPropagator @Inject() (dbConfigProvider: DatabaseConfigProv
           logger.info(s"Found ${projectTuples.length} projects to update to $newStatus for commission $commissionId")
           logger.info(s"Project IDs to update: ${projectTuples.map(_._1).mkString(", ")}")
           
-          val updateActions = projectTuples.map { case (id, project) =>
-            val updatedProject = project.copy(status = newStatus)
-            
-            // Combine update and verification in a single transaction
-            val updateAction = (for {
-              _ <- DBIO.successful(logger.info(s"Starting transaction for project $id"))
-              updateCount <- TableQuery[ProjectEntryRow].filter(_.id === id).update(updatedProject)
-              _ = logger.info(s"Database update for project $id completed with count: $updateCount")
-              // Verify the update within the same transaction
-              verification <- TableQuery[ProjectEntryRow].filter(_.id === id).result.headOption
-              _ = verification match {
-                case Some(updated) if updated.status == newStatus => 
-                  logger.info(s"Verified project $id is now status: ${updated.status}")
-                case Some(updated) => 
-                  logger.warn(s"Project $id status mismatch - expected: $newStatus, actual: ${updated.status}")
-                  throw new Exception(s"Project $id status mismatch - expected: $newStatus, actual: ${updated.status}")
-                case None =>
-                  logger.error(s"Could not verify project $id - not found after update")
-                  throw new Exception(s"Project $id not found after update")
+          // Process updates sequentially using foldLeft
+          projectTuples.foldLeft(Future.successful(Seq.empty[Try[Int]])) { case (accFuture, (id, project)) =>
+            accFuture.flatMap { acc =>
+              val updatedProject = project.copy(status = newStatus)
+              
+              val updateAction = (for {
+                _ <- DBIO.successful(logger.info(s"Starting transaction for project $id"))
+                updateCount <- TableQuery[ProjectEntryRow].filter(_.id === id).update(updatedProject)
+                _ = logger.info(s"Database update for project $id completed with count: $updateCount")
+                verification <- TableQuery[ProjectEntryRow].filter(_.id === id).result.headOption
+                _ = verification match {
+                  case Some(updated) if updated.status == newStatus => 
+                    logger.info(s"Verified project $id is now status: ${updated.status}")
+                  case Some(updated) => 
+                    logger.warn(s"Project $id status mismatch - expected: $newStatus, actual: ${updated.status}")
+                    throw new Exception(s"Project $id status mismatch - expected: $newStatus, actual: ${updated.status}")
+                  case None =>
+                    logger.error(s"Could not verify project $id - not found after update")
+                    throw new Exception(s"Project $id not found after update")
+                }
+              } yield (updateCount, verification)).transactionally
+
+              dbConfig.db.run(updateAction).map {
+                case (count, Some(updated)) if updated.status == newStatus =>
+                  val projectSerializer = new ProjectEntrySerializer {}
+                  implicit val projectsWrites: Writes[ProjectEntry] = projectSerializer.projectEntryWrites
+                  rabbitMqPropagator.tell(
+                    ChangeEvent(Seq(projectsWrites.writes(updatedProject)), Some("project"), UpdateOperation()),
+                    Actor.noSender
+                  )
+                  logger.info(s"Successfully updated project $id and sent to RabbitMQ")
+                  acc :+ Success(id)
+                case (_, Some(updated)) =>
+                  logger.error(s"Project $id update verification failed - status mismatch")
+                  acc :+ Failure(new Exception(s"Project $id update verification failed"))
+                case (_, None) =>
+                  logger.error(s"Project $id update verification failed - project not found")
+                  acc :+ Failure(new Exception(s"Project $id not found after update"))
+              }.recover {
+                case err =>
+                  logger.error(s"Failed to update project $id", err)
+                  acc :+ Failure(err)
               }
-            } yield (updateCount, verification)).transactionally.asTry
-            
-            dbConfig.db.run(updateAction).map {
-              case Success((count, Some(updated))) if updated.status == newStatus =>
-                val projectSerializer = new ProjectEntrySerializer {}
-                implicit val projectsWrites: Writes[ProjectEntry] = projectSerializer.projectEntryWrites
-                rabbitMqPropagator.tell(
-                  ChangeEvent(Seq(projectsWrites.writes(updatedProject)), Some("project"), UpdateOperation()),
-                  Actor.noSender
-                )
-                logger.info(s"Successfully updated project $id and sent to RabbitMQ")
-                Success(id)
-              case Success((_, Some(updated))) =>
-                logger.error(s"Project $id update verification failed - status mismatch")
-                Failure(new Exception(s"Project $id update verification failed"))
-              case Success((_, None)) =>
-                logger.error(s"Project $id update verification failed - project not found")
-                Failure(new Exception(s"Project $id not found after update"))
-              case Failure(err) =>
-                logger.error(s"Failed to update project $id", err)
-                Failure(err)
             }
-          }
-          
-          Future.sequence(updateActions).map { results =>
+          }.map { results =>
             val (successes, failures) = results.partition(_.isSuccess)
             logger.info(s"Update complete: ${successes.length} successes, ${failures.length} failures")
             if (failures.nonEmpty) {
