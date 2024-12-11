@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     # The first two permissions are needed to interact with GitHub's OIDC Token endpoint.
     # The second set of two permissions are needed to write test results back to GH
     permissions:
