@@ -43,8 +43,8 @@ const HelpPage: React.FC<RouteComponentProps> = (props) => {
         <br />
         <br />
         <a
-            href="https://sites.google.com/guardian.co.uk/multimedia/home/contacts"
-            target="_blank"
+          href="https://sites.google.com/guardian.co.uk/multimedia/home/contacts"
+          target="_blank"
         >
           Multimedia Support Contacts
         </a>
