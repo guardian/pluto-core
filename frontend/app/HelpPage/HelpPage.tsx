@@ -40,6 +40,14 @@ const HelpPage: React.FC<RouteComponentProps> = (props) => {
         >
           E-mail multimediatech@theguardian.com
         </a>
+        <br />
+        <br />
+        <a
+            href="https://sites.google.com/guardian.co.uk/multimedia/home/contacts"
+            target="_blank"
+        >
+          Multimedia Support Contacts
+        </a>
       </Paper>
     </>
   );
