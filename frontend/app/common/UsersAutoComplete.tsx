@@ -61,10 +61,15 @@ const UsersAutoComplete: React.FC<UsersAutoCompleteProps> = (props) => {
   };
 
   const inputDidChange = (evt: ChangeEvent<{}>, newValue: string | null) => {
-    if (props.shouldValidate) {
-      if (newValue) validateEntry(newValue);
-    }
     setInputValue(newValue ?? "");
+  };
+
+  const keyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key == "Enter") {
+      if (props.shouldValidate) {
+        validateEntry(inputValue);
+      }
+    }
   };
 
   return (
@@ -78,6 +83,7 @@ const UsersAutoComplete: React.FC<UsersAutoCompleteProps> = (props) => {
       onChange={props.valueDidChange}
       //onInputChange is fired when the user types
       onInputChange={inputDidChange}
+      onKeyDown={keyPress}
       options={userOptions}
       renderInput={(params) => (
         <TextField
