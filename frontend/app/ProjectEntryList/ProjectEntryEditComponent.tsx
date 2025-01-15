@@ -258,7 +258,10 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           }
           await getProjectTypeData(project.projectTypeId);
         } catch (error) {
-          if (error.message == "Request failed with status code 404") {
+          if (
+            (error as { message?: string }).message ===
+            "Request failed with status code 404"
+          ) {
             setErrorDialog(true);
           }
         }
@@ -527,6 +530,25 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       setRestoreStats(response.data);
     } catch (error) {
       console.error("Failed to get restore stats:", error);
+      // Check if it's the specific "no objects found" error
+      if (
+        axios.isAxiosError(error) &&
+        error.response?.status === 500 &&
+        error.response?.data?.includes("no objects found in any bucket")
+      ) {
+        setRestoreStats({
+          numberOfFiles: 0,
+          totalSize: 0,
+          standardRetrievalCost: 0,
+          bulkRetrievalCost: 0,
+        });
+      } else {
+        // Handle other errors
+        SystemNotification.open(
+          SystemNotifcationKind.Error,
+          "Failed to check restore availability"
+        );
+      }
     } finally {
       setIsLoadingStats(false);
     }
@@ -947,6 +969,8 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
               <DialogContentText id="restore-dialog-description">
                 {isLoadingStats ? (
                   "Loading project statistics..."
+                ) : restoreStats?.numberOfFiles === 0 ? (
+                  "No files were found in the archive for this project."
                 ) : restoreStats ? (
                   <>
                     <strong>
@@ -957,8 +981,8 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                     <br />
                     <br />
                     This restore will retrieve:
-                    <br />• {restoreStats.numberOfFiles.toLocaleString()} files
-                    <br />• {restoreStats.totalSize.toFixed(4)} GB total
+                    <br />• {restoreStats!.numberOfFiles.toLocaleString()} files
+                    <br />• {restoreStats!.totalSize.toFixed(4)} GB total
                     <br />
                     <br />
                     {!canDirectRestore &&
@@ -968,33 +992,41 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                   "No stats available"
                 )}
               </DialogContentText>
-              <FormControl component="fieldset" style={{ marginTop: "1rem" }}>
-                <RadioGroup
-                  value={retrievalType}
-                  onChange={(e) =>
-                    setRetrievalType(e.target.value as "Bulk" | "Standard")
-                  }
-                >
-                  <FormControlLabel
-                    value="Bulk"
-                    control={<Radio />}
-                    label={`Non urgent (5-12 hours, cheaper option)`}
-                  />
-                  <FormControlLabel
-                    value="Standard"
-                    control={<Radio />}
-                    label={`Urgent (2-5 hours, more expensive option)`}
-                  />
-                </RadioGroup>
-              </FormControl>
+              {(restoreStats?.numberOfFiles ?? 0) > 0 && !canDirectRestore && (
+                <FormControl component="fieldset" style={{ marginTop: "1rem" }}>
+                  <RadioGroup
+                    value={retrievalType}
+                    onChange={(e) =>
+                      setRetrievalType(e.target.value as "Bulk" | "Standard")
+                    }
+                  >
+                    <FormControlLabel
+                      value="Bulk"
+                      control={<Radio />}
+                      label={`Non urgent (5-12 hours, cheaper option)`}
+                    />
+                    <FormControlLabel
+                      value="Standard"
+                      control={<Radio />}
+                      label={`Urgent (2-5 hours, more expensive option)`}
+                    />
+                  </RadioGroup>
+                </FormControl>
+              )}
             </DialogContent>
             <DialogActions>
               <Button onClick={handleCloseRestoreDialog} color="primary">
-                Cancel
+                Close
               </Button>
-              <Button onClick={handleConfirmRestore} color="primary" autoFocus>
-                {canDirectRestore ? "Proceed" : "Request Restore"}
-              </Button>
+              {(restoreStats?.numberOfFiles ?? 0) > 0 && (
+                <Button
+                  onClick={handleConfirmRestore}
+                  color="primary"
+                  autoFocus
+                >
+                  {canDirectRestore ? "Proceed" : "Request Restore"}
+                </Button>
+              )}
             </DialogActions>
           </Dialog>
         </>
