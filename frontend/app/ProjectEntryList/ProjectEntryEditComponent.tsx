@@ -384,23 +384,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     }
   };
 
-  const checkProjectDate = () => {
-    const createdUNIX = Math.floor(new Date(project.created).getTime() / 1000);
-    const currentUNIX = Date.now() / 1000;
-    if (currentUNIX - createdUNIX < 86400) {
-      return false;
-    } else {
-      return true;
-    }
+  const isProjectOlderThanOneDay = () => {
+    const createdUNIX = new Date(project.created).getTime();
+    const currentUNIX = Date.now();
+    return currentUNIX - createdUNIX >= 86400000;
   };
 
-  const newStatusIsCompleted = () => {
-    if (project.status == "Completed") {
-      return true;
-    } else {
-      return false;
-    }
-  };
+  const newStatusIsCompleted = () => project.status === "Completed";
 
   const abortChanges = () => {
     if (initialProject) {
@@ -681,7 +671,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                     />
                   </Tooltip>
                   {hasChanges() ? ( // Only render if changes have been made
-                    checkProjectDate() ? (
+                    isProjectOlderThanOneDay() ? (
                       <div
                         style={{ height: "48px" }}
                         className={classes.formButtons}
