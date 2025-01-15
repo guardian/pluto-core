@@ -96,6 +96,20 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = ({
     }
   };
 
+  const isCommissionOlderThanOneDay = () => {
+    const createdUNIX = new Date(commission.created).getTime();
+    const currentUNIX = Date.now();
+    return currentUNIX - createdUNIX >= 86400000;
+  };
+
+  const newStatusIsCompleted = () => formState.status === "Completed";
+
+  const abortChanges = () => {
+    if (commission) {
+      setFormState(commission);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className={classes.root}>
       <Grid container xs={12} direction="row" spacing={3}>
@@ -226,21 +240,48 @@ const CommissionEntryForm: React.FC<CommissionEntryFormProps> = ({
             />
           </Tooltip>
 
-          <div className={classes.formButtons}>
-            {hasUnsavedChanges && !isSaving ? (
-              <Button
-                type="submit"
-                variant="contained"
-                color="secondary"
-                // disabled={props.isSaving}
-              >
-                Save changes
-              </Button>
-            ) : null}
-            {isSaving ? (
+          {hasUnsavedChanges && !isSaving ? (
+            isCommissionOlderThanOneDay() ? (
+              <div className={classes.formButtons}>
+                <Button type="submit" variant="contained" color="secondary">
+                  Save changes
+                </Button>
+              </div>
+            ) : newStatusIsCompleted() ? (
+              <div>
+                <Typography style={{ marginTop: "30px" }}>
+                  Are you sure you want to set this commission to Completed so
+                  soon? If you have just copied a large number of files to a
+                  project asset folder then please wait another day before
+                  setting this to Completed, to ensure all the files for this
+                  commission have been properly backed up.
+                </Typography>
+                <div className={classes.formButtons}>
+                  <Button
+                    color="secondary"
+                    variant="contained"
+                    onClick={() => abortChanges()}
+                  >
+                    Come back later
+                  </Button>
+                  <Button type="submit" variant="contained" color="secondary">
+                    Save changes
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className={classes.formButtons}>
+                <Button type="submit" variant="contained" color="secondary">
+                  Save changes
+                </Button>
+              </div>
+            )
+          ) : null}
+          {isSaving ? (
+            <div className={classes.formButtons}>
               <CircularProgress style={{ width: "18px", height: "18px" }} />
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </Grid>
       </Grid>
     </form>
