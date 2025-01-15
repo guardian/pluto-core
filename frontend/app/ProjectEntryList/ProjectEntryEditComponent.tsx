@@ -992,7 +992,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                   "No stats available"
                 )}
               </DialogContentText>
-              {(restoreStats?.numberOfFiles ?? 0) > 0 && !canDirectRestore && (
+              {(restoreStats?.numberOfFiles ?? 0) > 0 && (
                 <FormControl component="fieldset" style={{ marginTop: "1rem" }}>
                   <RadioGroup
                     value={retrievalType}
