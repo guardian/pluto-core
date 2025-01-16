@@ -65,7 +65,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         @Named("rabbitmq-matrix") rabbitMqMatrix:ActorRef,
                                         @Named("auditor") auditor:ActorRef,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
-                                       (implicit fileEntryDAO:FileEntryDAO, injector: Injector, mat: Materializer)
+                                       (implicit fileEntryDAO:FileEntryDAO, assetFolderFileEntryDAO:AssetFolderFileEntryDAO, injector: Injector, mat: Materializer)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
     with UpdateTitleRequestSerializer with FileEntrySerializer with AssetFolderFileEntrySerializer
@@ -697,6 +697,20 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                     fileEntryDAO
                       .deleteFromDisk(entry)
                       .andThen(_ => fileEntryDAO.deleteRecord(entry))
+                  case None =>
+                    logger.info(s"Ignoring non-backup file at ${entry.filepath}")
+                }
+              })
+            }
+            )
+            projectEntry.associatedAssetFolderFiles(true, implicitConfig).map(fileList => {
+              fileList.map(entry => {
+                entry.backupOf match {
+                  case Some(value) =>
+                    logger.info(s"Attempting to delete the file at: ${entry.filepath}")
+                    assetFolderFileEntryDAO
+                      .deleteFromDisk(entry)
+                      .andThen(_ => assetFolderFileEntryDAO.deleteRecord(entry))
                   case None =>
                     logger.info(s"Ignoring non-backup file at ${entry.filepath}")
                 }
