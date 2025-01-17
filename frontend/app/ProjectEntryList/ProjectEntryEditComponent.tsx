@@ -981,12 +981,11 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                     <br />
                     <br />
                     This restore will retrieve:
-                    <br />• {restoreStats!.numberOfFiles.toLocaleString()} files
-                    <br />• {restoreStats!.totalSize.toFixed(4)} GB total
+                    <br />• {restoreStats.numberOfFiles.toLocaleString()} files
+                    <br />• {restoreStats.totalSize.toFixed(4)} GB total
                     <br />
                     <br />
-                    {!canDirectRestore &&
-                      "If you proceed, a request will be sent to the Multimedia Tech admin team for approval. Please select your preferred restore speed:"}
+                    Please select your preferred restore speed:
                   </>
                 ) : (
                   "No stats available"
@@ -1003,12 +1002,16 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                     <FormControlLabel
                       value="Bulk"
                       control={<Radio />}
-                      label={`Non urgent (5-12 hours, cheaper option)`}
+                      label={`Non urgent (5-12 hours, $${restoreStats?.bulkRetrievalCost.toFixed(
+                        2
+                      )})`}
                     />
                     <FormControlLabel
                       value="Standard"
                       control={<Radio />}
-                      label={`Urgent (2-5 hours, more expensive option)`}
+                      label={`Urgent (2-5 hours, $${restoreStats?.standardRetrievalCost.toFixed(
+                        2
+                      )})`}
                     />
                   </RadioGroup>
                 </FormControl>
