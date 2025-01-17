@@ -578,6 +578,21 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     checkRestorePermissions();
   }, []);
 
+
+  const isProjectOlderThanOneDay = () => {
+    const createdUNIX = new Date(project.created).getTime();
+    const currentUNIX = Date.now();
+    return currentUNIX - createdUNIX >= 86400000;
+  };
+
+  const newStatusIsCompleted = () => project.status === "Completed";
+
+  const abortChanges = () => {
+    if (initialProject) {
+      setProject(initialProject);
+    }
+  };
+
   return (
     <>
       {userAllowedBoolean ? (
@@ -863,20 +878,65 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                       label="Private"
                     />
                   </Tooltip>
-                  <div
-                    style={{ height: "48px" }}
-                    className={classes.formButtons}
-                  >
-                    {hasChanges() && ( // Only render if changes have been made
-                      <Button
-                        type="submit"
-                        color="secondary"
-                        variant="contained"
+                  {hasChanges() ? ( // Only render if changes have been made
+                    isProjectOlderThanOneDay() ? (
+                      <div
+                        style={{ height: "48px" }}
+                        className={classes.formButtons}
                       >
-                        Save changes
-                      </Button>
-                    )}
-                  </div>
+                        <Button
+                          type="submit"
+                          color="secondary"
+                          variant="contained"
+                        >
+                          Save changes
+                        </Button>
+                      </div>
+                    ) : newStatusIsCompleted() ? (
+                      <div>
+                        <Typography style={{ marginTop: "30px" }}>
+                          Are you sure you want to set this project to Completed
+                          so soon? If you have just copied a large number of
+                          files to the project asset folder then please wait
+                          another day before setting this to Completed, to
+                          ensure all the files for this project have been
+                          properly backed up.
+                        </Typography>
+                        <div
+                          style={{ height: "48px" }}
+                          className={classes.formButtons}
+                        >
+                          <Button
+                            color="secondary"
+                            variant="contained"
+                            onClick={() => abortChanges()}
+                          >
+                            Come back later
+                          </Button>
+                          <Button
+                            type="submit"
+                            color="secondary"
+                            variant="contained"
+                          >
+                            Save changes
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        style={{ height: "48px" }}
+                        className={classes.formButtons}
+                      >
+                        <Button
+                          type="submit"
+                          color="secondary"
+                          variant="contained"
+                        >
+                          Save changes
+                        </Button>
+                      </div>
+                    )
+                  ) : null}
                 </Grid>
               </Grid>
             </form>
