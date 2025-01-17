@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { RouteComponentProps, useHistory, useLocation } from "react-router-dom";
+
 import {
   Box,
   Button,
@@ -16,6 +17,11 @@ import {
   Tooltip,
   Typography,
   styled,
+  Icon,
+  DialogTitle,
+  RadioGroup,
+  FormControl,
+  Radio,
 } from "@material-ui/core";
 import {
   getProject,
@@ -51,6 +57,7 @@ import ProjectFileUpload from "./ProjectFileUpload";
 import FolderIcon from "@material-ui/icons/Folder";
 import BuildIcon from "@material-ui/icons/Build";
 import LaunchIcon from "@material-ui/icons/Launch";
+import RestoreIcon from "@material-ui/icons/Restore";
 
 declare var deploymentRootPath: string;
 
@@ -96,6 +103,15 @@ const DownloadProjectButton = styled(Button)({
   },
 });
 
+const RestoreButton = styled(Button)({
+  marginLeft: "8px",
+  marginRight: "0px",
+  minWidth: "240px",
+  "&:hover": {
+    backgroundColor: "#A9A9A9",
+  },
+});
+
 const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   props
 ) => {
@@ -115,6 +131,18 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [initialProject, setInitialProject] = useState<Project | null>(null);
   const [missingFiles, setMissingFiles] = useState<MissingFiles[]>([]);
   const [userAllowedBoolean, setUserAllowedBoolean] = useState<boolean>(true);
+  const [openRestoreDialog, setOpenRestoreDialog] = useState(false);
+  const [retrievalType, setRetrievalType] = useState<"Bulk" | "Standard">(
+    "Bulk"
+  );
+  const [restoreStats, setRestoreStats] = useState<{
+    numberOfFiles: number;
+    totalSize: number;
+    standardRetrievalCost: number;
+    bulkRetrievalCost: number;
+  } | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [canDirectRestore, setCanDirectRestore] = useState<boolean>(false);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -123,6 +151,68 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       setProjectType(response.data.result as ProjectType);
     } catch (err) {
       console.error("Could not load project type information: ", err);
+    }
+  };
+
+  const API_PROJECT_RESTORE = "/project-restore";
+
+  const restoreProject = async () => {
+    try {
+      const path = await getProjectPath(project.id);
+      console.log("project.id", project.id);
+      console.log("path", path);
+      console.log("isLoggedIn.uid", (await isLoggedIn()).uid);
+      console.log("project.name", project.title);
+      console.log("retrievalType", retrievalType);
+      const response = await axios.post(`${API_PROJECT_RESTORE}/restore`, {
+        id: project.id,
+        path: path,
+        user: (await isLoggedIn()).uid,
+        project: project.title,
+        retrievalType: retrievalType,
+      });
+
+      if (response.status === 200 || 202) {
+        console.log("Project restore initiated successfully:", response.data);
+      } else {
+        throw new Error(
+          `Project restore failed with status: ${response.status}`
+        );
+      }
+
+      await updateProject({ ...project, status: "In Production" });
+
+      // Update local state
+      setProject({ ...project, status: "In Production" });
+      setInitialProject({ ...project, status: "In Production" });
+
+      // Notify the user of success
+      SystemNotification.open(
+        SystemNotifcationKind.Success,
+        `Successfully restored project "${project.title}" to "In Production" status.`
+      );
+    } catch (error) {
+      console.error("Failed to restore project:", error);
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        `Failed to restore the project. Please try again.`
+      );
+    }
+  };
+
+  const getProjectPath = async (projectId: number) => {
+    try {
+      const response = await axios.get(`/api/project/${projectId}/assetfolder`);
+      const projectPath = response.data.result.value;
+      console.log(
+        "project path request got ",
+        projectPath,
+        "for project id",
+        projectId
+      );
+      return projectPath;
+    } catch (err) {
+      console.error("Could not load project path information: ", err);
     }
   };
 
@@ -168,7 +258,10 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           }
           await getProjectTypeData(project.projectTypeId);
         } catch (error) {
-          if (error.message == "Request failed with status code 404") {
+          if (
+            (error as { message?: string }).message ===
+            "Request failed with status code 404"
+          ) {
             setErrorDialog(true);
           }
         }
@@ -384,6 +477,107 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     }
   };
 
+  const handleRestoreClick = async () => {
+    const path = await getProjectPath(project.id);
+    if (path) {
+      console.log("Calling getRestoreStats with path: ", path);
+      await getRestoreStats(path);
+      setOpenRestoreDialog(true);
+    }
+  };
+
+  const handleCloseRestoreDialog = () => {
+    setOpenRestoreDialog(false);
+  };
+
+  const handleConfirmRestore = async () => {
+    handleCloseRestoreDialog();
+    try {
+      if (!canDirectRestore) {
+        const loggedIn = await isLoggedIn();
+        await axios.post(`${API_PROJECT_RESTORE}/notify`, {
+          id: project.id,
+          user: loggedIn.uid,
+          retrievalType: retrievalType,
+        });
+        SystemNotification.open(
+          SystemNotifcationKind.Success,
+          "Restore request has been sent for approval"
+        );
+      } else {
+        await restoreProject();
+      }
+    } catch (error) {
+      console.error("Failed to process restore:", error);
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        canDirectRestore
+          ? "Failed to restore project"
+          : "Failed to send restore request"
+      );
+    }
+  };
+
+  const getRestoreStats = async (projectPath: string) => {
+    console.log("Calling getRestoreStats with path: ", projectPath);
+    try {
+      setIsLoadingStats(true);
+      const response = await axios.post(`${API_PROJECT_RESTORE}/stats`, {
+        path: projectPath,
+        id: project.id,
+      });
+      console.log("Raw response data:", response.data);
+      setRestoreStats(response.data);
+    } catch (error) {
+      console.error("Failed to get restore stats:", error);
+      // Check if it's the specific "no objects found" error
+      if (
+        axios.isAxiosError(error) &&
+        error.response?.status === 500 &&
+        error.response?.data?.includes("no objects found in any bucket")
+      ) {
+        setRestoreStats({
+          numberOfFiles: 0,
+          totalSize: 0,
+          standardRetrievalCost: 0,
+          bulkRetrievalCost: 0,
+        });
+      } else {
+        // Handle other errors
+        SystemNotification.open(
+          SystemNotifcationKind.Error,
+          "Failed to check restore availability"
+        );
+      }
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  useEffect(() => {
+    const checkRestorePermissions = async () => {
+      try {
+        const loggedIn = await isLoggedIn();
+        // if (loggedIn.isAdmin) {
+        //   setCanDirectRestore(true);
+        //   return;
+        // }
+        const response = await axios.post(
+          `${API_PROJECT_RESTORE}/permissions`,
+          {
+            user: loggedIn.uid,
+          }
+        );
+        setCanDirectRestore(response.data.allowed);
+      } catch (error) {
+        console.error("Failed to check restore permissions:", error);
+        setCanDirectRestore(false);
+      }
+    };
+
+    checkRestorePermissions();
+  }, []);
+
   const isProjectOlderThanOneDay = () => {
     const createdUNIX = new Date(project.created).getTime();
     const currentUNIX = Date.now();
@@ -511,6 +705,19 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                       <PermMedia />
                     </IconButton>
                   </Tooltip>
+                  <Box flexGrow={1} />
+                  {project.status == "Completed" && isAdmin && (
+                    <Tooltip title="Restore project assets from deep archive">
+                      <IconButton
+                        style={{ padding: "4px" }}
+                        disableRipple
+                        className={classes.noHoverEffect}
+                        onClick={handleRestoreClick}
+                      >
+                        <RestoreIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </Box>
                 <Box
                   display="flex"
@@ -803,6 +1010,85 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             </DialogContent>
             <DialogActions>
               <Button onClick={closeDialog}>Close</Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
+            open={openRestoreDialog}
+            onClose={handleCloseRestoreDialog}
+            aria-labelledby="restore-dialog-title"
+            aria-describedby="restore-dialog-description"
+          >
+            <DialogTitle id="restore-dialog-title">
+              {canDirectRestore
+                ? "Confirm Project Restore"
+                : "Request Project Restore"}
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="restore-dialog-description">
+                {isLoadingStats ? (
+                  "Loading project statistics..."
+                ) : restoreStats?.numberOfFiles === 0 ? (
+                  "No files were found in the archive for this project."
+                ) : restoreStats ? (
+                  <>
+                    <strong>
+                      {canDirectRestore
+                        ? "Are you sure you want to restore this project's assets from deep archive?"
+                        : "Request to restore this project's assets from deep archive"}
+                    </strong>
+                    <br />
+                    <br />
+                    This restore will retrieve:
+                    <br />• {restoreStats.numberOfFiles.toLocaleString()} files
+                    <br />• {restoreStats.totalSize.toFixed(4)} GB total
+                    <br />
+                    <br />
+                    Please select your preferred restore speed:
+                  </>
+                ) : (
+                  "No stats available"
+                )}
+              </DialogContentText>
+              {(restoreStats?.numberOfFiles ?? 0) > 0 && (
+                <FormControl component="fieldset" style={{ marginTop: "1rem" }}>
+                  <RadioGroup
+                    value={retrievalType}
+                    onChange={(e) =>
+                      setRetrievalType(e.target.value as "Bulk" | "Standard")
+                    }
+                  >
+                    <FormControlLabel
+                      value="Bulk"
+                      control={<Radio />}
+                      label={`Non urgent (5-12 hours, $${restoreStats?.bulkRetrievalCost.toFixed(
+                        2
+                      )})`}
+                    />
+                    <FormControlLabel
+                      value="Standard"
+                      control={<Radio />}
+                      label={`Urgent (2-5 hours, $${restoreStats?.standardRetrievalCost.toFixed(
+                        2
+                      )})`}
+                    />
+                  </RadioGroup>
+                </FormControl>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseRestoreDialog} color="primary">
+                Close
+              </Button>
+              {(restoreStats?.numberOfFiles ?? 0) > 0 && (
+                <Button
+                  onClick={handleConfirmRestore}
+                  color="primary"
+                  autoFocus
+                >
+                  {canDirectRestore ? "Proceed" : "Request Restore"}
+                </Button>
+              )}
             </DialogActions>
           </Dialog>
         </>
