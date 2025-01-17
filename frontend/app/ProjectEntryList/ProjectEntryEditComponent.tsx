@@ -578,7 +578,6 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     checkRestorePermissions();
   }, []);
 
-
   const isProjectOlderThanOneDay = () => {
     const createdUNIX = new Date(project.created).getTime();
     const currentUNIX = Date.now();
