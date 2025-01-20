@@ -705,14 +705,13 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             )
             projectEntry.associatedAssetFolderFiles(true, implicitConfig).map(fileList => {
               fileList.map(entry => {
-                entry.backupOf match {
-                  case Some(value) =>
-                    logger.info(s"Attempting to delete the file at: ${entry.filepath}")
-                    assetFolderFileEntryDAO
-                      .deleteFromDisk(entry)
-                      .andThen(_ => assetFolderFileEntryDAO.deleteRecord(entry))
-                  case None =>
-                    logger.info(s"Ignoring non-backup file at ${entry.filepath}")
+                if (entry.storageId == config.get[Int]("asset_folder_backup_storage")) {
+                  logger.info(s"Attempting to delete the file at: ${entry.filepath}")
+                  assetFolderFileEntryDAO
+                    .deleteFromDisk(entry)
+                    .andThen(_ => assetFolderFileEntryDAO.deleteRecord(entry))
+                } else {
+                  logger.info(s"Ignoring non-backup file at ${entry.filepath}")
                 }
               })
             }
