@@ -59,6 +59,27 @@ class AssetFolderFileEntryDAO @Inject()(dbConfigProvider:DatabaseConfigProvider)
     })
 
   /**
+   * This attempts to delete the file from disk, using the configured storage driver
+   * @param entry AssetFolderFileEntry to delete
+   * @return A future containing either a Right() containing a Boolean indicating whether the delete happened,  or a Left with an error string
+   */
+  def deleteFromDisk(entry:AssetFolderFileEntry):Future[Either[String,Boolean]] = {
+    val maybeStorageDriverFuture = storage(entry).map({
+      case Some(storageRef)=>
+        storageRef.getStorageDriver
+      case None=>
+        None
+    })
+
+    maybeStorageDriverFuture.flatMap({
+      case Some(storagedriver)=>
+        getFullPath(entry).map(fullpath=>Right(storagedriver.deleteFileAtPath(fullpath, entry.version)))
+      case None=>
+        Future(Left("No storage driver configured for storage"))
+    })
+  }
+
+  /**
     * Attempt to delete the underlying record from the database
     * @param entry FileEntry to delete
     * @return A Future with no value on success. On failure, the future fails; pick this up with .recover() or .onComplete
