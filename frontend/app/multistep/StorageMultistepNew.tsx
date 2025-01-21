@@ -3,7 +3,10 @@ import { RouteComponentProps } from "react-router-dom";
 import CommonMultistepContainer from "./common/CommonMultistepContainer";
 import StorageTypeComponent from "./storage/TypeComponent";
 import axios from "axios";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import StorageLoginComponent from "./storage/LoginComponent";
 import StorageSubfolderComponent from "./storage/SubfolderComponent";
 import SummaryComponent from "./storage/SummaryComponent";

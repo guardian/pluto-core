@@ -21,7 +21,7 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: Op
                             originalCommissionerName:Option[String], scheduledCompletion:Timestamp, owner:String,
                             notes:Option[String],
                             @JsonScalaEnumeration(classOf[ProductionOfficeMapper.EnumStatusType]) productionOffice:ProductionOffice.Value,
-                            originalTitle:Option[String], googleFolder:Option[String]) extends PlutoModel {
+                            originalTitle:Option[String], googleFolder:Option[String], confidential: Option[Boolean]) extends PlutoModel {
   private def logger = Logger(getClass)
 
   var projectCount: Option[Int] = None
@@ -89,6 +89,15 @@ case class PlutoCommission (id:Option[Int], collectionId:Option[Int], siteId: Op
     "commissionTitle"->title,
     "commissionDescription"->description.getOrElse("")
   )
+
+  def removeFromDatabase(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Try[Unit]] = id match {
+    case Some(realEntityId)=>
+      db.run(DBIO.seq(
+        TableQuery[PlutoCommissionRow].filter(_.id===realEntityId).delete,
+      ).asTry)
+    case None=>
+      Future(Failure(new RuntimeException("A record must have been saved before it can be removed from the database.")))
+  }
 }
 
 class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoCommission"){
@@ -111,8 +120,9 @@ class PlutoCommissionRow (tag:Tag) extends Table[PlutoCommission](tag,"PlutoComm
   def productionOffice = column[ProductionOffice.Value]("s_production_office")
   def originalTitle = column[Option[String]]("s_original_title")
   def googleFolder = column[Option[String]]("s_google_folder")
+  def confidential = column[Option[Boolean]]("b_confidential")
   
-  def * = (id.?, collectionId, siteId, created, updated, title, status, description, workingGroup, originalCommissionerName, scheduledCompletion, owner, notes, productionOffice, originalTitle, googleFolder) <> (PlutoCommission.tupled, PlutoCommission.unapply)
+  def * = (id.?, collectionId, siteId, created, updated, title, status, description, workingGroup, originalCommissionerName, scheduledCompletion, owner, notes, productionOffice, originalTitle, googleFolder, confidential) <> (PlutoCommission.tupled, PlutoCommission.unapply)
 }
 
 trait PlutoCommissionSerializer extends TimestampSerialization {
@@ -143,7 +153,8 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
       (JsPath \ "notes").writeNullable[String] and
       (JsPath \ "productionOffice").write[ProductionOffice.Value] and
       (JsPath \ "originalTitle").writeNullable[String] and
-      (JsPath \ "googleFolder").writeNullable[String]
+      (JsPath \ "googleFolder").writeNullable[String] and
+      (JsPath \ "confidential").writeNullable[Boolean]
   )(unlift(PlutoCommission.unapply))
 
   implicit val plutoCommissionReads:Reads[PlutoCommission] = (
@@ -162,11 +173,12 @@ trait PlutoCommissionSerializer extends TimestampSerialization {
       (JsPath \ "notes").readNullable[String] and
       (JsPath \ "productionOffice").read[ProductionOffice.Value] and
       (JsPath \ "originalTitle").readNullable[String] and
-      (JsPath \ "googleFolder").readNullable[String]
+      (JsPath \ "googleFolder").readNullable[String] and
+      (JsPath \ "confidential").readNullable[Boolean]
     )(PlutoCommission.apply _)
 }
 
-object PlutoCommission extends ((Option[Int],Option[Int],Option[String],Timestamp,Timestamp,String,EntryStatus.Value,Option[String],Int,Option[String],Timestamp,String,Option[String],ProductionOffice.Value, Option[String], Option[String])=>PlutoCommission)  {
+object PlutoCommission extends ((Option[Int],Option[Int],Option[String],Timestamp,Timestamp,String,EntryStatus.Value,Option[String],Int,Option[String],Timestamp,String,Option[String],ProductionOffice.Value, Option[String], Option[String], Option[Boolean])=>PlutoCommission)  {
   def entryForVsid(vsid:String)(implicit db:slick.jdbc.PostgresProfile#Backend#Database):Future[Option[PlutoCommission]] = {
     val idparts = vsid.split("-")
     if(idparts.length!=2) return Future(None)

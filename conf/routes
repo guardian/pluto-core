@@ -21,7 +21,9 @@ PUT     /api/file/:id                      @controllers.Files.update(id: Int)
 DELETE  /api/file/:id                      @controllers.Files.delete(id: Int,deleteReferenced:Boolean ?=false)
 GET     /api/file/:id/checkOnDisk          @controllers.Files.checkOnDisk(id: Int)
 GET     /api/file/:id/storageMetadata      @controllers.Files.fileMetadata(id:Int)
+GET     /api/file/:id/assetFolderStorageMetadata      @controllers.Files.assetFolderFileMetadata(id:Int)
 POST    /api/file/:projectFileId/changePremiereVersion  @controllers.PremiereVersionConverter.changeVersion(projectFileId:Int, requiredDisplayVersion:String ?= "")
+POST     /api/file/:id/content              @controllers.Files.updateContent(id: Int)
 
 GET     /api/storage                       @controllers.StoragesController.list(startAt:Int ?=0,length:Int ?=100)
 PUT     /api/storage                       @controllers.StoragesController.create
@@ -38,7 +40,7 @@ DELETE  /api/template/:id                  @controllers.ProjectTemplateControlle
 
 GET     /api/project                        @controllers.ProjectEntryController.list(startAt:Int ?=0,length:Int ?=100)
 GET     /api/project/list                   @controllers.ProjectEntryController.list(startAt:Int ?=0,length:Int ?=100)
-PUT     /api/project/list                   @controllers.ProjectEntryController.listFiltered(startAt:Int ?=0,length:Int ?=100)
+PUT     /api/project/list                   @controllers.ProjectEntryController.listFilteredAndSorted(startAt:Int ?=0,length:Int ?=100,  sort:String ?="created", sortDirection:String ?="desc")
 OPTIONS /api/project/list                   @controllers.Application.corsOptions
 GET     /api/project/distinctowners         @controllers.ProjectEntryController.distinctOwners
 
@@ -47,7 +49,10 @@ GET     /api/project/obits                  @controllers.ProjectEntryController.
 
 PUT     /api/project                        @controllers.ProjectEntryController.create
 GET     /api/project/forFilename            @controllers.Files.projectFromFile(filename: String,startAt:Int ?= 0,limit:Int ?=50, includeBackups:Boolean ?=false)
+GET     /api/project/deleted                @controllers.DeletionRecordController.deleted(startAt:Int ?=0,length:Int ?=100)
+GET     /api/project/deleted/:id            @controllers.DeletionRecordController.record(id:Int)
 GET     /api/project/:id/files              @controllers.ProjectEntryController.filesList(id:Int, allVersions:Boolean ?=false)
+GET     /api/project/:id/assetFolderFiles   @controllers.ProjectEntryController.assetFolderFilesList(id:Int, allVersions:Boolean ?=false)
 GET     /api/project/:id                    @controllers.ProjectEntryController.getitem(id: Int)
 GET     /api/project/vsid/:vsid                  @controllers.ProjectEntryController.getByVsid(vsid:String)
 PUT     /api/project/:id/wasopened          @controllers.ProjectEntryController.projectWasOpened(id: Int)
@@ -56,7 +61,13 @@ PUT     /api/project/:id                    @controllers.ProjectEntryController.
 PUT     /api/project/:id/status             @controllers.ProjectEntryController.updateStatus(id:Int)
 GET     /api/project/:id/fixPermissions     @controllers.ProjectEntryController.fixPermissions(id:Int)
 PUT     /api/project/:id/deleteData         @controllers.ProjectEntryController.deleteData(id: Int)
-
+GET     /api/project/:id/deleteJob          @controllers.ProjectEntryController.deleteJob(id: Int)
+GET     /api/project/:id/deleteItems        @controllers.ItemDeleteDataController.listForProject(id: Int)
+GET     /api/project/:id/matrixDeleteJob    @controllers.ProjectEntryController.matrixDeleteJob(id: Int)
+GET     /api/project/:id/matrixDeleteItems  @controllers.MatrixDeleteDataController.listForProject(id: Int)
+GET     /api/project/:id/missingFiles       @controllers.MissingFilesController.missing(id:Int)
+GET     /api/project/:id/removeWarning      @controllers.MissingFilesController.removeWarning(id:Int)
+GET     /api/project/:id/fileDownload       @controllers.ProjectEntryController.fileDownload(id:Int)
 
 GET     /api/valid-users                    @controllers.ProjectEntryController.queryUsersForAutocomplete(prefix:String ?= "", limit:Option[Int])
 GET     /api/known-user                     @controllers.ProjectEntryController.isUserKnown(uname:String ?= "")
@@ -102,6 +113,7 @@ PUT     /api/pluto/commission/list         @controllers.PlutoCommissionControlle
 OPTIONS /api/pluto/commission/list         @controllers.Application.corsOptions
 PUT     /api/pluto/commission/:id           @controllers.PlutoCommissionController.updateByAnyone(id:Int)
 PUT     /api/pluto/commission/:id/status   @controllers.PlutoCommissionController.updateStatus(id:Int)
+PUT     /api/pluto/commission/:id/deleteData    @controllers.ProjectEntryController.deleteCommissionData(id: Int)
 
 GET     /api/assetfolder/lookup            @controllers.AssetFolderController.assetFolderForPath(path:String)
 GET     /api/project/:projectId/assetfolder @controllers.AssetFolderController.assetFolderForProject(projectId:Int)

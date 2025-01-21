@@ -57,7 +57,7 @@ unmanagedResourceDirectories in Test +=  (baseDirectory ( _ /"target/web/public/
 resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 
 libraryDependencies ++= Seq(
-  "org.postgresql" % "postgresql" % "42.2.13.jre6",
+  "org.postgresql" % "postgresql" % "42.7.2",
   // https://mvnrepository.com/artifact/com.typesafe.play/play-slick
   "com.typesafe.play" %% "play-slick" % "4.0.2",
   "com.typesafe.play" %% "play-slick-evolutions" % "4.0.2",
@@ -74,7 +74,7 @@ libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
 //authentication
 libraryDependencies ++= Seq(
   "com.unboundid" % "unboundid-ldapsdk" % "5.0.0",
-  "com.nimbusds" % "nimbus-jose-jwt" % "8.21.1",
+  "com.nimbusds" % "nimbus-jose-jwt" % "9.37.2",
 )
 
 
@@ -87,10 +87,10 @@ libraryDependencies ++= Seq(
 
 // upgrade guava
 // https://mvnrepository.com/artifact/com.google.guava/guava
-libraryDependencies += "com.google.guava" % "guava" % "30.1-jre"
+libraryDependencies += "com.google.guava" % "guava" % "32.1.2-jre"
 
 val akkaManagementVersion = "1.0.8"
-val akkaVersion = "2.6.19"
+val akkaVersion = "2.8.4"
 //messaging persistence and clustering
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
@@ -104,14 +104,14 @@ libraryDependencies ++= Seq(
 )
 
 //explicit akka upgrades for version fixes
-val akkaHttpVersion = "10.1.15"
+val akkaHttpVersion = "10.5.2"
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
 )
 
 //Sentry
-libraryDependencies += "io.sentry" % "sentry-logback" % "5.5.2"
+libraryDependencies += "io.sentry" % "sentry-logback" % "7.5.0"
 
 //Reflections library for scanning classpath
 libraryDependencies += "org.reflections" % "reflections" % "0.9.11"
@@ -120,7 +120,7 @@ libraryDependencies += "com.newmotion" %% "akka-rabbitmq" % "5.1.2"
 
 libraryDependencies += "org.mockito" % "mockito-inline" % "2.8.9"
 
-val awsSdk2Version = "2.18.17"
+val awsSdk2Version = "2.20.143"
 
 libraryDependencies ++= Seq(
   "software.amazon.awssdk" % "s3" % awsSdk2Version,

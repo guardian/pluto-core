@@ -5,7 +5,7 @@ import java.sql.Timestamp
 import java.time.{Instant, LocalDateTime}
 import akka.stream.Materializer
 import drivers.{MatrixStoreDriver, PathMetadata, PathStorage, StorageDriver}
-import models.{FileEntry, FileEntryDAO, StorageEntry}
+import models.{FileEntry, FileEntryDAO, StorageEntry, AssetFolderFileEntryDAO}
 import org.apache.commons.io.input.NullInputStream
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -65,6 +65,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
       private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
+      private implicit val assetFolderFileEntryDAO:AssetFolderFileEntryDAO = injector.instanceOf[AssetFolderFileEntryDAO]
 
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-2" // shouldn't have spaces!
       val testFileNameDest = "/tmp/storageHelperSpecTest-dst-2" // shouldn't have spaces!
@@ -102,6 +103,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
       private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
+      private implicit val assetFolderFileEntryDAO:AssetFolderFileEntryDAO = injector.instanceOf[AssetFolderFileEntryDAO]
 
       val mockedStorageDriver = mock[PathStorage]
       mockedStorageDriver.getReadStream(any[String],any)
@@ -154,6 +156,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
       private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
+      private implicit val assetFolderFileEntryDAO:AssetFolderFileEntryDAO = injector.instanceOf[AssetFolderFileEntryDAO]
 
       // create a test file
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-3" // shouldn't have spaces!
@@ -189,6 +192,7 @@ class StorageHelperSpec extends Specification with Mockito with utils.BuildMyApp
       protected val dbConfigProvider = injector.instanceOf(classOf[DatabaseConfigProvider])
       protected implicit val db = dbConfigProvider.get[JdbcProfile].db
       private implicit val fileEntryDAO:FileEntryDAO = injector.instanceOf[FileEntryDAO]
+      private implicit val assetFolderFileEntryDAO:AssetFolderFileEntryDAO = injector.instanceOf[AssetFolderFileEntryDAO]
 
       // create a test file
       val testFileNameSrc = "/tmp/storageHelperSpecTest-src-5" // shouldn't have spaces!

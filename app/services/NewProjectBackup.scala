@@ -4,20 +4,19 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Keep, Sink}
 import drivers.{StorageDriver, StorageMetadata}
 import helpers.StorageHelper
-import models.{EntryStatus, FileAssociationRow, FileEntry, FileEntryDAO, ProjectEntry, StorageEntry, StorageEntryHelper}
+import models._
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import slick.jdbc.PostgresProfile
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 import slick.jdbc.PostgresProfile.api._
 
 import java.sql.Timestamp
 import java.time.{Duration, Instant}
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 @Singleton
@@ -123,6 +122,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     * @return a Future containing a FileEntry to write to.  This should be saved to the database before proceeding to write.
     */
   def ascertainTarget(maybeSourceFileEntry:Option[FileEntry], maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = {
+    logger.warn(s"In ascertainTarget. maybePrevDestEntry - ${maybePrevDestEntry}")
     (maybeSourceFileEntry, maybePrevDestEntry) match {
       case (Some(sourceEntry), Some(prevDestEntry))=>
         logger.debug(s"${sourceEntry.filepath}: prevDestEntry is $prevDestEntry")
@@ -133,7 +133,8 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
             mtime=Timestamp.from(Instant.now()),
             atime=Timestamp.from(Instant.now()),
             hasContent = false,
-            hasLink = true)
+            hasLink = true,
+            backupOf = sourceEntry.id) // check
           findAvailableVersion(destStorage, intendedTarget)
             .map(correctedTarget=>{
               logger.debug(s"Destination storage ${destStorage.id} ${destStorage.rootpath} supports versioning, nothing will be over-written. Target version number is ${correctedTarget.version+1}")
@@ -173,8 +174,8 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     * @return a Future, with an Option contianing the number of changed rows if an action was taken.
     */
   def makeProjectLink(sourceEntry:FileEntry, destEntry:FileEntry) = {
-    import slick.jdbc.PostgresProfile.api._
     import cats.implicits._
+    import slick.jdbc.PostgresProfile.api._
 
     def addRow(forProjectId:Int) = db.run {
       TableQuery[FileAssociationRow] += (forProjectId, destEntry.id.get)
@@ -196,6 +197,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
   }
 
   private def getTargetFileEntry(sourceEntry:FileEntry, maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry):Future[FileEntry] = {
+    logger.warn(s"In getTargetFileEntry. maybePrevDestEntry: ${maybePrevDestEntry}")
     for {
       targetDestEntry <- ascertainTarget(Some(sourceEntry), maybePrevDestEntry, destStorage)  //if our destStorage supports versioning, then we get a new entry here
       updatedEntryTry <- fileEntryDAO.save(targetDestEntry) //make sure that we get the updated database id of the file
@@ -230,6 +232,7 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
     *         fails on error.
     */
   def performBackup(sourceEntry:FileEntry, maybePrevDestEntry:Option[FileEntry], destStorage:StorageEntry) = {
+    logger.warn(s"maybePrevDestEntry: ${maybePrevDestEntry}")
     for {
       updatedDestEntry <- getTargetFileEntry(sourceEntry, maybePrevDestEntry, destStorage)
       results <- {
@@ -461,8 +464,14 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
   def backupProjects(onlyInProgress:Boolean):Future[BackupResults] = {
     val parallelCopies = config.getOptional[Int]("backup.parallelCopies").getOrElse(1)
 
+    var backupTypes = Array(1,5)
+    val backupTypesSequence = config.getOptional[Seq[Int]]("backup_types").getOrElse(None)
+    if (backupTypesSequence != None) {
+      backupTypes = backupTypesSequence.iterator.toArray
+    }
+
     def getScanSource() = if(onlyInProgress) {
-      ProjectEntry.scanProjectsForStatus(EntryStatus.InProduction)
+      ProjectEntry.scanProjectsForStatusAndTypes(EntryStatus.InProduction, backupTypes)
     } else {
       ProjectEntry.scanAllProjects
     }
@@ -495,6 +504,81 @@ class NewProjectBackup @Inject() (config:Configuration, dbConfigProvider: Databa
         }))(Keep.right)
         .run()
     } yield result
+  }
+
+  /**
+   * Deletes all audio backups for the given project.  This deletes the files from disk via the storage driver,
+   * deletes the ProjectFileAssociation and the FileEntry associated with the backup file.
+   * @param projectAndFiles A 2-tuple consisting of the ProjectEntry representing the project and a list of all the
+   *                        FileEntry objects associated with it
+   * @param storageDrivers Cached map of StorageDrivers, so we don't have to initialise a new one every time
+   * @return A successful Future if all the invalid backups are removed or there were none to remove. A Failed future if
+   *         there is a problem.
+   */
+  def deleteAudioBackupsFor(projectAndFiles:(ProjectEntry, Seq[FileEntry]), storageDrivers:Map[Int, StorageDriver]):Future[Seq[Unit]] = {
+    val p = projectAndFiles._1
+    val backupFiles = projectAndFiles._2.filter(_.backupOf.isDefined)
+
+    val audioBackups = backupFiles.filter(fileEntry=>{
+      if(fileEntry.filepath.endsWith(".cpr")) {
+        logger.debug(s"Found Cubase file: ${fileEntry.filepath}")
+        true
+      } else if(fileEntry.filepath.endsWith(".sesx")) {
+        logger.debug(s"Found Audition file: ${fileEntry.filepath}")
+        true
+      } else {
+        false
+      }
+    })
+
+    logger.info(s"Project ${p.projectTitle} (${p.id.get}) has ${audioBackups.length} audio backups")
+
+    Future.sequence(
+      audioBackups.map(fileEntry=>{
+        storageDrivers.get(fileEntry.storageId) match {
+          case None=>
+            logger.error(s"Could not get a storage driver for ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
+            Future.failed(new RuntimeException("Could not get a storage driver on the second pass, this should not happen!"))
+          case Some(driver)=>
+            if(fileEntry.storageId!=2) {
+              logger.info(s"Deleting backup ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
+              if (driver.deleteFileAtPath(fileEntry.filepath, fileEntry.version)) {
+                logger.info(s"Deleting backup entry ${fileEntry.id}")
+                fileEntry.deleteSelf
+              } else {
+                logger.error(s"Could not delete file ${fileEntry.filepath} on storage id ${fileEntry.storageId}")
+                Future( () )
+              }
+            } else {
+              Future( () )
+            }
+        }
+      })
+    )
+  }
+
+  def deleteAudioBackups:Future[BackupResults] = {
+    loadStorageDrivers().flatMap(drivers=>
+      ProjectEntry
+        .scanAllProjects
+        .map(p=>{
+          logger.info(s"Checking project ${p.projectTitle} for backups")
+          p
+        })
+        .mapAsync(1)(p=>p.associatedFiles(allVersions = true).map((p, _)))
+        .map(projectAndFiles=>{
+          val p = projectAndFiles._1
+          val f = projectAndFiles._2
+          val backupsCount = f.count(_.backupOf.isDefined)
+          logger.info(s"Project ${p.projectTitle} has ${f.length} files of which $backupsCount are backups")
+          projectAndFiles
+        })
+        .mapAsync(1)(projectAndFiles=>deleteAudioBackupsFor(projectAndFiles, drivers))
+        .toMat(Sink.fold(BackupResults.empty(0))((acc, results)=>{
+          acc.copy(successCount = acc.successCount+results.length)
+        }))(Keep.right)
+        .run()
+    )
   }
 }
 

@@ -2,31 +2,31 @@ package controllers
 
 import akka.stream.Materializer
 import auth.BearerTokenAuth
-
-import javax.inject.Inject
 import exceptions.{AlreadyExistsException, BadDataException}
 import helpers.StorageHelper
-import play.api.{Configuration, Logger}
-import play.api.db.slick.DatabaseConfigProvider
-import play.api.mvc._
-import slick.jdbc.PostgresProfile
-import play.api.libs.json._
-import slick.jdbc.PostgresProfile.api._
-
-import scala.concurrent.ExecutionContext.Implicits.global
 import models._
+import play.api.Configuration
 import play.api.cache.SyncCacheApi
-import play.api.inject.Injector
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json._
+import play.api.mvc._
+import services.NewProjectBackup
+import slick.jdbc.PostgresProfile
+import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
+import java.io.{BufferedInputStream, FileInputStream}
+import java.security.MessageDigest
 import java.time.format.DateTimeFormatter
-import scala.concurrent.{CanAwait, Future}
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 
-class Files @Inject() (override val controllerComponents:ControllerComponents,
+
+
+class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: play.api.libs.Files.TemporaryFileCreator, override val controllerComponents:ControllerComponents,
                        override val bearerTokenAuth:BearerTokenAuth,
                        override implicit val config: Configuration, dbConfigProvider: DatabaseConfigProvider, cacheImpl:SyncCacheApi, storageHelper:StorageHelper)
                       (implicit mat:Materializer, fileEntryDAO:FileEntryDAO)
@@ -153,6 +153,127 @@ class Files @Inject() (override val controllerComponents:ControllerComponents,
         Future(BadRequest(Json.obj("status" -> "error", "detail" -> "No upload payload")))
     }
   }}
+
+
+  def updateContent(requestedId: Int) = IsAuthenticatedAsync(parse.multipartFormData) { uid => { request =>
+    implicit val db = dbConfig.db
+    logger.debug(s"updateContent called with requestedId: $requestedId")
+
+    val sha256Option = request.body.dataParts.get("sha256").flatMap(_.headOption)
+    logger.debug(s"SHA256 option received: $sha256Option")
+    def calculateSha256(fileInputStream: FileInputStream): Future[String] = Future {
+      val md = MessageDigest.getInstance("SHA-256")
+      val stream = new BufferedInputStream(fileInputStream)
+
+      try {
+        val buffer = new Array[Byte](8192)
+        Stream.continually(stream.read(buffer)).takeWhile(_ != -1).foreach { bytesRead =>
+          md.update(buffer, 0, bytesRead)
+        }
+        val sha256 = md.digest().map("%02x".format(_)).mkString
+        logger.debug(s"Calculated SHA256: $sha256")
+        sha256
+      } catch {
+        case e: Exception =>
+          println(s"updateContent error: ${e.toString}")
+          logger.error("Error calculating SHA256", e)
+          throw e
+      }
+      finally {
+        stream.close()
+      }
+    }
+
+    request.body.file("file") match {
+      case Some(filePart) =>
+        logger.info(s"File found: ${filePart.filename}, size: ${filePart.fileSize}")
+        println(s"File found: ${filePart.filename}, size: ${filePart.fileSize}")
+        val fileInputStream = new FileInputStream(filePart.ref.path.toFile)
+        calculateSha256(fileInputStream).flatMap { calculatedSha =>
+          logger.debug(s"SHA256 comparison: received $sha256Option, calculated $calculatedSha")
+          println(s"SHA256 comparison: received $sha256Option, calculated $calculatedSha")
+          if (sha256Option.contains(calculatedSha)) {
+            db.run(
+              TableQuery[FileEntryRow].filter(_.id === requestedId).result.headOption.asTry
+            ).flatMap {
+              case Success(Some(fileEntry: FileEntry)) =>
+                logger.info(s"File entry found: $fileEntry")
+                backupFile(fileEntry).flatMap { backupPath =>
+                  logger.info(s"Backup successful: $backupPath")
+                  // Now that the backup has succeeded, proceed with the update
+                  logger.info("About to update file...")
+                  fileEntryDAO.writeStreamToFile(fileEntry, new FileInputStream(filePart.ref.path.toFile)).map { _ =>
+                    logger.info("File content update successful")
+                    Ok(Json.obj("status" -> "ok", "detail" -> "File content has been updated."))
+                  }
+                }.recover { case error: Throwable =>
+                  logger.error(s"Backup failed: ${error}")
+                  println(s"Backup failed: ${error.toString}")
+                  InternalServerError(Json.obj("status" -> "error", "detail" -> s"Backup failed: ${error.toString}"))
+                }
+              case Success(None) =>
+                logger.warn(s"No file entry found for ID $requestedId")
+                println((s"No file entry found for ID $requestedId"))
+                Future.successful(NotFound(Json.obj("status" -> "error", "detail" -> s"File with ID $requestedId not found")))
+              case Failure(error) =>
+                logger.error("Database query failed", error)
+                println("Database query failed", error.toString)
+                Future.successful(InternalServerError(Json.obj("status" -> "error", "detail" -> error.toString)))
+            }
+          } else {
+            logger.warn("SHA256 checksum does not match")
+            println("SHA256 checksum does not match")
+            Future.successful(BadRequest(Json.obj("status" -> "error", "detail" -> s"SHA256 checksum does not match - $sha256Option - $calculatedSha")))
+          }
+        }
+      case None =>
+        logger.warn("No file provided in the request")
+        println("No file provided in the request")
+        Future.successful(BadRequest(Json.obj("status" -> "error", "detail" -> "No file provided")))
+    }
+  }
+  }
+
+
+  def backupFile(fileEntry: FileEntry) = {
+    logger.warn("starting backupFile")
+    Future.sequence(Seq(
+      backupFileToStorage(fileEntry)
+    ))
+      .map(results => {
+        logger.warn(s"backupFile completed, results were $results")
+        results
+      }).map {
+      case Some((_, path)) :: _ => path // Extract the Path from the tuple inside the Some
+      case _ => throw new Exception("No backup path found")
+    }
+  }
+
+  def backupFileToStorage(fileEntry: FileEntry) = {
+    implicit val db = dbConfigProvider.get[PostgresProfile].db
+    logger.warn(s"in backupFileToStorage. fileEntry: ${fileEntry}")
+    for {
+      projectStorage <- StorageEntryHelper.entryFor(fileEntry.storageId)
+      backupStorage <- projectStorage.flatMap(_.backsUpTo).map(StorageEntryHelper.entryFor).getOrElse(Future(None))
+      _ <- Future(logger.warn(s"In backupStorage for. projectStorage: ${projectStorage}, backupStorage: ${backupStorage}"))
+      result <- backupStorage match {
+        case Some(actualBackupStorage) =>
+          logger.warn(s"Creating an incremental backup for ${fileEntry.filepath} on storage ${actualBackupStorage.storageType} ${actualBackupStorage.id}")
+          for {
+            maybeProjectEntry <- ProjectEntry.projectForFileEntry(fileEntry)
+            mostRecentBackup <- if (maybeProjectEntry.isDefined) maybeProjectEntry.get.mostRecentBackup else Future(None)
+            _ <- Future(logger.warn(s"In backupStorage inner for: maybeProjectEntry: ${maybeProjectEntry} mostRecentBackup: ${mostRecentBackup} maybeProjectEntry mostRecentBackup: ${maybeProjectEntry.get.mostRecentBackup}"))
+            result <- backupService.performBackup(fileEntry, mostRecentBackup, actualBackupStorage).map(Some.apply)
+          } yield result
+        case None =>
+          logger.warn(s"Project for ${fileEntry.filepath} is on a storage which has no backup configured. Cannot make an incremental backup for it.")
+          Future(None)
+      }
+    } yield result
+  }.map(result => {
+    logger.warn(s"completed backupFileToStorage, result was $result")
+    result
+  })
 
   def deleteFromDisk(requestedId:Int, targetFile:FileEntry, deleteReferenced: Boolean, isRetry:Boolean=false):Future[Result] = deleteid(requestedId).flatMap({
     case Success(rowCount)=>
@@ -283,5 +404,36 @@ class Files @Inject() (override val controllerComponents:ControllerComponents,
         Future(InternalServerError(Json.obj("status" -> "error", "detail" -> s"Could not look up file: ${error.toString}")))
     })
   }}
+
+  def assetFolderSelectId(requestedId: Int) = {
+    dbConfig.db.run(
+      TableQuery[AssetFolderFileEntryRow].filter(_.id === requestedId).result.asTry
+    )
+  }
+
+  def assetFolderFileMetadata(fileId:Int) = IsAuthenticatedAsync {uid=>{request=>
+    assetFolderSelectId(fileId).flatMap({
+      case Success(rows)=>
+        if(rows.isEmpty){
+          Future(NotFound(Json.obj("status"->"notfound")))
+        } else {
+          storageHelper
+            .assetFolderOnStorageMetadata(rows.head)
+            .map(result=>Ok(Json.obj(
+              "status"->"ok",
+              "metadata"->Json.obj(
+                "size"->result.map(_.size),
+                "lastModified"->result.map(_.lastModified.format(DateTimeFormatter.ISO_DATE_TIME))
+              )
+            )))
+        }
+      case Failure(err)=>
+        logger.error(s"Asset folder file metadata retrieval failed: ${err.getMessage}", err)
+        Future(InternalServerError(Json.obj("status"->"error", "detail"->err.getMessage)))
+    })
+  }}
+
 }
+
+case class RenameFileRequest(newName: String)
 

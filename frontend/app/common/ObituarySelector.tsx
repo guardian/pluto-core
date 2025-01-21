@@ -1,5 +1,5 @@
 import React, { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { Box, Grid, TextField } from "@material-ui/core";
+import { Box, Grid, TextField, makeStyles } from "@material-ui/core";
 import { Autocomplete, Alert } from "@material-ui/lab";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -11,6 +11,20 @@ interface ObituarySelectorProps {
   shouldValidate?: boolean;
 }
 
+const useStyles = makeStyles((theme) => ({
+  root: {
+    position: "relative",
+  },
+  alert: {
+    backgroundColor: theme.palette.background.paper,
+    position: "absolute",
+    top: -90,
+    left: -15,
+    right: 0,
+    zIndex: 1, // to ensure the alert appears on top
+  },
+}));
+
 /**
  * This component provides an auto-complete for known obituaries.
  */
@@ -20,6 +34,7 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
   const [projectId, setProjectId] = useState<number | null>(null);
   const [validationFailed, setValidationFailed] = useState(false);
 
+  const classes = useStyles();
   /**
    * useMemo remembers a value for a given input and will not-recalculate it if the dependency does not change
    * the factory function here performs a lookup for a prefix of `inputValue`.
@@ -92,8 +107,14 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
   }
 
   return (
-    <Grid container direction="column" alignItems="stretch" spacing={2}>
-      <Grid item xs>
+    <Grid
+      container
+      direction="column"
+      alignItems="stretch"
+      spacing={1}
+      className={classes.root}
+    >
+      <Grid item xs={12}>
         <Box minWidth={"400px"} width={"100%"} display="flex">
           {inputValue != "" ? (
             <Autocomplete
@@ -137,8 +158,9 @@ const ObituarySelector: React.FC<ObituarySelectorProps> = (props) => {
         </Box>
       </Grid>
       {validationFailed && props.shouldValidate && (
-        <Grid item xs>
+        <Grid item xs={12}>
           <Alert
+            className={classes.alert}
             variant="outlined"
             severity="error"
             action={

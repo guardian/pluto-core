@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import {
   LinearProgress,
   MenuItem,
   Select,
+  TextField,
   Typography,
 } from "@material-ui/core";
 import { projectCreateStyles } from "./CommonStyles";
 import { useGuardianStyles } from "~/misc/utils";
 
 interface TemplateComponentProps {
-  value?: number;
-  valueDidChange: (newValue: number) => void;
+  templateValue?: number;
+  templateValueDidChange: (newValue: number) => void;
 }
 
 const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
@@ -99,35 +103,40 @@ const TemplateComponent: React.FC<TemplateComponentProps> = (props) => {
 
   //ensure that we have _a_ current value set if the known projects change
   useEffect(() => {
-    if (!props.value && knownProjectTemplates.length > 0) {
+    if (!props.templateValue && knownProjectTemplates.length > 0) {
       const defaultValue =
         defaultProjectTemplate ?? knownProjectTemplates[0].id;
-      props.valueDidChange(defaultValue);
+      props.templateValueDidChange(defaultValue);
     }
   }, [knownProjectTemplates]);
 
   return (
-    <div className={guardianClasses.common_box_size}>
-      <Typography variant={"h3"}>Select project template</Typography>
-      <Typography>
-        The first piece of information we need is a template to base your new
-        project on.
-      </Typography>
-      <div className={classes.floatCentre}>
-        {props.value ? (
-          <Select
-            value={props.value}
-            onChange={(evt) => props.valueDidChange(evt.target.value as number)}
+    <div>
+      <div>
+        {props.templateValue ? (
+          <TextField
+            select
+            style={{ width: 340 }}
+            label="Project template"
+            helperText="Please select a project template"
+            value={props.templateValue}
+            onChange={(evt) =>
+              props.templateValueDidChange(
+                (evt.target.value as unknown) as number
+              )
+            }
+            FormHelperTextProps={{ style: { fontSize: "0.86rem" } }}
+            InputLabelProps={{ shrink: true, style: { fontSize: "1.2rem" } }}
           >
             {knownProjectTemplates.map((template, idx) => (
               <MenuItem value={template.id} key={idx}>
                 {template.name}
               </MenuItem>
             ))}
-          </Select>
+          </TextField>
         ) : null}
         {loading ? <LinearProgress /> : null}
-        {!loading && !props.value ? (
+        {!loading && !props.templateValue ? (
           <Typography>No project templates available</Typography>
         ) : null}
       </div>

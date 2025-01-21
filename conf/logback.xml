@@ -46,12 +46,11 @@
     <logger name="services.actors.MessageProcessorActor" level="WARN"/>
     <logger name="services.actors.MessageProcessorState" level="WARN"/>
     <logger name="services.PlutoProjectTypeScanner" level="WARN"/>
-    <logger name="models.FileEntry" level="INFO" />
-    <logger name="controllers.Files" level="WARN" />
+    <logger name="models.FileEntry" level="WARN" />
     <logger name="postrun.UpdateAdobeUuid" level="INFO"/>
     <logger name="models.ProjectMetadata" level="WARN"/>
     <logger name="postrun.UpdateAdobeUuidSpec" level="WARN"/>
-    <logger name="services.StorageScanner" level="INFO"/>
+    <logger name="services.StorageScanner" level="WARN"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
     <logger name="MockProjectCreationActor" level="DEBUG"/>
     <logger name="services.actors.ProjectCreationActor" level="INFO"/>

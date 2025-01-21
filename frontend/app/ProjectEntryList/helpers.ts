@@ -1,16 +1,24 @@
 import Axios from "axios";
 import axios from "axios";
-import { SystemNotifcationKind, SystemNotification } from "pluto-headers";
+import {
+  SystemNotifcationKind,
+  SystemNotification,
+} from "@guardian/pluto-headers";
+import { saveAs } from "file-saver";
 
 const API = "/api";
 const API_PROJECTS = `${API}/project`;
 const API_PROJECTS_FILTER = `${API_PROJECTS}/list`;
 const API_FILES = `${API}/file`;
 
+declare var deploymentRootPath: string;
+
 interface ProjectsOnPage {
   page?: number;
   pageSize?: number;
   filterTerms?: FilterTerms;
+  order?: string;
+  orderBy?: string | number | symbol;
 }
 
 interface PlutoFilesAPIResponse<T> {
@@ -21,10 +29,20 @@ interface PlutoBucketsAPIResponse<T> {
   buckets: T;
 }
 
+interface PlutoDeleteJobAPIResponse<T> {
+  job_status: T;
+}
+
+interface PlutoItemDeleteDataAPIResponse<T> {
+  results: T;
+}
+
 export const getProjectsOnPage = async ({
   page = 0,
   pageSize = 25,
   filterTerms,
+  order,
+  orderBy,
 }: ProjectsOnPage): Promise<[Project[], number]> => {
   try {
     const {
@@ -35,7 +53,7 @@ export const getProjectsOnPage = async ({
       ? await Axios.put<PlutoApiResponseWithCount<Project[]>>(
           `${API_PROJECTS_FILTER}?startAt=${
             page * pageSize
-          }&length=${pageSize}`,
+          }&length=${pageSize}&sort=${String(orderBy)}&sortDirection=${order}`,
           filterTerms
         )
       : await Axios.get<PlutoApiResponseWithCount<Project[]>>(
@@ -257,9 +275,16 @@ export const translatePremiereVersion = async (
   }
 };
 
-export const getOpenUrl = async (entry: FileEntry) => {
+export const getOpenUrl = async (entry: FileEntry, id: number) => {
   const storageResult = await getStorageData(entry.storage);
-  const pathToUse = storageResult.clientpath
+  const isAudition = await isAuditionProject(id);
+  const auditionPath = await getAssetFolderPath(id);
+
+  const normalisedPath = auditionPath.value.replace(/^\/srv/, "/Volumes");
+
+  const pathToUse = isAudition
+    ? normalisedPath
+    : storageResult.clientpath
     ? storageResult.clientpath
     : storageResult.rootpath;
 
@@ -273,6 +298,75 @@ export const getOpenUrl = async (entry: FileEntry) => {
   return `pluto:openproject:${pathToUse}/${entry.filepath}${versionPart}`;
 };
 
+export const getSesxProjectTypeIds = async () => {
+  try {
+    const { data } = await Axios.get(`${API}/projecttype`);
+    if (data.status === "ok") {
+      return data.result
+        .filter(
+          (projectType: { fileExtension: string }) =>
+            projectType.fileExtension === ".sesx"
+        )
+        .map((projectType: { id: any }) => projectType.id);
+    } else {
+      throw new Error("Failed to fetch project types");
+    }
+  } catch (error) {
+    console.error("Error fetching project types:", error);
+    throw error;
+  }
+};
+
+const isAuditionProject = async (id: number) => {
+  try {
+    const sesxProjectTypeIds = await getSesxProjectTypeIds();
+    console.log("sesxProjectTypeIds", sesxProjectTypeIds);
+    const {
+      status,
+      data: { result },
+    } = await Axios.get<PlutoApiResponse<Project>>(`${API_PROJECTS}/${id}`);
+
+    if (status === 200) {
+      if (sesxProjectTypeIds.includes(result.projectTypeId)) {
+        return true;
+      }
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const getAssetFolderPath = async (
+  id: number
+): Promise<ProjectMetadataResponse> => {
+  try {
+    const {
+      status,
+      data: { result },
+    } = await Axios.get<PlutoApiResponse<ProjectMetadataResponse>>(
+      `${API_PROJECTS}/${id}/assetfolder`
+    );
+
+    if (status === 200) {
+      return result;
+    }
+
+    // Handle the non-200 status without throwing an error
+    console.error(
+      `Could not get asset folder path for project ${id}. ${status}`
+    );
+    return Promise.reject(
+      new Error(`Could not get asset folder path for project ${id}. ${status}`)
+    );
+  } catch (error) {
+    console.error(error);
+    return Promise.reject(error);
+  }
+};
+
 export const getOpenUrlForId = async (id: number) => {
   const fileResult = await getFileData(id);
 
@@ -284,7 +378,7 @@ export const getOpenUrlForId = async (id: number) => {
     return;
   }
 
-  return getOpenUrl(fileResult[0]);
+  return getOpenUrl(fileResult[0], id);
 };
 
 /**
@@ -390,4 +484,143 @@ export const getBuckets = async (): Promise<string[]> => {
     console.error(error);
     throw error;
   }
+};
+
+export const getDeleteJob = async (id: number): Promise<string> => {
+  try {
+    const {
+      status,
+      data: { job_status },
+    } = await Axios.get<PlutoDeleteJobAPIResponse<string>>(
+      `${API_PROJECTS}/${id}/deleteJob`
+    );
+
+    if (status === 200) {
+      return job_status;
+    }
+
+    throw new Error(`Could not get job status for project ${id}. ${status}`);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const getItemsNotDeleted = async (
+  id: number
+): Promise<ItemsNotDeleted[]> => {
+  try {
+    const {
+      status,
+      data: { results },
+    } = await Axios.get<PlutoItemDeleteDataAPIResponse<ItemsNotDeleted[]>>(
+      `${API_PROJECTS}/${id}/deleteItems`
+    );
+
+    if (status === 200) {
+      return results;
+    }
+
+    throw new Error(
+      `Could not get items not deleted for project ${id}. ${status}`
+    );
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const getAssetFolderProjectFiles = async (
+  id: number
+): Promise<AssetFolderFileEntry[]> => {
+  const response = await Axios.get<AssetFolderProjectFilesResponse>(
+    `${API_PROJECTS}/${id}/assetFolderFiles?allVersions=false`,
+    { validateStatus: (s) => s == 200 || s == 404 }
+  );
+  switch (response.status) {
+    case 200:
+      return response.data.files;
+    case 404:
+      throw `The project with id. ${id} does not exist`;
+    default:
+      throw `Axios returned an unexpected response code ${response.status}`;
+  }
+};
+
+export const getAssetFolderFileStorageMetadata = async (
+  fileId: number
+): Promise<Map<string, string>> => {
+  const response = await Axios.get<FileMetadataResponse>(
+    `${API_FILES}/${fileId}/assetFolderStorageMetadata`,
+    { validateStatus: (s) => s == 200 || s == 404 }
+  );
+
+  switch (response.status) {
+    case 200:
+      return new Map(Object.entries(response.data.metadata));
+    case 404:
+      throw `There is no file with id. ${fileId}`;
+    default:
+      throw `Axios returned an unexpected response code ${response.status}`;
+  }
+};
+
+export const getMissingFiles = async (id: number): Promise<MissingFiles[]> => {
+  try {
+    const {
+      status,
+      data: { results },
+    } = await Axios.get<PlutoItemDeleteDataAPIResponse<MissingFiles[]>>(
+      `${API_PROJECTS}/${id}/missingFiles`
+    );
+
+    if (status === 200) {
+      return results;
+    }
+
+    throw new Error(`Could not get missing files for project ${id}. ${status}`);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export const downloadProjectFile = async (id: number) => {
+  const url = `${deploymentRootPath}${API_PROJECTS}/${id}/fileDownload`;
+
+  const token = localStorage.getItem("pluto:access-token");
+  if (!token) {
+    console.log("No local access token, performing request without it");
+  }
+
+  const toAddTo = {};
+
+  const newInit = Object.assign({}, toAddTo, {
+    headers: Object.assign({}, null, {
+      Authorization: `Bearer ${token}`,
+    }),
+  });
+
+  let filename = "";
+
+  fetch(url, newInit)
+    .then((response) => {
+      // @ts-ignore
+      filename = response.headers
+        .get("Content-Disposition")
+        .split('filename="')[1]
+        .split('";')[0];
+
+      if (filename.substr(filename.length - 1)) {
+        filename = filename.slice(0, -1);
+      }
+
+      return response.blob();
+    })
+    .then((blob) => {
+      saveAs(blob, filename);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 };

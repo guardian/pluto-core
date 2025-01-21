@@ -1,13 +1,16 @@
 import React from "react";
 import { CheckCircle } from "@material-ui/icons";
-import { Button, Typography } from "@material-ui/core";
+import { Box, Button, Grid, Typography } from "@material-ui/core";
 import AssetFolderLink from "../../ProjectEntryList/AssetFolderLink";
 import {
   openProject,
   updateProjectOpenedStatus,
 } from "../../ProjectEntryList/helpers";
 import { createProjectDeliverable } from "../../utils/api";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import { Helmet } from "react-helmet";
 import { useHistory } from "react-router-dom";
 import { useGuardianStyles } from "~/misc/utils";
@@ -41,86 +44,98 @@ const ProjectCreatedComponent: React.FC<ProjectCreatedComponentProps> = (
       );
     }
   };
+  const buttonStyle = {
+    minWidth: "175px",
+    minHeight: "50px",
+  };
 
   return (
     <div className={classes.container}>
       <Helmet>
         <title>Edit project created - Pluto</title>
       </Helmet>
-      <div style={{ marginLeft: "auto", marginRight: "auto", width: "100px" }}>
-        <CheckCircle className={classes.success} />
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center",
+          marginBottom: "50px",
+        }}
+      >
+        <CheckCircle className={classes.success} style={{ width: "80px" }} />
+        <Typography className={classes.bannerText} gutterBottom>
+          Your project has been created! <br />
+        </Typography>
       </div>
-      <Typography className={classes.bannerText}>
-        Your project has been created.
-        <br />
-        Would you like to....
-      </Typography>
-      <table>
-        <tbody>
-          <tr>
-            <td>
-              <Typography>
-                Open the Asset Folder in Finder so you can start importing media
-              </Typography>
-            </td>
-            <td>
-              <AssetFolderLink projectId={props.projectId} />
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <Typography>Start work on the project</Typography>
-            </td>
-            <td>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={async () => {
-                  try {
-                    await openProject(props.projectId);
-                  } catch (error) {
-                    SystemNotification.open(
-                      SystemNotifcationKind.Error,
-                      `An error occurred when attempting to open the project. `
-                    );
-                    console.error(error);
-                  }
-                  try {
-                    await updateProjectOpenedStatus(props.projectId);
-                  } catch (error) {
-                    console.error(error);
-                  }
-                }}
-              >
-                Open project
-              </Button>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <Typography>Add some deliverables right away</Typography>
-            </td>
-            <td>
-              <Button variant="outlined" onClick={createDeliverable}>
-                Add Deliverables
-              </Button>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <Typography>Return to the Projects list</Typography>
-            </td>
-            <td>
-              <Button
-                onClick={() => history.push("/project?mine")}
-                variant="outlined"
-              >
-                Projects list
-              </Button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <br />
+      <Grid container spacing={3}>
+        <Grid item xs={8}>
+          <Typography>
+            Open the Asset Folder in Finder so you can start importing media
+          </Typography>
+        </Grid>
+        <Grid item xs={4}>
+          <AssetFolderLink
+            projectId={props.projectId}
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+          />
+        </Grid>
+        <Grid item xs={8}>
+          <Typography>Start work on the project</Typography>
+        </Grid>
+        <Grid item xs={4}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={async () => {
+              try {
+                await openProject(props.projectId);
+              } catch (error) {
+                SystemNotification.open(
+                  SystemNotifcationKind.Error,
+                  `An error occurred when attempting to open the project. `
+                );
+                console.error(error);
+              }
+              try {
+                await updateProjectOpenedStatus(props.projectId);
+              } catch (error) {
+                console.error(error);
+              }
+            }}
+            style={buttonStyle}
+          >
+            Open project
+          </Button>
+        </Grid>
+        <Grid item xs={8}>
+          <Typography>Add some deliverables right away</Typography>
+        </Grid>
+        <Grid item xs={4}>
+          <Button
+            variant="outlined"
+            onClick={createDeliverable}
+            style={buttonStyle}
+          >
+            Add Deliverables
+          </Button>
+        </Grid>
+        <Grid item xs={8}>
+          <Typography>Return to the Projects list</Typography>
+        </Grid>
+        <Grid item xs={4}>
+          <Button
+            onClick={() => history.push("/project?mine")}
+            variant="outlined"
+            style={buttonStyle}
+          >
+            Projects list
+          </Button>
+        </Grid>
+      </Grid>
     </div>
   );
 };

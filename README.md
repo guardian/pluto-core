@@ -24,6 +24,12 @@ $ sbt docker:publishLocal
 ```
 - this should create a local docker image called `guardianmultimedia/pluto-core:DEV`.  If done from the minikube context it will immediately be available for use in the cluster.
 
+Alternatively, run `$ make` in the root of the project. The supplied `Makefile` 
+1. Ensures you are using the minikube docker context
+2. Builds the frontend
+3. Builds backend and publishes a local image
+4. Deletes the old pluto-core pod so you can test the new image 
+
 ## Session cookie setup
 
 pluto-core is still under active development and still uses a session cookie. This is controlled by the `play.http.session` section of `application.conf`.
@@ -168,7 +174,7 @@ if you have **AshScriptPlugin** enabled in `build.sbt` when building.
 - You need a version 1.11 JDK. On Linux this is normally as simple as `apt-get install openjdk-11-jdk` or the yum equivalent
 - If you are not using the postgres docker image (not recommended!!), you will need to set up the test database before the tests will work:
   `sudo -u postgres ./scripts/create_dev_db.sh` (**Note**: if installing through homebrew, postgres runs as the current
-  user so the `sudo -u postgres` part is not required)
+  user so the `sudo -u postgres` part is not required.)
 
 ### Backend
 
@@ -243,4 +249,16 @@ All of these steps are carried out by the `scripts/docker-init/setup_dev.db.sh` 
 consult that for setup-by-step instructions.
 
 These steps are carried out automatically when you run `scripts/setup_docker_postgres.sh`.
+
+## Settings For Jobs to Back Up Project Files
+
+Various settings are required in the pluto-core config. file to make backing up project files work correctly, for example: -
+
+asset_folder_backup_storage = 3
+asset_folder_storage = 5
+asset_folder_backup_types = [2,6]
+asset_folder_backup_make_folders = false
+backup_types = [1,3,4,5,7,8]
+
+Where asset_folder_backup_storage is the storage to back up to, asset_folder_storage is the storage used for asset folders, asset_folder_backup_types is an array of the types to back up with the job for project files stored in asset folders (Currently these are Cubase and Audition files), asset_folder_backup_make_folders is a Boolean controlling if an attempt should be made to create the folder on the storage before copying the file, and backup_types is an array of the types to back up with the job to copy files from the project file storage (Designed to be used with project types other than Cubase or Audition).
 

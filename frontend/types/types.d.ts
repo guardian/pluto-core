@@ -6,6 +6,7 @@ interface Commission {
   workingGroupId: number;
   status: string;
   owner: string;
+  confidential: boolean;
 }
 
 interface CommissionFullRecord {
@@ -26,6 +27,7 @@ interface CommissionFullRecord {
   productionOffice: string;
   originalTitle: string;
   googleFolder: string;
+  confidential: boolean;
 }
 
 interface CreateWorkingGroup {
@@ -55,6 +57,7 @@ interface Project {
   sensitive: boolean;
   status: ProjectStatus;
   productionOffice: ProductionOffice;
+  confidential: boolean;
 }
 
 type FilterOrderType = "W_STARTSWITH" | "W_ENDSWITH" | "W_CONTAINS" | "W_EXACT";
@@ -360,4 +363,41 @@ interface FileEntryFilterTerms {
 interface PlutoApiResponseWithCount<T> {
   result: T;
   count: number;
+}
+
+interface ItemsNotDeleted {
+  id?: number;
+  projectEntry?: number;
+  item?: string;
+}
+
+interface AssetFolderFileEntry {
+  id: number;
+  filepath: string;
+  storage: number;
+  version: number;
+  ctime: string;
+  mtime: string;
+  atime: string;
+  backupOf?: number;
+}
+
+interface AssetFolderProjectFilesResponse {
+  status: string;
+  files: AssetFolderFileEntry[];
+}
+
+interface DeletionRecord {
+  id: number;
+  projectEntry: number;
+  user: string;
+  deleted: string;
+  created: string;
+  workingGroup: string;
+}
+
+interface MissingFiles {
+  id: number;
+  project: number;
+  filepath: string;
 }

@@ -10,6 +10,8 @@ import {
   TableRow,
   TableSortLabel,
   Grid,
+  Menu,
+  MenuItem,
 } from "@material-ui/core";
 import React, { useEffect, useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
@@ -51,6 +53,7 @@ const CommissionsList: React.FC = () => {
   >(undefined);
   const [user, setUser] = useState<PlutoUser | null>(null);
   const { search } = useLocation();
+  const [commissionToOpen, setCommissionToOpen] = useState<number>(1);
 
   useEffect(() => {
     if (filterTerms != undefined) {
@@ -96,7 +99,8 @@ const CommissionsList: React.FC = () => {
   useEffect(() => {
     const fetchWhoIsLoggedIn = async () => {
       try {
-        const user = await isLoggedIn();
+        let user = await isLoggedIn();
+        user.uid = generateUserName(user.uid);
         setUser(user);
       } catch (error) {
         console.error("Could not login user:", error);
@@ -115,6 +119,61 @@ const CommissionsList: React.FC = () => {
     console.log("Filter terms set: ", newFilters);
     setFilterTerms(newFilters);
   }, [user]);
+
+  const generateUserName = (inputString: string) => {
+    if (inputString.includes("@")) {
+      const splitString = inputString.split("@", 1)[0];
+      const userNameConst = splitString.replace(".", "_");
+      return userNameConst;
+    }
+    return inputString;
+  };
+
+  const [contextMenu, setContextMenu] = React.useState<{
+    mouseX: number;
+    mouseY: number;
+  } | null>(null);
+
+  const handleContextMenu = (event: React.MouseEvent, commission: number) => {
+    event.preventDefault();
+    setCommissionToOpen(commission);
+    setContextMenu(
+      contextMenu === null
+        ? {
+            mouseX: event.clientX + 2,
+            mouseY: event.clientY - 6,
+          }
+        : null
+    );
+  };
+
+  const handleClose = () => {
+    setContextMenu(null);
+  };
+
+  const userAllowed = (confidential: Boolean, commissionUser: string) => {
+    if (confidential == undefined) {
+      return true;
+    }
+    if (confidential == false) {
+      return true;
+    }
+    if (user != null) {
+      if (user.isAdmin) {
+        return true;
+      } else if (
+        commissionUser
+          .split("|")
+          .includes(generateUserName(user.uid).toLowerCase())
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return true;
+    }
+  };
 
   return (
     <>
@@ -196,27 +255,39 @@ const CommissionsList: React.FC = () => {
                   workingGroupId,
                   status,
                   owner,
-                }) => (
-                  <TableRow
-                    hover={true}
-                    onClick={() => {
-                      window.open(
-                        `${deploymentRootPath}commission/${id}`,
-                        "_blank"
-                      );
-                    }}
-                    key={id}
-                  >
-                    <TableCell>{title}</TableCell>
-                    <TableCell>{projectCount}</TableCell>
-                    <TableCell>{new Date(created).toLocaleString()}</TableCell>
-                    <TableCell>
-                      {workingGroups.get(workingGroupId) ?? "<Unknown>"}
-                    </TableCell>
-                    <TableCell>{status}</TableCell>
-                    <TableCell>{owner.replace(/\|/g, " ")}</TableCell>
-                  </TableRow>
-                )
+                  confidential,
+                }) => {
+                  if (userAllowed(confidential, owner)) {
+                    return (
+                      <TableRow
+                        hover={true}
+                        onClick={() => {
+                          window.open(
+                            `${deploymentRootPath}commission/${id}`,
+                            "_blank"
+                          );
+                        }}
+                        key={id}
+                        onContextMenu={(e) => {
+                          handleContextMenu(e, id);
+                        }}
+                      >
+                        <TableCell>{title}</TableCell>
+                        <TableCell>{projectCount}</TableCell>
+                        <TableCell>
+                          {new Date(created).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          {workingGroups.get(workingGroupId) ?? "<Unknown>"}
+                        </TableCell>
+                        <TableCell>{status}</TableCell>
+                        <TableCell>{owner.replace(/\|/g, " ")}</TableCell>
+                      </TableRow>
+                    );
+                  } else {
+                    return null;
+                  }
+                }
               )}
             </TableBody>
           </Table>
@@ -236,6 +307,36 @@ const CommissionsList: React.FC = () => {
           labelDisplayedRows={({ from, to }) => `${from}-${to}`}
         />
       </Paper>
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleClose}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem
+          onClick={(e) => {
+            window.open(
+              `${deploymentRootPath}commission/${commissionToOpen}`,
+              "_blank"
+            );
+            handleClose();
+          }}
+        >
+          Open in new window or tab
+        </MenuItem>
+        <MenuItem
+          onClick={(e) => {
+            history.push(`/commission/${commissionToOpen}`);
+            handleClose();
+          }}
+        >
+          Open in existing window or tab
+        </MenuItem>
+      </Menu>
     </>
   );
 };

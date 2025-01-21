@@ -17,6 +17,9 @@ import {
   TableSortLabel,
   Box,
   useTheme,
+  makeStyles,
+  Menu,
+  MenuItem,
 } from "@material-ui/core";
 import { SortDirection, sortListByOrder } from "../utils/lists";
 import CommissionEntryView from "../EntryViews/CommissionEntryView";
@@ -29,10 +32,15 @@ import {
   getSimpleProjectTypeData,
 } from "./helpers";
 import AssetFolderLink from "./AssetFolderLink";
+import Color from "color";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import { useGuardianStyles } from "~/misc/utils";
+import { useHistory } from "react-router-dom";
 
 const tableHeaderTitles: HeaderTitle<Project>[] = [
   { label: "Project title", key: "title" },
@@ -54,9 +62,10 @@ const ActionIcons: React.FC<{ id: number; isAdmin?: boolean }> = ({
   isAdmin = false,
 }) => (
   <IconButton
-    onClick={(event) =>
-      window.open(`${deploymentRootPath}project/${id}`, "_blank")
-    }
+    onClick={(event) => {
+      event.stopPropagation();
+      window.open(`${deploymentRootPath}project/${id}`, "_blank");
+    }}
   >
     <EditIcon />
   </IconButton>
@@ -68,12 +77,18 @@ interface ProjectsTableProps {
   //array of page sizes to present to the user
   pageSizeOptions: number[];
   //callback to tell the parent to update the source data
-  updateRequired: (page: number, pageSize: number) => void;
+  updateRequired: (
+    page: number,
+    pageSize: number,
+    order: SortDirection,
+    orderBy: keyof Project
+  ) => void;
   //list of projects to display
   projects: Project[];
   //is the user an admin
   isAdmin?: boolean;
   projectCount: number;
+  user: PlutoUser | null;
 }
 
 const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
@@ -90,10 +105,12 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [updatingProject, setUpdatingProject] = useState<number>(0);
   const [projectTypeData, setProjectTypeData] = useState<any>({});
+  const [projectToOpen, setProjectToOpen] = useState<number>(1);
+  const history = useHistory<any>();
 
   useEffect(() => {
     console.log("filter terms or search changed, updating...");
-    props.updateRequired(page, rowsPerPage);
+    props.updateRequired(page, rowsPerPage, order, orderBy);
   }, [page, rowsPerPage, order, orderBy, refreshGeneration]);
 
   const handleChangePage = (
@@ -176,6 +193,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
       Prelude: "#5e382c",
       Audition: "#2d533d",
       Migrated: "#414141",
+      defaultType: "#A9A9A9",
     };
     const lightColours: any = {
       Cubase: "#ffd8e3",
@@ -184,11 +202,67 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
       Prelude: "#ffdccf",
       Audition: "#d1ffe5",
       Migrated: "#ffffff",
+      defaultType: "#A9A9A9",
     };
     if (detectDarkTheme()) {
       return darkColours[typeName];
     } else {
       return lightColours[typeName];
+    }
+  };
+
+  const [contextMenu, setContextMenu] = React.useState<{
+    mouseX: number;
+    mouseY: number;
+  } | null>(null);
+
+  const handleContextMenu = (event: React.MouseEvent, project: number) => {
+    event.preventDefault();
+    setProjectToOpen(project);
+    setContextMenu(
+      contextMenu === null
+        ? {
+            mouseX: event.clientX + 2,
+            mouseY: event.clientY - 6,
+          }
+        : null
+    );
+  };
+
+  const handleClose = () => {
+    setContextMenu(null);
+  };
+
+  const generateUserName = (inputString: string) => {
+    if (inputString.includes("@")) {
+      const splitString = inputString.split("@", 1)[0];
+      const userNameConst = splitString.replace(".", "_");
+      return userNameConst;
+    }
+    return inputString;
+  };
+
+  const userAllowed = (confidential: Boolean, projectUser: string) => {
+    if (confidential == undefined) {
+      return true;
+    }
+    if (confidential == false) {
+      return true;
+    }
+    if (props.user != null) {
+      if (props.user.isAdmin) {
+        return true;
+      } else if (
+        projectUser
+          .split("|")
+          .includes(generateUserName(props.user.uid).toLowerCase())
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return true;
     }
   };
 
@@ -219,7 +293,7 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortListByOrder(props.projects, orderBy, order).map((project) => {
+            {props.projects.map((project) => {
               const {
                 id,
                 title,
@@ -229,38 +303,58 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                 status,
                 user: projectUser,
                 projectTypeId,
+                confidential,
               } = project;
-              return (
-                <TableRow
-                  key={id}
-                  hover
-                  style={{
-                    backgroundColor: backgroundColourForType(
-                      projectTypeData[projectTypeId]
-                    ),
-                  }}
-                >
-                  <TableCell>{title}</TableCell>
-                  <TableCell>
-                    <CommissionEntryView entryId={commissionId} />
-                  </TableCell>
-                  <TableCell>
-                    <span className="datetime">
-                      {moment(created).format("DD/MM/YYYY HH:mm A")}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <WorkingGroupEntryView entryId={workingGroupId} />
-                  </TableCell>
-                  <TableCell>{status}</TableCell>
-                  <TableCell>{projectUser.replace(/\|/g, " ")}</TableCell>
-                  <TableCell>
-                    <img src={imagePath(projectTypeData[projectTypeId])} />
-                  </TableCell>
-                  <TableCell>
-                    <Box width="100px">
-                      <span className="icons">
-                        <ActionIcons id={id} isAdmin={props.isAdmin ?? false} />
+
+              const backgroundColour = backgroundColourForType(
+                projectTypeData[projectTypeId] || "defaultType"
+              );
+
+              if (userAllowed(confidential, projectUser)) {
+                return (
+                  <TableRow
+                    style={{
+                      backgroundColor: backgroundColour,
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = Color(
+                        backgroundColour
+                      )
+                        .darken(0.1)
+                        .string();
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = backgroundColour;
+                    }}
+                    onClick={() =>
+                      window.open(
+                        `${deploymentRootPath}project/${id}`,
+                        "_blank"
+                      )
+                    }
+                    onContextMenu={(e) => {
+                      handleContextMenu(e, id);
+                    }}
+                  >
+                    <TableCell>{title}</TableCell>
+                    <TableCell>
+                      <CommissionEntryView entryId={commissionId} />
+                    </TableCell>
+                    <TableCell>
+                      <span className="datetime">
+                        {moment(created).format("DD/MM/YYYY HH:mm A")}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <WorkingGroupEntryView entryId={workingGroupId} />
+                    </TableCell>
+                    <TableCell>{status}</TableCell>
+                    <TableCell>{projectUser.replace(/\|/g, " ")}</TableCell>
+                    <TableCell>
+                      <img src={imagePath(projectTypeData[projectTypeId])} />
+                    </TableCell>
+                    <TableCell>
+                      <Box width="50px">
                         <IconButton
                           onClick={(event) => {
                             event.stopPropagation();
@@ -270,42 +364,55 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
                         >
                           <DeleteIcon />
                         </IconButton>
-                      </span>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      className={classes.openProjectButton}
-                      variant="contained"
-                      color="primary"
-                      onClick={async () => {
-                        try {
-                          await openProject(id);
-                        } catch (error) {
-                          SystemNotification.open(
-                            SystemNotifcationKind.Error,
-                            `An error occurred when attempting to open the project. `
-                          );
-                          console.error(error);
-                        }
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        className={classes.openProjectButton}
+                        variant="contained"
+                        color="primary"
+                        onClick={async (event) => {
+                          event.stopPropagation();
+                          try {
+                            await openProject(id);
+                          } catch (error) {
+                            SystemNotification.open(
+                              SystemNotifcationKind.Error,
+                              `An error occurred when attempting to open the project. `
+                            );
+                            console.error(error);
+                          }
 
-                        try {
-                          await updateProjectOpenedStatus(id);
+                          try {
+                            await updateProjectOpenedStatus(id);
 
-                          await props.updateRequired(page, rowsPerPage);
-                        } catch (error) {
-                          console.error(error);
-                        }
-                      }}
-                    >
-                      Open project
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <AssetFolderLink projectId={id} />
-                  </TableCell>
-                </TableRow>
-              );
+                            await props.updateRequired(
+                              page,
+                              rowsPerPage,
+                              order,
+                              orderBy
+                            );
+                          } catch (error) {
+                            console.error(error);
+                          }
+                        }}
+                      >
+                        Open project
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <AssetFolderLink
+                        projectId={id}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              } else {
+                return null;
+              }
             })}
           </TableBody>
         </Table>
@@ -320,6 +427,36 @@ const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleClose}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem
+          onClick={(e) => {
+            window.open(
+              `${deploymentRootPath}project/${projectToOpen}`,
+              "_blank"
+            );
+            handleClose();
+          }}
+        >
+          Open in new window or tab
+        </MenuItem>
+        <MenuItem
+          onClick={(e) => {
+            history.push(`/project/${projectToOpen}`);
+            handleClose();
+          }}
+        >
+          Open in existing window or tab
+        </MenuItem>
+      </Menu>
       <Dialog
         open={openDialog}
         onClose={closeDialog}

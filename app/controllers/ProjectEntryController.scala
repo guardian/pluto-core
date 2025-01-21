@@ -1,39 +1,57 @@
 package controllers
 
-import java.util.UUID
-import javax.inject.{Inject, Named, Singleton}
 import akka.actor.ActorRef
 import akka.pattern.ask
 import auth.{BearerTokenAuth, Security}
 import exceptions.RecordNotFoundException
 import helpers.{AllowCORSFunctions, S3Helper}
 import models._
+import play.api.Configuration
 import play.api.cache.SyncCacheApi
-import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.http.HttpEntity
 import play.api.inject.Injector
 import play.api.libs.json.{JsError, JsResult, JsValue, Json, Writes}
 import play.api.mvc._
+import services.RabbitMqDeliverable.DeliverableEvent
 import services.RabbitMqPropagator.ChangeEvent
+import services.RabbitMqSend.FixEvent
 import services.actors.Auditor
-import services.{CreateOperation, UpdateOperation, ValidateProject}
-import services.actors.creation.{CreationMessage, GenericCreationActor}
 import services.actors.creation.GenericCreationActor.{NewProjectRequest, ProjectCreateTransientData}
+import services.actors.creation.{CreationMessage, GenericCreationActor}
+import services.{CreateOperation, UpdateOperation}
 import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile
-import slick.lifted.TableQuery
 import slick.jdbc.PostgresProfile.api._
-import services.RabbitMqSend.FixEvent
+import slick.lifted.TableQuery
+
+import java.io.File
 import java.nio.file.Paths
 import java.time.ZonedDateTime
-import scala.concurrent.{Await, Future}
+import javax.inject.{Inject, Named, Singleton}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 import scala.language.postfixOps
-import java.io.File
-import services.RabbitMqDeliverable.DeliverableEvent
+import scala.util.{Failure, Success, Try}
+import vidispine.{VSOnlineOutputMessage, VidispineCommunicator, VidispineConfig}
+import mes.OnlineOutputMessage
+import mess.InternalOnlineOutputMessage
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+import java.util.concurrent.{Executors, TimeUnit}
+import de.geekonaut.slickmdc.MdcExecutionContext
+import services.RabbitMqSAN.SANEvent
+import com.om.mxs.client.japi.Vault
+import akka.stream.scaladsl.{Keep, Sink, Source}
+import mxscopy.streamcomponents.OMFastContentSearchSource
+import mxscopy.models.ObjectMatrixEntry
+import matrixstore.MatrixStoreEnvironmentConfigProvider
+import mxscopy.MXSConnectionBuilderImpl
+import mxscopy.MXSConnectionBuilder
+import services.RabbitMqMatrix.MatrixEvent
+import java.util.Date
+import java.sql.Timestamp
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
@@ -43,12 +61,14 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         @Named("rabbitmq-propagator") implicit val rabbitMqPropagator:ActorRef,
                                         @Named("rabbitmq-send") rabbitMqSend:ActorRef,
                                         @Named("rabbitmq-deliverable") rabbitMqDeliverable:ActorRef,
+                                        @Named("rabbitmq-san") rabbitMqSAN:ActorRef,
+                                        @Named("rabbitmq-matrix") rabbitMqMatrix:ActorRef,
                                         @Named("auditor") auditor:ActorRef,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
-                                       (implicit fileEntryDAO:FileEntryDAO, injector: Injector)
+                                       (implicit fileEntryDAO:FileEntryDAO, assetFolderFileEntryDAO:AssetFolderFileEntryDAO, injector: Injector, mat: Materializer)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
-    with UpdateTitleRequestSerializer with FileEntrySerializer
+    with UpdateTitleRequestSerializer with FileEntrySerializer with AssetFolderFileEntrySerializer
     with Security
 {
   override implicit val cache:SyncCacheApi = cacheImpl
@@ -69,6 +89,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
   )
 
   override def dbupdate(itemId:Int, entry:ProjectEntry) :Future[Try[Int]] = {
+    logger.info(s"Updating project id ${itemId} and status ${entry.status}")
     val newRecord = entry.id match {
       case Some(id)=>entry
       case None=>entry.copy(id=Some(itemId))
@@ -235,7 +256,46 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     })
   }}
 
-  override def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
+  def withRequiredSort(query: =>Query[ProjectEntryRow, ProjectEntry, Seq], sort:String, sortDirection:SortDirection.Value):Query[ProjectEntryRow, ProjectEntry, Seq] = {
+    import EntryStatusMapper._
+    (sort, sortDirection) match {
+      case ("created", SortDirection.desc) => query.sortBy(_.created.desc)
+      case ("created", SortDirection.asc) => query.sortBy(_.created.asc)
+      case ("title", SortDirection.desc) => query.sortBy(_.projectTitle.desc)
+      case ("title", SortDirection.asc) => query.sortBy(_.projectTitle.asc)
+      case ("workingGroupId", SortDirection.desc) => query.sortBy(_.workingGroup.desc)
+      case ("workingGroupId", SortDirection.asc) => query.sortBy(_.workingGroup.asc)
+      case ("status", SortDirection.desc) => query.sortBy(_.status.desc)
+      case ("status", SortDirection.asc) => query.sortBy(_.status.asc)
+      case ("user", SortDirection.desc) => query.sortBy(_.user.desc)
+      case ("user", SortDirection.asc) => query.sortBy(_.user.asc)
+      case ("commissionId", SortDirection.desc) => query.sortBy(_.commission.desc)
+      case ("commissionId", SortDirection.asc) => query.sortBy(_.commission.asc)
+      case _ =>
+        logger.warn(s"Sort field $sort was not recognised, ignoring")
+        query
+    }
+  }
+
+  def listFilteredAndSorted(startAt:Int, limit:Int, sort: String, sortDirection: String) = IsAuthenticatedAsync(parse.json) {uid=>{request=>
+    this.validateFilterParams(request).fold(
+      errors => {
+        logger.error(s"Errors parsing content: $errors")
+        Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors))))
+      },
+      filterTerms => {
+        this.selectFilteredAndSorted(startAt, limit, filterTerms, sort, getSortDirection(sortDirection).getOrElse(SortDirection.desc)).map({
+          case Success((count,result))=>Ok(Json.obj("status" -> "ok","count"->count,"result"->this.jstranslate(result)))
+          case Failure(error)=>
+            logger.error(error.toString)
+            InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+        }
+        )
+      }
+    )
+  }}
+
+  def selectall(startAt:Int, limit:Int) = dbConfig.db.run(
     TableQuery[ProjectEntryRow].length.result.zip(
       TableQuery[ProjectEntryRow].sortBy(_.created.desc).drop(startAt).take(limit).result
     )
@@ -249,6 +309,18 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     dbConfig.db.run(
       basequery.length.result.zip(
         basequery.sortBy(_.created.desc).drop(startAt).take(limit).result
+      )
+    ).map(Success(_)).recover(Failure(_))
+  }
+
+  def selectFilteredAndSorted(startAt: Int, limit: Int, terms: ProjectEntryFilterTerms, sort: String, sortDirection: SortDirection.Value): Future[Try[(Int, Seq[ProjectEntry])]] = {
+    val basequery = terms.addFilterTerms {
+      TableQuery[ProjectEntryRow]
+    }
+
+    dbConfig.db.run(
+      basequery.length.result.zip(
+        withRequiredSort(basequery, sort, sortDirection).drop(startAt).take(limit).result
       )
     ).map(Success(_)).recover(Failure(_))
   }
@@ -309,7 +381,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       errors=>
         Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
       projectRequest=> {
-        val fullRequestFuture=projectRequest.copy(user=uid).hydrate
+        val fullRequestFuture=projectRequest.hydrate
         fullRequestFuture.flatMap({
           case None=>
             Future(BadRequest(Json.obj("status"->"error","detail"->"Invalid template or storage ID")))
@@ -568,7 +640,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     Future(Ok(Json.obj("status"->"ok","detail"->"Fix permissions run.")))
   }
 
-  def deleteDataRunner(projectId: Int, pluto: Boolean, file: Boolean, backups: Boolean, pTR: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean, buckets: Array[String], bucketBooleans: Array[Boolean]): Unit = {
+  def deleteDataRunner(projectId: Int, delay: Int, pluto: Boolean, file: Boolean, backups: Boolean, pTR: Boolean, deliverables: Boolean, sAN: Boolean, matrix: Boolean, s3: Boolean, buckets: Array[String], bucketBooleans: Array[Boolean]): Unit = {
     def deleteFileJob() = Future {
       if (file) {
         implicit val db = dbConfig.db
@@ -627,6 +699,19 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                       .andThen(_ => fileEntryDAO.deleteRecord(entry))
                   case None =>
                     logger.info(s"Ignoring non-backup file at ${entry.filepath}")
+                }
+              })
+            }
+            )
+            projectEntry.associatedAssetFolderFiles(true, implicitConfig).map(fileList => {
+              fileList.map(entry => {
+                if (entry.storageId == config.get[Int]("asset_folder_backup_storage")) {
+                  logger.info(s"Attempting to delete the file at: ${entry.filepath}")
+                  assetFolderFileEntryDAO
+                    .deleteFromDisk(entry)
+                    .andThen(_ => assetFolderFileEntryDAO.deleteRecord(entry))
+                } else {
+                  logger.info(s"Ignoring non-backup file at ${entry.filepath}")
                 }
               })
             }
@@ -692,31 +777,35 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             if (assetFolderString == "") {
               logger.warn(s"No asset folder found for project. Can not attempt to delete data from S3.")
             } else {
-              logger.info(s"About to attempt to delete any data in the S3 bucket: ${bucket}")
               implicit lazy val s3helper: S3Helper = helpers.S3Helper.createFromBucketName(bucket).toOption.get
               val assetFolderBasePath = config.get[String]("postrun.assetFolder.basePath")
               val keyForSearch = assetFolderString.replace(s"$assetFolderBasePath/", "")
-              val bucketObjectData = s3helper.listBucketObjects(keyForSearch)
-              for (s3Object <- bucketObjectData) {
-                if (s"$keyForSearch/" != s3Object.key) {
-                  logger.info(s"Found S3 key: ${s3Object.key}")
-                  val objectVersions = s3helper.listObjectsVersions(s3Object)
-                  for (version <- objectVersions) {
-                    logger.info(s"Found version: ${version.versionId()} for key: ${version.key()}")
-                    val deleteOutcome = s3helper.deleteObject(s3Object, version.versionId())
-                    logger.info(s"Delete response was: $deleteOutcome")
+              if (!keyForSearch.matches(".*?\\/.*?\\/.*?\\_.*?")) {
+                logger.warn(s"Key for search does not match the expected format. Can not attempt to delete data from S3.")
+              } else {
+                logger.info(s"About to attempt to delete any data in the S3 bucket: ${bucket}")
+                val bucketObjectData = s3helper.listBucketObjects(keyForSearch)
+                for (s3Object <- bucketObjectData) {
+                  if (s"$keyForSearch/" != s3Object.key) {
+                    logger.info(s"Found S3 key: ${s3Object.key}")
+                    val objectVersions = s3helper.listObjectsVersions(s3Object)
+                    for (version <- objectVersions) {
+                      logger.info(s"Found version: ${version.versionId()} for key: ${version.key()}")
+                      val deleteOutcome = s3helper.deleteObject(s3Object, version.versionId())
+                      logger.info(s"Delete response was: $deleteOutcome")
+                    }
                   }
                 }
-              }
-              val bucketObjectDataFolder = s3helper.listBucketObjects(keyForSearch)
-              for (s3Object <- bucketObjectDataFolder) {
-                if (s"$keyForSearch/" == s3Object.key) {
-                  logger.info(s"Found S3 key: ${s3Object.key}")
-                  val objectVersionsFolder = s3helper.listObjectsVersions(s3Object)
-                  for (version <- objectVersionsFolder) {
-                    logger.info(s"Found version: ${version.versionId()} for key: ${version.key()}")
-                    val deleteOutcomeFolder = s3helper.deleteObject(s3Object, version.versionId())
-                    logger.info(s"Delete response was: $deleteOutcomeFolder")
+                val bucketObjectDataFolder = s3helper.listBucketObjects(keyForSearch)
+                for (s3Object <- bucketObjectDataFolder) {
+                  if (s"$keyForSearch/" == s3Object.key) {
+                    logger.info(s"Found S3 key: ${s3Object.key}")
+                    val objectVersionsFolder = s3helper.listObjectsVersions(s3Object)
+                    for (version <- objectVersionsFolder) {
+                      logger.info(s"Found version: ${version.versionId()} for key: ${version.key()}")
+                      val deleteOutcomeFolder = s3helper.deleteObject(s3Object, version.versionId())
+                      logger.info(s"Delete response was: $deleteOutcomeFolder")
+                    }
                   }
                 }
               }
@@ -726,13 +815,159 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       }
     }
 
+    def onlineFilesByProject(vidispineCommunicator: VidispineCommunicator, projectId: Int): Future[Seq[OnlineOutputMessage]] = {
+      vidispineCommunicator.getFilesOfProject(projectId)
+        .map(_.filterNot(isBranding).map(InternalOnlineOutputMessage.toOnlineOutputMessage))
+    }
+
+    def isBranding(item: VSOnlineOutputMessage): Boolean = item.mediaCategory.toLowerCase match {
+      case "branding" => true // Case insensitive
+      case _ => false
+    }
+
+    def deleteSAN() = Future {
+      if (sAN) {
+        Thread.sleep(delay)
+        logger.info(s"About to attempt to delete any SAN data present for project ${projectId}")
+        implicit val db = dbConfig.db
+        DeleteJobDAO.getOrCreate(projectId, "Started")
+        lazy val vidispineConfig = VidispineConfig.fromEnvironment.toOption.get
+        implicit lazy val executionContext = new MdcExecutionContext(
+          ExecutionContext.fromExecutor(
+            Executors.newWorkStealingPool(10)
+          )
+        )
+        implicit lazy val actorSystem:ActorSystem = ActorSystem("pluto-core-delete", defaultExecutionContext=Some(executionContext))
+        implicit lazy val mat:Materializer = Materializer(actorSystem)
+        implicit lazy val vidispineCommunicator = new VidispineCommunicator(vidispineConfig)
+        val vidispineMethodOut = Await.result(onlineFilesByProject(vidispineCommunicator, projectId), 120.seconds)
+        vidispineMethodOut.map(onlineOutputMessage => {
+          if (onlineOutputMessage.projectIds.length > 2) {
+            logger.info(s"Refusing to attempt to delete Vidispine item ${onlineOutputMessage.vidispineItemId.get} as it is referenced by more than one project.")
+            ItemDeleteDataDAO.getOrCreate(projectId, onlineOutputMessage.vidispineItemId.get)
+          } else {
+            logger.info(s"About to attempt to send a message to delete Vidispine item ${onlineOutputMessage.vidispineItemId.get}")
+            rabbitMqSAN ! SANEvent(onlineOutputMessage)
+          }
+        })
+        Thread.sleep(1000)
+        DeleteJobDAO.getOrCreate(projectId, "Finished")
+      }
+    }
+
+    def nearlineFilesByProject(vault: Vault, projectId: String): Future[Seq[OnlineOutputMessage]] = {
+      val sinkFactory = Sink.seq[OnlineOutputMessage]
+      Source.fromGraph(new OMFastContentSearchSource(vault,
+        s"""GNM_PROJECT_ID:\"$projectId\"""",
+        Array("MXFS_PATH", "MXFS_FILENAME", "GNM_PROJECT_ID", "GNM_TYPE", "__mxs__length")
+      )
+      ).filterNot(isBrandingMatrix)
+        .map(InternalOnlineOutputMessage.toOnlineOutputMessage)
+        .toMat(sinkFactory)(Keep.right)
+        .run()
+    }
+
+    def isBrandingMatrix(entry: ObjectMatrixEntry): Boolean = entry.stringAttribute("GNM_TYPE") match {
+      case Some(gnmType) =>
+        gnmType.toLowerCase match {
+          case "branding" => true // Case insensitive
+          case _ => false
+        }
+      case _ => false
+    }
+
+    def searchAssociatedNearlineMedia(projectId: Int, vault: Vault): Future[Seq[OnlineOutputMessage]] = {
+      nearlineFilesByProject(vault, projectId.toString)
+    }
+
+    def getNearlineResults(projectId: Int, nearlineVaultId: String, matrixStore: MXSConnectionBuilderImpl): Future[Either[String, Seq[OnlineOutputMessage]]] =
+      matrixStore.withVaultFuture(nearlineVaultId) { vault =>
+        searchAssociatedNearlineMedia(projectId, vault).map(Right.apply)
+      }
+
+    def deleteMatrix() = Future {
+      if (matrix) {
+        Thread.sleep(delay)
+        logger.info(s"About to attempt to delete any Object Matrix data present for project ${projectId}")
+        implicit val db = dbConfig.db
+        MatrixDeleteJobDAO.getOrCreate(projectId, "Started")
+        lazy val matrixStoreConfig = new MatrixStoreEnvironmentConfigProvider().get() match {
+          case Left(err)=>
+            logger.error(s"Could not initialise due to incorrect matrix-store config: $err")
+            sys.exit(1)
+          case Right(config)=>config
+        }
+        implicit lazy val executionContext = new MdcExecutionContext(
+          ExecutionContext.fromExecutor(
+            Executors.newWorkStealingPool(10)
+          )
+        )
+        implicit lazy val actorSystem:ActorSystem = ActorSystem("pluto-core-delete-matrix", defaultExecutionContext=Some(executionContext))
+        implicit lazy val mat:Materializer = Materializer(actorSystem)
+        val connectionIdleTime = sys.env.getOrElse("CONNECTION_MAX_IDLE", "750").toInt
+        implicit val matrixStore = new MXSConnectionBuilderImpl(
+          hosts = matrixStoreConfig.hosts,
+          accessKeyId = matrixStoreConfig.accessKeyId,
+          accessKeySecret = matrixStoreConfig.accessKeySecret,
+          clusterId = matrixStoreConfig.clusterId,
+          maxIdleSeconds = connectionIdleTime
+        )
+        val matrixMethodOut = Await.result(getNearlineResults(projectId, matrixStoreConfig.nearlineVaultId, matrixStore), 120.seconds)
+        matrixMethodOut match {
+          case Right(nearlineResults) =>
+            nearlineResults.map(onlineOutputMessage => {
+              if (onlineOutputMessage.projectIds.length > 2) {
+                logger.info(s"Refusing to attempt to delete Object Matrix data for object ${onlineOutputMessage.nearlineId.get} as it is referenced by more than one project.")
+                MatrixDeleteDataDAO.getOrCreate(projectId, onlineOutputMessage.nearlineId.get)
+              } else {
+                logger.info(s"About to attempt to send a message to delete Object Matrix data for object ${onlineOutputMessage.nearlineId.get}")
+                rabbitMqMatrix ! MatrixEvent(onlineOutputMessage)
+              }
+            })
+          case Left(something) =>
+            logger.info(s"No Object Matrix data was found to process.")
+        }
+        MatrixDeleteJobDAO.getOrCreate(projectId, "Finished")
+      }
+    }
+
+    def makeDeletionRecord() = Future {
+      implicit val db = dbConfig.db
+
+      var user = ""
+      val currentDate = new Date()
+      val timestampOfNow = new Timestamp(currentDate.getTime)
+      var created = timestampOfNow
+      var workingGroupName = ""
+
+      ProjectEntry.entryForId(projectId).map({
+        case Success(projectEntry: ProjectEntry) =>
+          user = projectEntry.user
+          created = projectEntry.created
+          projectEntry.getWorkingGroup.map({
+            case Some(workingGroup: PlutoWorkingGroup) =>
+              workingGroupName = workingGroup.name
+              DeletionRecordDAO.getOrCreate(projectId, user, timestampOfNow, created, workingGroupName)
+            case None =>
+              logger.error(s"Could not get working group name for project ${projectId}")
+              DeletionRecordDAO.getOrCreate(projectId, user, timestampOfNow, created, "Unknown")
+          })
+        case Failure(error) =>
+          logger.error(s"Could not look up project entry for ${projectId}: ", error)
+          Left(error.toString)
+      })
+    }
+
     val f = for {
-      f1 <- deletePTRJob()
-      f2 <- deleteFileJob()
-      f3 <- deleteBackupsJob()
-      f4 <- deleteDeliverables()
-      f5 <- deleteS3()
-    } yield List(f1, f2, f3, f4, f5)
+      f1 <- makeDeletionRecord()
+      f2 <- deletePTRJob()
+      f3 <- deleteFileJob()
+      f4 <- deleteBackupsJob()
+      f5 <- deleteDeliverables()
+      f6 <- deleteS3()
+      f7 <- deleteMatrix()
+      f8 <- deleteSAN()
+    } yield List(f1, f2, f3, f4, f5, f6, f7, f8)
     if (pluto) {
       Thread.sleep(800)
       implicit val db = dbConfig.db
@@ -770,7 +1005,134 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
     logger.info(s"Buckets value is: ${request.body.asJson.get("buckets")}")
     logger.info(s"Bucket Booleans value is: ${request.body.asJson.get("bucketBooleans")}")
-    deleteDataRunner(projectId, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
+    deleteDataRunner(projectId, 0, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
     Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
   }
+
+  def deleteJob(projectId: Int) = IsAdminAsync { uid => request =>
+    dbConfig.db.run(
+      TableQuery[DeleteJob].filter(_.projectEntry===projectId).result
+    ).map(_.headOption match {
+    case Some(jobRecord)=>
+      Ok(Json.obj("status"->"ok","job_status"->jobRecord.status))
+    case None=>
+      NotFound(Json.obj("status"->"notfound","detail"->s"No job with project id: $projectId"))
+    }).recover({
+      case err:Throwable=>
+        logger.error(s"Could not look up project $projectId: ", err)
+        InternalServerError(Json.obj("status"->"error","detail"->"Database error looking up job, see server logs"))
+    })
+  }
+
+  def matrixDeleteJob(projectId: Int) = IsAdminAsync { uid => request =>
+    dbConfig.db.run(
+      TableQuery[MatrixDeleteJob].filter(_.projectEntry===projectId).result
+    ).map(_.headOption match {
+      case Some(jobRecord)=>
+        Ok(Json.obj("status"->"ok","job_status"->jobRecord.status))
+      case None=>
+        NotFound(Json.obj("status"->"notfound","detail"->s"No job with project id: $projectId"))
+    }).recover({
+      case err:Throwable=>
+        logger.error(s"Could not look up project $projectId: ", err)
+        InternalServerError(Json.obj("status"->"error","detail"->"Database error looking up job, see server logs"))
+    })
+  }
+
+  def getProjectsForCommission(commission: Int) = dbConfig.db.run(
+    TableQuery[ProjectEntryRow].filter(_.commission===commission).sortBy(_.created.desc).result
+  ).map(Success(_)).recover(Failure(_))
+
+  def deleteCommissionData(commissionId: Int) = IsAdmin { uid =>
+    request =>
+      logger.info(s"Got a delete data request for commission ${commissionId}.")
+      logger.info(s"Commission value is: ${request.body.asJson.get("commission")}")
+      logger.info(s"Pluto value is: ${request.body.asJson.get("pluto")}")
+      logger.info(s"File value is: ${request.body.asJson.get("file")}")
+      logger.info(s"Backups value is: ${request.body.asJson.get("backups")}")
+      logger.info(s"PTR value is: ${request.body.asJson.get("PTR")}")
+      logger.info(s"Deliverables value is: ${request.body.asJson.get("deliverables")}")
+      logger.info(s"SAN value is: ${request.body.asJson.get("SAN")}")
+      logger.info(s"Matrix value is: ${request.body.asJson.get("matrix")}")
+      logger.info(s"S3 value is: ${request.body.asJson.get("S3")}")
+      logger.info(s"Buckets value is: ${request.body.asJson.get("buckets")}")
+      logger.info(s"Bucket Booleans value is: ${request.body.asJson.get("bucketBooleans")}")
+
+      implicit val db = dbConfig.db
+
+      getProjectsForCommission(commissionId).map({
+        case Success(result)=>
+          result.map((project) => {
+            logger.info(s"Found project ${project.id.get}.")
+            deleteDataRunner(project.id.get, 400, request.body.asJson.get("pluto").toString().toBoolean, request.body.asJson.get("file").toString().toBoolean, request.body.asJson.get("backups").toString().toBoolean, request.body.asJson.get("PTR").toString().toBoolean, request.body.asJson.get("deliverables").toString().toBoolean, request.body.asJson.get("SAN").toString().toBoolean, request.body.asJson.get("matrix").toString().toBoolean, request.body.asJson.get("S3").toString().toBoolean, request.body.asJson.get("buckets").validate[Array[String]].get, request.body.asJson.get("bucketBooleans").validate[Array[Boolean]].get)
+          })
+          if (request.body.asJson.get("commission").toString().toBoolean) {
+            Thread.sleep(1400)
+
+            PlutoCommission.forId(commissionId).map({
+              case Some(plutoCommission: PlutoCommission) =>
+                plutoCommission.removeFromDatabase.map({
+                  case Success(_) =>
+                    logger.info(s"Attempt at removing commission record worked.")
+                  case Failure(error) =>
+                    logger.error(s"Attempt at removing commission record failed with error: ${error}")
+                })
+              case None =>
+                logger.error(s"Could not look up commission entry for ${commissionId}: ")
+            })
+          }
+        case Failure(error)=>
+          logger.error(error.toString)
+      })
+
+      Ok(Json.obj("status"->"ok","detail"->"Delete data run."))
+  }
+
+  def assetFolderFilesList(requestedId: Int, allVersions: Boolean) = IsAuthenticatedAsync {uid=>{request=>
+    implicit val db = dbConfig.db
+
+    selectid(requestedId).flatMap({
+      case Failure(error)=>
+        logger.error(s"Could not list files from project ${requestedId}",error)
+        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+      case Success(someSeq)=>
+        someSeq.headOption match { //matching on pk, so can only be one result
+          case Some(projectEntry)=>
+            projectEntry.associatedAssetFolderFiles(allVersions, implicitConfig).map(fileList=>Ok(Json.obj("status"->"ok","files"->fileList)))
+          case None=>
+            Future(NotFound(Json.obj("status"->"error","detail"->s"project $requestedId not found")))
+        }
+    })
+  }}
+
+  def fileDownload(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
+    implicit val db = dbConfig.db
+
+    selectid(requestedId).flatMap({
+      case Failure(error)=>
+        logger.error(s"Could not download file for project ${requestedId}",error)
+        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+      case Success(someSeq)=>
+        someSeq.headOption match {
+          case Some(projectEntry)=>
+
+            val fileData = for {
+              f1 <- projectEntry.associatedFiles(false).map(fileList=>fileList(0))
+              f2 <- f1.getFullPath
+            } yield (f1, f2)
+
+            val (fileEntry, fullPath) = (fileData.map(_._1), fileData.map(_._2))
+
+            val fileEntryData = Await.result(fileEntry, Duration(10, TimeUnit.SECONDS))
+            val fullPathData = Await.result(fullPath, Duration(10, TimeUnit.SECONDS))
+
+            Future(Ok.sendFile(
+               content = new java.io.File(fullPathData),
+               fileName = _ => Some(fileEntryData.filepath)
+             ))
+          case None=>
+            Future(NotFound(Json.obj("status"->"error","detail"->s"Project $requestedId not found")))
+        }
+    })
+  }}
 }

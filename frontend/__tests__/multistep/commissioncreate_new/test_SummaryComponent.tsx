@@ -1,5 +1,7 @@
 import React from "react";
 import { shallow, mount } from "enzyme";
+import { Typography } from "@material-ui/core";
+
 import SummaryComponent from "../../../app/multistep/commissioncreate_new/SummaryComponent";
 
 describe("SummaryComponent", () => {
@@ -14,10 +16,24 @@ describe("SummaryComponent", () => {
       />
     );
 
-    expect(rendered.find("td#scheduled-completion-value").text()).toEqual(
-      "Thursday, 2nd Jan 2020"
+    expect(
+      rendered
+        .find(Typography)
+        .find({ id: "scheduled-completion-value" })
+        .at(0)
+        .text()
+    ).toEqual(
+      "You can't create a commission with a completion date in the past"
     );
-    expect(rendered.find("td#title-value").text()).toEqual("test");
-    expect(rendered.find("td#productionoffice-value").text()).toEqual("UK");
+    expect(
+      rendered.find(Typography).find({ id: "title-value" }).at(0).text()
+    ).toEqual("test");
+    expect(
+      rendered
+        .find(Typography)
+        .find({ id: "productionoffice-value" })
+        .at(0)
+        .text()
+    ).toEqual("UK");
   });
 });

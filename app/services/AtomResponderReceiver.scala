@@ -115,7 +115,7 @@ class AtomResponderReceiver @Inject()(config:Configuration, dbConfigProvider:Dat
           commissionDataObject.onComplete({
             case Success(commissionData) => {
               commissionData match {
-                case Some(PlutoCommission(id, collectionId, siteId, created, updated, title, status, description, workingGroup, originalCommissionerName, scheduledCompletion, owner, notes, productionOffice, originalTitle, googleFolder)) => {
+                case Some(PlutoCommission(id, collectionId, siteId, created, updated, title, status, description, workingGroup, originalCommissionerName, scheduledCompletion, owner, notes, productionOffice, originalTitle, googleFolder, confidential)) => {
                   logger.debug(s"Found a commission.")
                   publishData("update", commissionData.get, messageData.id)
                 }

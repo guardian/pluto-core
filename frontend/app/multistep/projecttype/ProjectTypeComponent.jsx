@@ -1,8 +1,16 @@
+import React from "react";
 import CommonMultistepComponent from "../common/CommonMultistepComponent.jsx";
 import MultistepComponentLoadsOnMount from "../common/LoadsOnMount.jsx";
 import ErrorViewComponent from "../common/ErrorViewComponent.jsx";
 import PlutoProjectTypeSelector from "../../Selectors/PlutoProjectTypeSelector.jsx";
 import axios from "axios";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+  Input,
+} from "@material-ui/core";
 
 class ProjectTypeComponent extends MultistepComponentLoadsOnMount {
   /* CommonMultistepComponent includes an implementation of ComponentDidUpdate which
@@ -45,64 +53,70 @@ class ProjectTypeComponent extends MultistepComponentLoadsOnMount {
     if (this.state.loading) return <p>Loading...</p>;
 
     return (
-      <div>
+      <div style={{ height: 400 }}>
         <h3>Project Type</h3>
-        <table>
-          <tbody>
-            <tr>
-              <td>Name of project type</td>
-              <td>
-                <input
+        <Table style={{ width: "inherit" }}>
+          <TableBody>
+            <TableRow>
+              <TableCell>Name of project type</TableCell>
+              <TableCell>
+                <Input
                   id="project_type_name"
                   className="inputs"
                   value={this.state.name}
                   onChange={(event) =>
                     this.setState({ name: event.target.value })
                   }
+                  style={{ width: 300 }}
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Opens with which Mac app?</td>
-              <td>
-                <input
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Opens with which Mac app?</TableCell>
+              <TableCell>
+                <Input
                   id="opens_with"
                   className="inputs"
                   value={this.state.opensWith}
                   onChange={(event) =>
                     this.setState({ opensWith: event.target.value })
                   }
+                  style={{ width: 300 }}
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Minimum required software version to open it</td>
-              <td>
-                <input
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>
+                Minimum required software version to open it
+              </TableCell>
+              <TableCell>
+                <Input
                   id="version"
                   className="inputs"
                   value={this.state.version}
                   onChange={(event) =>
                     this.setState({ version: event.target.value })
                   }
+                  style={{ width: 300 }}
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>File extension for this file type</td>
-              <td>
-                <input
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>File extension for this file type</TableCell>
+              <TableCell>
+                <Input
                   id="extension"
                   className="inputs"
                   value={this.state.fileExtension}
                   onChange={(event) =>
                     this.setState({ fileExtension: event.target.value })
                   }
+                  style={{ width: 300 }}
                 />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
     );
   }

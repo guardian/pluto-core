@@ -2,16 +2,17 @@ package controllers
 
 import akka.actor.ActorRef
 import auth.BearerTokenAuth
-import exceptions.{AlreadyExistsException, BadDataException}
+import exceptions.RecordNotFoundException
 import helpers.AllowCORSFunctions
+
 import javax.inject._
 import models._
 import play.api.Configuration
 import play.api.cache.SyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.http.{HttpEntity, Status}
+import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, JsResult, JsValue, Json}
-import play.api.mvc.{ControllerComponents, EssentialAction, Request, ResponseHeader, Result}
+import play.api.mvc.{ControllerComponents, Request, ResponseHeader, Result}
 import services.{CommissionStatusPropagator, CreateOperation, UpdateOperation}
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
@@ -177,6 +178,7 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
 
       db.run(TableQuery[PlutoCommissionRow].filter(_.id===itemId).update(newRecord).asTry)
         .map(maybeRows=>{
+          commissionStatusPropagator ! CommissionStatusPropagator.CommissionStatusUpdate(itemId, newRecord.status)
           sendToRabbitMq(UpdateOperation(),newRecord,rabbitMqPropagator)
           maybeRows
         })
@@ -243,5 +245,46 @@ class PlutoCommissionController @Inject()(override val controllerComponents:Cont
                     InternalServerError(Json.obj("status"->"db_error","detail"->"Database error, see logs for details"))
                 })
         )
+    }
+
+    def selectIdOfProject(requestedId: Int):Future[Try[Seq[ProjectEntry]]] = db.run(
+      TableQuery[ProjectEntryRow].filter(_.id === requestedId).result.asTry
+    )
+
+    def doUpdateGenericSelector[T](requestedId:T, selector:T=>Future[Try[Seq[ProjectEntry]]])(f: ProjectEntry=>Future[Try[Int]]):Future[Seq[Try[Int]]] = selector(requestedId).flatMap({
+      case Success(someSeq)=>
+        if(someSeq.isEmpty)
+          Future(Seq(Failure(new RecordNotFoundException(s"No records found for id. $requestedId"))))
+        else
+          Future.sequence(someSeq.map(f))
+      case Failure(error)=>Future(Seq(Failure(error)))
+    })
+
+    def doUpdateGeneric(requestedId:Int)(f: ProjectEntry=>Future[Try[Int]]) = doUpdateGenericSelector[Int](requestedId,selectIdOfProject)(f)
+
+    private def internalUpdate(id:Int, request: Request[JsValue]) =
+      this.validate(request).fold(
+        errors=>Future(BadRequest(Json.obj("status"->"error","detail"->JsError.toJson(errors)))),
+        validRecord=>
+          this.dbupdate(id,validRecord) map {
+            case Success(rowsUpdated)=> {
+              ProjectEntry.forCommission(id).map(projects => {
+                projects.map(project => {
+                  doUpdateGeneric(project.id.get) {record=>
+                    val updatedProjectEntry = record.copy (confidential = validRecord.confidential)
+                    db.run (
+                      TableQuery[ProjectEntryRow].filter (_.id === project.id).update (updatedProjectEntry).asTry
+                    )
+                  }
+                })
+              })
+              Ok(Json.obj("status" -> "ok", "detail" -> "Record updated", "id" -> id))
+            }
+            case Failure(error)=>InternalServerError(Json.obj("status"->"error", "detail"->error.toString))
+          }
+      )
+
+    override def updateByAnyone(id: Int) = IsAuthenticatedAsync(parse.json) { uid=> request=>
+      internalUpdate(id, request)
     }
   }

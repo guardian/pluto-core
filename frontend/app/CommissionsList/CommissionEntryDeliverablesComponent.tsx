@@ -7,25 +7,15 @@ import {
   TableRow,
   TableBody,
   TableCell,
-  IconButton,
 } from "@material-ui/core";
 import axios from "axios";
 import moment from "moment";
-import EditIcon from "@material-ui/icons/Edit";
 import { useGuardianStyles } from "~/misc/utils";
 
 interface CommissionEntryDeliverablesComponentProps {
   commission: CommissionFullRecord;
   searchString: string;
 }
-
-const ActionIcons: React.FC<{ id: number }> = (props) => (
-  <span className="icons">
-    <IconButton href={`/deliverables/project/${props.id}`}>
-      <EditIcon />
-    </IconButton>
-  </span>
-);
 
 const CommissionEntryDeliverablesComponent: React.FC<CommissionEntryDeliverablesComponentProps> = (
   props
@@ -71,7 +61,6 @@ const CommissionEntryDeliverablesComponent: React.FC<CommissionEntryDeliverables
               <TableCell>Project Id.</TableCell>
               <TableCell>Items</TableCell>
               <TableCell>Created</TableCell>
-              <TableCell>Open</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -82,15 +71,22 @@ const CommissionEntryDeliverablesComponent: React.FC<CommissionEntryDeliverables
                   .includes(props.searchString.toLowerCase())
               )
               .map((entry, idx) => (
-                <TableRow key={idx}>
+                <TableRow
+                  key={idx}
+                  onClick={() =>
+                    window.open(
+                      `/deliverables/project/${entry.pluto_core_project_id}`,
+                      "_blank"
+                    )
+                  }
+                  hover
+                  style={{ cursor: "pointer" }}
+                >
                   <TableCell>{entry.name}</TableCell>
                   <TableCell>{entry.pluto_core_project_id}</TableCell>
                   <TableCell>{entry.total_assets}</TableCell>
                   <TableCell>
                     {moment(entry.created).format("DD/MM/YYYY HH:mm A")}
-                  </TableCell>
-                  <TableCell>
-                    <ActionIcons id={entry.pluto_core_project_id} />
                   </TableCell>
                 </TableRow>
               ))}

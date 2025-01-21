@@ -14,6 +14,7 @@ case class ProjectEntryFilterTerms(title:Option[String],
                                    showKilled:Option[Boolean],
                                    status:Option[String],
                                    sensitive:Option[Boolean],
+
                                    wildcard:FilterTypeWildcard.Value)
 extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
 
@@ -33,7 +34,6 @@ extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
         projectEntryRow <- action.filter(_.id===assoc.projectEntry)
       } yield projectEntryRow
     }
-
     if(title.isDefined) action = action.filter(_.projectTitle.toLowerCase like makeWildcard(title.get).toLowerCase)
     if(vidispineProjectId.isDefined) action = action.filter(_.vidispineProjectId like makeWildcard(vidispineProjectId.get))
     if(user.isDefined && user.get!="Everyone") action = action.filter(_.user like makeWildcard(user.get))

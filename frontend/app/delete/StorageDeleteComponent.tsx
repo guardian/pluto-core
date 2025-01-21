@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { RouteComponentProps } from "react-router-dom";
 import axios from "axios";
-import { SystemNotification, SystemNotifcationKind } from "pluto-headers";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 import ImprovedDeleteComponent from "./ImprovedDeleteComponent";
 import { CircularProgress } from "@material-ui/core";
 import SummaryComponent from "../multistep/storage/SummaryComponent";

@@ -41,11 +41,11 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
     number | undefined
   >(undefined);
 
-  const steps = ["Working group", "Title", "Production Office", "Review"];
+  const steps = ["Commission Configuration", "Review"];
 
   const canComplete = () => {
     return (
-      activeStep == 3 &&
+      activeStep == 1 &&
       !!workingGroupId &&
       title != "" &&
       isAfter(scheduledCompletion, new Date())
@@ -55,7 +55,7 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
   const userContext = useContext(UserContext);
 
   const doCreate = async () => {
-    setActiveStep(4);
+    setActiveStep(2);
     setCreationInProgress(true);
     setErrorMessage(undefined);
 
@@ -152,27 +152,25 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
       canComplete={canComplete}
       createClicked={doCreate}
     >
-      {activeStep == 0 ? (
+      {/* {activeStep == 0 ? (
         <PlutoLinkageComponent
           workingGroupIdDidChange={setWorkingGroupId}
           workingGroupId={workingGroupId}
         />
-      ) : undefined}
-      {activeStep == 1 ? (
+      ) : undefined} */}
+      {activeStep == 0 ? (
         <CommissionTitleComponent
           title={title}
           expiration={scheduledCompletion}
           onTitleChanged={setTitle}
           onExpirationChanged={setScheduledCompletion}
-        />
-      ) : undefined}
-      {activeStep == 2 ? (
-        <ProductionOfficeComponent
           valueWasSet={(newValue) => setProductionOffice(newValue)}
-          value={productionOffice}
+          productionOfficeValue={productionOffice}
+          workingGroupIdDidChange={setWorkingGroupId}
+          workingGroupId={workingGroupId}
         />
       ) : undefined}
-      {activeStep == 3 ? (
+      {activeStep == 1 ? (
         <SummaryComponent
           title={title}
           scheduledCompetion={scheduledCompletion}
@@ -180,7 +178,7 @@ const CommissionMultistepNew: React.FC<CommissionMultistepNewProps> = (
           productionOffice={productionOffice}
         />
       ) : undefined}
-      {activeStep == 4 ? (
+      {activeStep == 2 ? (
         <InProgressComponent
           didFail={errorMessage != undefined}
           description="Creating your commission, please wait..."

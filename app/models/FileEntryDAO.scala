@@ -1,6 +1,6 @@
 package models
 
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.Source
 import drivers.StorageDriver
 import org.slf4j.LoggerFactory
 import play.api.Logger
@@ -8,14 +8,14 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.Injector
 import play.api.mvc.RawBuffer
 import slick.jdbc.PostgresProfile
+import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
 
-import java.io.{File, FileInputStream}
+import java.io.{File, FileInputStream, InputStream}
 import java.nio.file.{Files, Path, Paths}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import slick.jdbc.PostgresProfile.api._
 
 @Singleton
 class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit ec:ExecutionContext, injector:Injector) {
@@ -175,6 +175,56 @@ class FileEntryDAO @Inject() (dbConfigProvider:DatabaseConfigProvider)(implicit 
       case None=>
         Future(Failure(new RuntimeException("Can't update a file record that has not been saved")))
     }
+
+
+  def writeStreamToFile(entry: FileEntry, inputStream: InputStream): Future[Unit] = {
+    logger.debug(s"writeStreamToFile called for entry: ${entry.id}")
+
+    storage(entry).flatMap {
+      case Some(storage) =>
+        storage.getStorageDriver match {
+          case Some(storageDriver) =>
+            val outputPath = Paths.get(entry.filepath)
+            logger.info(s"Preparing to write to $outputPath with storage driver $storageDriver")
+
+            Future {
+              try {
+                logger.debug("Initiating file write process using storageDriver...")
+
+                // Using storageDriver to write data from inputStream to the path
+                val result = storageDriver.writeDataToPath(outputPath.toString, entry.version, inputStream)
+                inputStream.close() // Close the stream after writing
+                logger.debug("File write process completed. Updating file content status...")
+
+                updateFileHasContent(entry)
+                logger.info(s"File successfully written to $outputPath and content status updated.")
+                result
+              } catch {
+                case e: Exception =>
+                  logger.error(s"Error occurred during file writing to $outputPath", e)
+                  try {
+                    inputStream.close()
+                  } catch {
+                    case closeError: Exception =>
+                      logger.error("Error occurred while closing input stream", closeError)
+                  }
+                  throw e
+              }
+            }
+
+          case None =>
+            val errorMsg = s"No storage driver available for storage ${entry.storageId}"
+            logger.error(errorMsg)
+            Future.failed(new RuntimeException(errorMsg))
+        }
+
+      case None =>
+        val errorMsg = s"No storage could be found for ID ${entry.storageId}"
+        logger.error(errorMsg)
+        Future.failed(new RuntimeException(errorMsg))
+    }
+  }
+
 
   /* Asynchronously writes the given buffer to this file*/
   def writeToFile(entry:FileEntry, buffer: RawBuffer):Future[Unit] = {

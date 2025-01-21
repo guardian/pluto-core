@@ -14,7 +14,7 @@ import {
   Tooltip,
   Typography,
 } from "@material-ui/core";
-import { Breadcrumb } from "pluto-headers";
+import { Breadcrumb } from "@guardian/pluto-headers";
 import { ArrowBack, PermMedia, WarningRounded } from "@material-ui/icons";
 import { getFileStorageMetadata, getProject, getProjectFiles } from "./helpers";
 import { Alert } from "@material-ui/lab";
