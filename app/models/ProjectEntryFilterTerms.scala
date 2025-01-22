@@ -13,6 +13,8 @@ case class ProjectEntryFilterTerms(title:Option[String],
                                    commissionId:Option[Int],
                                    showKilled:Option[Boolean],
                                    status:Option[String],
+                                   sensitive:Option[Boolean],
+
                                    wildcard:FilterTypeWildcard.Value)
 extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
 
@@ -39,6 +41,7 @@ extends GeneralFilterEntryTerms[ProjectEntryRow, ProjectEntry] {
     if(showKilled.contains(false)) action = action.filter(_.status=!=EntryStatus.Killed)
     if(commissionId.isDefined ) action = action.filter(_.commission===commissionId.get)
     if(status.isDefined) action = action.filter(_.status===EntryStatus.withName(status.get))
+    if(sensitive.isDefined) action = action.filter(_.sensitive === sensitive.get)
     action
   }
 }
@@ -55,6 +58,7 @@ trait ProjectEntryFilterTermsSerializer {
       (JsPath \ "commissionId").readNullable[Int] and
       (JsPath \ "showKilled").readNullable[Boolean] and
       (JsPath \ "status").readNullable[String] and
+      (JsPath \ "sensitive").readNullable[Boolean] and
       (JsPath \ "match").read[FilterTypeWildcard.Value]
   )(ProjectEntryFilterTerms.apply _)
 }
