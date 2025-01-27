@@ -63,8 +63,8 @@ extends PlutoModel{
     } yield result
   }
 
-  def mostRecentBackup(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer) = {
-    Source.fromPublisher(db.stream(projectFilesLookupQuery(None).result))
+  def mostRecentBackup(implicit db:slick.jdbc.PostgresProfile#Backend#Database, mat:Materializer, maybeStorageId:Option[Int]) = {
+    Source.fromPublisher(db.stream(projectFilesLookupQuery(Some(maybeStorageId.get)).result))
       .toMat(Sink.headOption)(Keep.right)
       .run()
       .map(_.map(_._2))
