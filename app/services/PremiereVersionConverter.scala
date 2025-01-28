@@ -59,7 +59,7 @@ class PremiereVersionConverter @Inject() (backupService:NewProjectBackup)(implic
           logger.info(s"Creating an incremental backup for ${fileEntry.filepath} on storage ${actualBackupStorage.storageType} ${actualBackupStorage.id}")
           for {
             maybeProjectEntry <- ProjectEntry.projectForFileEntry(fileEntry)
-            mostRecentBackup <- if (maybeProjectEntry.isDefined) maybeProjectEntry.get.mostRecentBackup else Future(None)
+            mostRecentBackup <- if (maybeProjectEntry.isDefined) maybeProjectEntry.get.mostRecentBackup(db, mat, actualBackupStorage.id) else Future(None)
             result <- backupService.performBackup(fileEntry, mostRecentBackup, actualBackupStorage).map(Some.apply)
           } yield result
         case None=>

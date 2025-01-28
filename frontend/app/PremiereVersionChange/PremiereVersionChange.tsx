@@ -40,7 +40,7 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
   const [targetVersionName, setTargetVersionName] = useState("");
   const [fileId, setFileId] = useState<number | undefined>(undefined);
   const [fileSize, setFileSize] = useState<number | undefined>(undefined);
-
+  const [failedLarge, setFailedLarge] = useState(false);
   const [conversionInProgress, setConversionInProgress] = useState(false);
   const [newOpenUrl, setNewOpenUrl] = useState<string | undefined>(undefined);
   const [popupBlocked, setPopupBlocked] = useState(false);
@@ -111,17 +111,6 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
     }
   }, [fileId]);
 
-  useEffect(() => {
-    if (fileSize && fileSize > largestSupportedFile) {
-      console.warn(
-        `File size is ${fileSize} which is larger than the preconfigured limit of ${largestSupportedFile}`
-      );
-      setLastError(
-        "This project is too large to be reliably converted automatically. Please contact multimediatech@theguardian.com who can perform the conversion manually."
-      );
-    }
-  }, [fileSize]);
-
   /**
    * User does not want to continue. If the window was opened directly then close it, otherwise go back to the root page.
    */
@@ -162,6 +151,9 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
           setConversionInProgress(false);
         } else {
           console.error(err);
+          if (fileSize && fileSize > largestSupportedFile) {
+            setFailedLarge(true);
+          }
           if (typeof err == "string") {
             setLastError(err);
           } else {
@@ -202,6 +194,20 @@ const PremiereVersionChange: React.FC<RouteComponentProps> = (props) => {
           Change Premiere project's version
         </Typography>
         {loading || conversionInProgress ? <LinearProgress /> : undefined}
+        {failedLarge ? (
+          <Typography className={classes.centered}>
+            This project is too large to be automatically updated to a newer
+            version of Adobe Premiere by Pluto. Please contact
+            multimediatech@theguardian.com for assistance.
+            <br />
+            <br />
+            If you need to open this urgently then make sure you choose the
+            "Open Anyway" button. As the project opens, Premiere Pro will
+            request you to rename the project file. Make sure you remove the
+            "_1" bit that is added to the end of the filename and click save.
+            Then let it overwrite when prompted.
+          </Typography>
+        ) : undefined}
         {lastError ? (
           <Typography className={classes.centered}>
             <Error
