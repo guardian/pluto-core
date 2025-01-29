@@ -54,7 +54,6 @@ import FolderIcon from "@material-ui/icons/Folder";
 import BuildIcon from "@material-ui/icons/Build";
 import LaunchIcon from "@material-ui/icons/Launch";
 import { sortListByOrder } from "../utils/lists";
-import Axios from "axios";
 
 declare var deploymentRootPath: string;
 
@@ -448,7 +447,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
   const updateFileRecord = async (fileDataInput: FileEntry): Promise<void> => {
     try {
-      const { status } = await Axios.put<PlutoApiResponse<void>>(
+      const { status } = await axios.put<PlutoApiResponse<void>>(
         `/api/file/${fileDataInput.id}`,
         fileData
       );
