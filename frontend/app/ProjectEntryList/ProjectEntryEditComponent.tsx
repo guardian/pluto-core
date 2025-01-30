@@ -447,7 +447,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     if (fileData?.premiereVersion) {
       setPremiereProVersion(fileData.premiereVersion);
     }
-  }, [fileData.premiereVersion]);
+  }, [fileData?.premiereVersion]);
 
   const handleVersionChange = (
     event: React.ChangeEvent<
