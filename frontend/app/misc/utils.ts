@@ -432,4 +432,9 @@ export const useGuardianStyles = makeStyles((theme) => ({
       backgroundColor: "transparent",
     },
   },
+  versionSelect: {
+    "& .MuiSelect-select": {
+      paddingLeft: "10px",
+    },
+  },
 }));

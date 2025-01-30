@@ -16,6 +16,8 @@ import {
   Tooltip,
   Typography,
   styled,
+  Select,
+  MenuItem,
 } from "@material-ui/core";
 import {
   getProject,
@@ -51,6 +53,7 @@ import ProjectFileUpload from "./ProjectFileUpload";
 import FolderIcon from "@material-ui/icons/Folder";
 import BuildIcon from "@material-ui/icons/Build";
 import LaunchIcon from "@material-ui/icons/Launch";
+import { sortListByOrder } from "../utils/lists";
 
 declare var deploymentRootPath: string;
 
@@ -115,6 +118,11 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [initialProject, setInitialProject] = useState<Project | null>(null);
   const [missingFiles, setMissingFiles] = useState<MissingFiles[]>([]);
   const [userAllowedBoolean, setUserAllowedBoolean] = useState<boolean>(true);
+  const [knownVersions, setKnownVersions] = useState<
+    PremiereVersionTranslation[]
+  >([]);
+  const [fileData, setFileData] = useState<FileEntry | undefined>(undefined);
+  const [premiereVersion, setPremiereVersion] = useState<number>(1);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -167,6 +175,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
             setInitialProject(project);
           }
           await getProjectTypeData(project.projectTypeId);
+          await getFileForId(project.id);
         } catch (error) {
           if (error.message == "Request failed with status code 404") {
             setErrorDialog(true);
@@ -189,6 +198,8 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     fetchWhoIsLoggedIn();
 
     getMissingFilesData();
+
+    getPremiereVersionData();
 
     return () => {
       isMounted = false;
@@ -395,6 +406,86 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const abortChanges = () => {
     if (initialProject) {
       setProject(initialProject);
+    }
+  };
+
+  const getPremiereVersionData = async () => {
+    try {
+      const response = await axios.get<
+        ObjectListResponse<PremiereVersionTranslation>
+      >("/api/premiereVersion");
+      setKnownVersions(response.data.result);
+    } catch (err) {
+      console.error("Could not load Premiere version data: ", err);
+    }
+  };
+
+  const getFileForId = async (projectId: number) => {
+    try {
+      const response = await axios.get(`/api/project/${projectId}/files`);
+      setFileData(response.data.files.pop() as FileEntry);
+    } catch (err) {
+      console.error("Could not load project file information: ", err);
+    }
+  };
+
+  useEffect(() => {
+    if (fileData?.premiereVersion) {
+      setPremiereVersion(fileData.premiereVersion);
+    }
+  }, [fileData?.premiereVersion]);
+
+  const handleVersionChange = (
+    event: React.ChangeEvent<
+      HTMLSelectElement | { version?: number; value: unknown }
+    >
+  ): void => {
+    if (typeof event.target.value === "number") {
+      setPremiereVersion(event.target.value);
+    }
+  };
+
+  const updateFileRecord = async (fileDataInput: FileEntry): Promise<void> => {
+    try {
+      const { status } = await axios.put<PlutoApiResponse<void>>(
+        `/api/file/${fileDataInput.id}`,
+        fileData
+      );
+
+      if (status !== 200) {
+        throw new Error(
+          `Could not update file ${fileDataInput.id}: server said ${status}`
+        );
+      }
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+
+  const onVersionSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    event.preventDefault();
+
+    try {
+      let fileDataToSend = fileData;
+
+      if (fileDataToSend?.premiereVersion) {
+        fileDataToSend.premiereVersion = premiereVersion;
+      }
+
+      await updateFileRecord(fileDataToSend as FileEntry);
+
+      SystemNotification.open(
+        SystemNotifcationKind.Success,
+        `Successfully updated Premiere Pro version to ${premiereVersion}`
+      );
+    } catch {
+      SystemNotification.open(
+        SystemNotifcationKind.Error,
+        `Failed to update Premiere Pro version to ${premiereVersion}`
+      );
     }
   };
 
@@ -732,6 +823,44 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                 </Grid>
               </Grid>
             </form>
+            {isAdmin && projectTypeData[project.projectTypeId] == "Premiere" ? (
+              <form onSubmit={onVersionSubmit}>
+                <Grid
+                  container
+                  xs={12}
+                  direction="row"
+                  style={{ width: "380" }}
+                >
+                  <Grid item xs={5} style={{ marginTop: "5" }}>
+                    <Typography>Premiere Pro Version</Typography>
+                  </Grid>
+                  <Grid item xs={3}>
+                    <Select
+                      id="version"
+                      value={premiereVersion}
+                      label="Premiere Pro Version"
+                      onChange={handleVersionChange}
+                      className={classes.versionSelect}
+                    >
+                      {sortListByOrder(
+                        knownVersions,
+                        "internalVersionNumber",
+                        "desc"
+                      ).map((entry, idx) => (
+                        <MenuItem value={entry.internalVersionNumber}>
+                          {entry.internalVersionNumber}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Button type="submit" color="secondary" variant="contained">
+                      Set Version
+                    </Button>
+                  </Grid>
+                </Grid>
+              </form>
+            ) : null}
           </Paper>
           {project === EMPTY_PROJECT ? null : (
             <ProjectEntryDeliverablesComponent
