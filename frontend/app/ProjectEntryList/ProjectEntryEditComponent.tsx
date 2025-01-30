@@ -99,6 +99,20 @@ const DownloadProjectButton = styled(Button)({
   },
 });
 
+const EMPTY_FILE: FileEntry = {
+  id: 0,
+  filepath: "",
+  storage: 0,
+  user: "",
+  version: 0,
+  ctime: "",
+  mtime: "",
+  atime: "",
+  hasContent: false,
+  hasLink: false,
+  premiereVersion: 0,
+};
+
 const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   props
 ) => {
@@ -121,8 +135,8 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [knownVersions, setKnownVersions] = useState<
     PremiereVersionTranslation[]
   >([]);
-  const [fileData, setFileData] = useState<FileEntry | undefined>(undefined);
-  const [premiereVersion, setPremiereVersion] = useState<number>(1);
+  const [fileData, setFileData] = useState<FileEntry>(EMPTY_FILE);
+  const [premiereProVersion, setPremiereProVersion] = useState<number>(1);
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -431,9 +445,9 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
   useEffect(() => {
     if (fileData?.premiereVersion) {
-      setPremiereVersion(fileData.premiereVersion);
+      setPremiereProVersion(fileData.premiereVersion);
     }
-  }, [fileData?.premiereVersion]);
+  }, [fileData.premiereVersion]);
 
   const handleVersionChange = (
     event: React.ChangeEvent<
@@ -441,7 +455,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     >
   ): void => {
     if (typeof event.target.value === "number") {
-      setPremiereVersion(event.target.value);
+      setPremiereProVersion(event.target.value);
     }
   };
 
@@ -471,20 +485,18 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     try {
       let fileDataToSend = fileData;
 
-      if (fileDataToSend?.premiereVersion) {
-        fileDataToSend.premiereVersion = premiereVersion;
-      }
+      fileDataToSend.premiereVersion = premiereProVersion;
 
       await updateFileRecord(fileDataToSend as FileEntry);
 
       SystemNotification.open(
         SystemNotifcationKind.Success,
-        `Successfully updated Premiere Pro version to ${premiereVersion}`
+        `Successfully updated Premiere Pro version to ${premiereProVersion}`
       );
     } catch {
       SystemNotification.open(
         SystemNotifcationKind.Error,
-        `Failed to update Premiere Pro version to ${premiereVersion}`
+        `Failed to update Premiere Pro version to ${premiereProVersion}`
       );
     }
   };
@@ -837,7 +849,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                   <Grid item xs={3}>
                     <Select
                       id="version"
-                      value={premiereVersion}
+                      value={premiereProVersion}
                       label="Premiere Pro Version"
                       onChange={handleVersionChange}
                       className={classes.versionSelect}
