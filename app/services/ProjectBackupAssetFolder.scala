@@ -395,6 +395,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
                         }
                       })
                   })
+                  Thread.sleep(config.getOptional[Long]("backup.pauseMilliseconds").getOrElse(0))
                 })
               } catch {
                 case e: java.lang.NullPointerException => logger.debug(s"Could not find any project files to process.")
