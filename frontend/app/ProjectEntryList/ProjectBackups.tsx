@@ -25,6 +25,7 @@ import BackupEntry from "./BackupEntry";
 import SizeFormatter from "../common/SizeFormatter";
 import PremiereVersionTranslationView from "../EntryViews/PremiereVersionTranslationView";
 import { useGuardianStyles } from "~/misc/utils";
+import { isLoggedIn } from "~/utils/api";
 
 declare var deploymentRootPath: string;
 
@@ -116,7 +117,7 @@ const ProjectBackups: React.FC<RouteComponentProps<{ itemid: string }>> = (
   const [dialogErrString, setDialogErrString] = useState<string | undefined>(
     undefined
   );
-
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [primaryFiles, setPrimaryFiles] = useState<FileEntry[]>([]);
   const [backupFiles, setBackupFiles] = useState<FileEntry[]>([]);
   const [primaryFileMetadata, setPrimaryFileMetadata] = useState<
@@ -167,6 +168,19 @@ const ProjectBackups: React.FC<RouteComponentProps<{ itemid: string }>> = (
       });
     }
   }, [project]);
+
+  const fetchWhoIsLoggedIn = async () => {
+    try {
+      const loggedIn = await isLoggedIn();
+      setIsAdmin(loggedIn.isAdmin);
+    } catch {
+      setIsAdmin(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWhoIsLoggedIn();
+  }, []);
 
   return (
     <>
@@ -229,6 +243,8 @@ const ProjectBackups: React.FC<RouteComponentProps<{ itemid: string }>> = (
                 filepath={f.filepath}
                 version={f.version}
                 premiereVersion={f.premiereVersion}
+                isAdmin={isAdmin}
+                projectId={project?.id}
               />
             ))}
           </List>
