@@ -1168,7 +1168,6 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
               }
               filePlace = filePlace + 1
             }
-            logger.debug(s"Copying from file $fileToLoad to $fileToSaveOver")
             storageHelper.copyFile(fileToLoad, fileToSaveOver)
             Future(Ok(Json.obj("status"->"okay","detail"->s"Restored file for project $requestedId from version $requestedVersion")))
           case None=>
