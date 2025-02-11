@@ -52,6 +52,7 @@ import mxscopy.MXSConnectionBuilder
 import services.RabbitMqMatrix.MatrixEvent
 import java.util.Date
 import java.sql.Timestamp
+import helpers.StorageHelper
 
 @Singleton
 class ProjectEntryController @Inject() (@Named("project-creation-actor") projectCreationActor:ActorRef,
@@ -64,7 +65,8 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         @Named("rabbitmq-san") rabbitMqSAN:ActorRef,
                                         @Named("rabbitmq-matrix") rabbitMqMatrix:ActorRef,
                                         @Named("auditor") auditor:ActorRef,
-                                        override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth)
+                                        override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
+                                        storageHelper:StorageHelper)
                                        (implicit fileEntryDAO:FileEntryDAO, assetFolderFileEntryDAO:AssetFolderFileEntryDAO, injector: Injector, mat: Materializer)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
@@ -1130,6 +1132,44 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                content = new java.io.File(fullPathData),
                fileName = _ => Some(fileEntryData.filepath)
              ))
+          case None=>
+            Future(NotFound(Json.obj("status"->"error","detail"->s"Project $requestedId not found")))
+        }
+    })
+  }}
+
+  def restoreBackup(requestedId: Int, requestedVersion: Int) = IsAdminAsync {uid=>{request=>
+    implicit val db = dbConfig.db
+
+    selectid(requestedId).flatMap({
+      case Failure(error)=>
+        logger.error(s"Could not restore file for project ${requestedId}",error)
+        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+      case Success(someSeq)=>
+        someSeq.headOption match {
+          case Some(projectEntry)=>
+            val fileData = for {
+              f1 <- projectEntry.associatedFiles(false).map(fileList=>fileList(0))
+            } yield (f1)
+            val fileToSaveOver = Await.result(fileData, Duration(10, TimeUnit.SECONDS))
+            val fileDataTwo = for {
+              f2 <- projectEntry.associatedFiles(true).map(fileList=>fileList)
+            } yield (f2)
+            val fileEntryDataTwo = Await.result(fileDataTwo, Duration(10, TimeUnit.SECONDS))
+            var versionFound = 0
+            var filePlace = 0
+            val timestamp = dateTimeToTimestamp(ZonedDateTime.now())
+            var fileToLoad = FileEntry(None, "", 1, "", 1, timestamp, timestamp, timestamp, false, false, None, None)
+
+            while (versionFound == 0) {
+              if ((!fileEntryDataTwo(filePlace).backupOf.isEmpty) && (fileEntryDataTwo(filePlace).version == requestedVersion)) {
+                fileToLoad = fileEntryDataTwo(filePlace)
+                versionFound = 1
+              }
+              filePlace = filePlace + 1
+            }
+            storageHelper.copyFile(fileToLoad, fileToSaveOver)
+            Future(Ok(Json.obj("status"->"okay","detail"->s"Restored file for project $requestedId from version $requestedVersion")))
           case None=>
             Future(NotFound(Json.obj("status"->"error","detail"->s"Project $requestedId not found")))
         }
