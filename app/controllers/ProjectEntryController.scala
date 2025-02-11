@@ -1162,7 +1162,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             var fileToLoad = FileEntry(None, "", 1, "", 1, timestamp, timestamp, timestamp, false, false, None, None)
 
             while (versionFound == 0) {
-              if (fileEntryDataTwo(filePlace).version == requestedVersion) {
+              if ((!fileEntryDataTwo(filePlace).backupOf.isEmpty) && (fileEntryDataTwo(filePlace).version == requestedVersion)) {
                 fileToLoad = fileEntryDataTwo(filePlace)
                 versionFound = 1
               }
