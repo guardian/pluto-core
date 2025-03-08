@@ -94,7 +94,7 @@
     "@material-ui/pickers": "^3.3.10",
     "@types/jsonwebtoken": "^8.5.0",
     "@types/react-helmet": "^6.1.0",
-    "axios": "^1.7.4",
+    "axios": "^1.8.2",
     "browserify-sign": "^4.2.3",
     "color": "^4.2.3",
     "crypto-browserify": "^3.12.0",
