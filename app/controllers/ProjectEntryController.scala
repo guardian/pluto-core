@@ -39,6 +39,7 @@ import mes.OnlineOutputMessage
 import mess.InternalOnlineOutputMessage
 import akka.actor.ActorSystem
 import akka.stream.Materializer
+
 import java.util.concurrent.{Executors, TimeUnit}
 import de.geekonaut.slickmdc.MdcExecutionContext
 import services.RabbitMqSAN.SANEvent
@@ -50,6 +51,7 @@ import matrixstore.MatrixStoreEnvironmentConfigProvider
 import mxscopy.MXSConnectionBuilderImpl
 import mxscopy.MXSConnectionBuilder
 import services.RabbitMqMatrix.MatrixEvent
+
 import java.util.Date
 import java.sql.Timestamp
 import helpers.StorageHelper
@@ -1170,6 +1172,46 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
             }
             storageHelper.copyFile(fileToLoad, fileToSaveOver)
             Future(Ok(Json.obj("status"->"okay","detail"->s"Restored file for project $requestedId from version $requestedVersion")))
+          case None=>
+            Future(NotFound(Json.obj("status"->"error","detail"->s"Project $requestedId not found")))
+        }
+    })
+  }}
+
+  implicit val restoreRequestReads = Json.reads[RestoreRequest]
+
+  def restoreAssetFolderBackup(requestedId: Int) = IsAdminAsync[RestoreRequest](parse.json[RestoreRequest]) {uid=>{request=>
+    implicit val db = dbConfig.db
+
+    selectid(requestedId).flatMap({
+      case Failure(error)=>
+        logger.error(s"Could not restore file for project ${requestedId}",error)
+        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+      case Success(someSeq)=>
+        someSeq.headOption match {
+          case Some(projectEntry)=>
+            val fileData = for {
+              f1 <- projectEntry.associatedFiles(false).map(fileList=>fileList(0))
+            } yield (f1)
+            val fileToSaveOver = Await.result(fileData, Duration(10, TimeUnit.SECONDS))
+            val fileDataTwo = for {
+              f2 <- projectEntry.associatedFiles(true).map(fileList=>fileList)
+            } yield (f2)
+            val fileEntryDataTwo = Await.result(fileDataTwo, Duration(10, TimeUnit.SECONDS))
+            var versionFound = 0
+            var filePlace = 0
+            val timestamp = dateTimeToTimestamp(ZonedDateTime.now())
+            var fileToLoad = FileEntry(None, "", 1, "", 1, timestamp, timestamp, timestamp, false, false, None, None)
+
+            //while (versionFound == 0) {
+              //if ((!fileEntryDataTwo(filePlace).backupOf.isEmpty) && (fileEntryDataTwo(filePlace).version == requestedVersion)) {
+              //  fileToLoad = fileEntryDataTwo(filePlace)
+              //  versionFound = 1
+              //}
+              //filePlace = filePlace + 1
+            //}
+            storageHelper.copyFile(fileToLoad, fileToSaveOver)
+            Future(Ok(Json.obj("status"->"okay","detail"->s"Restored file for project $requestedId using date: ${request.body.date} path: ${request.body.path} version: ${request.body.version}")))
           case None=>
             Future(NotFound(Json.obj("status"->"error","detail"->s"Project $requestedId not found")))
         }

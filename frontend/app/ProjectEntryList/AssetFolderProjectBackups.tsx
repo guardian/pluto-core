@@ -20,6 +20,7 @@ import { getProject, getAssetFolderProjectFiles } from "./helpers";
 import clsx from "clsx";
 import AssetFolderBackupEntry from "./AssetFolderBackupEntry";
 import { useGuardianStyles } from "~/misc/utils";
+import { isLoggedIn } from "~/utils/api";
 
 declare var deploymentRootPath: string;
 
@@ -30,7 +31,7 @@ const AssetFolderProjectBackups: React.FC<RouteComponentProps<{
   const [dialogErrString, setDialogErrString] = useState<string | undefined>(
     undefined
   );
-
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [backupFiles, setBackupFiles] = useState<AssetFolderFileEntry[]>([]);
   const history = useHistory();
   const classes = useGuardianStyles();
@@ -60,6 +61,19 @@ const AssetFolderProjectBackups: React.FC<RouteComponentProps<{
       });
     }
   }, [project]);
+
+  const fetchWhoIsLoggedIn = async () => {
+    try {
+      const loggedIn = await isLoggedIn();
+      setIsAdmin(loggedIn.isAdmin);
+    } catch {
+      setIsAdmin(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWhoIsLoggedIn();
+  }, []);
 
   return (
     <>
@@ -115,6 +129,8 @@ const AssetFolderProjectBackups: React.FC<RouteComponentProps<{
                 fileId={f.id}
                 filepath={f.filepath}
                 version={f.version}
+                isAdmin={isAdmin}
+                projectId={project?.id}
               />
             ))}
           </List>

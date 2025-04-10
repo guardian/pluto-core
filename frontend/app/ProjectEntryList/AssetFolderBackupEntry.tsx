@@ -4,6 +4,12 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
 } from "@material-ui/core";
 import { FileCopy } from "@material-ui/icons";
 import { getAssetFolderFileStorageMetadata } from "./helpers";
@@ -11,11 +17,18 @@ import { format, parseISO } from "date-fns";
 import { DEFAULT_DATE_FORMAT } from "../../types/constants";
 import SizeFormatter from "../common/SizeFormatter";
 import { useGuardianStyles } from "~/misc/utils";
+import axios from "axios";
+import {
+    SystemNotification,
+    SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 
 interface AssetFolderBackupEntryProps {
   fileId: number;
   filepath: string;
   version: number;
+  isAdmin: boolean;
+  projectId?: number;
 }
 
 const AssetFolderBackupEntry: React.FC<AssetFolderBackupEntryProps> = (
@@ -24,6 +37,7 @@ const AssetFolderBackupEntry: React.FC<AssetFolderBackupEntryProps> = (
   const classes = useGuardianStyles();
   const [fileMeta, setFileMeta] = useState<Map<string, string>>(new Map());
   const [loadError, setLoadError] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
 
   useEffect(() => {
     getAssetFolderFileStorageMetadata(props.fileId)
@@ -44,6 +58,42 @@ const AssetFolderBackupEntry: React.FC<AssetFolderBackupEntryProps> = (
         setLoadError(true);
       });
   }, [props.fileId]);
+
+    const handleClickOpenDialog = () => {
+        setOpenDialog(true);
+    };
+
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+    };
+
+    const handleConfirmUpload = () => {
+        handleCloseDialog();
+        handleRestore();
+    };
+
+    const handleRestore = async () => {
+        try {
+            const request =
+                "/api/project/" + props.projectId + "/restoreForAssetFolder";
+            const response = await axios.post(request, {"path":props.filepath, "version": props.version, "date": fileMeta.get("lastModified")}, {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            console.log(response.data);
+            SystemNotification.open(
+                SystemNotifcationKind.Success,
+                `${response.data.detail}`
+            );
+        } catch (error) {
+            console.error("Error restoring file:", error);
+            SystemNotification.open(
+                SystemNotifcationKind.Error,
+                `Failed to restore project: ${error}`
+            );
+        }
+    };
 
   return (
     <ListItem>
@@ -68,6 +118,48 @@ const AssetFolderBackupEntry: React.FC<AssetFolderBackupEntryProps> = (
           )}
         </>
       </ListItemText>
+        {props.isAdmin ? (
+            <div>
+                <Button
+                    color="secondary"
+                    variant="contained"
+                    onClick={handleClickOpenDialog}
+                >
+                    Restore
+                </Button>
+                {/* Confirmation Dialog */}
+                <Dialog
+                    open={openDialog}
+                    onClose={handleCloseDialog}
+                    aria-labelledby="update-file-dialog-title"
+                    aria-describedby="update-file-dialog-description"
+                >
+                    <DialogTitle id="update-file-dialog-title">
+                        Confirm Project File Restore
+                    </DialogTitle>
+                    <DialogContent>
+                        <DialogContentText id="update-file-dialog-description">
+                            <strong>
+                                Are you sure you want to restore the project file?
+                            </strong>
+                            <br />
+                            You are about to restore a backed up project file. This action
+                            will overwrite the current file.
+                            <br />
+                            <br />
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleCloseDialog} color="primary">
+                            Cancel
+                        </Button>
+                        <Button onClick={handleConfirmUpload} color="primary" autoFocus>
+                            Proceed
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </div>
+        ) : null}
     </ListItem>
   );
 };

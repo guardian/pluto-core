@@ -423,7 +423,8 @@ class Files @Inject() (backupService:NewProjectBackup, temporaryFileCreator: pla
               "status"->"ok",
               "metadata"->Json.obj(
                 "size"->result.map(_.size),
-                "lastModified"->result.map(_.lastModified.format(DateTimeFormatter.ISO_DATE_TIME))
+                "lastModified"->result.map(_.lastModified.format(DateTimeFormatter.ISO_DATE_TIME)),
+                "oid"->result.map(_.objectMatrixId)
               )
             )))
         }

@@ -13,6 +13,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
+import drivers.MatrixStoreDriver
 
 object StorageHelper {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -51,7 +52,7 @@ object StorageHelper {
   }
 }
 
-class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector, fileEntryDAO: FileEntryDAO, assetFolderFileEntryDAO: AssetFolderFileEntryDAO) {
+class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector, fileEntryDAO: FileEntryDAO, assetFolderFileEntryDAO: AssetFolderFileEntryDAO, matrixDriver: MatrixStoreDriver) {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /**
@@ -264,7 +265,11 @@ class StorageHelper @Inject() (implicit mat:Materializer, injector:Injector, fil
 
       maybeStorageDriver match {
         case Some(storageDriver)=>
-          storageDriver.getMetadata(targetFile.filepath, targetFile.version)
+          if (storageDriver == matrixDriver) {
+            matrixDriver.getMetadata(targetFile.filepath, targetFile.version)
+          } else {
+            storageDriver.getMetadata(targetFile.filepath, targetFile.version)
+          }
         case None=>
           throw new RuntimeException(s"No storage driver defined for ${maybeStorage.map(_.repr).getOrElse("unknown storage")}")
       }
