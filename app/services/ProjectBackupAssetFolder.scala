@@ -193,7 +193,7 @@ class ProjectBackupAssetFolder @Inject()(config:Configuration, dbConfigProvider:
   def getListOfFiles(dir: File): Array[File] = {
     val filesList= dir.listFiles
     val res = filesList ++ filesList.filter(_.isDirectory).flatMap(getListOfFiles)
-    res.filter { f => f.isFile && (f.getName.endsWith(".cpr") || f.getName.endsWith(".sesx") || f.getName.endsWith(".bak")) && !f.getName.startsWith("._") }
+    res.filter { f => f.isFile && (f.getName.endsWith(".cpr") || f.getName.endsWith(".sesx")) && !f.getName.startsWith("._") && !f.getPath.contains("/Backup/") && !f.getPath.contains("/RestoredProjectFiles/") }
   }
 
   def getAssetFolderProjectFilePaths (name: String): Array[String] = {
