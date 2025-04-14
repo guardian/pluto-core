@@ -24,7 +24,7 @@ import slick.dbio.DBIOAction
 import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.TableQuery
-
+import play.api.libs.mailer._
 import java.io.File
 import java.nio.file.Paths
 import java.time.ZonedDateTime
@@ -67,7 +67,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                                         @Named("auditor") auditor:ActorRef,
                                         override val controllerComponents:ControllerComponents, override val bearerTokenAuth:BearerTokenAuth,
                                         storageHelper:StorageHelper)
-                                       (implicit fileEntryDAO:FileEntryDAO, assetFolderFileEntryDAO:AssetFolderFileEntryDAO, injector: Injector, mat: Materializer)
+                                       (implicit fileEntryDAO:FileEntryDAO, assetFolderFileEntryDAO:AssetFolderFileEntryDAO, injector: Injector, mat: Materializer, mailerClient: MailerClient)
   extends GenericDatabaseObjectControllerWithFilter[ProjectEntry,ProjectEntryFilterTerms]
     with ProjectEntrySerializer with ProjectRequestSerializer with ProjectEntryFilterTermsSerializer
     with UpdateTitleRequestSerializer with FileEntrySerializer with AssetFolderFileEntrySerializer
@@ -369,6 +369,15 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
       case GenericCreationActor.ProjectCreateSucceeded(succeededRequest, projectEntry)=>
         logger.info(s"Created new project: $projectEntry")
         sendToRabbitMq(CreateOperation(), projectEntry, rabbitMqPropagator)
+        if (projectEntry.sensitive == Some(true)) {
+          logger.info(s"Sensitive project created.")
+          val email = Email( config.get[String]("mail.subject"), s"${config.get[String]("mail.sender_name")} FROM <${config.get[String]("mail.sender_address")}>", Seq(s"${config.get[String]("mail.recipient_name")} TO <${config.get[String]("mail.recipient_address")}>"), bodyText = Some(config.get[String]("mail.body")))
+          try {
+            mailerClient.send(email)
+          } catch {
+            case e: Exception => logger.error(s"Sending e-mail failed with error: $e")
+          }
+        }
         Ok(Json.obj("status"->"ok","detail"->"created project", "projectId"->projectEntry.id.get))
       case GenericCreationActor.ProjectCreateFailed(failedRequest, error)=>
         logger.error("Could not create new project", error)
