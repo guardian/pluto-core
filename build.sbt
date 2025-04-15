@@ -128,6 +128,9 @@ libraryDependencies ++= Seq(
   "software.amazon.awssdk" % "url-connection-client" % awsSdk2Version
 )
 
+libraryDependencies += "com.typesafe.play" %% "play-mailer" % "8.0.1"
+libraryDependencies += "com.typesafe.play" %% "play-mailer-guice" % "8.0.1"
+
 enablePlugins(UniversalPlugin)
 
 enablePlugins(LinuxPlugin)
