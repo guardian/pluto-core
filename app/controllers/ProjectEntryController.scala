@@ -371,7 +371,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         sendToRabbitMq(CreateOperation(), projectEntry, rabbitMqPropagator)
         if (projectEntry.sensitive == Some(true)) {
           logger.info(s"Sensitive project created.")
-          val email = Email( config.get[String]("mail.subject"), s"${config.get[String]("mail.sender_name")} FROM <${config.get[String]("mail.sender_address")}>", Seq(s"${config.get[String]("mail.recipient_name")} TO <${config.get[String]("mail.recipient_address")}>"), bodyText = Some(config.get[String]("mail.body")))
+          val email = Email( config.get[String]("mail.subject"), s"${config.get[String]("mail.sender_name")} <${config.get[String]("mail.sender_address")}>", Seq(s"${config.get[String]("mail.recipient_name")} <${config.get[String]("mail.recipient_address")}>"), bodyText = Some(config.get[String]("mail.body")))
           try {
             mailerClient.send(email)
           } catch {
