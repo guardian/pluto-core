@@ -1147,7 +1147,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
     })
   }}
 
-  def restoreBackup(requestedId: Int, requestedVersion: Int) = IsAdminAsync {uid=>{request=>
+  def restoreBackup(requestedId: Int, requestedVersion: Int) = IsAuthenticatedAsync {uid=>{request=>
     implicit val db = dbConfig.db
 
     selectid(requestedId).flatMap({
