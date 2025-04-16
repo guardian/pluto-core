@@ -28,7 +28,6 @@ interface BackupEntryProps {
   filepath: string;
   version: number;
   premiereVersion?: number;
-  isAdmin: boolean;
   projectId?: number;
 }
 
@@ -124,48 +123,46 @@ const BackupEntry: React.FC<BackupEntryProps> = (props) => {
           )}
         </>
       </ListItemText>
-      {props.isAdmin ? (
-        <div>
-          <Button
-            color="secondary"
-            variant="contained"
-            onClick={handleClickOpenDialog}
-          >
-            Restore
-          </Button>
-          {/* Confirmation Dialog */}
-          <Dialog
-            open={openDialog}
-            onClose={handleCloseDialog}
-            aria-labelledby="update-file-dialog-title"
-            aria-describedby="update-file-dialog-description"
-          >
-            <DialogTitle id="update-file-dialog-title">
-              Confirm Project File Restore
-            </DialogTitle>
-            <DialogContent>
-              <DialogContentText id="update-file-dialog-description">
-                <strong>
-                  Are you sure you want to restore the project file?
-                </strong>
-                <br />
-                You are about to restore a backed up project file. This action
-                will overwrite the current file.
-                <br />
-                <br />
-              </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleCloseDialog} color="primary">
-                Cancel
-              </Button>
-              <Button onClick={handleConfirmUpload} color="primary" autoFocus>
-                Proceed
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </div>
-      ) : null}
+      <div>
+        <Button
+          color="secondary"
+          variant="contained"
+          onClick={handleClickOpenDialog}
+        >
+          Restore
+        </Button>
+        {/* Confirmation Dialog */}
+        <Dialog
+          open={openDialog}
+          onClose={handleCloseDialog}
+          aria-labelledby="update-file-dialog-title"
+          aria-describedby="update-file-dialog-description"
+        >
+          <DialogTitle id="update-file-dialog-title">
+            Confirm Project File Restore
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="update-file-dialog-description">
+              <strong>
+                Are you sure you want to restore the project file?
+              </strong>
+              <br />
+              You are about to restore a backed up project file. This action
+              will overwrite the current file.
+              <br />
+              <br />
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDialog} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmUpload} color="primary" autoFocus>
+              Proceed
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </div>
     </ListItem>
   );
 };
