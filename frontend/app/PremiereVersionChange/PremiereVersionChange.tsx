@@ -23,7 +23,7 @@ import {
 } from "../ProjectEntryList/helpers";
 import { useGuardianStyles } from "~/misc/utils";
 
-const largestSupportedFile = 10485760; //don't try to convert anything bigger than 10meg, it's unreliable
+const largestSupportedFile = 70000000; //don't try to convert anything bigger than 70meg, it's unreliable
 
 interface PremiereVersionChangeParams {
   project: string;
