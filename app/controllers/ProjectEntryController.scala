@@ -1184,4 +1184,82 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
         }
     })
   }}
+
+  def deleteRecursively(file: File): Unit = {
+    if (file.isDirectory) {
+      file.listFiles.foreach(deleteRecursively)
+    }
+    if (file.exists && !file.delete) {
+      throw new Exception(s"Unable to delete ${file.getAbsolutePath}")
+    }
+  }
+
+  def restoreAssetFolderBackup(requestedId: Int) = IsAuthenticatedAsync {uid=>{request=>
+    implicit val db = dbConfig.db
+
+    selectid(requestedId).flatMap({
+      case Failure(error)=>
+        logger.error(s"Could not restore files for project ${requestedId}",error)
+        Future(InternalServerError(Json.obj("status"->"error","detail"->error.toString)))
+      case Success(someSeq)=>
+        someSeq.headOption match {
+          case Some(projectEntry)=>
+            db.run(
+              TableQuery[ProjectMetadataRow]
+                .filter(_.key===ProjectMetadata.ASSET_FOLDER_KEY)
+                .filter(_.projectRef===requestedId)
+                .result
+            ).map(results=>{
+              val resultCount = results.length
+              if(resultCount==0){
+                logger.warn(s"No asset folder registered under project id $requestedId")
+              } else if(resultCount>1){
+                logger.warn(s"Multiple asset folders found for project $requestedId: $results")
+              } else {
+                logger.debug(s"Found this data: ${results.head}")
+                logger.debug(s"Found this asset folder: ${results.head.value.get}")
+                deleteRecursively(new File(s"${results.head.value.get}/RestoredProjectFiles"))
+                new File(s"${results.head.value.get}/RestoredProjectFiles").mkdirs()
+                val fileData = for {
+                  f2 <- projectEntry.associatedAssetFolderFiles(false, implicitConfig).map(fileList=>fileList)
+                } yield (f2)
+                val fileEntryData = Await.result(fileData, Duration(10, TimeUnit.SECONDS))
+                logger.debug(s"File data found: $fileEntryData")
+                val splitterRegex = "^(?:[^\\/]*\\/){4}".r
+                val filenameRegex = "([^\\/]+$)".r
+                fileEntryData.map(fileData => {
+                  new File(s"${config.get[String]("postrun.assetFolder.basePath")}/${splitterRegex.findFirstIn(fileData.filepath).get}RestoredProjectFiles/${filenameRegex.replaceFirstIn(splitterRegex.replaceFirstIn(fileData.filepath,""),"")}").mkdirs()
+                  val timestamp = dateTimeToTimestamp(ZonedDateTime.now())
+                  if (new File(s"${config.get[String]("postrun.assetFolder.basePath")}/${splitterRegex.findFirstIn(fileData.filepath).get}RestoredProjectFiles/${splitterRegex.replaceFirstIn(fileData.filepath,"")}").exists()) {
+                    var space_not_found = true
+                    var number_to_try = 1
+                    while (space_not_found) {
+                      val pathToWorkOn = splitterRegex.replaceFirstIn(fileData.filepath,"")
+                      val indexOfPoint = pathToWorkOn.lastIndexOf(".")
+                      val readyPath = s"${pathToWorkOn.substring(0, indexOfPoint)}_$number_to_try${pathToWorkOn.substring(indexOfPoint)}"
+                      if (new File(s"${config.get[String]("postrun.assetFolder.basePath")}/${splitterRegex.findFirstIn(fileData.filepath).get}RestoredProjectFiles/$readyPath").exists()) {
+                        number_to_try = number_to_try + 1
+                      } else {
+                        space_not_found = false
+                        val fileToSave = AssetFolderFileEntry(None, s"${splitterRegex.findFirstIn(fileData.filepath).get}RestoredProjectFiles/$readyPath", config.get[Int]("asset_folder_storage"), 1, timestamp, timestamp, timestamp, None, None)
+                        storageHelper.copyAssetFolderFile(fileData, fileToSave)
+                      }
+                    }
+                  } else {
+                      val fileToSave = AssetFolderFileEntry(None, s"${splitterRegex.findFirstIn(fileData.filepath).get}RestoredProjectFiles/${splitterRegex.replaceFirstIn(fileData.filepath, "")}", config.get[Int]("asset_folder_storage"), 1, timestamp, timestamp, timestamp, None, None)
+                      storageHelper.copyAssetFolderFile(fileData, fileToSave)
+                    }
+                  }
+                )
+              }
+            }).recover({
+              case err: Throwable =>
+                logger.error(s"Could not look up asset folder for project id $requestedId: ", err)
+            })
+            Future(Ok(Json.obj("status"->"okay","detail"->s"Restored files for project $requestedId")))
+          case None=>
+            Future(NotFound(Json.obj("status"->"error","detail"->s"Project $requestedId not found")))
+        }
+    })
+  }}
 }

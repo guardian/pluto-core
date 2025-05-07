@@ -13,6 +13,7 @@ import {
   Paper,
   Tooltip,
   Typography,
+  DialogContent,
 } from "@material-ui/core";
 import { Breadcrumb } from "@guardian/pluto-headers";
 import { ArrowBack, PermMedia, WarningRounded } from "@material-ui/icons";
@@ -20,6 +21,11 @@ import { getProject, getAssetFolderProjectFiles } from "./helpers";
 import clsx from "clsx";
 import AssetFolderBackupEntry from "./AssetFolderBackupEntry";
 import { useGuardianStyles } from "~/misc/utils";
+import axios from "axios";
+import {
+  SystemNotification,
+  SystemNotifcationKind,
+} from "@guardian/pluto-headers";
 
 declare var deploymentRootPath: string;
 
@@ -30,7 +36,7 @@ const AssetFolderProjectBackups: React.FC<RouteComponentProps<{
   const [dialogErrString, setDialogErrString] = useState<string | undefined>(
     undefined
   );
-
+  const [openDialog, setOpenDialog] = useState(false);
   const [backupFiles, setBackupFiles] = useState<AssetFolderFileEntry[]>([]);
   const history = useHistory();
   const classes = useGuardianStyles();
@@ -61,6 +67,42 @@ const AssetFolderProjectBackups: React.FC<RouteComponentProps<{
     }
   }, [project]);
 
+  const handleClickOpenDialog = () => {
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleConfirmUpload = () => {
+    handleCloseDialog();
+    handleRestore();
+  };
+
+  const handleRestore = async () => {
+    try {
+      const request =
+          "/api/project/" + props.match.params.itemid + "/restoreForAssetFolder";
+      const response = await axios.put(request, null, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      console.log(response.data);
+      SystemNotification.open(
+          SystemNotifcationKind.Success,
+          `${response.data.detail}`
+      );
+    } catch (error) {
+      console.error("Error restoring file:", error);
+      SystemNotification.open(
+          SystemNotifcationKind.Error,
+          `Failed to restore project: ${error}`
+      );
+    }
+  };
+
   return (
     <>
       {project ? (
@@ -80,6 +122,41 @@ const AssetFolderProjectBackups: React.FC<RouteComponentProps<{
               plutoCoreBaseUri={`${deploymentRootPath.replace(/\/+$/, "")}`}
             />
           ) : undefined}
+        </Grid>
+        <Grid item>
+          <Button
+              color="secondary"
+              variant="contained"
+              onClick={handleClickOpenDialog}
+          >
+            Restore
+          </Button>
+          {/* Confirmation Dialog */}
+          <Dialog
+              open={openDialog}
+              onClose={handleCloseDialog}
+              aria-labelledby="update-file-dialog-title"
+              aria-describedby="update-file-dialog-description"
+          >
+            <DialogTitle id="update-file-dialog-title">
+              Confirm Restoration of Backed up Project Files:
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="update-file-dialog-description">
+                You are about to restore all the backed up project files shown on this page. This will result in a folder being created in the project's asset folder named "RestoredProjectFiles", and within that a list of all Cubase/Audition files we have backed up. Once you have identified which project file you need, please move it out of this folder and into the root of project’s asset folder, before you carry on working with it.
+                <br />
+                <br />
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDialog} color="primary">
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmUpload} color="primary" autoFocus>
+                Proceed
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Grid>
         <Grid item>
           <Grid container spacing={2}>
