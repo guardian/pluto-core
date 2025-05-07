@@ -83,7 +83,7 @@ const AssetFolderProjectBackups: React.FC<RouteComponentProps<{
   const handleRestore = async () => {
     try {
       const request =
-          "/api/project/" + props.match.params.itemid + "/restoreForAssetFolder";
+        "/api/project/" + props.match.params.itemid + "/restoreForAssetFolder";
       const response = await axios.put(request, null, {
         headers: {
           "Content-Type": "application/json",
@@ -91,14 +91,14 @@ const AssetFolderProjectBackups: React.FC<RouteComponentProps<{
       });
       console.log(response.data);
       SystemNotification.open(
-          SystemNotifcationKind.Success,
-          `${response.data.detail}`
+        SystemNotifcationKind.Success,
+        `${response.data.detail}`
       );
     } catch (error) {
       console.error("Error restoring file:", error);
       SystemNotification.open(
-          SystemNotifcationKind.Error,
-          `Failed to restore project: ${error}`
+        SystemNotifcationKind.Error,
+        `Failed to restore project: ${error}`
       );
     }
   };
@@ -125,25 +125,31 @@ const AssetFolderProjectBackups: React.FC<RouteComponentProps<{
         </Grid>
         <Grid item>
           <Button
-              color="secondary"
-              variant="contained"
-              onClick={handleClickOpenDialog}
+            color="secondary"
+            variant="contained"
+            onClick={handleClickOpenDialog}
           >
             Restore
           </Button>
           {/* Confirmation Dialog */}
           <Dialog
-              open={openDialog}
-              onClose={handleCloseDialog}
-              aria-labelledby="update-file-dialog-title"
-              aria-describedby="update-file-dialog-description"
+            open={openDialog}
+            onClose={handleCloseDialog}
+            aria-labelledby="update-file-dialog-title"
+            aria-describedby="update-file-dialog-description"
           >
             <DialogTitle id="update-file-dialog-title">
               Confirm Restoration of Backed up Project Files:
             </DialogTitle>
             <DialogContent>
               <DialogContentText id="update-file-dialog-description">
-                You are about to restore all the backed up project files shown on this page. This will result in a folder being created in the project's asset folder named "RestoredProjectFiles", and within that a list of all Cubase/Audition files we have backed up. Once you have identified which project file you need, please move it out of this folder and into the root of project’s asset folder, before you carry on working with it.
+                You are about to restore all the backed up project files shown
+                on this page. This will result in a folder being created in the
+                project's asset folder named "RestoredProjectFiles", and within
+                that a list of all Cubase/Audition files we have backed up. Once
+                you have identified which project file you need, please move it
+                out of this folder and into the root of project’s asset folder,
+                before you carry on working with it.
                 <br />
                 <br />
               </DialogContentText>
