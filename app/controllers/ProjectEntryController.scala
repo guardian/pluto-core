@@ -1228,6 +1228,7 @@ class ProjectEntryController @Inject() (@Named("project-creation-actor") project
                 val splitterRegex = "^(?:[^\\/]*\\/){4}".r
                 val filenameRegex = "([^\\/]+$)".r
                 fileEntryData.map(fileData => {
+                  Thread.sleep(4000)
                   new File(s"${config.get[String]("postrun.assetFolder.basePath")}/${splitterRegex.findFirstIn(fileData.filepath).get}RestoredProjectFiles/${filenameRegex.replaceFirstIn(splitterRegex.replaceFirstIn(fileData.filepath,""),"")}").mkdirs()
                   val timestamp = dateTimeToTimestamp(ZonedDateTime.now())
                   if (new File(s"${config.get[String]("postrun.assetFolder.basePath")}/${splitterRegex.findFirstIn(fileData.filepath).get}RestoredProjectFiles/${splitterRegex.replaceFirstIn(fileData.filepath,"")}").exists()) {
