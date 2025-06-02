@@ -70,6 +70,8 @@ GET     /api/project/:id/removeWarning      @controllers.MissingFilesController.
 GET     /api/project/:id/fileDownload       @controllers.ProjectEntryController.fileDownload(id:Int)
 PUT     /api/project/:id/restore/:version   @controllers.ProjectEntryController.restoreBackup(id:Int, version:Int)
 PUT     /api/project/:id/restoreForAssetFolder  @controllers.ProjectEntryController.restoreAssetFolderBackup(id:Int)
+PUT     /api/project/:id/statusChange       @controllers.StatusController.record(id: Int)
+GET     /api/statusChanges                  @controllers.StatusController.records(startAt:Int ?=0,length:Int ?=100)
 
 GET     /api/valid-users                    @controllers.ProjectEntryController.queryUsersForAutocomplete(prefix:String ?= "", limit:Option[Int])
 GET     /api/known-user                     @controllers.ProjectEntryController.isUserKnown(uname:String ?= "")
@@ -116,6 +118,7 @@ OPTIONS /api/pluto/commission/list         @controllers.Application.corsOptions
 PUT     /api/pluto/commission/:id           @controllers.PlutoCommissionController.updateByAnyone(id:Int)
 PUT     /api/pluto/commission/:id/status   @controllers.PlutoCommissionController.updateStatus(id:Int)
 PUT     /api/pluto/commission/:id/deleteData    @controllers.ProjectEntryController.deleteCommissionData(id: Int)
+PUT     /api/pluto/commission/:id/statusChange  @controllers.StatusController.recordForCommission(id: Int)
 
 GET     /api/assetfolder/lookup            @controllers.AssetFolderController.assetFolderForPath(path:String)
 GET     /api/project/:projectId/assetfolder @controllers.AssetFolderController.assetFolderForProject(projectId:Int)

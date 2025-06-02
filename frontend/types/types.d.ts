@@ -401,3 +401,12 @@ interface MissingFiles {
   project: number;
   filepath: string;
 }
+
+interface StatusChange {
+  id: number;
+  projectId: number;
+  time: string;
+  user: string;
+  status: string;
+  title: string;
+}
