@@ -37,7 +37,7 @@ const StatusChanges: React.FC<RouteComponentProps> = (props) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [page, setPage] = useState(0);
   const [pageSize, setRowsPerPage] = useState(pageSizeOptions[0]);
-  const [order, setOrder] = useState<SortDirection>("asc");
+  const [order, setOrder] = useState<SortDirection>("desc");
   const [orderBy, setOrderBy] = useState<keyof StatusChange>("id");
 
   useEffect(() => {

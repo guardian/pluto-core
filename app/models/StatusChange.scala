@@ -66,7 +66,7 @@ object StatusChangeDAO extends ((Option[Int], Int, Timestamp, String, String, St
 
   def getRecords(startAt:Int, limit:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) =
     db.run(
-      TableQuery[StatusChange].sortBy(_.id.asc).drop(startAt).take(limit).result.asTry
+      TableQuery[StatusChange].sortBy(_.id.desc).drop(startAt).take(limit).result.asTry
     )
 }
 
