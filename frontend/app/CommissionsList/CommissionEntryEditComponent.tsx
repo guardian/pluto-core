@@ -360,8 +360,6 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   const handleFormSubmit = async (updatedCommission: CommissionFullRecord) => {
     setIsSaving(true);
     try {
-      await updateCommissionData(updatedCommission);
-
       try {
         await recordStatusChange(
           updatedCommission.id,
@@ -371,6 +369,8 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
       } catch {
         console.error("Failed to record status change");
       }
+
+      await updateCommissionData(updatedCommission);
 
       SystemNotification.open(
         SystemNotifcationKind.Success,
