@@ -122,21 +122,14 @@ const StatusChanges: React.FC<RouteComponentProps> = (props) => {
               </TableHead>
               <TableBody>
                 {sortListByOrder(statusChanges, orderBy, order).map(
-                  ({
-                    id,
-                    projectId,
-                    time,
-                    user,
-                    status,
-                    title
-                  }) => (
+                  ({ id, projectId, time, user, status, title }) => (
                     <TableRow
                       hover={true}
                       onClick={() =>
-                          window.open(
-                              `${deploymentRootPath}project/${projectId}`,
-                              "_blank"
-                          )
+                        window.open(
+                          `${deploymentRootPath}project/${projectId}`,
+                          "_blank"
+                        )
                       }
                       key={id}
                     >

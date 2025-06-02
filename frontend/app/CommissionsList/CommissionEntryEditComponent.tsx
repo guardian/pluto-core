@@ -37,7 +37,7 @@ import {
   loadCommissionData,
   projectsForCommission,
   updateCommissionData,
-  recordStatusChange
+  recordStatusChange,
 } from "./helpers";
 import ErrorIcon from "@material-ui/icons/Error";
 import ProductionOfficeSelector from "../common/ProductionOfficeSelector";
@@ -323,7 +323,7 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
   const [userAllowedBoolean, setUserAllowedBoolean] = useState<boolean>(true);
   const [order, setOrder] = useState<SortDirection>("desc");
   const [orderBy, setOrderBy] = useState<keyof Project>("created");
-  const [userName, setUserName] = useState<string>('');
+  const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
     const fetchCommissionData = async () => {
@@ -364,13 +364,12 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
 
       try {
         await recordStatusChange(
-            updatedCommission.id,
-            userName,
-            updatedCommission.status
+          updatedCommission.id,
+          userName,
+          updatedCommission.status
         );
-
       } catch {
-        console.error('Failed to record status change');
+        console.error("Failed to record status change");
       }
 
       SystemNotification.open(

@@ -626,25 +626,25 @@ export const downloadProjectFile = async (id: number) => {
 };
 
 export const recordStatusChange = async (
-    id: number,
-    user: string,
-    status_string: string,
-    title: string
+  id: number,
+  user: string,
+  status_string: string,
+  title: string
 ): Promise<void> => {
   try {
     const { status } = await Axios.put<PlutoApiResponse<void>>(
-        `${API_PROJECTS}/${id}/statusChange`,
-        `{"user":"${user}","status":"${status_string}","title":"${title}"}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+      `${API_PROJECTS}/${id}/statusChange`,
+      `{"user":"${user}","status":"${status_string}","title":"${title}"}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
 
     if (status !== 200) {
       throw new Error(
-          `Could not record status change for project ${id}: server said ${status}`
+        `Could not record status change for project ${id}: server said ${status}`
       );
     }
   } catch (error) {

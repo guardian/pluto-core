@@ -138,7 +138,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   >([]);
   const [fileData, setFileData] = useState<FileEntry>(EMPTY_FILE);
   const [premiereProVersion, setPremiereProVersion] = useState<number>(1);
-  const [userName, setUserName] = useState<string>('');
+  const [userName, setUserName] = useState<string>("");
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -282,14 +282,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
             try {
               await recordStatusChange(
-                  project.id,
-                  userName,
-                  project.status,
-                  project.title
+                project.id,
+                userName,
+                project.status,
+                project.title
               );
-
             } catch {
-              console.error('Failed to record status change');
+              console.error("Failed to record status change");
             }
 
             SystemNotification.open(
@@ -316,14 +315,13 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
 
           try {
             await recordStatusChange(
-                project.id,
-                userName,
-                project.status,
-                project.title
+              project.id,
+              userName,
+              project.status,
+              project.title
             );
-
           } catch {
-            console.error('Failed to record status change');
+            console.error("Failed to record status change");
           }
 
           SystemNotification.open(
