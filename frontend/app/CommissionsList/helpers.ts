@@ -197,3 +197,30 @@ export const startDelete = async (
     throw error;
   }
 };
+
+export const recordStatusChange = async (
+  id: number,
+  user: string,
+  status_string: string
+): Promise<void> => {
+  try {
+    const { status } = await Axios.put<PlutoApiResponse<void>>(
+      `${API_COMMISSION}/${id}/statusChange`,
+      `{"user":"${user}","status":"${status_string}"}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (status !== 200) {
+      throw new Error(
+        `Could not record status change for commission ${id}: server said ${status}`
+      );
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};

@@ -28,6 +28,7 @@ import {
   getSimpleProjectTypeData,
   getMissingFiles,
   downloadProjectFile,
+  recordStatusChange,
 } from "./helpers";
 import {
   SystemNotification,
@@ -137,6 +138,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   >([]);
   const [fileData, setFileData] = useState<FileEntry>(EMPTY_FILE);
   const [premiereProVersion, setPremiereProVersion] = useState<number>(1);
+  const [userName, setUserName] = useState<string>("");
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -203,6 +205,7 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     const fetchWhoIsLoggedIn = async () => {
       try {
         const loggedIn = await isLoggedIn();
+        setUserName(loggedIn.uid);
         setIsAdmin(loggedIn.isAdmin);
       } catch {
         setIsAdmin(false);
@@ -277,6 +280,17 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
           try {
             await updateProject(project as Project);
 
+            try {
+              await recordStatusChange(
+                project.id,
+                userName,
+                project.status,
+                project.title
+              );
+            } catch {
+              console.error("Failed to record status change");
+            }
+
             SystemNotification.open(
               SystemNotifcationKind.Success,
               `Successfully updated project "${project.title}"`
@@ -298,6 +312,17 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       } else {
         try {
           await updateProject(project as Project);
+
+          try {
+            await recordStatusChange(
+              project.id,
+              userName,
+              project.status,
+              project.title
+            );
+          } catch {
+            console.error("Failed to record status change");
+          }
 
           SystemNotification.open(
             SystemNotifcationKind.Success,
