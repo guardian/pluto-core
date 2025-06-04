@@ -71,6 +71,7 @@ GET     /api/project/:id/fileDownload       @controllers.ProjectEntryController.
 PUT     /api/project/:id/restore/:version   @controllers.ProjectEntryController.restoreBackup(id:Int, version:Int)
 PUT     /api/project/:id/restoreForAssetFolder  @controllers.ProjectEntryController.restoreAssetFolderBackup(id:Int)
 PUT     /api/project/:id/statusChange       @controllers.StatusController.record(id: Int)
+GET     /api/project/:id/statusChanges      @controllers.StatusController.recordsForProject(id:Int)
 GET     /api/statusChanges                  @controllers.StatusController.records(startAt:Int ?=0,length:Int ?=100)
 
 GET     /api/valid-users                    @controllers.ProjectEntryController.queryUsersForAutocomplete(prefix:String ?= "", limit:Option[Int])

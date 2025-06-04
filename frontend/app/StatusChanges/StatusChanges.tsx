@@ -41,7 +41,7 @@ const StatusChanges: React.FC<RouteComponentProps> = (props) => {
   const [orderBy, setOrderBy] = useState<keyof StatusChange>("id");
 
   useEffect(() => {
-    const fetchDeletionRecordsOnPage = async () => {
+    const fetchStatusChangesOnPage = async () => {
       const statusChanges = await getStatusChangesOnPage({ page, pageSize });
       setStatusChanges(statusChanges);
     };
@@ -57,7 +57,7 @@ const StatusChanges: React.FC<RouteComponentProps> = (props) => {
 
     fetchWhoIsLoggedIn();
 
-    fetchDeletionRecordsOnPage();
+    fetchStatusChangesOnPage();
   }, [page, pageSize]);
 
   const handleChangePage = (

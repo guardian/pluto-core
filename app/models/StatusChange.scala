@@ -68,6 +68,11 @@ object StatusChangeDAO extends ((Option[Int], Int, Timestamp, String, String, St
     db.run(
       TableQuery[StatusChange].sortBy(_.id.desc).drop(startAt).take(limit).result.asTry
     )
+
+  def getRecordsForProject(projectId:Int)(implicit db:slick.jdbc.PostgresProfile#Backend#Database) =
+    db.run(
+      TableQuery[StatusChange].filter(_.projectId===projectId).result.asTry
+    )
 }
 
 class StatusChange(tag:Tag) extends Table[StatusChangeDAO](tag, "StatusChange") {
