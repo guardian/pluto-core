@@ -652,3 +652,24 @@ export const recordStatusChange = async (
     throw error;
   }
 };
+
+export const getStatusChanges = async (id: number): Promise<StatusChange[]> => {
+  try {
+    const {
+      status,
+      data: { result },
+    } = await Axios.get<PlutoApiResponse<StatusChange[]>>(
+      `${API_PROJECTS}/${id}/statusChanges`
+    );
+
+    if (status === 200) {
+      console.log(result);
+      return result;
+    }
+
+    throw new Error(`Could not retrieve status changes. ${status}`);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};

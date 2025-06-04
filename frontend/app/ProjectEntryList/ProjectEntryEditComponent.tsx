@@ -18,6 +18,13 @@ import {
   styled,
   Select,
   MenuItem,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableSortLabel,
+  TableBody,
+  TableContainer,
 } from "@material-ui/core";
 import {
   getProject,
@@ -29,6 +36,7 @@ import {
   getMissingFiles,
   downloadProjectFile,
   recordStatusChange,
+  getStatusChanges,
 } from "./helpers";
 import {
   SystemNotification,
@@ -54,7 +62,7 @@ import ProjectFileUpload from "./ProjectFileUpload";
 import FolderIcon from "@material-ui/icons/Folder";
 import BuildIcon from "@material-ui/icons/Build";
 import LaunchIcon from "@material-ui/icons/Launch";
-import { sortListByOrder } from "../utils/lists";
+import { SortDirection, sortListByOrder } from "../utils/lists";
 
 declare var deploymentRootPath: string;
 
@@ -114,6 +122,12 @@ const EMPTY_FILE: FileEntry = {
   premiereVersion: 0,
 };
 
+const tableHeaderTitles: HeaderTitle<StatusChange>[] = [
+  { label: "User", key: "user" },
+  { label: "Time", key: "time" },
+  { label: "Status", key: "status" },
+];
+
 const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   props
 ) => {
@@ -139,6 +153,9 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
   const [fileData, setFileData] = useState<FileEntry>(EMPTY_FILE);
   const [premiereProVersion, setPremiereProVersion] = useState<number>(1);
   const [userName, setUserName] = useState<string>("");
+  const [statusChanges, setStatusChanges] = useState<StatusChange[]>([]);
+  const [order, setOrder] = useState<SortDirection>("desc");
+  const [orderBy, setOrderBy] = useState<keyof StatusChange>("id");
 
   const getProjectTypeData = async (projectTypeId: number) => {
     try {
@@ -162,6 +179,16 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
       setMissingFiles(returnedRecords);
     } catch {
       console.log("Could not load missing files.");
+    }
+  };
+
+  const fetchStatusChanges = async () => {
+    try {
+      const id = Number(props.match.params.itemid);
+      const statusChanges = await getStatusChanges(id);
+      setStatusChanges(statusChanges);
+    } catch {
+      console.log("Could not load status changes.");
     }
   };
 
@@ -217,6 +244,8 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
     getMissingFilesData();
 
     getPremiereVersionData();
+
+    fetchStatusChanges();
 
     return () => {
       isMounted = false;
@@ -524,6 +553,14 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
         `Failed to update Premiere Pro version to ${premiereProVersion}`
       );
     }
+  };
+
+  const sortByColumn = (property: keyof StatusChange) => (
+    _event: React.MouseEvent<unknown>
+  ) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
   };
 
   return (
@@ -954,6 +991,64 @@ const ProjectEntryEditComponent: React.FC<ProjectEntryEditComponentProps> = (
                   </Typography>
                 </Grid>
               </Grid>
+            </Paper>
+          )}
+          {statusChanges.length === 0 ? null : (
+            <Paper style={{ marginTop: 18 }}>
+              <Typography
+                variant="h4"
+                style={{ paddingTop: 18, marginLeft: 16 }}
+              >
+                Status Changes
+              </Typography>
+              <TableContainer>
+                <Table className={classes.table}>
+                  <TableHead>
+                    <TableRow>
+                      {tableHeaderTitles.map((title, index) => (
+                        <TableCell
+                          key={title.label ? title.label : index}
+                          sortDirection={orderBy === title.key ? order : false}
+                        >
+                          {title.key ? (
+                            <TableSortLabel
+                              active={orderBy === title.key}
+                              direction={orderBy === title.key ? order : "asc"}
+                              onClick={sortByColumn(title.key)}
+                            >
+                              {title.label}
+                              {orderBy === title.key && (
+                                <span className={classes.visuallyHidden}>
+                                  {order === "desc"
+                                    ? "sorted descending"
+                                    : "sorted ascending"}
+                                </span>
+                              )}
+                            </TableSortLabel>
+                          ) : (
+                            title.label
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {sortListByOrder(statusChanges, orderBy, order).map(
+                      ({ id, projectId, time, user, status, title }) => (
+                        <TableRow key={id}>
+                          <TableCell>{user}</TableCell>
+                          <TableCell>
+                            <span className="datetime">
+                              {moment(time).format("DD/MM/YYYY HH:mm")}
+                            </span>
+                          </TableCell>
+                          <TableCell>{status}</TableCell>
+                        </TableRow>
+                      )
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Paper>
           )}
           <Dialog

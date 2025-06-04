@@ -75,4 +75,13 @@ class StatusController @Inject()(cc:ControllerComponents, override val bearerTok
     })
   }}
 
+  def recordsForProject(projectId:Int) = IsAuthenticatedAsync {uid=>{request=>
+    StatusChangeDAO.getRecordsForProject(projectId).map({
+      case Success(results)=>Ok(Json.obj("status"->"ok","result"->results))
+      case Failure(error)=>
+        logger.error("Could not list status changes: ", error)
+        InternalServerError(Json.obj("status"->"error","detail"->error.toString))
+    })
+  }}
+
 }
