@@ -381,7 +381,10 @@ const CommissionDeleteDataComponent: React.FC<CommissionDeleteDataComponentProps
                     <br />
                     1. If you have 'Project Records' enabled it will break
                     deletion from Vidispine, the Storage Area Network, and the
-                    Object Matrix system.
+                    Object Matrix system. If you need to delete the project
+                    records, it is best to come back about a week after the
+                    first delete attempt was made to give the system time to
+                    delete other data.
                     <br />
                     <br />
                     2. Some parts of the Pluto system where not designed to be
@@ -433,6 +436,15 @@ const CommissionDeleteDataComponent: React.FC<CommissionDeleteDataComponentProps
                       onClick={() => history.goBack()}
                     >
                       Back
+                    </Button>
+                    <Button
+                      className="cancel"
+                      variant="outlined"
+                      onClick={() =>
+                        window.location.assign(`/pluto-core/deleted/`)
+                      }
+                    >
+                      Deletion Records
                     </Button>
                     <Button type="submit" variant="contained" color="secondary">
                       Submit Delete Request

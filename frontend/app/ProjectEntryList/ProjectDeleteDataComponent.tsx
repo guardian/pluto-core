@@ -320,7 +320,9 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                 <br />
                 1. If you have 'Project Record' enabled it will break deletion
                 from Vidispine, the Storage Area Network, and the Object Matrix
-                system.
+                system. If you need to delete the project record, it is best to
+                come back about a week after the first delete attempt was made
+                to give the system time to delete other data.
                 <br />
                 <br />
                 2. Some parts of the Pluto system where not designed to be
@@ -367,6 +369,13 @@ const ProjectDeleteDataComponent: React.FC<ProjectDeleteDataComponentProps> = (
                   onClick={() => history.goBack()}
                 >
                   Back
+                </Button>
+                <Button
+                  className="cancel"
+                  variant="outlined"
+                  onClick={() => window.location.assign(`/pluto-core/deleted/`)}
+                >
+                  Deletion Records
                 </Button>
                 <Tooltip title="See project's media">
                   <IconButton
