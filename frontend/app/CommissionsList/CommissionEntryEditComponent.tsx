@@ -640,19 +640,6 @@ const CommissionEntryEditComponent: React.FC<RouteComponentProps<
             <Grid item>
               <Typography variant="h4">Projects</Typography>
             </Grid>
-            <Grid item>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() =>
-                  history.push(
-                    `/project/new?commissionId=${commissionId}&workingGroupId=${commissionData?.workingGroupId}`
-                  )
-                }
-              >
-                New Project
-              </Button>
-            </Grid>
           </Grid>
           <Grid container>
             {filterTerms ? (

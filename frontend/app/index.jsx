@@ -325,15 +325,6 @@ class App extends React.Component {
                     />
                     <Route path="/type/" component={ProjectTypeList} />
                     <Route
-                      path="/project/new"
-                      render={(props) => (
-                        <ProjectCreateMultistepNew
-                          isAdmin={this.state.isAdmin}
-                          {...props}
-                        />
-                      )}
-                    />
-                    <Route
                       path="/project/:itemid/backups"
                       component={ProjectBackups}
                     />
@@ -354,15 +345,6 @@ class App extends React.Component {
                       component={ProjectEntryEditComponent}
                     />
                     <Route path="/project/" component={ProjectEntryList} />
-                    <Route
-                      path="/commission/new"
-                      render={(props) => (
-                        <CommissionMultistepNew
-                          match={props.match}
-                          userName={this.state.currentUsername}
-                        />
-                      )}
-                    />
                     <Route
                       path="/commission/:commissionId/deletedata"
                       component={CommissionDeleteDataComponent}

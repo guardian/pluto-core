@@ -41,23 +41,6 @@ const CommissionCreated: React.FC<CommissionCreatedProps> = (props) => {
       <br />
       <Grid container spacing={3}>
         <Grid item xs={8}>
-          <Typography>Create a project</Typography>
-        </Grid>
-        <Grid item xs={4}>
-          <Button
-            style={buttonStyle}
-            color="primary"
-            variant="contained"
-            onClick={() =>
-              history.push(
-                `/project/new?commissionId=${props.commissionId}&workingGroupId=${props.workingGroupId}`
-              )
-            }
-          >
-            New Project
-          </Button>
-        </Grid>
-        <Grid item xs={8}>
           <Typography>Go to the new commission's page</Typography>
         </Grid>
         <Grid item xs={4}>
