@@ -132,18 +132,6 @@ const ProjectEntryList: React.FC<RouteComponentProps> = () => {
             />
           </Grid>
         ) : null}
-        <Grid className={classes.buttonGrid}>
-          <Button
-            className={classes.createButton}
-            variant="contained"
-            color="primary"
-            onClick={() => {
-              history.push("/project/new");
-            }}
-          >
-            New
-          </Button>
-        </Grid>
       </Grid>
       <Paper elevation={3}>
         <ProjectsTable

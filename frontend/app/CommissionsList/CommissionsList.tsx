@@ -200,18 +200,6 @@ const CommissionsList: React.FC = () => {
             />
           </Grid>
         ) : null}
-        <Grid className={classes.buttonGrid} style={{ marginLeft: "auto" }}>
-          <Button
-            className={classes.createButton}
-            variant="contained"
-            color="primary"
-            onClick={() => {
-              history.push("/commission/new");
-            }}
-          >
-            New
-          </Button>
-        </Grid>
       </Grid>
       <Paper elevation={3}>
         <TableContainer>
